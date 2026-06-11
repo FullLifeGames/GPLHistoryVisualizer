@@ -1,0 +1,25 @@
+{
+  "season_number": 10,
+  "season_id": "season_010",
+  "season_label": "Season 10",
+  "playlists": [
+    {
+      "playlistId": "PLS5CJdaR4C6d5569mv-qfCA1SNlQENyTQ",
+      "title": "GPL Season 10 - Meine K\u00e4mpfe",
+      "description": "",
+      "publishedAt": "2025-10-13T10:47:39.321534Z",
+      "channelId": "UCGJoPLl-4NriTMUsNMK-9Zg",
+      "channelTitle": "Present",
+      "itemCount": 21
+    },
+    {
+      "playlistId": "PLS5CJdaR4C6eyTuzsyMeaGcFV9DqexOmI",
+      "title": "GPL Season 10 - ALLE K\u00c4MPFE",
+      "description": "Hier findet ihr alle GPL Season 10 K\u00e4mpfe von allen Teilnehmenden!",
+      "publishedAt": "2025-10-13T10:49:19.517967Z",
+      "channelId": "UCGJoPLl-4NriTMUsNMK-9Zg",
+      "channelTitle": "Present",
+      "itemCount": 140
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "season_number": 3,
+  "season_id": "season_003",
+  "season_label": "Season 3",
+  "playlists": [
+    {
+      "playlistId": "PLS5CJdaR4C6d-mBBOEn6cNbJPkfEXuwEr",
+      "title": "Infos zu GPL S3!",
+      "description": "",
+      "publishedAt": "2016-01-30T13:29:26.842176Z",
+      "channelId": "UCGJoPLl-4NriTMUsNMK-9Zg",
+      "channelTitle": "Present",
+      "itemCount": 5
+    },
+    {
+      "playlistId": "PLS5CJdaR4C6fifYZDdkNVR9X8aEUwQHnV",
+      "title": "GPL [S3] - PresentLP",
+      "description": "",
+      "publishedAt": "2016-02-02T17:30:11.166082Z",
+      "channelId": "UCGJoPLl-4NriTMUsNMK-9Zg",
+      "channelTitle": "Present",
+      "itemCount": 53
+    }
+  ]
+}

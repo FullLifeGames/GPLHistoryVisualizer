@@ -1,0 +1,532 @@
+
+,Killliste,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Backel Gefackel Punkte
+,Rang,,Pokemon,,,,Liga,Sp 1,Sp 2,Sp 3,Sp 4,Sp 5,Sp 6,Sp 7,Sp 8,Sp 9,Sp 10,Sp 11,Sp 12,Sp 13,Kills Gesamt,Team,,Quote,,,,,,,,Rang,,Pokemon,,,,Liga,Sp 1,Sp 2,Sp 3,Sp 4,Sp 5,Sp 6,Sp 7,Sp 8,Sp 9,Sp 10,Sp 11,Punkte Gesamt,Team
+,,1,Ogerpon-Gestein,von,Bene,,GPL,1,1,0,3,0,0,,,3,3,1,1,,13,,Wackel Backel,"12,99","12,99001",,,,,,,,,Ogerpon-Gestein,von,Bene,,GPL,,,,,,,,,,,,0,,Wackel Backel
+,,2,Deoxys-Geschwindigkeit,von,Bene,,GPL,,3,,0,1,,0,1,0,0,0,0,2,7,,Wackel Backel,"6,99","6,99001",,,,,,,,,Deoxys-Geschwindigkeit,von,Bene,,GPL,,,,,,,,,,,,0,,Wackel Backel
+,,3,Demeteros,von,Bene,,GPL,2,3,0,1,,,0,,,1,2,,,9,,Wackel Backel,"8,993","8,99302",,,,,,,,,Demeteros,von,Bene,,GPL,,,,,,,,,,,,0,,Wackel Backel
+,,4,Bailonda,von,Bene,,GPL,1,,0,,0,,0,,2,1,,,1,5,,Wackel Backel,"4,993","4,99302",,,,,,,,,Bailonda,von,Bene,,GPL,,,,,,,,,,,,0,,Wackel Backel
+,,5,Granforgita,von,Bene,,GPL,0,0,0,4,,,,0,0,,,,3,7,,Wackel Backel,"6,993","6,99302",,,,,,,,,Granforgita,von,Bene,,GPL,,,,,,,,,,,,0,,Wackel Backel
+,,6,UHaFnir,von,Bene,,GPL,0,,,0,,0,,0,1,,1,2,,4,,Wackel Backel,"3,993","3,99303",,,,,,,,,UHaFnir,von,Bene,,GPL,,,,,,,,,,,,0,,Wackel Backel
+,,7,Bronzong,von,Bene,,GPL,,,,,0,,,0,,1,,0,,1,,Wackel Backel,"0,996","0,99603",,,,,,,,,Bronzong,von,Bene,,GPL,,,,,,,,,,,,0,,Wackel Backel
+,,8,Amfira,von,Bene,,GPL,,1,3,,0,1,4,,,,2,3,0,14,,Wackel Backel,"13,992","13,99203",,,,,,,,,Amfira,von,Bene,,GPL,,,,,,,,,,,,0,,Wackel Backel
+,,9,Caesurio,von,Bene,,GPL,2,0,3,0,1,2,1,2,,2,0,1,0,14,,Wackel Backel,"13,988","13,98804",,,,,,,,,Caesurio,von,Bene,,GPL,,,,,,,,,,,,0,,Wackel Backel
+,,10,Gastrodon,von,Bene,,GPL,,,,,,0,1,0,0,,,,0,1,,Wackel Backel,"0,995","0,99504",,,,,,,,,Gastrodon,von,Bene,,GPL,,,,,,,,,,,,0,,Wackel Backel
+,,11,Giflor,von,Bene,,GPL,,,,,,,,,,,,,,0,,Wackel Backel,0,"0,00005",,,,,,,,,Giflor,von,Bene,,GPL,,,,,,,,,,,,0,,Wackel Backel
+,,12,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,1,Boreos-Therian,von,Blocki,,GPL,0,0,,0,3,3,1,0,1,0,,,,8,,Kastanienbomber,"7,991","7,99101",,,,,,,,,Boreos-Therian,von,Blocki,,GPL,,,,,,,,,,,,0,,Kastanienbomber
+,,2,Ogerpon,von,Blocki,,GPL,,3,0,0,0,,1,3,,0,0,,1,8,,Kastanienbomber,"7,991","7,99101",,,,,,,,,Ogerpon,von,Blocki,,GPL,,,,,,,,,,,,0,,Kastanienbomber
+,,3,Hisui-Viscogon,von,Blocki,,GPL,0,4,0,3,,2,2,3,1,,,2,1,18,,Kastanienbomber,"17,99","17,99002",,,,,,,,,Hisui-Viscogon,von,Blocki,,GPL,,,,,,,,,,,,0,,Kastanienbomber
+,,4,Suicune,von,Blocki,,GPL,1,0,1,0,0,,0,,0,,0,0,1,3,,Kastanienbomber,"2,99","2,99002",,,,,,,,,Suicune,von,Blocki,,GPL,,,,,,,,,,,,0,,Kastanienbomber
+,,5,Panferno,von,Blocki,,GPL,0,,1,3,0,0,1,,0,0,0,0,0,5,,Kastanienbomber,"4,989","4,98902",,,,,,,,,Panferno,von,Blocki,,GPL,,,,,,,,,,,,0,,Kastanienbomber
+,,6,Galar-Lahmus,von,Blocki,,GPL,,,,,0,,,0,,,,3,,3,,Kastanienbomber,"2,997","2,99703",,,,,,,,,Galar-Lahmus,von,Blocki,,GPL,,,,,,,,,,,,0,,Kastanienbomber
+,,7,Axantor,von,Blocki,,GPL,0,0,,3,,,,,,,0,,,3,,Kastanienbomber,"2,996","2,99603",,,,,,,,,Axantor,von,Blocki,,GPL,,,,,,,,,,,,0,,Kastanienbomber
+,,8,Diancie,von,Blocki,,GPL,0,0,,,,2,,0,,0,,3,0,5,,Kastanienbomber,"4,993","4,99303",,,,,,,,,Diancie,von,Blocki,,GPL,,,,,,,,,,,,0,,Kastanienbomber
+,,9,Donphan,von,Blocki,,GPL,,,1,,,4,,,0,1,,,,6,,Kastanienbomber,"5,996","5,99604",,,,,,,,,Donphan,von,Blocki,,GPL,,,,,,,,,,,,0,,Kastanienbomber
+,,10,Rotom,von,Blocki,,GPL,,,0,,0,,,,,,0,,,0,,Kastanienbomber,"-0,003","-0,00296",,,,,,,,,Rotom,von,Blocki,,GPL,,,,,,,,,,,,0,,Kastanienbomber
+,,11,Calamanero,von,Blocki,,GPL,,,,,,0,1,0,0,1,1,1,1,5,,Kastanienbomber,"4,992","4,99205",,,,,,,,,Calamanero,von,Blocki,,GPL,,,,,,,,,,,,0,,Kastanienbomber
+,,12,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,1,Donnersichel,von,Dauni,,GPL,0,0,,,1,,1,,4,,0,,4,10,,Pfundskerle,"9,993","9,99301",,,,,,,,,Donnersichel,von,Dauni,,GPL,,,,,,,,,,,,0,,Pfundskerle
+,,2,Zapdos,von,Dauni,,GPL,,1,1,2,,0,0,0,1,1,,1,0,7,,Pfundskerle,"6,99","6,99001",,,,,,,,,Zapdos,von,Dauni,,GPL,,,,,,,,,,,,0,,Pfundskerle
+,,3,Primarene,von,Dauni,,GPL,0,3,0,,0,2,0,4,1,1,2,,1,14,,Pfundskerle,"13,989","13,98902",,,,,,,,,Primarene,von,Dauni,,GPL,,,,,,,,,,,,0,,Pfundskerle
+,,4,Scherox,von,Dauni,,GPL,0,6,1,1,0,,1,,0,2,3,3,0,17,,Pfundskerle,"16,989","16,98902",,,,,,,,,Scherox,von,Dauni,,GPL,,,,,,,,,,,,0,,Pfundskerle
+,,5,Terrakium,von,Dauni,,GPL,4,1,0,4,1,0,2,4,0,,0,0,0,16,,Pfundskerle,"15,988","15,98802",,,,,,,,,Terrakium,von,Dauni,,GPL,,,,,,,,,,,,0,,Pfundskerle
+,,6,Myriador,von,Dauni,,GPL,0,,,1,,,,,0,0,,,,1,,Pfundskerle,"0,996","0,99603",,,,,,,,,Myriador,von,Dauni,,GPL,,,,,,,,,,,,0,,Pfundskerle
+,,7,Crimanzo,von,Dauni,,GPL,,,1,,,0,1,,,,0,4,,6,,Pfundskerle,"5,995","5,99503",,,,,,,,,Crimanzo,von,Dauni,,GPL,,,,,,,,,,,,0,,Pfundskerle
+,,8,Zobiris,von,Dauni,,GPL,,,,0,,0,,1,,0,,0,,1,,Pfundskerle,"0,995","0,99503",,,,,,,,,Zobiris,von,Dauni,,GPL,,,,,,,,,,,,0,,Pfundskerle
+,,9,Tenterra,von,Dauni,,GPL,,,,0,0,,,,,,,,1,1,,Pfundskerle,"0,997","0,99704",,,,,,,,,Tenterra,von,Dauni,,GPL,,,,,,,,,,,,0,,Pfundskerle
+,,10,Vesprit,von,Dauni,,GPL,0,,3,,1,,,1,,,1,0,,6,,Pfundskerle,"5,994","5,99404",,,,,,,,,Vesprit,von,Dauni,,GPL,,,,,,,,,,,,0,,Pfundskerle
+,,11,Ambidiffel,von,Dauni,,GPL,,0,,,,0,,1,,0,,,,1,,Pfundskerle,"0,996","0,99605",,,,,,,,,Ambidiffel,von,Dauni,,GPL,,,,,,,,,,,,0,,Pfundskerle
+,,12,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,1,Gladimperio,von,Domji,,GPL,1,,0,,0,5,,0,1,,0,,,7,,Shining Legends,"6,993","6,99301",,,,,,,,,Gladimperio,von,Domji,,GPL,,,,,,,,,,,,0,,Shining Legends
+,,2,Gortrom,von,Domji,,GPL,2,1,0,,,0,,0,,2,1,1,0,7,,Shining Legends,"6,991","6,99101",,,,,,,,,Gortrom,von,Domji,,GPL,,,,,,,,,,,,0,,Shining Legends
+,,3,Pixi,von,Domji,,GPL,0,,0,1,,0,0,1,1,0,,0,0,3,,Shining Legends,"2,99","2,99002",,,,,,,,,Pixi,von,Domji,,GPL,,,,,,,,,,,,0,,Shining Legends
+,,4,Mamutel,von,Domji,,GPL,0,3,,1,2,,1,1,2,4,1,2,0,17,,Shining Legends,"16,989","16,98902",,,,,,,,,Mamutel,von,Domji,,GPL,,,,,,,,,,,,0,,Shining Legends
+,,5,Voltolos-Therian,von,Domji,,GPL,0,1,,3,,0,,1,0,1,,,0,6,,Shining Legends,"5,992","5,99202",,,,,,,,,Voltolos-Therian,von,Domji,,GPL,,,,,,,,,,,,0,,Shining Legends
+,,6,Garados,von,Domji,,GPL,,,1,,0,,,,,,,0,0,1,,Shining Legends,"0,996","0,99603",,,,,,,,,Garados,von,Domji,,GPL,,,,,,,,,,,,0,,Shining Legends
+,,7,Bandelby,von,Domji,,GPL,0,0,,0,0,,,,,0,,,,0,,Shining Legends,"-0,005","-0,00497",,,,,,,,,Bandelby,von,Domji,,GPL,,,,,,,,,,,,0,,Shining Legends
+,,8,Skelabra,von,Domji,,GPL,,3,0,2,0,3,1,,0,,2,,,11,,Shining Legends,"10,992","10,99203",,,,,,,,,Skelabra,von,Domji,,GPL,,,,,,,,,,,,0,,Shining Legends
+,,9,Kapoera,von,Domji,,GPL,,,,2,0,1,0,,0,1,1,0,,5,,Shining Legends,"4,992","4,99204",,,,,,,,,Kapoera,von,Domji,,GPL,,,,,,,,,,,,0,,Shining Legends
+,,10,Gewaldro,von,Domji,,GPL,,,,,,,0,,,,,0,,0,,Shining Legends,"-0,002","-0,00195",,,,,,,,,Gewaldro,von,Domji,,GPL,,,,,,,,,,,,0,,Shining Legends
+,,11,Psiana,von,Domji,,GPL,,0,1,,,,0,0,,,1,,1,3,,Shining Legends,"2,994","2,99405",,,,,,,,,Psiana,von,Domji,,GPL,,,,,,,,,,,,0,,Shining Legends
+,,12,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,1,Hoopa-Entfesselt,von,King Blex,,GPL,0,,,2,,1,0,,0,,1,,3,7,,Cyber End Jugulis,"6,993","6,99301",,,,,,,,,Hoopa-Entfesselt,von,King Blex,,GPL,,,,,,,,,,,,0,,Cyber End Jugulis
+,,2,Eisenhand,von,King Blex,,GPL,3,1,0,1,0,,1,4,1,0,1,0,1,13,,Cyber End Jugulis,"12,988","12,98801",,,,,,,,,Eisenhand,von,King Blex,,GPL,,,,,,,,,,,,0,,Cyber End Jugulis
+,,3,Eisenrad,von,King Blex,,GPL,0,3,4,0,0,,,0,,2,3,2,,14,,Cyber End Jugulis,"13,991","13,99102",,,,,,,,,Eisenrad,von,King Blex,,GPL,,,,,,,,,,,,0,,Cyber End Jugulis
+,,4,Eisenhals,von,King Blex,,GPL,1,0,1,2,2,0,0,,1,,1,2,2,12,,Cyber End Jugulis,"11,989","11,98902",,,,,,,,,Eisenhals,von,King Blex,,GPL,,,,,,,,,,,,0,,Cyber End Jugulis
+,,5,Hisui-Arkani,von,King Blex,,GPL,,,,,1,1,2,3,0,0,0,,0,7,,Cyber End Jugulis,"6,992","6,99202",,,,,,,,,Hisui-Arkani,von,King Blex,,GPL,,,,,,,,,,,,0,,Cyber End Jugulis
+,,6,Tentoxa,von,King Blex,,GPL,,,0,0,,0,0,,,,,0,0,0,,Cyber End Jugulis,"-0,006","-0,00597",,,,,,,,,Tentoxa,von,King Blex,,GPL,,,,,,,,,,,,0,,Cyber End Jugulis
+,,7,Porygon-Z,von,King Blex,,GPL,4,,,0,,1,,,1,0,,,,6,,Cyber End Jugulis,"5,995","5,99503",,,,,,,,,Porygon-Z,von,King Blex,,GPL,,,,,,,,,,,,0,,Cyber End Jugulis
+,,8,Mimigma,von,King Blex,,GPL,2,0,1,,1,,,0,,1,,,,5,,Cyber End Jugulis,"4,994","4,99403",,,,,,,,,Mimigma,von,King Blex,,GPL,,,,,,,,,,,,0,,Cyber End Jugulis
+,,9,Pokusan,von,King Blex,,GPL,,,,,,0,,,,,,,,0,,Cyber End Jugulis,"-0,001","-0,00096",,,,,,,,,Pokusan,von,King Blex,,GPL,,,,,,,,,,,,0,,Cyber End Jugulis
+,,10,Fruyal,von,King Blex,,GPL,,0,,,,,,0,2,0,0,3,,5,,Cyber End Jugulis,"4,994","4,99404",,,,,,,,,Fruyal,von,King Blex,,GPL,,,,,,,,,,,,0,,Cyber End Jugulis
+,,11,Britzigel,von,King Blex,,GPL,,0,0,,0,,0,0,,,,3,0,3,,Cyber End Jugulis,"2,993","2,99305",,,,,,,,,Britzigel,von,King Blex,,GPL,,,,,,,,,,,,0,,Cyber End Jugulis
+,,12,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,1,Mew,von,Minetube,,GPL,1,,,0,,0,0,2,,1,1,,2,7,,Throes Mad,"6,992","6,99201",,,,,,,,,Mew,von,Minetube,,GPL,,,,,,,,,,,,0,,Throes Mad
+,,2,Maskagato,von,Minetube,,GPL,1,0,3,0,1,,0,0,2,0,0,,1,8,,Throes Mad,"7,989","7,98901",,,,,,,,,Maskagato,von,Minetube,,GPL,,,,,,,,,,,,0,,Throes Mad
+,,3,Despotar,von,Minetube,,GPL,1,0,,0,,1,2,,1,3,0,,,8,,Throes Mad,"7,992","7,99202",,,,,,,,,Despotar,von,Minetube,,GPL,,,,,,,,,,,,0,,Throes Mad
+,,4,Grandiras,von,Minetube,,GPL,,5,,3,3,,0,,,0,0,,1,12,,Throes Mad,"11,993","11,99302",,,,,,,,,Grandiras,von,Minetube,,GPL,,,,,,,,,,,,0,,Throes Mad
+,,5,Stalobor,von,Minetube,,GPL,,0,0,,2,1,2,1,0,0,0,,0,6,,Throes Mad,"5,99","5,99002",,,,,,,,,Stalobor,von,Minetube,,GPL,,,,,,,,,,,,0,,Throes Mad
+,,6,Milotic,von,Minetube,,GPL,2,,2,,0,2,,5,0,,,1,0,12,,Throes Mad,"11,992","11,99203",,,,,,,,,Milotic,von,Minetube,,GPL,,,,,,,,,,,,0,,Throes Mad
+,,7,Panzaeron,von,Minetube,,GPL,1,,0,,0,3,2,0,,,0,4,,10,,Throes Mad,"9,992","9,99203",,,,,,,,,Panzaeron,von,Minetube,,GPL,,,,,,,,,,,,0,,Throes Mad
+,,8,Curelei,von,Minetube,,GPL,,3,1,,,,,,0,,,0,,4,,Throes Mad,"3,996","3,99603",,,,,,,,,Curelei,von,Minetube,,GPL,,,,,,,,,,,,0,,Throes Mad
+,,9,Affiti,von,Minetube,,GPL,,,,0,,,,,,,,1,,1,,Throes Mad,"0,998","0,99804",,,,,,,,,Affiti,von,Minetube,,GPL,,,,,,,,,,,,0,,Throes Mad
+,,10,Toxiquak,von,Minetube,,GPL,,0,0,,,1,,0,0,4,,1,2,8,,Throes Mad,"7,992","7,99204",,,,,,,,,Toxiquak,von,Minetube,,GPL,,,,,,,,,,,,0,,Throes Mad
+,,11,Traunfugil,von,Minetube,,GPL,0,,,1,0,,,,,,,1,,2,,Throes Mad,"1,996","1,99605",,,,,,,,,Traunfugil,von,Minetube,,GPL,,,,,,,,,,,,0,,Throes Mad
+,,12,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,1,Katapuldra,von,Nestfloh,,GPL,1,2,1,0,0,1,4,0,0,0,2,,1,12,,Böller Brüder,"11,988","11,98801",,,,,,,,,Katapuldra,von,Nestfloh,,GPL,,,,,,,,,,,,0,,Böller Brüder
+,,2,Lumiflora,von,Nestfloh,,GPL,,,1,3,,5,0,2,2,,2,1,0,16,,Böller Brüder,"15,991","15,99101",,,,,,,,,Lumiflora,von,Nestfloh,,GPL,,,,,,,,,,,,0,,Böller Brüder
+,,3,Impoleon,von,Nestfloh,,GPL,0,,,0,1,0,,0,0,,0,,,1,,Böller Brüder,"0,993","0,99302",,,,,,,,,Impoleon,von,Nestfloh,,GPL,,,,,,,,,,,,0,,Böller Brüder
+,,4,Pamomamo,von,Nestfloh,,GPL,0,,,0,0,,1,1,0,0,0,0,0,2,,Böller Brüder,"1,99","1,99002",,,,,,,,,Pamomamo,von,Nestfloh,,GPL,,,,,,,,,,,,0,,Böller Brüder
+,,5,Cresselia,von,Nestfloh,,GPL,0,1,,,2,0,,,,0,2,0,,5,,Böller Brüder,"4,993","4,99302",,,,,,,,,Cresselia,von,Nestfloh,,GPL,,,,,,,,,,,,0,,Böller Brüder
+,,6,Lavados,von,Nestfloh,,GPL,,,0,,1,,0,4,,,,1,2,8,,Böller Brüder,"7,994","7,99403",,,,,,,,,Lavados,von,Nestfloh,,GPL,,,,,,,,,,,,0,,Böller Brüder
+,,7,Irokex,von,Nestfloh,,GPL,,0,,,,0,,1,,0,,,1,2,,Böller Brüder,"1,995","1,99503",,,,,,,,,Irokex,von,Nestfloh,,GPL,,,,,,,,,,,,0,,Böller Brüder
+,,8,Guardevoir,von,Nestfloh,,GPL,,1,0,0,,,,,2,0,,0,0,3,,Böller Brüder,"2,993","2,99303",,,,,,,,,Guardevoir,von,Nestfloh,,GPL,,,,,,,,,,,,0,,Böller Brüder
+,,9,Pampross,von,Nestfloh,,GPL,,0,,,,2,0,,,2,,,,4,,Böller Brüder,"3,996","3,99604",,,,,,,,,Pampross,von,Nestfloh,,GPL,,,,,,,,,,,,0,,Böller Brüder
+,,10,Ursaring,von,Nestfloh,,GPL,5,,0,,,,,,,,,1,,6,,Böller Brüder,"5,997","5,99704",,,,,,,,,Ursaring,von,Nestfloh,,GPL,,,,,,,,,,,,0,,Böller Brüder
+,,11,Arktilas,von,Nestfloh,,GPL,0,4,1,0,2,,1,,2,,0,,,10,,Böller Brüder,"9,992","9,99205",,,,,,,,,Arktilas,von,Nestfloh,,GPL,,,,,,,,,,,,0,,Böller Brüder
+,,12,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,1,Eisenkrieger,von,OGDeniz96,,GPL,3,0,0,3,4,0,1,1,0,3,,0,1,16,,Squid Squad,"15,988","15,98801",,,,,,,,,Eisenkrieger,von,OGDeniz96,,GPL,,,,,,,,,,,,0,,Squid Squad
+,,2,Eisenfalter,von,OGDeniz96,,GPL,0,0,1,,1,,1,,1,,1,,1,6,,Squid Squad,"5,992","5,99201",,,,,,,,,Eisenfalter,von,OGDeniz96,,GPL,,,,,,,,,,,,0,,Squid Squad
+,,3,Laschoking,von,OGDeniz96,,GPL,,,0,0,1,0,0,,0,,0,4,,5,,Squid Squad,"4,992","4,99202",,,,,,,,,Laschoking,von,OGDeniz96,,GPL,,,,,,,,,,,,0,,Squid Squad
+,,4,Metagross,von,OGDeniz96,,GPL,,,,0,0,1,0,5,1,1,1,,0,9,,Squid Squad,"8,991","8,99102",,,,,,,,,Metagross,von,OGDeniz96,,GPL,,,,,,,,,,,,0,,Squid Squad
+,,5,Hisui-Admurai,von,OGDeniz96,,GPL,0,,,,,1,1,,,,0,3,0,5,,Squid Squad,"4,994","4,99402",,,,,,,,,Hisui-Admurai,von,OGDeniz96,,GPL,,,,,,,,,,,,0,,Squid Squad
+,,6,Grypheldis,von,OGDeniz96,,GPL,1,1,1,,0,,0,,0,,,,,3,,Squid Squad,"2,994","2,99403",,,,,,,,,Grypheldis,von,OGDeniz96,,GPL,,,,,,,,,,,,0,,Squid Squad
+,,7,Sandfell,von,OGDeniz96,,GPL,2,0,1,3,0,,,2,2,0,,,0,10,,Squid Squad,"9,991","9,99103",,,,,,,,,Sandfell,von,OGDeniz96,,GPL,,,,,,,,,,,,0,,Squid Squad
+,,8,Polaross,von,OGDeniz96,,GPL,,2,2,2,,5,,,,2,0,0,1,14,,Squid Squad,"13,992","13,99203",,,,,,,,,Polaross,von,OGDeniz96,,GPL,,,,,,,,,,,,0,,Squid Squad
+,,9,Piepi,von,OGDeniz96,,GPL,0,,,0,,0,,0,,1,0,0,,1,,Squid Squad,"0,993","0,99304",,,,,,,,,Piepi,von,OGDeniz96,,GPL,,,,,,,,,,,,0,,Squid Squad
+,,10,Chillabell,von,OGDeniz96,,GPL,,0,,,,,,4,,,,1,,5,,Squid Squad,"4,997","4,99704",,,,,,,,,Chillabell,von,OGDeniz96,,GPL,,,,,,,,,,,,0,,Squid Squad
+,,11,Trombork,von,OGDeniz96,,GPL,,,,,,,,0,,3,,,,3,,Squid Squad,"2,998","2,99805",,,,,,,,,Trombork,von,OGDeniz96,,GPL,,,,,,,,,,,,0,,Squid Squad
+,,12,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,1,Knakrack,von,Pokgalaxy,,GPL,0,1,2,2,0,1,5,1,0,,1,3,,16,,Tails of Mystery,"15,989","15,98901",,,,,,,,,Knakrack,von,Pokgalaxy,,GPL,,,,,,,,,,,,0,,Tails of Mystery
+,,2,Galar-Laschoking,von,Pokgalaxy,,GPL,3,1,1,0,1,,0,0,1,0,0,,,7,,Tails of Mystery,"6,99","6,99001",,,,,,,,,Galar-Laschoking,von,Pokgalaxy,,GPL,,,,,,,,,,,,0,,Tails of Mystery
+,,3,Krarmor,von,Pokgalaxy,,GPL,0,0,0,0,0,2,0,0,0,2,0,1,0,5,,Tails of Mystery,"4,987","4,98702",,,,,,,,,Krarmor,von,Pokgalaxy,,GPL,,,,,,,,,,,,0,,Tails of Mystery
+,,4,Keldeo,von,Pokgalaxy,,GPL,1,,1,,0,4,0,,,1,1,0,0,8,,Tails of Mystery,"7,991","7,99102",,,,,,,,,Keldeo,von,Pokgalaxy,,GPL,,,,,,,,,,,,0,,Tails of Mystery
+,,5,Snibunna,von,Pokgalaxy,,GPL,1,0,,,5,0,0,0,,,,0,3,9,,Tails of Mystery,"8,992","8,99202",,,,,,,,,Snibunna,von,Pokgalaxy,,GPL,,,,,,,,,,,,0,,Tails of Mystery
+,,6,Feelinara,von,Pokgalaxy,,GPL,,,,,,2,,,0,4,0,2,0,8,,Tails of Mystery,"7,994","7,99403",,,,,,,,,Feelinara,von,Pokgalaxy,,GPL,,,,,,,,,,,,0,,Tails of Mystery
+,,7,Relaxo,von,Pokgalaxy,,GPL,,1,,,,,,,,,,,0,1,,Tails of Mystery,"0,998","0,99803",,,,,,,,,Relaxo,von,Pokgalaxy,,GPL,,,,,,,,,,,,0,,Tails of Mystery
+,,8,Rotom-Heat,von,Pokgalaxy,,GPL,0,0,0,0,,1,1,0,,,,,3,5,,Tails of Mystery,"4,992","4,99203",,,,,,,,,Rotom-Heat,von,Pokgalaxy,,GPL,,,,,,,,,,,,0,,Tails of Mystery
+,,9,Horrerba,von,Pokgalaxy,,GPL,,,,0,0,,,,0,1,,0,,1,,Tails of Mystery,"0,995","0,99504",,,,,,,,,Horrerba,von,Pokgalaxy,,GPL,,,,,,,,,,,,0,,Tails of Mystery
+,,10,Wampitz,von,Pokgalaxy,,GPL,,,2,3,,,,9,1,0,2,,,17,,Tails of Mystery,"16,994","16,99404",,,,,,,,,Wampitz,von,Pokgalaxy,,GPL,,,,,,,,,,,,0,,Tails of Mystery
+,,11,Rameidon,von,Pokgalaxy,,GPL,,,,,,,,,,,,,,0,,Tails of Mystery,0,"0,00005",,,,,,,,,Rameidon,von,Pokgalaxy,,GPL,,,,,,,,,,,,0,,Tails of Mystery
+,,12,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,1,Demeteros-Therian,von,Present,,GPL,2,,,,1,1,1,2,1,0,2,0,1,11,,Prekani,"10,99","10,99001",,,,,,,,,Demeteros-Therian,von,Present,,GPL,,,,,,,,,,,,0,,Prekani
+,,2,Dragoran,von,Present,,GPL,0,,0,,1,2,,,,,,1,0,4,,Prekani,"3,994","3,99401",,,,,,,,,Dragoran,von,Present,,GPL,,,,,,,,,,,,0,,Prekani
+,,3,Arkani,von,Present,,GPL,,1,2,0,,,,2,1,,,6,,12,,Prekani,"11,994","11,99402",,,,,,,,,Arkani,von,Present,,GPL,,,,,,,,,,,,0,,Prekani
+,,4,Rotom-Wash,von,Present,,GPL,0,,1,2,0,1,,2,0,1,1,,0,8,,Prekani,"7,99","7,99002",,,,,,,,,Rotom-Wash,von,Present,,GPL,,,,,,,,,,,,0,,Prekani
+,,5,Zytomega,von,Present,,GPL,0,0,,0,,,,,,1,,0,3,4,,Prekani,"3,994","3,99402",,,,,,,,,Zytomega,von,Present,,GPL,,,,,,,,,,,,0,,Prekani
+,,6,Beatori,von,Present,,GPL,,2,,0,1,0,0,0,2,,0,,,5,,Prekani,"4,992","4,99203",,,,,,,,,Beatori,von,Present,,GPL,,,,,,,,,,,,0,,Prekani
+,,7,Kobalium,von,Present,,GPL,0,,,5,,0,1,1,1,0,2,,,10,,Prekani,"9,992","9,99203",,,,,,,,,Kobalium,von,Present,,GPL,,,,,,,,,,,,0,,Prekani
+,,8,Mopex,von,Present,,GPL,,0,0,,1,,1,,,,1,,,3,,Prekani,"2,995","2,99503",,,,,,,,,Mopex,von,Present,,GPL,,,,,,,,,,,,0,,Prekani
+,,9,Rizeros,von,Present,,GPL,0,5,0,1,2,4,1,,1,3,0,1,2,20,,Prekani,"19,988","19,98804",,,,,,,,,Rizeros,von,Present,,GPL,,,,,,,,,,,,0,,Prekani
+,,10,Tengulist,von,Present,,GPL,,1,2,,,,,0,,3,,2,,8,,Prekani,"7,995","7,99504",,,,,,,,,Tengulist,von,Present,,GPL,,,,,,,,,,,,0,,Prekani
+,,11,Mottineva,von,Present,,GPL,,,,,,,2,,,,,,0,2,,Prekani,"1,998","1,99805",,,,,,,,,Mottineva,von,Present,,GPL,,,,,,,,,,,,0,,Prekani
+,,12,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,1,Snieboss,von,Raizor,,GPL,0,0,0,,0,0,1,0,2,0,2,1,4,10,,Unbound Soul,"9,988","9,98801",,,,,,,,,Snieboss,von,Raizor,,GPL,,,,,,,,,,,,0,,Unbound Soul
+,,2,Ursaluna,von,Raizor,,GPL,3,3,2,3,0,4,0,,,3,,0,2,20,,Unbound Soul,"19,99","19,99001",,,,,,,,,Ursaluna,von,Raizor,,GPL,,,,,,,,,,,,0,,Unbound Soul
+,,3,Servol-w,von,Raizor,,GPL,,0,,0,,0,,0,0,0,,0,,0,,Unbound Soul,"-0,007","-0,00698",,,,,,,,,Servol-w,von,Raizor,,GPL,,,,,,,,,,,,0,,Unbound Soul
+,,4,Entei,von,Raizor,,GPL,,,,,3,,0,1,,0,,,0,4,,Unbound Soul,"3,995","3,99502",,,,,,,,,Entei,von,Raizor,,GPL,,,,,,,,,,,,0,,Unbound Soul
+,,5,Eisenhaupt,von,Raizor,,GPL,3,,,,,,0,3,0,,2,7,0,15,,Unbound Soul,"14,993","14,99302",,,,,,,,,Eisenhaupt,von,Raizor,,GPL,,,,,,,,,,,,0,,Unbound Soul
+,,6,Turtok,von,Raizor,,GPL,,0,,0,,,,,1,,1,,,2,,Unbound Soul,"1,996","1,99603",,,,,,,,,Turtok,von,Raizor,,GPL,,,,,,,,,,,,0,,Unbound Soul
+,,7,Cupidos-Therian,von,Raizor,,GPL,0,1,0,4,,,,,,,0,,,5,,Unbound Soul,"4,995","4,99503",,,,,,,,,Cupidos-Therian,von,Raizor,,GPL,,,,,,,,,,,,0,,Unbound Soul
+,,8,Voltrean,von,Raizor,,GPL,0,,1,,,0,,,,,,,0,1,,Unbound Soul,"0,996","0,99603",,,,,,,,,Voltrean,von,Raizor,,GPL,,,,,,,,,,,,0,,Unbound Soul
+,,9,Silvarro,von,Raizor,,GPL,,0,0,,2,,0,,,0,0,0,,2,,Unbound Soul,"1,993","1,99304",,,,,,,,,Silvarro,von,Raizor,,GPL,,,,,,,,,,,,0,,Unbound Soul
+,,10,Alola-Snobilikat,von,Raizor,,GPL,,,,0,1,0,,2,1,1,,0,,5,,Unbound Soul,"4,993","4,99304",,,,,,,,,Alola-Snobilikat,von,Raizor,,GPL,,,,,,,,,,,,0,,Unbound Soul
+,,11,Hisui-Arktilas,von,Raizor,,GPL,0,,1,1,0,1,0,2,2,,1,,0,8,,Unbound Soul,"7,99","7,99005",,,,,,,,,Hisui-Arktilas,von,Raizor,,GPL,,,,,,,,,,,,0,,Unbound Soul
+,,12,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,1,Latios,von,RobinVGC,,GPL,1,0,2,1,,0,,,4,0,,0,0,8,,Choice Bandits,"7,991","7,99101",,,,,,,,,Latios,von,RobinVGC,,GPL,,,,,,,,,,,,0,,Choice Bandits
+,,2,Cupidos,von,RobinVGC,,GPL,,,0,0,1,,0,0,1,,1,,2,5,,Choice Bandits,"4,992","4,99201",,,,,,,,,Cupidos,von,RobinVGC,,GPL,,,,,,,,,,,,0,,Choice Bandits
+,,3,Fatalitcha,von,RobinVGC,,GPL,4,1,0,0,0,0,,0,,2,,1,0,8,,Choice Bandits,"7,99","7,99002",,,,,,,,,Fatalitcha,von,RobinVGC,,GPL,,,,,,,,,,,,0,,Choice Bandits
+,,4,Wie-Shu,von,RobinVGC,,GPL,0,1,4,0,,1,4,0,,4,0,0,1,15,,Choice Bandits,"14,989","14,98902",,,,,,,,,Wie-Shu,von,RobinVGC,,GPL,,,,,,,,,,,,0,,Choice Bandits
+,,5,Raikou,von,RobinVGC,,GPL,,0,,,0,2,1,0,0,,1,0,,4,,Choice Bandits,"3,992","3,99202",,,,,,,,,Raikou,von,RobinVGC,,GPL,,,,,,,,,,,,0,,Choice Bandits
+,,6,Rabigator,von,RobinVGC,,GPL,0,,0,,0,,,6,0,,0,1,0,7,,Choice Bandits,"6,992","6,99203",,,,,,,,,Rabigator,von,RobinVGC,,GPL,,,,,,,,,,,,0,,Choice Bandits
+,,7,Aggrostella,von,RobinVGC,,GPL,,,,,1,,1,,,0,,,,2,,Choice Bandits,"1,997","1,99703",,,,,,,,,Aggrostella,von,RobinVGC,,GPL,,,,,,,,,,,,0,,Choice Bandits
+,,8,Registeel,von,RobinVGC,,GPL,4,,,,,,0,,1,,0,,,5,,Choice Bandits,"4,996","4,99603",,,,,,,,,Registeel,von,RobinVGC,,GPL,,,,,,,,,,,,0,,Choice Bandits
+,,9,Montecarbo,von,RobinVGC,,GPL,,6,0,2,0,6,0,2,0,0,1,0,1,18,,Choice Bandits,"17,988","17,98804",,,,,,,,,Montecarbo,von,RobinVGC,,GPL,,,,,,,,,,,,0,,Choice Bandits
+,,10,Illumise,von,RobinVGC,,GPL,1,0,,0,,0,,,,2,,,,3,,Choice Bandits,"2,995","2,99504",,,,,,,,,Illumise,von,RobinVGC,,GPL,,,,,,,,,,,,0,,Choice Bandits
+,,11,Kronjuwild,von,RobinVGC,,GPL,,,,,,,,,,,,,,0,,Choice Bandits,0,"0,00005",,,,,,,,,Kronjuwild,von,RobinVGC,,GPL,,,,,,,,,,,,0,,Choice Bandits
+,,12,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,1,Riesenzahn,von,Sirazoa,,GPL,1,1,0,2,,0,0,,4,0,0,1,1,10,,Eon Engine,"9,989","9,98901",,,,,,,,,Riesenzahn,von,Sirazoa,,GPL,,,,,,,,,,,,0,,Eon Engine
+,,2,Jirachi,von,Sirazoa,,GPL,,,1,3,1,,,0,0,0,0,1,0,6,,Eon Engine,"5,991","5,99101",,,,,,,,,Jirachi,von,Sirazoa,,GPL,,,,,,,,,,,,0,,Eon Engine
+,,3,Alola-Vulnona,von,Sirazoa,,GPL,4,1,0,2,,2,2,0,,2,,0,1,14,,Eon Engine,"13,99","13,99002",,,,,,,,,Alola-Vulnona,von,Sirazoa,,GPL,,,,,,,,,,,,0,,Eon Engine
+,,4,Brutalanda,von,Sirazoa,,GPL,,1,0,,,,1,0,0,0,,0,,2,,Eon Engine,"1,993","1,99302",,,,,,,,,Brutalanda,von,Sirazoa,,GPL,,,,,,,,,,,,0,,Eon Engine
+,,5,Volcanion,von,Sirazoa,,GPL,1,0,,,,3,2,2,0,0,0,0,,8,,Eon Engine,"7,991","7,99102",,,,,,,,,Volcanion,von,Sirazoa,,GPL,,,,,,,,,,,,0,,Eon Engine
+,,6,Aquana,von,Sirazoa,,GPL,,,0,0,0,,0,,,,1,,0,1,,Eon Engine,"0,994","0,99403",,,,,,,,,Aquana,von,Sirazoa,,GPL,,,,,,,,,,,,0,,Eon Engine
+,,7,Riffex,von,Sirazoa,,GPL,,,,,1,,0,,1,,0,,,2,,Eon Engine,"1,996","1,99603",,,,,,,,,Riffex,von,Sirazoa,,GPL,,,,,,,,,,,,0,,Eon Engine
+,,8,Kolowal,von,Sirazoa,,GPL,2,,,1,1,3,,2,,0,,,0,9,,Eon Engine,"8,993","8,99303",,,,,,,,,Kolowal,von,Sirazoa,,GPL,,,,,,,,,,,,0,,Eon Engine
+,,9,Chimstix,von,Sirazoa,,GPL,,0,,0,1,,,0,,,,,,1,,Eon Engine,"0,996","0,99604",,,,,,,,,Chimstix,von,Sirazoa,,GPL,,,,,,,,,,,,0,,Eon Engine
+,,10,Skorgla,von,Sirazoa,,GPL,0,0,0,,1,0,,,0,,0,2,0,3,,Eon Engine,"2,991","2,99104",,,,,,,,,Skorgla,von,Sirazoa,,GPL,,,,,,,,,,,,0,,Eon Engine
+,,11,Morpeko,von,Sirazoa,,GPL,0,,,,,0,,,,,,,,0,,Eon Engine,"-0,002","-0,00195",,,,,,,,,Morpeko,von,Sirazoa,,GPL,,,,,,,,,,,,0,,Eon Engine
+,,12,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,1,Ogerpon-Wasser,von,Snomnie,,GPL,0,0,1,4,4,1,1,3,1,2,1,0,0,18,,Corvi Crushers,"17,987","17,98701",,,,,,,,,Ogerpon-Wasser,von,Snomnie,,GPL,,,,,,,,,,,,0,,Corvi Crushers
+,,2,Liberlo,von,Snomnie,,GPL,0,2,,0,0,,0,,3,3,0,,1,9,,Corvi Crushers,"8,991","8,99101",,,,,,,,,Liberlo,von,Snomnie,,GPL,,,,,,,,,,,,0,,Corvi Crushers
+,,3,Trikephalo,von,Snomnie,,GPL,,1,2,1,,0,1,,1,2,0,2,,10,,Corvi Crushers,"9,991","9,99102",,,,,,,,,Trikephalo,von,Snomnie,,GPL,,,,,,,,,,,,0,,Corvi Crushers
+,,4,Infamomo,von,Snomnie,,GPL,5,,1,,,,,1,0,,,1,1,9,,Corvi Crushers,"8,994","8,99402",,,,,,,,,Infamomo,von,Snomnie,,GPL,,,,,,,,,,,,0,,Corvi Crushers
+,,5,Regieleki,von,Snomnie,,GPL,1,,,1,0,0,,0,,0,2,1,,5,,Corvi Crushers,"4,992","4,99202",,,,,,,,,Regieleki,von,Snomnie,,GPL,,,,,,,,,,,,0,,Corvi Crushers
+,,6,Florges,von,Snomnie,,GPL,0,,1,0,,,0,0,,,,,,1,,Corvi Crushers,"0,995","0,99503",,,,,,,,,Florges,von,Snomnie,,GPL,,,,,,,,,,,,0,,Corvi Crushers
+,,7,Schlurm,von,Snomnie,,GPL,,,0,,0,1,0,1,0,,0,,0,2,,Corvi Crushers,"1,992","1,99203",,,,,,,,,Schlurm,von,Snomnie,,GPL,,,,,,,,,,,,0,,Corvi Crushers
+,,8,Meloetta,von,Snomnie,,GPL,,0,,,,,,,,0,,1,0,1,,Corvi Crushers,"0,996","0,99603",,,,,,,,,Meloetta,von,Snomnie,,GPL,,,,,,,,,,,,0,,Corvi Crushers
+,,9,Golgantes,von,Snomnie,,GPL,,2,,,1,,0,,,,,,,3,,Corvi Crushers,"2,997","2,99705",,,,,,,,,Golgantes,von,Snomnie,,GPL,,,,,,,,,,,,0,,Corvi Crushers
+,,10,Arktos,von,Snomnie,,GPL,0,3,1,,1,4,,,1,0,2,4,2,18,,Corvi Crushers,"17,99","17,99004",,,,,,,,,Arktos,von,Snomnie,,GPL,,,,,,,,,,,,0,,Corvi Crushers
+,,11,Nockchan,von,Snomnie,,GPL,,,,1,,0,,1,,,,,,2,,Corvi Crushers,"1,997","1,99705",,,,,,,,,Nockchan,von,Snomnie,,GPL,,,,,,,,,,,,0,,Corvi Crushers
+,,12,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,1,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,2,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,3,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,4,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,5,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,6,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,7,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,8,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,9,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,10,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,11,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,12,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,1,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,2,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,3,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,4,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,5,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,6,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,7,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,8,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,9,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,10,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,11,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,12,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,1,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,2,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,3,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,4,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,5,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,6,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,7,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,8,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,9,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,10,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,11,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,12,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,1,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,2,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,3,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,4,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,5,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,6,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,7,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,8,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,9,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,10,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,11,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,12,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,1,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,2,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,3,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,4,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,5,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,6,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,7,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,8,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,9,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,10,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,11,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,12,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,1,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,2,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,3,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,4,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,5,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,6,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,7,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,8,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,9,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,10,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,11,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,12,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,1,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,2,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,3,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,4,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,5,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,6,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,7,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,8,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,9,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,10,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,11,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,12,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,1,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,2,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,3,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,4,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,5,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,6,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,7,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,8,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,9,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,10,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,11,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+,,12,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,,,,von,,,,,,,,,,,,,,,-100
+
+,1,,Ursaluna,von,Raizor,,GPL,3,3,2,3,0,4,0,,,3,,0,2,20,,Unbound Soul,"19,99","19,99001",,,Bene,,,,1,,Ogerpon-Gestein,von,Bene,,GPL,,,,,,,,,,,,0,,Wackel Backel
+,1,,Rizeros,von,Present,,GPL,0,5,0,1,2,4,1,,1,3,0,1,2,20,,Prekani,"19,988","19,98804",,,Blocki,,,,1,,Deoxys-Geschwindigkeit,von,Bene,,GPL,,,,,,,,,,,,0,,Wackel Backel
+,3,,Arktos,von,Snomnie,,GPL,0,3,1,,1,4,,,1,0,2,4,2,18,,Corvi Crushers,"17,99","17,99004",,,Dauni,,,,1,,Demeteros,von,Bene,,GPL,,,,,,,,,,,,0,,Wackel Backel
+,3,,Hisui-Viscogon,von,Blocki,,GPL,0,4,0,3,,2,2,3,1,,,2,1,18,,Kastanienbomber,"17,99","17,99002",,,Domji,,,,1,,Bailonda,von,Bene,,GPL,,,,,,,,,,,,0,,Wackel Backel
+,3,,Montecarbo,von,RobinVGC,,GPL,,6,0,2,0,6,0,2,0,0,1,0,1,18,,Choice Bandits,"17,988","17,98804",,,King Blex,,,,1,,Granforgita,von,Bene,,GPL,,,,,,,,,,,,0,,Wackel Backel
+,3,,Ogerpon-Wasser,von,Snomnie,,GPL,0,0,1,4,4,1,1,3,1,2,1,0,0,18,,Corvi Crushers,"17,987","17,98701",,,Minetube,,,,1,,UHaFnir,von,Bene,,GPL,,,,,,,,,,,,0,,Wackel Backel
+,7,,Wampitz,von,Pokgalaxy,,GPL,,,2,3,,,,9,1,0,2,,,17,,Tails of Mystery,"16,994","16,99404",,,Nestfloh,,,,1,,Bronzong,von,Bene,,GPL,,,,,,,,,,,,0,,Wackel Backel
+,7,,Scherox,von,Dauni,,GPL,0,6,1,1,0,,1,,0,2,3,3,0,17,,Pfundskerle,"16,989","16,98902",,,OGDeniz96,,,,1,,Amfira,von,Bene,,GPL,,,,,,,,,,,,0,,Wackel Backel
+,7,,Mamutel,von,Domji,,GPL,0,3,,1,2,,1,1,2,4,1,2,0,17,,Shining Legends,"16,989","16,98902",,,Pokgalaxy,,,,1,,Caesurio,von,Bene,,GPL,,,,,,,,,,,,0,,Wackel Backel
+,10,,Lumiflora,von,Nestfloh,,GPL,,,1,3,,5,0,2,2,,2,1,0,16,,Böller Brüder,"15,991","15,99101",,,Present,,,,1,,Gastrodon,von,Bene,,GPL,,,,,,,,,,,,0,,Wackel Backel
+,10,,Knakrack,von,Pokgalaxy,,GPL,0,1,2,2,0,1,5,1,0,,1,3,,16,,Tails of Mystery,"15,989","15,98901",,,Raizor,,,,1,,Giflor,von,Bene,,GPL,,,,,,,,,,,,0,,Wackel Backel
+,10,,Terrakium,von,Dauni,,GPL,4,1,0,4,1,0,2,4,0,,0,0,0,16,,Pfundskerle,"15,988","15,98802",,,RobinVGC,,,,1,,Boreos-Therian,von,Blocki,,GPL,,,,,,,,,,,,0,,Kastanienbomber
+,10,,Eisenkrieger,von,OGDeniz96,,GPL,3,0,0,3,4,0,1,1,0,3,,0,1,16,,Squid Squad,"15,988","15,98801",,,Sirazoa,,,,1,,Ogerpon,von,Blocki,,GPL,,,,,,,,,,,,0,,Kastanienbomber
+,14,,Eisenhaupt,von,Raizor,,GPL,3,,,,,,0,3,0,,2,7,0,15,,Unbound Soul,"14,993","14,99302",,,Snomnie,,,,1,,Hisui-Viscogon,von,Blocki,,GPL,,,,,,,,,,,,0,,Kastanienbomber
+,14,,Wie-Shu,von,RobinVGC,,GPL,0,1,4,0,,1,4,0,,4,0,0,1,15,,Choice Bandits,"14,989","14,98902",,,,,,,1,,Suicune,von,Blocki,,GPL,,,,,,,,,,,,0,,Kastanienbomber
+,16,,Amfira,von,Bene,,GPL,,1,3,,0,1,4,,,,2,3,0,14,,Wackel Backel,"13,992","13,99203",,,,,,,1,,Panferno,von,Blocki,,GPL,,,,,,,,,,,,0,,Kastanienbomber
+,16,,Polaross,von,OGDeniz96,,GPL,,2,2,2,,5,,,,2,0,0,1,14,,Squid Squad,"13,992","13,99203",,,,,,,1,,Galar-Lahmus,von,Blocki,,GPL,,,,,,,,,,,,0,,Kastanienbomber
+,16,,Eisenrad,von,King Blex,,GPL,0,3,4,0,0,,,0,,2,3,2,,14,,Cyber End Jugulis,"13,991","13,99102",,,,,,,1,,Axantor,von,Blocki,,GPL,,,,,,,,,,,,0,,Kastanienbomber
+,16,,Alola-Vulnona,von,Sirazoa,,GPL,4,1,0,2,,2,2,0,,2,,0,1,14,,Eon Engine,"13,99","13,99002",,,,,,,1,,Diancie,von,Blocki,,GPL,,,,,,,,,,,,0,,Kastanienbomber
+,16,,Primarene,von,Dauni,,GPL,0,3,0,,0,2,0,4,1,1,2,,1,14,,Pfundskerle,"13,989","13,98902",,,,,,,1,,Donphan,von,Blocki,,GPL,,,,,,,,,,,,0,,Kastanienbomber
+,16,,Caesurio,von,Bene,,GPL,2,0,3,0,1,2,1,2,,2,0,1,0,14,,Wackel Backel,"13,988","13,98804",,,,,,,1,,Rotom,von,Blocki,,GPL,,,,,,,,,,,,0,,Kastanienbomber
+,22,,Ogerpon-Gestein,von,Bene,,GPL,1,1,0,3,0,0,,,3,3,1,1,,13,,Wackel Backel,"12,99","12,99001",,,,,,,1,,Calamanero,von,Blocki,,GPL,,,,,,,,,,,,0,,Kastanienbomber
+,22,,Eisenhand,von,King Blex,,GPL,3,1,0,1,0,,1,4,1,0,1,0,1,13,,Cyber End Jugulis,"12,988","12,98801",,,,,,,1,,Donnersichel,von,Dauni,,GPL,,,,,,,,,,,,0,,Pfundskerle
+,24,,Arkani,von,Present,,GPL,,1,2,0,,,,2,1,,,6,,12,,Prekani,"11,994","11,99402",,,,,,,1,,Zapdos,von,Dauni,,GPL,,,,,,,,,,,,0,,Pfundskerle
+,24,,Grandiras,von,Minetube,,GPL,,5,,3,3,,0,,,0,0,,1,12,,Throes Mad,"11,993","11,99302",,,,,,,1,,Primarene,von,Dauni,,GPL,,,,,,,,,,,,0,,Pfundskerle
+,24,,Milotic,von,Minetube,,GPL,2,,2,,0,2,,5,0,,,1,0,12,,Throes Mad,"11,992","11,99203",,,,,,,1,,Scherox,von,Dauni,,GPL,,,,,,,,,,,,0,,Pfundskerle
+,24,,Eisenhals,von,King Blex,,GPL,1,0,1,2,2,0,0,,1,,1,2,2,12,,Cyber End Jugulis,"11,989","11,98902",,,,,,,1,,Terrakium,von,Dauni,,GPL,,,,,,,,,,,,0,,Pfundskerle
+,24,,Katapuldra,von,Nestfloh,,GPL,1,2,1,0,0,1,4,0,0,0,2,,1,12,,Böller Brüder,"11,988","11,98801",,,,,,,1,,Myriador,von,Dauni,,GPL,,,,,,,,,,,,0,,Pfundskerle
+,29,,Skelabra,von,Domji,,GPL,,3,0,2,0,3,1,,0,,2,,,11,,Shining Legends,"10,992","10,99203",,,,,,,1,,Crimanzo,von,Dauni,,GPL,,,,,,,,,,,,0,,Pfundskerle
+,29,,Demeteros-Therian,von,Present,,GPL,2,,,,1,1,1,2,1,0,2,0,1,11,,Prekani,"10,99","10,99001",,,,,,,1,,Zobiris,von,Dauni,,GPL,,,,,,,,,,,,0,,Pfundskerle
+,31,,Donnersichel,von,Dauni,,GPL,0,0,,,1,,1,,4,,0,,4,10,,Pfundskerle,"9,993","9,99301",,,,,,,1,,Tenterra,von,Dauni,,GPL,,,,,,,,,,,,0,,Pfundskerle
+,31,,Arktilas,von,Nestfloh,,GPL,0,4,1,0,2,,1,,2,,0,,,10,,Böller Brüder,"9,992","9,99205",,,,,,,1,,Vesprit,von,Dauni,,GPL,,,,,,,,,,,,0,,Pfundskerle
+,31,,Panzaeron,von,Minetube,,GPL,1,,0,,0,3,2,0,,,0,4,,10,,Throes Mad,"9,992","9,99203",,,,,,,1,,Ambidiffel,von,Dauni,,GPL,,,,,,,,,,,,0,,Pfundskerle
+,31,,Kobalium,von,Present,,GPL,0,,,5,,0,1,1,1,0,2,,,10,,Prekani,"9,992","9,99203",,,,,,,1,,Gladimperio,von,Domji,,GPL,,,,,,,,,,,,0,,Shining Legends
+,31,,Sandfell,von,OGDeniz96,,GPL,2,0,1,3,0,,,2,2,0,,,0,10,,Squid Squad,"9,991","9,99103",,,,,,,1,,Gortrom,von,Domji,,GPL,,,,,,,,,,,,0,,Shining Legends
+,31,,Trikephalo,von,Snomnie,,GPL,,1,2,1,,0,1,,1,2,0,2,,10,,Corvi Crushers,"9,991","9,99102",,,,,,,1,,Pixi,von,Domji,,GPL,,,,,,,,,,,,0,,Shining Legends
+,31,,Riesenzahn,von,Sirazoa,,GPL,1,1,0,2,,0,0,,4,0,0,1,1,10,,Eon Engine,"9,989","9,98901",,,,,,,1,,Mamutel,von,Domji,,GPL,,,,,,,,,,,,0,,Shining Legends
+,31,,Snieboss,von,Raizor,,GPL,0,0,0,,0,0,1,0,2,0,2,1,4,10,,Unbound Soul,"9,988","9,98801",,,,,,,1,,Voltolos-Therian,von,Domji,,GPL,,,,,,,,,,,,0,,Shining Legends
+,39,,Infamomo,von,Snomnie,,GPL,5,,1,,,,,1,0,,,1,1,9,,Corvi Crushers,"8,994","8,99402",,,,,,,1,,Garados,von,Domji,,GPL,,,,,,,,,,,,0,,Shining Legends
+,39,,Kolowal,von,Sirazoa,,GPL,2,,,1,1,3,,2,,0,,,0,9,,Eon Engine,"8,993","8,99303",,,,,,,1,,Bandelby,von,Domji,,GPL,,,,,,,,,,,,0,,Shining Legends
+,39,,Demeteros,von,Bene,,GPL,2,3,0,1,,,0,,,1,2,,,9,,Wackel Backel,"8,993","8,99302",,,,,,,1,,Skelabra,von,Domji,,GPL,,,,,,,,,,,,0,,Shining Legends
+,39,,Snibunna,von,Pokgalaxy,,GPL,1,0,,,5,0,0,0,,,,0,3,9,,Tails of Mystery,"8,992","8,99202",,,,,,,1,,Kapoera,von,Domji,,GPL,,,,,,,,,,,,0,,Shining Legends
+,39,,Metagross,von,OGDeniz96,,GPL,,,,0,0,1,0,5,1,1,1,,0,9,,Squid Squad,"8,991","8,99102",,,,,,,1,,Gewaldro,von,Domji,,GPL,,,,,,,,,,,,0,,Shining Legends
+,39,,Liberlo,von,Snomnie,,GPL,0,2,,0,0,,0,,3,3,0,,1,9,,Corvi Crushers,"8,991","8,99101",,,,,,,1,,Psiana,von,Domji,,GPL,,,,,,,,,,,,0,,Shining Legends
+,45,,Tengulist,von,Present,,GPL,,1,2,,,,,0,,3,,2,,8,,Prekani,"7,995","7,99504",,,,,,,1,,Hoopa-Entfesselt,von,King Blex,,GPL,,,,,,,,,,,,0,,Cyber End Jugulis
+,45,,Lavados,von,Nestfloh,,GPL,,,0,,1,,0,4,,,,1,2,8,,Böller Brüder,"7,994","7,99403",,,,,,,1,,Eisenhand,von,King Blex,,GPL,,,,,,,,,,,,0,,Cyber End Jugulis
+,45,,Feelinara,von,Pokgalaxy,,GPL,,,,,,2,,,0,4,0,2,0,8,,Tails of Mystery,"7,994","7,99403",,,,,,,1,,Eisenrad,von,King Blex,,GPL,,,,,,,,,,,,0,,Cyber End Jugulis
+,45,,Toxiquak,von,Minetube,,GPL,,0,0,,,1,,0,0,4,,1,2,8,,Throes Mad,"7,992","7,99204",,,,,,,1,,Eisenhals,von,King Blex,,GPL,,,,,,,,,,,,0,,Cyber End Jugulis
+,45,,Despotar,von,Minetube,,GPL,1,0,,0,,1,2,,1,3,0,,,8,,Throes Mad,"7,992","7,99202",,,,,,,1,,Hisui-Arkani,von,King Blex,,GPL,,,,,,,,,,,,0,,Cyber End Jugulis
+,45,,Keldeo,von,Pokgalaxy,,GPL,1,,1,,0,4,0,,,1,1,0,0,8,,Tails of Mystery,"7,991","7,99102",,,,,,,1,,Tentoxa,von,King Blex,,GPL,,,,,,,,,,,,0,,Cyber End Jugulis
+,45,,Volcanion,von,Sirazoa,,GPL,1,0,,,,3,2,2,0,0,0,0,,8,,Eon Engine,"7,991","7,99102",,,,,,,1,,Porygon-Z,von,King Blex,,GPL,,,,,,,,,,,,0,,Cyber End Jugulis
+,45,,Boreos-Therian,von,Blocki,,GPL,0,0,,0,3,3,1,0,1,0,,,,8,,Kastanienbomber,"7,991","7,99101",,,,,,,1,,Mimigma,von,King Blex,,GPL,,,,,,,,,,,,0,,Cyber End Jugulis
+,45,,Ogerpon,von,Blocki,,GPL,,3,0,0,0,,1,3,,0,0,,1,8,,Kastanienbomber,"7,991","7,99101",,,,,,,1,,Pokusan,von,King Blex,,GPL,,,,,,,,,,,,0,,Cyber End Jugulis
+,45,,Latios,von,RobinVGC,,GPL,1,0,2,1,,0,,,4,0,,0,0,8,,Choice Bandits,"7,991","7,99101",,,,,,,1,,Fruyal,von,King Blex,,GPL,,,,,,,,,,,,0,,Cyber End Jugulis
+,45,,Hisui-Arktilas,von,Raizor,,GPL,0,,1,1,0,1,0,2,2,,1,,0,8,,Unbound Soul,"7,99","7,99005",,,,,,,1,,Britzigel,von,King Blex,,GPL,,,,,,,,,,,,0,,Cyber End Jugulis
+,45,,Rotom-Wash,von,Present,,GPL,0,,1,2,0,1,,2,0,1,1,,0,8,,Prekani,"7,99","7,99002",,,,,,,1,,Mew,von,Minetube,,GPL,,,,,,,,,,,,0,,Throes Mad
+,45,,Fatalitcha,von,RobinVGC,,GPL,4,1,0,0,0,0,,0,,2,,1,0,8,,Choice Bandits,"7,99","7,99002",,,,,,,1,,Maskagato,von,Minetube,,GPL,,,,,,,,,,,,0,,Throes Mad
+,45,,Maskagato,von,Minetube,,GPL,1,0,3,0,1,,0,0,2,0,0,,1,8,,Throes Mad,"7,989","7,98901",,,,,,,1,,Despotar,von,Minetube,,GPL,,,,,,,,,,,,0,,Throes Mad
+,59,,Granforgita,von,Bene,,GPL,0,0,0,4,,,,0,0,,,,3,7,,Wackel Backel,"6,993","6,99302",,,,,,,1,,Grandiras,von,Minetube,,GPL,,,,,,,,,,,,0,,Throes Mad
+,59,,Gladimperio,von,Domji,,GPL,1,,0,,0,5,,0,1,,0,,,7,,Shining Legends,"6,993","6,99301",,,,,,,1,,Stalobor,von,Minetube,,GPL,,,,,,,,,,,,0,,Throes Mad
+,59,,Hoopa-Entfesselt,von,King Blex,,GPL,0,,,2,,1,0,,0,,1,,3,7,,Cyber End Jugulis,"6,993","6,99301",,,,,,,1,,Milotic,von,Minetube,,GPL,,,,,,,,,,,,0,,Throes Mad
+,59,,Rabigator,von,RobinVGC,,GPL,0,,0,,0,,,6,0,,0,1,0,7,,Choice Bandits,"6,992","6,99203",,,,,,,1,,Panzaeron,von,Minetube,,GPL,,,,,,,,,,,,0,,Throes Mad
+,59,,Hisui-Arkani,von,King Blex,,GPL,,,,,1,1,2,3,0,0,0,,0,7,,Cyber End Jugulis,"6,992","6,99202",,,,,,,1,,Curelei,von,Minetube,,GPL,,,,,,,,,,,,0,,Throes Mad
+,59,,Mew,von,Minetube,,GPL,1,,,0,,0,0,2,,1,1,,2,7,,Throes Mad,"6,992","6,99201",,,,,,,1,,Affiti,von,Minetube,,GPL,,,,,,,,,,,,0,,Throes Mad
+,59,,Gortrom,von,Domji,,GPL,2,1,0,,,0,,0,,2,1,1,0,7,,Shining Legends,"6,991","6,99101",,,,,,,1,,Toxiquak,von,Minetube,,GPL,,,,,,,,,,,,0,,Throes Mad
+,59,,Deoxys-Geschwindigkeit,von,Bene,,GPL,,3,,0,1,,0,1,0,0,0,0,2,7,,Wackel Backel,"6,99","6,99001",,,,,,,1,,Traunfugil,von,Minetube,,GPL,,,,,,,,,,,,0,,Throes Mad
+,59,,Zapdos,von,Dauni,,GPL,,1,1,2,,0,0,0,1,1,,1,0,7,,Pfundskerle,"6,99","6,99001",,,,,,,1,,Katapuldra,von,Nestfloh,,GPL,,,,,,,,,,,,0,,Böller Brüder
+,59,,Galar-Laschoking,von,Pokgalaxy,,GPL,3,1,1,0,1,,0,0,1,0,0,,,7,,Tails of Mystery,"6,99","6,99001",,,,,,,1,,Lumiflora,von,Nestfloh,,GPL,,,,,,,,,,,,0,,Böller Brüder
+,69,,Ursaring,von,Nestfloh,,GPL,5,,0,,,,,,,,,1,,6,,Böller Brüder,"5,997","5,99704",,,,,,,1,,Impoleon,von,Nestfloh,,GPL,,,,,,,,,,,,0,,Böller Brüder
+,69,,Donphan,von,Blocki,,GPL,,,1,,,4,,,0,1,,,,6,,Kastanienbomber,"5,996","5,99604",,,,,,,1,,Pamomamo,von,Nestfloh,,GPL,,,,,,,,,,,,0,,Böller Brüder
+,69,,Crimanzo,von,Dauni,,GPL,,,1,,,0,1,,,,0,4,,6,,Pfundskerle,"5,995","5,99503",,,,,,,1,,Cresselia,von,Nestfloh,,GPL,,,,,,,,,,,,0,,Böller Brüder
+,69,,Porygon-Z,von,King Blex,,GPL,4,,,0,,1,,,1,0,,,,6,,Cyber End Jugulis,"5,995","5,99503",,,,,,,1,,Lavados,von,Nestfloh,,GPL,,,,,,,,,,,,0,,Böller Brüder
+,69,,Vesprit,von,Dauni,,GPL,0,,3,,1,,,1,,,1,0,,6,,Pfundskerle,"5,994","5,99404",,,,,,,1,,Irokex,von,Nestfloh,,GPL,,,,,,,,,,,,0,,Böller Brüder
+,69,,Voltolos-Therian,von,Domji,,GPL,0,1,,3,,0,,1,0,1,,,0,6,,Shining Legends,"5,992","5,99202",,,,,,,1,,Guardevoir,von,Nestfloh,,GPL,,,,,,,,,,,,0,,Böller Brüder
+,69,,Eisenfalter,von,OGDeniz96,,GPL,0,0,1,,1,,1,,1,,1,,1,6,,Squid Squad,"5,992","5,99201",,,,,,,1,,Pampross,von,Nestfloh,,GPL,,,,,,,,,,,,0,,Böller Brüder
+,69,,Jirachi,von,Sirazoa,,GPL,,,1,3,1,,,0,0,0,0,1,0,6,,Eon Engine,"5,991","5,99101",,,,,,,1,,Ursaring,von,Nestfloh,,GPL,,,,,,,,,,,,0,,Böller Brüder
+,69,,Stalobor,von,Minetube,,GPL,,0,0,,2,1,2,1,0,0,0,,0,6,,Throes Mad,"5,99","5,99002",,,,,,,1,,Arktilas,von,Nestfloh,,GPL,,,,,,,,,,,,0,,Böller Brüder
+,78,,Chillabell,von,OGDeniz96,,GPL,,0,,,,,,4,,,,1,,5,,Squid Squad,"4,997","4,99704",,,,,,,1,,Eisenkrieger,von,OGDeniz96,,GPL,,,,,,,,,,,,0,,Squid Squad
+,78,,Registeel,von,RobinVGC,,GPL,4,,,,,,0,,1,,0,,,5,,Choice Bandits,"4,996","4,99603",,,,,,,1,,Eisenfalter,von,OGDeniz96,,GPL,,,,,,,,,,,,0,,Squid Squad
+,78,,Cupidos-Therian,von,Raizor,,GPL,0,1,0,4,,,,,,,0,,,5,,Unbound Soul,"4,995","4,99503",,,,,,,1,,Laschoking,von,OGDeniz96,,GPL,,,,,,,,,,,,0,,Squid Squad
+,78,,Fruyal,von,King Blex,,GPL,,0,,,,,,0,2,0,0,3,,5,,Cyber End Jugulis,"4,994","4,99404",,,,,,,1,,Metagross,von,OGDeniz96,,GPL,,,,,,,,,,,,0,,Squid Squad
+,78,,Mimigma,von,King Blex,,GPL,2,0,1,,1,,,0,,1,,,,5,,Cyber End Jugulis,"4,994","4,99403",,,,,,,1,,Hisui-Admurai,von,OGDeniz96,,GPL,,,,,,,,,,,,0,,Squid Squad
+,78,,Hisui-Admurai,von,OGDeniz96,,GPL,0,,,,,1,1,,,,0,3,0,5,,Squid Squad,"4,994","4,99402",,,,,,,1,,Grypheldis,von,OGDeniz96,,GPL,,,,,,,,,,,,0,,Squid Squad
+,78,,Alola-Snobilikat,von,Raizor,,GPL,,,,0,1,0,,2,1,1,,0,,5,,Unbound Soul,"4,993","4,99304",,,,,,,1,,Sandfell,von,OGDeniz96,,GPL,,,,,,,,,,,,0,,Squid Squad
+,78,,Diancie,von,Blocki,,GPL,0,0,,,,2,,0,,0,,3,0,5,,Kastanienbomber,"4,993","4,99303",,,,,,,1,,Polaross,von,OGDeniz96,,GPL,,,,,,,,,,,,0,,Squid Squad
+,78,,Bailonda,von,Bene,,GPL,1,,0,,0,,0,,2,1,,,1,5,,Wackel Backel,"4,993","4,99302",,,,,,,1,,Piepi,von,OGDeniz96,,GPL,,,,,,,,,,,,0,,Squid Squad
+,78,,Cresselia,von,Nestfloh,,GPL,0,1,,,2,0,,,,0,2,0,,5,,Böller Brüder,"4,993","4,99302",,,,,,,1,,Chillabell,von,OGDeniz96,,GPL,,,,,,,,,,,,0,,Squid Squad
+,78,,Calamanero,von,Blocki,,GPL,,,,,,0,1,0,0,1,1,1,1,5,,Kastanienbomber,"4,992","4,99205",,,,,,,1,,Trombork,von,OGDeniz96,,GPL,,,,,,,,,,,,0,,Squid Squad
+,78,,Kapoera,von,Domji,,GPL,,,,2,0,1,0,,0,1,1,0,,5,,Shining Legends,"4,992","4,99204",,,,,,,1,,Knakrack,von,Pokgalaxy,,GPL,,,,,,,,,,,,0,,Tails of Mystery
+,78,,Rotom-Heat,von,Pokgalaxy,,GPL,0,0,0,0,,1,1,0,,,,,3,5,,Tails of Mystery,"4,992","4,99203",,,,,,,1,,Galar-Laschoking,von,Pokgalaxy,,GPL,,,,,,,,,,,,0,,Tails of Mystery
+,78,,Beatori,von,Present,,GPL,,2,,0,1,0,0,0,2,,0,,,5,,Prekani,"4,992","4,99203",,,,,,,1,,Krarmor,von,Pokgalaxy,,GPL,,,,,,,,,,,,0,,Tails of Mystery
+,78,,Laschoking,von,OGDeniz96,,GPL,,,0,0,1,0,0,,0,,0,4,,5,,Squid Squad,"4,992","4,99202",,,,,,,1,,Keldeo,von,Pokgalaxy,,GPL,,,,,,,,,,,,0,,Tails of Mystery
+,78,,Regieleki,von,Snomnie,,GPL,1,,,1,0,0,,0,,0,2,1,,5,,Corvi Crushers,"4,992","4,99202",,,,,,,1,,Snibunna,von,Pokgalaxy,,GPL,,,,,,,,,,,,0,,Tails of Mystery
+,78,,Cupidos,von,RobinVGC,,GPL,,,0,0,1,,0,0,1,,1,,2,5,,Choice Bandits,"4,992","4,99201",,,,,,,1,,Feelinara,von,Pokgalaxy,,GPL,,,,,,,,,,,,0,,Tails of Mystery
+,78,,Panferno,von,Blocki,,GPL,0,,1,3,0,0,1,,0,0,0,0,0,5,,Kastanienbomber,"4,989","4,98902",,,,,,,1,,Relaxo,von,Pokgalaxy,,GPL,,,,,,,,,,,,0,,Tails of Mystery
+,78,,Krarmor,von,Pokgalaxy,,GPL,0,0,0,0,0,2,0,0,0,2,0,1,0,5,,Tails of Mystery,"4,987","4,98702",,,,,,,1,,Rotom-Heat,von,Pokgalaxy,,GPL,,,,,,,,,,,,0,,Tails of Mystery
+,97,,Pampross,von,Nestfloh,,GPL,,0,,,,2,0,,,2,,,,4,,Böller Brüder,"3,996","3,99604",,,,,,,1,,Horrerba,von,Pokgalaxy,,GPL,,,,,,,,,,,,0,,Tails of Mystery
+,97,,Curelei,von,Minetube,,GPL,,3,1,,,,,,0,,,0,,4,,Throes Mad,"3,996","3,99603",,,,,,,1,,Wampitz,von,Pokgalaxy,,GPL,,,,,,,,,,,,0,,Tails of Mystery
+,97,,Entei,von,Raizor,,GPL,,,,,3,,0,1,,0,,,0,4,,Unbound Soul,"3,995","3,99502",,,,,,,1,,Rameidon,von,Pokgalaxy,,GPL,,,,,,,,,,,,0,,Tails of Mystery
+,97,,Zytomega,von,Present,,GPL,0,0,,0,,,,,,1,,0,3,4,,Prekani,"3,994","3,99402",,,,,,,1,,Demeteros-Therian,von,Present,,GPL,,,,,,,,,,,,0,,Prekani
+,97,,Dragoran,von,Present,,GPL,0,,0,,1,2,,,,,,1,0,4,,Prekani,"3,994","3,99401",,,,,,,1,,Dragoran,von,Present,,GPL,,,,,,,,,,,,0,,Prekani
+,97,,UHaFnir,von,Bene,,GPL,0,,,0,,0,,0,1,,1,2,,4,,Wackel Backel,"3,993","3,99303",,,,,,,1,,Arkani,von,Present,,GPL,,,,,,,,,,,,0,,Prekani
+,97,,Raikou,von,RobinVGC,,GPL,,0,,,0,2,1,0,0,,1,0,,4,,Choice Bandits,"3,992","3,99202",,,,,,,1,,Rotom-Wash,von,Present,,GPL,,,,,,,,,,,,0,,Prekani
+,104,,Trombork,von,OGDeniz96,,GPL,,,,,,,,0,,3,,,,3,,Squid Squad,"2,998","2,99805",,,,,,,1,,Zytomega,von,Present,,GPL,,,,,,,,,,,,0,,Prekani
+,104,,Golgantes,von,Snomnie,,GPL,,2,,,1,,0,,,,,,,3,,Corvi Crushers,"2,997","2,99705",,,,,,,1,,Beatori,von,Present,,GPL,,,,,,,,,,,,0,,Prekani
+,104,,Galar-Lahmus,von,Blocki,,GPL,,,,,0,,,0,,,,3,,3,,Kastanienbomber,"2,997","2,99703",,,,,,,1,,Kobalium,von,Present,,GPL,,,,,,,,,,,,0,,Prekani
+,104,,Axantor,von,Blocki,,GPL,0,0,,3,,,,,,,0,,,3,,Kastanienbomber,"2,996","2,99603",,,,,,,1,,Mopex,von,Present,,GPL,,,,,,,,,,,,0,,Prekani
+,104,,Illumise,von,RobinVGC,,GPL,1,0,,0,,0,,,,2,,,,3,,Choice Bandits,"2,995","2,99504",,,,,,,1,,Rizeros,von,Present,,GPL,,,,,,,,,,,,0,,Prekani
+,104,,Mopex,von,Present,,GPL,,0,0,,1,,1,,,,1,,,3,,Prekani,"2,995","2,99503",,,,,,,1,,Tengulist,von,Present,,GPL,,,,,,,,,,,,0,,Prekani
+,104,,Psiana,von,Domji,,GPL,,0,1,,,,0,0,,,1,,1,3,,Shining Legends,"2,994","2,99405",,,,,,,1,,Mottineva,von,Present,,GPL,,,,,,,,,,,,0,,Prekani
+,104,,Grypheldis,von,OGDeniz96,,GPL,1,1,1,,0,,0,,0,,,,,3,,Squid Squad,"2,994","2,99403",,,,,,,1,,Snieboss,von,Raizor,,GPL,,,,,,,,,,,,0,,Unbound Soul
+,104,,Britzigel,von,King Blex,,GPL,,0,0,,0,,0,0,,,,3,0,3,,Cyber End Jugulis,"2,993","2,99305",,,,,,,1,,Ursaluna,von,Raizor,,GPL,,,,,,,,,,,,0,,Unbound Soul
+,104,,Guardevoir,von,Nestfloh,,GPL,,1,0,0,,,,,2,0,,0,0,3,,Böller Brüder,"2,993","2,99303",,,,,,,1,,Servol-w,von,Raizor,,GPL,,,,,,,,,,,,0,,Unbound Soul
+,104,,Skorgla,von,Sirazoa,,GPL,0,0,0,,1,0,,,0,,0,2,0,3,,Eon Engine,"2,991","2,99104",,,,,,,1,,Entei,von,Raizor,,GPL,,,,,,,,,,,,0,,Unbound Soul
+,104,,Suicune,von,Blocki,,GPL,1,0,1,0,0,,0,,0,,0,0,1,3,,Kastanienbomber,"2,99","2,99002",,,,,,,1,,Eisenhaupt,von,Raizor,,GPL,,,,,,,,,,,,0,,Unbound Soul
+,104,,Pixi,von,Domji,,GPL,0,,0,1,,0,0,1,1,0,,0,0,3,,Shining Legends,"2,99","2,99002",,,,,,,1,,Turtok,von,Raizor,,GPL,,,,,,,,,,,,0,,Unbound Soul
+,117,,Mottineva,von,Present,,GPL,,,,,,,2,,,,,,0,2,,Prekani,"1,998","1,99805",,,,,,,1,,Cupidos-Therian,von,Raizor,,GPL,,,,,,,,,,,,0,,Unbound Soul
+,117,,Nockchan,von,Snomnie,,GPL,,,,1,,0,,1,,,,,,2,,Corvi Crushers,"1,997","1,99705",,,,,,,1,,Voltrean,von,Raizor,,GPL,,,,,,,,,,,,0,,Unbound Soul
+,117,,Aggrostella,von,RobinVGC,,GPL,,,,,1,,1,,,0,,,,2,,Choice Bandits,"1,997","1,99703",,,,,,,1,,Silvarro,von,Raizor,,GPL,,,,,,,,,,,,0,,Unbound Soul
+,117,,Traunfugil,von,Minetube,,GPL,0,,,1,0,,,,,,,1,,2,,Throes Mad,"1,996","1,99605",,,,,,,1,,Alola-Snobilikat,von,Raizor,,GPL,,,,,,,,,,,,0,,Unbound Soul
+,117,,Turtok,von,Raizor,,GPL,,0,,0,,,,,1,,1,,,2,,Unbound Soul,"1,996","1,99603",,,,,,,1,,Hisui-Arktilas,von,Raizor,,GPL,,,,,,,,,,,,0,,Unbound Soul
+,117,,Riffex,von,Sirazoa,,GPL,,,,,1,,0,,1,,0,,,2,,Eon Engine,"1,996","1,99603",,,,,,,1,,Latios,von,RobinVGC,,GPL,,,,,,,,,,,,0,,Choice Bandits
+,117,,Irokex,von,Nestfloh,,GPL,,0,,,,0,,1,,0,,,1,2,,Böller Brüder,"1,995","1,99503",,,,,,,1,,Cupidos,von,RobinVGC,,GPL,,,,,,,,,,,,0,,Choice Bandits
+,117,,Silvarro,von,Raizor,,GPL,,0,0,,2,,0,,,0,0,0,,2,,Unbound Soul,"1,993","1,99304",,,,,,,1,,Fatalitcha,von,RobinVGC,,GPL,,,,,,,,,,,,0,,Choice Bandits
+,117,,Brutalanda,von,Sirazoa,,GPL,,1,0,,,,1,0,0,0,,0,,2,,Eon Engine,"1,993","1,99302",,,,,,,1,,Wie-Shu,von,RobinVGC,,GPL,,,,,,,,,,,,0,,Choice Bandits
+,117,,Schlurm,von,Snomnie,,GPL,,,0,,0,1,0,1,0,,0,,0,2,,Corvi Crushers,"1,992","1,99203",,,,,,,1,,Raikou,von,RobinVGC,,GPL,,,,,,,,,,,,0,,Choice Bandits
+,117,,Pamomamo,von,Nestfloh,,GPL,0,,,0,0,,1,1,0,0,0,0,0,2,,Böller Brüder,"1,99","1,99002",,,,,,,1,,Rabigator,von,RobinVGC,,GPL,,,,,,,,,,,,0,,Choice Bandits
+,128,,Affiti,von,Minetube,,GPL,,,,0,,,,,,,,1,,1,,Throes Mad,"0,998","0,99804",,,,,,,1,,Aggrostella,von,RobinVGC,,GPL,,,,,,,,,,,,0,,Choice Bandits
+,128,,Relaxo,von,Pokgalaxy,,GPL,,1,,,,,,,,,,,0,1,,Tails of Mystery,"0,998","0,99803",,,,,,,1,,Registeel,von,RobinVGC,,GPL,,,,,,,,,,,,0,,Choice Bandits
+,128,,Tenterra,von,Dauni,,GPL,,,,0,0,,,,,,,,1,1,,Pfundskerle,"0,997","0,99704",,,,,,,1,,Montecarbo,von,RobinVGC,,GPL,,,,,,,,,,,,0,,Choice Bandits
+,128,,Ambidiffel,von,Dauni,,GPL,,0,,,,0,,1,,0,,,,1,,Pfundskerle,"0,996","0,99605",,,,,,,1,,Illumise,von,RobinVGC,,GPL,,,,,,,,,,,,0,,Choice Bandits
+,128,,Chimstix,von,Sirazoa,,GPL,,0,,0,1,,,0,,,,,,1,,Eon Engine,"0,996","0,99604",,,,,,,1,,Kronjuwild,von,RobinVGC,,GPL,,,,,,,,,,,,0,,Choice Bandits
+,128,,Bronzong,von,Bene,,GPL,,,,,0,,,0,,1,,0,,1,,Wackel Backel,"0,996","0,99603",,,,,,,1,,Riesenzahn,von,Sirazoa,,GPL,,,,,,,,,,,,0,,Eon Engine
+,128,,Myriador,von,Dauni,,GPL,0,,,1,,,,,0,0,,,,1,,Pfundskerle,"0,996","0,99603",,,,,,,1,,Jirachi,von,Sirazoa,,GPL,,,,,,,,,,,,0,,Eon Engine
+,128,,Garados,von,Domji,,GPL,,,1,,0,,,,,,,0,0,1,,Shining Legends,"0,996","0,99603",,,,,,,1,,Alola-Vulnona,von,Sirazoa,,GPL,,,,,,,,,,,,0,,Eon Engine
+,128,,Voltrean,von,Raizor,,GPL,0,,1,,,0,,,,,,,0,1,,Unbound Soul,"0,996","0,99603",,,,,,,1,,Brutalanda,von,Sirazoa,,GPL,,,,,,,,,,,,0,,Eon Engine
+,128,,Meloetta,von,Snomnie,,GPL,,0,,,,,,,,0,,1,0,1,,Corvi Crushers,"0,996","0,99603",,,,,,,1,,Volcanion,von,Sirazoa,,GPL,,,,,,,,,,,,0,,Eon Engine
+,128,,Gastrodon,von,Bene,,GPL,,,,,,0,1,0,0,,,,0,1,,Wackel Backel,"0,995","0,99504",,,,,,,1,,Aquana,von,Sirazoa,,GPL,,,,,,,,,,,,0,,Eon Engine
+,128,,Horrerba,von,Pokgalaxy,,GPL,,,,0,0,,,,0,1,,0,,1,,Tails of Mystery,"0,995","0,99504",,,,,,,1,,Riffex,von,Sirazoa,,GPL,,,,,,,,,,,,0,,Eon Engine
+,128,,Zobiris,von,Dauni,,GPL,,,,0,,0,,1,,0,,0,,1,,Pfundskerle,"0,995","0,99503",,,,,,,1,,Kolowal,von,Sirazoa,,GPL,,,,,,,,,,,,0,,Eon Engine
+,128,,Florges,von,Snomnie,,GPL,0,,1,0,,,0,0,,,,,,1,,Corvi Crushers,"0,995","0,99503",,,,,,,1,,Chimstix,von,Sirazoa,,GPL,,,,,,,,,,,,0,,Eon Engine
+,128,,Aquana,von,Sirazoa,,GPL,,,0,0,0,,0,,,,1,,0,1,,Eon Engine,"0,994","0,99403",,,,,,,1,,Skorgla,von,Sirazoa,,GPL,,,,,,,,,,,,0,,Eon Engine
+,128,,Piepi,von,OGDeniz96,,GPL,0,,,0,,0,,0,,1,0,0,,1,,Squid Squad,"0,993","0,99304",,,,,,,1,,Morpeko,von,Sirazoa,,GPL,,,,,,,,,,,,0,,Eon Engine
+,128,,Impoleon,von,Nestfloh,,GPL,0,,,0,1,0,,0,0,,0,,,1,,Böller Brüder,"0,993","0,99302",,,,,,,1,,Ogerpon-Wasser,von,Snomnie,,GPL,,,,,,,,,,,,0,,Corvi Crushers
+,145,,Giflor,von,Bene,,GPL,,,,,,,,,,,,,,0,,Wackel Backel,0,"0,00005",,,,,,,1,,Liberlo,von,Snomnie,,GPL,,,,,,,,,,,,0,,Corvi Crushers
+,145,,Rameidon,von,Pokgalaxy,,GPL,,,,,,,,,,,,,,0,,Tails of Mystery,0,"0,00005",,,,,,,1,,Trikephalo,von,Snomnie,,GPL,,,,,,,,,,,,0,,Corvi Crushers
+,145,,Kronjuwild,von,RobinVGC,,GPL,,,,,,,,,,,,,,0,,Choice Bandits,0,"0,00005",,,,,,,1,,Infamomo,von,Snomnie,,GPL,,,,,,,,,,,,0,,Corvi Crushers
+,145,,Pokusan,von,King Blex,,GPL,,,,,,0,,,,,,,,0,,Cyber End Jugulis,"-0,001","-0,00096",,,,,,,1,,Regieleki,von,Snomnie,,GPL,,,,,,,,,,,,0,,Corvi Crushers
+,145,,Gewaldro,von,Domji,,GPL,,,,,,,0,,,,,0,,0,,Shining Legends,"-0,002","-0,00195",,,,,,,1,,Florges,von,Snomnie,,GPL,,,,,,,,,,,,0,,Corvi Crushers
+,145,,Morpeko,von,Sirazoa,,GPL,0,,,,,0,,,,,,,,0,,Eon Engine,"-0,002","-0,00195",,,,,,,1,,Schlurm,von,Snomnie,,GPL,,,,,,,,,,,,0,,Corvi Crushers
+,145,,Rotom,von,Blocki,,GPL,,,0,,0,,,,,,0,,,0,,Kastanienbomber,"-0,003","-0,00296",,,,,,,1,,Meloetta,von,Snomnie,,GPL,,,,,,,,,,,,0,,Corvi Crushers
+,145,,Bandelby,von,Domji,,GPL,0,0,,0,0,,,,,0,,,,0,,Shining Legends,"-0,005","-0,00497",,,,,,,1,,Golgantes,von,Snomnie,,GPL,,,,,,,,,,,,0,,Corvi Crushers
+,145,,Tentoxa,von,King Blex,,GPL,,,0,0,,0,0,,,,,0,0,0,,Cyber End Jugulis,"-0,006","-0,00597",,,,,,,1,,Arktos,von,Snomnie,,GPL,,,,,,,,,,,,0,,Corvi Crushers
+,145,,Servol-w,von,Raizor,,GPL,,0,,0,,0,,0,0,0,,0,,0,,Unbound Soul,"-0,007","-0,00698",,,,,,,1,,Nockchan,von,Snomnie,,GPL,,,,,,,,,,,,0,,Corvi Crushers
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100
+,145,,,von,,,,,,,,,,,,,,,,,0,,,0,-100,,,,,,,155,,,von,,,,,,,,,,,,,,,-100

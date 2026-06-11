@@ -1,0 +1,16 @@
+{
+  "season_number": 5,
+  "season_id": "season_005",
+  "season_label": "Season 5",
+  "playlists": [
+    {
+      "playlistId": "PLS5CJdaR4C6dgZBUTna08bqUofRaXrgBY",
+      "title": "GPL [S5] - PresentLP",
+      "description": "",
+      "publishedAt": "2018-03-25T09:17:50.871549Z",
+      "channelId": "UCGJoPLl-4NriTMUsNMK-9Zg",
+      "channelTitle": "Present",
+      "itemCount": 44
+    }
+  ]
+}

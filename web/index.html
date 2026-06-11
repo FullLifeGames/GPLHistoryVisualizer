@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="de" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GPL History Visualizer</title>
+    <link href="https://unpkg.com/tabulator-tables@6.4.0/dist/css/tabulator.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="brand-lockup">
+        <a class="brand-logo" href="#/all-time" aria-label="GPL History Visualizer">
+          <img src="../GPL_Season_10_Logo.png" alt="GPL Season 10" />
+        </a>
+        <div class="brand-copy">
+          <h1>GPL History Visualizer</h1>
+          <p data-i18n="app.subtitle">CSV-basiertes Archiv der German Pokémon League.</p>
+        </div>
+      </div>
+      <div class="header-actions" aria-label="Anzeigeoptionen">
+        <button class="header-button" id="language-toggle" type="button">English</button>
+        <button class="header-button" id="theme-toggle" type="button">Nachtmodus</button>
+        <div class="status" id="load-status" data-i18n="status.loading">Lade CSV-Daten</div>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <nav class="tabs" aria-label="Views">
+        <button class="tab is-active" data-view="all-time" data-i18n="nav.allTime">Ewige Tabelle</button>
+        <button class="tab" data-view="killlists" data-i18n="nav.killlists">Pokémon-Killlisten</button>
+        <button class="tab" data-view="table-history" data-i18n="nav.tableHistory">Tabellenverlauf</button>
+        <button class="tab" data-view="match-plan" data-i18n="nav.matchPlan">Spielplan</button>
+        <button class="tab" data-view="battle-history" data-i18n="nav.battleHistory">Kampfverlauf</button>
+        <button class="tab" data-view="video-archive" data-i18n="nav.videoArchive">Video-Archiv</button>
+        <button class="tab" data-view="person-details" data-i18n="nav.personDetails">Personendetails</button>
+        <button class="tab" data-view="matchup" data-i18n="nav.matchup">Matchup-Check</button>
+      </nav>
+
+      <section class="toolbar">
+        <label>
+          <span data-i18n="filters.season">Saison</span>
+          <select id="season-filter"></select>
+        </label>
+        <label>
+          <span data-i18n="filters.division">Liga/Bereich</span>
+          <select id="division-filter"></select>
+        </label>
+        <label>
+          <span data-i18n="filters.search">Suche</span>
+          <input id="search-filter" type="search" placeholder="Team, Trainer, Pokémon, Video" data-i18n-placeholder="filters.searchPlaceholder" />
+        </label>
+      </section>
+
+      <section class="summary-grid" id="summary-grid" aria-label="Gefilterte Archiv-Zusammenfassung"></section>
+
+      <section id="view-all-time" class="view is-active">
+        <div class="section-head">
+          <h2 data-i18n="sections.allTimeTitle">Ewige Tabelle</h2>
+          <p data-i18n="sections.allTimeDescription">Aus verfügbaren Tabellenständen aggregiert; unsichere Felder bleiben leer.</p>
+        </div>
+        <div id="all-time-table" class="table-wrap"></div>
+      </section>
+
+      <section id="view-killlists" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.killlistsTitle">Pokémon-Killlisten</h2>
+          <p data-i18n="sections.killlistsDescription">Best-effort-Zeilen aus öffentlichen Sheets mit Pokémon-Kill/Death-Spalten.</p>
+        </div>
+        <div id="killlists-table" class="table-wrap"></div>
+      </section>
+
+      <section id="view-table-history" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.tableHistoryTitle">Tabellenverlauf</h2>
+          <p data-i18n="sections.tableHistoryDescription">Tabellenstände je Saison mit Quellenstatus pro Zeile.</p>
+        </div>
+        <div id="table-history-table" class="table-wrap"></div>
+      </section>
+
+      <section id="view-battle-history" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.battleHistoryTitle">Kampfverlauf</h2>
+          <p data-i18n="sections.battleHistoryDescription">Kampfzeilen aus den normalisierten CSV-Daten, mit Videoquellen wenn vorhanden.</p>
+        </div>
+        <div id="battle-history-table" class="table-wrap"></div>
+      </section>
+
+      <section id="view-match-plan" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.matchPlanTitle">Spielplan</h2>
+          <p data-i18n="sections.matchPlanDescription">Saisonbezogener Matchplan aus den vorhandenen CSV-Matchdaten.</p>
+        </div>
+        <div id="match-plan-table" class="table-wrap"></div>
+      </section>
+
+      <section id="view-video-archive" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.videoArchiveTitle">Video-Archiv</h2>
+          <p data-i18n="sections.videoArchiveDescription">Öffentliche GPL-Videos aus Teilnehmerkanälen mit Best-effort-Zuordnung zu Spieltagen.</p>
+        </div>
+        <div id="video-archive-table" class="table-wrap"></div>
+      </section>
+
+      <section id="view-person-details" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.personDetailsTitle">Personendetails</h2>
+          <p data-i18n="sections.personDetailsDescription">Personen, Teams, Tabellenstände und Titel über alle Saisons.</p>
+        </div>
+        <div id="person-focus" class="person-focus" hidden></div>
+        <div id="person-summary-table" class="table-wrap"></div>
+        <div id="person-season-table" class="table-wrap stacked-table"></div>
+        <div class="subsection-head">
+          <h3 data-i18n="personDetails.pokemonTitle">Pokémon & Kills</h3>
+        </div>
+        <div id="person-pokemon-table" class="table-wrap"></div>
+      </section>
+
+      <section id="view-matchup" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.matchupTitle">Matchup-Check</h2>
+          <p data-i18n="sections.matchupDescription">Vergleiche zwei Trainer oder Teams anhand verfügbarer Match-Zeilen.</p>
+        </div>
+        <form id="matchup-form" class="matchup-form">
+          <label>
+            <span data-i18n="matchup.firstName">Erster Name</span>
+            <select id="matchup-a"></select>
+          </label>
+          <label>
+            <span data-i18n="matchup.secondName">Zweiter Name</span>
+            <select id="matchup-b"></select>
+          </label>
+          <button type="submit" data-i18n="matchup.check">Prüfen</button>
+        </form>
+        <div id="matchup-result" class="result-box"></div>
+      </section>
+    </main>
+
+    <script src="https://unpkg.com/tabulator-tables@6.4.0/dist/js/tabulator.min.js"></script>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

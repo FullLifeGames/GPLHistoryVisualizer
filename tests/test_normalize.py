@@ -1,0 +1,325 @@
+from collections import Counter
+from pathlib import Path
+
+from gpl_history.normalize import (
+    _canonical_name,
+    _display_name,
+    _match_row,
+    _person_id,
+    _records_from_rows,
+    _schedule_matches_from_rows,
+    normalize_all,
+)
+
+
+def test_aliases_merge_to_preferred_person_display_names():
+    assert _canonical_name("FullLifeGames") == "bene"
+    assert _person_id("FullLifeGames") == "person_bene"
+    assert _display_name("FullLifeGames") == "Bene"
+
+    assert _canonical_name("Kaffecone") == "art n gaming"
+    assert _canonical_name("Kaffeecone") == "art n gaming"
+    assert _person_id("Kaffeecone") == "person_art_n_gaming"
+    assert _display_name("Kaffecone") == "Art'n'Gaming"
+    assert _display_name("TeamMauni") == "Maxi von Vogel"
+    assert _display_name("Maxi [Team Mauni]") == "Maxi von Vogel"
+    assert _display_name("DauniDaunstar") == "Dauni Daunstar"
+    assert _display_name("Raizor Zockt") == "Raizor"
+    assert _display_name("ProfessorN") == "Professor N"
+    assert _canonical_name("CabgoLord") == "fnupa"
+    assert _person_id("Cabgolord") == "person_fnupa"
+    assert _display_name("CabgoLord") == "Fnupa"
+
+
+def test_person_labels_drop_result_and_rule_notes_before_aliasing():
+    assert _display_name("PresentLP nach Brechen der Item Clause") == "PresentLP"
+    assert _display_name("Oktopaul; Draw nach Time Out") == "Oktopaul"
+    assert _display_name("DaumenKinoLP; Sieg für Paul nach Time Out") == "DaumenKinoLP"
+    assert _display_name("Crowd [Freewin]") == "CrowdController"
+    assert _display_name("Morbolth Daumenkino Sieg") == "Morbolth"
+
+
+def test_match_row_removes_disconnect_notes_before_alias_display():
+    row = _match_row(
+        "season_001",
+        1,
+        "1. Spieltag",
+        "DiaSwordPlay",
+        "KaffeeConeLP nach DC",
+        "5",
+        "0",
+        "https://example.test/sheet",
+        "Regular Season",
+        True,
+    )
+
+    assert row["player_b"] == "Art'n'Gaming"
+    assert row["winner"] == "DiaSwordPlay"
+
+
+def test_records_from_rows_prefers_known_header_row_after_title_rows():
+    rows = [
+        ["GPL Pokémon Kill Rang:", "", "Stand: Spieltag 7"],
+        ["", "", ""],
+        ["Pokémon", "Kills", "Platz", "Kanal"],
+        ["Quajutsu", "13", "1", "PresentLP"],
+    ]
+
+    assert _records_from_rows(rows) == [
+        {"pokemon": "Quajutsu", "kills": "13", "rank": "1", "kanal": "PresentLP"}
+    ]
+
+
+def test_schedule_matches_from_rows_extracts_explicit_scored_cells_with_week_context():
+    rows = [
+        ["", "1. Spieltag - Sonntag der 14.09.2014", "", "7. Spieltag - Sonntag der 26.10.2014"],
+        ["", "DaumenKinoLP [4 – 3] SurskitTV   U. nach DC", "", "PresentLP [3 - 0] SurskitTV"],
+    ]
+
+    matches = _schedule_matches_from_rows("season_001", rows, "https://example.test/sheet")
+
+    assert matches == [
+        {
+            "season_id": "season_001",
+            "match_id": "season_001_schedule_0001",
+            "week": "1. Spieltag - Sonntag der 14.09.2014",
+            "player_a": "DaumenKinoLP",
+            "player_b": "SurskitTV",
+            "team_a": None,
+            "team_b": None,
+            "score_a": "4",
+            "score_b": "3",
+            "winner": None,
+            "video_id": None,
+            "video_title": None,
+            "video_url": None,
+            "data_status": "sheet_extracted",
+            "source_urls": "https://example.test/sheet",
+        },
+        {
+            "season_id": "season_001",
+            "match_id": "season_001_schedule_0002",
+            "week": "7. Spieltag - Sonntag der 26.10.2014",
+            "player_a": "PresentLP",
+            "player_b": "SurskitTV",
+            "team_a": None,
+            "team_b": None,
+            "score_a": "3",
+            "score_b": "0",
+            "winner": None,
+            "video_id": None,
+            "video_title": None,
+            "video_url": None,
+            "data_status": "sheet_extracted",
+            "source_urls": "https://example.test/sheet",
+        },
+    ]
+
+
+def test_normalized_killlists_do_not_duplicate_identical_rows():
+    output = normalize_all(Path("data"))
+    rows = [row for row in output.pokemon_killlists if row["data_status"] != "not_available"]
+    keys = [
+        (
+            row["season_id"],
+            row["division"],
+            row["stage"],
+            row["pokemon_normalized"],
+            row["trainer_normalized"],
+            row["team_name"],
+            row["kills"],
+            row["deaths"],
+            row["differential"],
+            row["source_urls"],
+        )
+        for row in rows
+    ]
+    duplicates = [key for key, count in Counter(keys).items() if count > 1]
+
+    assert duplicates == []
+
+
+def test_s10_killlist_uses_playoff_table_with_deaths():
+    output = normalize_all(Path("data"))
+    rows = [
+        row
+        for row in output.pokemon_killlists
+        if row["season_id"] == "season_010" and row["data_status"] == "sheet_extracted"
+    ]
+
+    assert rows
+    assert {row["division"] for row in rows} == {"Playoffs"}
+
+    ramoth = next(row for row in rows if row["pokemon"] == "Ramoth" and row["trainer"] == "Minetube")
+    assert ramoth["kills"] == "3"
+    assert ramoth["deaths"] == "2"
+    assert ramoth["differential"] == "1"
+
+
+def test_missing_killlist_placeholders_preserve_unavailable_source_urls():
+    output = normalize_all(Path("data"))
+    rows = {
+        row["season_id"]: row
+        for row in output.pokemon_killlists
+        if row["season_id"] in {"season_003", "season_004", "season_005"} and row["data_status"] == "not_available"
+    }
+
+    assert "1d7DpiW3aMjnYWiY9KSpk9nSi-gnEUnSFVAK-zGpy59Q" in rows["season_003"]["source_urls"]
+    assert "16OVT2YZN7gtsckJEMPSdMETsCiXuCs0HTSFl5xQGdwg" in rows["season_004"]["source_urls"]
+    assert "1oXO8WjHo3Og1gncQWS7jEPaNyAFrkJhxL-xS57holc0" in rows["season_005"]["source_urls"]
+
+
+def test_unavailable_bene_killlists_are_person_scoped_without_inferred_pokemon():
+    output = normalize_all(Path("data"))
+    rows = {
+        row["season_id"]: row
+        for row in output.pokemon_killlists
+        if row["season_id"] in {"season_003", "season_004", "season_005"} and row["data_status"] == "not_available"
+    }
+
+    assert rows["season_003"]["trainer"] == "Bene"
+    assert rows["season_003"]["team_name"] == "Unlimited Blade Works"
+    assert rows["season_004"]["trainer"] == "Bene"
+    assert rows["season_004"]["team_name"] == "Ritter der Tapukokosnuss"
+    assert rows["season_005"]["trainer"] == "Bene"
+    assert rows["season_005"]["team_name"] == "Victini Bottom"
+    assert {row["pokemon"] for row in rows.values()} == {None}
+    assert {row["kills"] for row in rows.values()} == {None}
+
+
+def test_s9_killlists_preserve_team_from_wide_summary_rows():
+    output = normalize_all(Path("data"))
+    rows = [
+        row
+        for row in output.pokemon_killlists
+        if row["season_id"] == "season_009" and row["pokemon_normalized"] == "uhafnir"
+    ]
+    by_division = {row["division"]: row for row in rows}
+
+    assert by_division["Overall"]["team_name"] == "Victory Instinct"
+    assert by_division["Doubles"]["team_name"] == "Victory Instinct"
+    assert by_division["Doubles"]["trainer"] == "Bene"
+    assert by_division["Doubles"]["kills"] == "3"
+
+    singles_rows = [row for row in rows if row["division"] == "Singles"]
+    assert {row["trainer"]: row["kills"] for row in singles_rows} == {"BelmontGabriel": "2", "El Scizor": "1"}
+
+
+def test_s10_playoff_matches_are_in_playoff_division():
+    output = normalize_all(Path("data"))
+    rows = [
+        row
+        for row in output.matches
+        if row["season_id"] == "season_010" and row.get("stage") == "playoffs" and row["data_status"] == "sheet_extracted"
+    ]
+
+    assert rows
+    assert {row["division"] for row in rows} == {"Playoffs"}
+
+
+def test_s6_playoff_matches_are_filterable_as_playoffs():
+    output = normalize_all(Path("data"))
+    rows = [
+        row
+        for row in output.matches
+        if row["season_id"] == "season_006" and row.get("stage") == "playoffs" and row["data_status"] == "sheet_extracted"
+    ]
+
+    assert rows
+    assert {row["division"] for row in rows} == {"Playoffs"}
+
+
+def test_playoff_and_tag_team_champions_are_represented_per_person():
+    output = normalize_all(Path("data"))
+    rows = [row for row in output.champions if row["data_status"] in {"source_evidenced", "user_provided"}]
+    by_season = {}
+    for row in rows:
+        by_season.setdefault(row["season_id"], []).append(row)
+
+    assert {row["champion_name"] for row in by_season["season_007"]} == {"Nestfloh"}
+    assert by_season["season_007"][0]["data_status"] == "source_evidenced"
+    assert by_season["season_007"][0]["evidence_type"] == "final_standings_rank_1"
+    assert {row["champion_name"] for row in by_season["season_009"]} == {"BelmontGabriel", "El Scizor", "Bene"}
+    assert {row["champion_name"] for row in by_season["season_010"]} == {"Bene"}
+    assert by_season["season_010"][0]["data_status"] == "source_evidenced"
+    assert by_season["season_010"][0]["evidence_type"] == "playoff_final_kader_status"
+
+
+def test_s10_regular_table_uses_direct_comparison_for_first_place():
+    output = normalize_all(Path("data"))
+    rows = {
+        row["player_name"]: row
+        for row in output.standings
+        if row["season_id"] == "season_010" and row["division"] == "Regular Season" and row["is_primary"] == "true"
+    }
+
+    assert len(rows) == 14
+    assert rows["Minetube"]["rank"] == "1"
+    assert rows["PresentLP"]["rank"] == "2"
+
+
+def test_playoff_rows_are_available_for_s7_and_s10_tables_and_plan():
+    output = normalize_all(Path("data"))
+    s7_standings = [
+        row for row in output.standings if row["season_id"] == "season_007" and row["division"] == "Playoffs"
+    ]
+    s10_standings = [
+        row for row in output.standings if row["season_id"] == "season_010" and row["division"] == "Playoffs"
+    ]
+    s7_matches = [row for row in output.matches if row["season_id"] == "season_007" and row["division"] == "Playoffs"]
+    s10_final = [
+        row
+        for row in output.matches
+        if row["season_id"] == "season_010" and row["division"] == "Playoffs" and row["week"] == "Finale"
+    ]
+
+    assert s7_standings and s7_standings[0]["player_name"] == "Nestfloh"
+    assert s7_matches and s7_matches[0]["winner"] == "Nestfloh"
+    assert s7_matches[0]["data_status"] == "source_evidenced"
+    assert any(row["player_name"] == "Bene" and row["rank"] == "1" for row in s10_standings)
+    assert s10_final and s10_final[0]["winner"] == "Bene"
+    assert s10_final[0]["data_status"] == "sheet_extracted"
+
+
+def test_mid_season_team_controller_changes_are_kept_as_person_stints():
+    output = normalize_all(Path("data"))
+    stints = output.person_stints
+
+    s3_ubw = [
+        row
+        for row in stints
+        if row["season_id"] == "season_003" and row["team_id"] == "season_003_unlimited_blade_works_1"
+    ]
+    assert {row["person_name"] for row in s3_ubw} == {"LucarioLP", "Bene"}
+    assert {row["person_name"]: (row["start_week"], row["end_week"]) for row in s3_ubw} == {
+        "LucarioLP": ("1", "10"),
+        "Bene": ("11", "26"),
+    }
+    assert {row["person_name"]: row["matches"] for row in s3_ubw} == {"LucarioLP": "10", "Bene": "16"}
+
+    s3_week_1 = next(row for row in output.matches if row["season_id"] == "season_003" and row["week"].startswith("1. Spieltag") and row["player_b"] == "FanmadeLetsPlay")
+    s3_week_11 = next(row for row in output.matches if row["season_id"] == "season_003" and row["week"].startswith("11. Spieltag") and row["player_b"] == "SurskitTV")
+    assert s3_week_1["player_a"] == "LucarioLP"
+    assert s3_week_1["team_a"] == "Unlimited Blade Works*¹"
+    assert s3_week_11["player_a"] == "Bene"
+
+    s9_victory = [
+        row
+        for row in stints
+        if row["season_id"] == "season_009" and row["team_id"] == "season_009_victory_instinct"
+    ]
+    assert {row["person_name"] for row in s9_victory} == {"BelmontGabriel", "El Scizor", "Bene"}
+    assert {row["person_name"]: (row["start_week"], row["end_week"]) for row in s9_victory} == {
+        "BelmontGabriel": ("1", "7"),
+        "El Scizor": ("8", "14"),
+        "Bene": ("1", "14"),
+    }
+
+    s9_week_1 = next(row for row in output.matches if row["season_id"] == "season_009" and row["week"].startswith("1. Spieltag") and row["player_b"] == "Maxi von Vogel")
+    s9_week_8 = next(row for row in output.matches if row["season_id"] == "season_009" and row["week"].startswith("8. Spieltag") and row["player_a"] == "Maxi von Vogel")
+    assert s9_week_1["player_a"] == "BelmontGabriel"
+    assert s9_week_1["winner"] == "BelmontGabriel"
+    assert s9_week_8["player_b"] == "El Scizor"
+
+    s9_champions = [row["champion_name"] for row in output.champions if row["season_id"] == "season_009"]
+    assert set(s9_champions) == {"BelmontGabriel", "El Scizor", "Bene"}

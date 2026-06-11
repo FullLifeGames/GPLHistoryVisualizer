@@ -1,0 +1,62 @@
+[
+  {
+    "sheet_id": "16wGz0QnHeyqfcAhKdYvDqUZAvKxXKuAHchszJjhpp-o",
+    "workbook_title": "GPL Spielplan Season 2 Liga 1",
+    "gid": "0",
+    "title": "Tabellenblatt1",
+    "index": 0,
+    "source_url": "https://docs.google.com/spreadsheets/d/16wGz0QnHeyqfcAhKdYvDqUZAvKxXKuAHchszJjhpp-o/edit#gid=0",
+    "raw_path": "data/raw/season_002/sheets/16wgz0qnheyqfcahkdyvdquzavkxxkuahchszjjhpp_o_tabellenblatt1_0.csv",
+    "status": "available",
+    "status_code": 200,
+    "error": null,
+    "rows": 69,
+    "columns": 7,
+    "fetch_method": "sheets_api"
+  },
+  {
+    "sheet_id": "1vJ-pioe3RZKSZ3LIGEA3FVTv_KEE_XKIQAXSIUNNd-Q",
+    "workbook_title": "GPL Tabelle Season 2 Liga 1",
+    "gid": "0",
+    "title": "Tabellenblatt1",
+    "index": 0,
+    "source_url": "https://docs.google.com/spreadsheets/d/1vJ-pioe3RZKSZ3LIGEA3FVTv_KEE_XKIQAXSIUNNd-Q/edit#gid=0",
+    "raw_path": "data/raw/season_002/sheets/1vj_pioe3rzksz3ligea3fvtv_kee_xkiqaxsiunnd_q_tabellenblatt1_0.csv",
+    "status": "available",
+    "status_code": 200,
+    "error": null,
+    "rows": 19,
+    "columns": 10,
+    "fetch_method": "sheets_api"
+  },
+  {
+    "sheet_id": "1WmLcn2i-N6D44ZWEZXDinSbIg4Br4AAfLNbRGUSPOlU",
+    "workbook_title": "GPL Regelwerk Season 2 ",
+    "gid": "0",
+    "title": "Tabellenblatt1",
+    "index": 0,
+    "source_url": "https://docs.google.com/spreadsheets/d/1WmLcn2i-N6D44ZWEZXDinSbIg4Br4AAfLNbRGUSPOlU/edit#gid=0",
+    "raw_path": "data/raw/season_002/sheets/1wmlcn2i_n6d44zwezxdinsbig4br4aaflnbrguspolu_tabellenblatt1_0.csv",
+    "status": "available",
+    "status_code": 200,
+    "error": null,
+    "rows": 31,
+    "columns": 1,
+    "fetch_method": "sheets_api"
+  },
+  {
+    "sheet_id": "1FUsClf5qEny-BHY5Djp8rIwRJKBSJDvygJ8LBa62FEo",
+    "workbook_title": "GPL Kill Rangliste Season 2 Liga 1",
+    "gid": "0",
+    "title": "Tabellenblatt1",
+    "index": 0,
+    "source_url": "https://docs.google.com/spreadsheets/d/1FUsClf5qEny-BHY5Djp8rIwRJKBSJDvygJ8LBa62FEo/edit#gid=0",
+    "raw_path": "data/raw/season_002/sheets/1fusclf5qeny_bhy5djp8riwrjkbsjdvygj8lba62feo_tabellenblatt1_0.csv",
+    "status": "available",
+    "status_code": 200,
+    "error": null,
+    "rows": 140,
+    "columns": 7,
+    "fetch_method": "sheets_api"
+  }
+]

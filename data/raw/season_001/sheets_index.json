@@ -1,0 +1,47 @@
+[
+  {
+    "sheet_id": "14N_40jsahiN9DChpnNaPTnFy26If6imVHtqBGDWk6pg",
+    "workbook_title": "GPL Spielplan",
+    "gid": "0",
+    "title": "Tabellenblatt1",
+    "index": 0,
+    "source_url": "https://docs.google.com/spreadsheets/d/14N_40jsahiN9DChpnNaPTnFy26If6imVHtqBGDWk6pg/edit#gid=0",
+    "raw_path": "data/raw/season_001/sheets/14n_40jsahin9dchpnnaptnfy26if6imvhtqbgdwk6pg_tabellenblatt1_0.csv",
+    "status": "available",
+    "status_code": 200,
+    "error": null,
+    "rows": 53,
+    "columns": 7,
+    "fetch_method": "sheets_api"
+  },
+  {
+    "sheet_id": "1n9SmK-ccTCn8Jjhs4U2LKnibXY8PvuBtV3V9MCOURRA",
+    "workbook_title": "GPL Ligatabelle",
+    "gid": "0",
+    "title": "Tabellenblatt1",
+    "index": 0,
+    "source_url": "https://docs.google.com/spreadsheets/d/1n9SmK-ccTCn8Jjhs4U2LKnibXY8PvuBtV3V9MCOURRA/edit#gid=0",
+    "raw_path": "data/raw/season_001/sheets/1n9smk_cctcn8jjhs4u2lknibxy8pvubtv3v9mcourra_tabellenblatt1_0.csv",
+    "status": "available",
+    "status_code": 200,
+    "error": null,
+    "rows": 16,
+    "columns": 10,
+    "fetch_method": "sheets_api"
+  },
+  {
+    "sheet_id": "1kiwDk4NgYoKb0Oo9yqzwl9HXHxuQ_0I5gkb1JtE57PI",
+    "workbook_title": "GPL K/D Rang",
+    "gid": "0",
+    "title": "Tabellenblatt1",
+    "index": 0,
+    "source_url": "https://docs.google.com/spreadsheets/d/1kiwDk4NgYoKb0Oo9yqzwl9HXHxuQ_0I5gkb1JtE57PI/edit?pli=1#gid=0",
+    "raw_path": "data/raw/season_001/sheets/1kiwdk4ngyokb0oo9yqzwl9hxhxuq_0i5gkb1jte57pi_tabellenblatt1_0.csv",
+    "status": "available",
+    "status_code": 200,
+    "error": null,
+    "rows": 164,
+    "columns": 5,
+    "fetch_method": "sheets_api"
+  }
+]

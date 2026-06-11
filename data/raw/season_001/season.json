@@ -1,0 +1,25 @@
+{
+  "season_number": 1,
+  "season_id": "season_001",
+  "season_label": "Season 1",
+  "playlists": [
+    {
+      "playlistId": "PLS5CJdaR4C6eqsxduM_12Op6KnKjDUM4V",
+      "title": "German Pok\u00e9mon League - PresentLP",
+      "description": "",
+      "publishedAt": "2014-09-14T10:53:53.964791Z",
+      "channelId": "UCGJoPLl-4NriTMUsNMK-9Zg",
+      "channelTitle": "Present",
+      "itemCount": 22
+    },
+    {
+      "playlistId": "PLS5CJdaR4C6cpb_TFuDmV0ce4l96iv4Hy",
+      "title": "German Pok\u00e9mon League - Alle K\u00e4mpfe",
+      "description": "",
+      "publishedAt": "2014-09-14T10:54:05.95601Z",
+      "channelId": "UCGJoPLl-4NriTMUsNMK-9Zg",
+      "channelTitle": "Present",
+      "itemCount": 23
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+[
+  {
+    "sheet_id": "1B2uTMvWlAHb7WlpupJV1A2Hbi3K3U1vCyoFV0wCapcw",
+    "gid": "1658832908",
+    "label": "gid_1658832908",
+    "source_url": "https://docs.google.com/spreadsheets/d/1B2uTMvWlAHb7WlpupJV1A2Hbi3K3U1vCyoFV0wCapcw/edit#gid=1658832908",
+    "export_url": "https://docs.google.com/spreadsheets/d/1B2uTMvWlAHb7WlpupJV1A2Hbi3K3U1vCyoFV0wCapcw/export?format=csv&gid=1658832908",
+    "raw_path": "data/raw/season_008/sheets/1b2utmvwlahb7wlpupjv1a2hbi3k3u1vcyofv0wcapcw_gid_1658832908.csv",
+    "status": "available",
+    "status_code": 200,
+    "error": null,
+    "rows": 33,
+    "columns": 18,
+    "api_error": "Sheets API metadata error 400 for 1B2uTMvWlAHb7WlpupJV1A2Hbi3K3U1vCyoFV0wCapcw: API key expired. Please renew the API key."
+  }
+]

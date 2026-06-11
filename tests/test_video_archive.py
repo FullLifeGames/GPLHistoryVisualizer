@@ -1,0 +1,337 @@
+import csv
+import json
+
+from gpl_history.video_archive import (
+    build_video_archive,
+    channel_candidate_from_url,
+    classify_video_type,
+    match_video_to_matches,
+    parse_gpl_video_title,
+)
+
+
+def test_channel_candidate_from_common_youtube_url_shapes():
+    assert channel_candidate_from_url("https://www.youtube.com/user/PresentLP") == {
+        "kind": "username",
+        "value": "PresentLP",
+        "canonical_url": "https://www.youtube.com/user/PresentLP",
+    }
+    assert channel_candidate_from_url("https://www.youtube.com/@BeneVGC/videos") == {
+        "kind": "handle",
+        "value": "@BeneVGC",
+        "canonical_url": "https://www.youtube.com/@BeneVGC",
+    }
+    assert channel_candidate_from_url("https://www.youtube.com/channel/UCabc123") == {
+        "kind": "channel_id",
+        "value": "UCabc123",
+        "canonical_url": "https://www.youtube.com/channel/UCabc123",
+    }
+    assert channel_candidate_from_url("https://www.youtube.com/watch?v=abc") is None
+
+
+def test_parse_gpl_video_title_extracts_season_week_and_playoff_round():
+    parsed = parse_gpl_video_title("GPL Season 10 - Spieltag 7 vs Bene")
+    assert parsed["is_gpl"] is True
+    assert parsed["season_id"] == "season_010"
+    assert parsed["week_number"] == 7
+    assert parsed["stage"] == "regular_season"
+
+    playoff = parse_gpl_video_title("German Pokémon League S7 Playoffs Finale vs Nestfloh")
+    assert playoff["is_gpl"] is True
+    assert playoff["season_id"] == "season_007"
+    assert playoff["stage"] == "playoffs"
+    assert playoff["round"] == "finale"
+
+
+def test_classify_video_type_distinguishes_games_teambuildings_and_other_gpl_videos():
+    assert classify_video_type("GPL [S8] Spieltag 3 vs Bene") == "game"
+    assert classify_video_type("GPL Season 10 Teambuilding - Wackel Backel") == "teambuilding"
+    assert classify_video_type("German Pokémon League S7 Team Building mit Draftanalyse") == "teambuilding"
+    assert classify_video_type("GPL Season 2 - Update") == "update"
+    assert classify_video_type("GPL Season 4 - Ankündigung") == "announcement"
+    assert classify_video_type("Legendäre GPL Kämpfe | Reaction | GPL S1 Raizor vs Fnupa") == "reaction"
+    assert classify_video_type("GPL S6 Recap und Rückblick") == "recap"
+
+
+def test_classify_video_type_keeps_match_titles_with_teambuilding_jokes_as_games():
+    assert classify_video_type("GPL [S2] - Spieltag 18 - VS. Little Litleos: Teambuilding Fail vom Feinsten") == "game"
+
+
+def test_match_video_to_matches_prefers_same_season_week_and_people():
+    video = {
+        "title": "GPL Season 10 - Spieltag 7 vs Bene",
+        "channel_person_name": "Minetube",
+    }
+    matches = [
+        {
+            "season_id": "season_010",
+            "match_id": "season_010_schedule_0042",
+            "week": "Spieltag 7",
+            "stage": "regular_season",
+            "division": "Regular Season",
+            "player_a": "Bene",
+            "player_b": "Minetube",
+            "team_a": "Wackel Backel",
+            "team_b": "Backel Gefackel",
+        },
+        {
+            "season_id": "season_010",
+            "match_id": "season_010_schedule_0043",
+            "week": "Spieltag 7",
+            "stage": "regular_season",
+            "division": "Regular Season",
+            "player_a": "PresentLP",
+            "player_b": "Dauni Daunstar",
+            "team_a": "Prekani",
+            "team_b": "Team Dauni",
+        },
+    ]
+
+    result = match_video_to_matches(video, matches)
+
+    assert result is not None
+    assert result["match_id"] == "season_010_schedule_0042"
+    assert result["perspective_person"] == "Minetube"
+    assert result["opponent"] == "Bene"
+    assert result["confidence"] >= 90
+
+
+def test_match_video_to_matches_rejects_explicit_week_mismatch():
+    video = {
+        "title": "GPL - Spieltag 21 - vs. Raizoroark",
+        "channel_person_name": "DaumenKinoLP",
+    }
+    matches = [
+        {
+            "season_id": "season_001",
+            "match_id": "season_001_schedule_0080",
+            "week": "10. Spieltag - Sonntag der 16.11.2014",
+            "stage": "regular_season",
+            "division": "Regular Season",
+            "player_a": "DaumenKinoLP",
+            "player_b": "Raizor",
+            "team_a": "",
+            "team_b": "Raizoroark",
+        }
+    ]
+
+    assert match_video_to_matches(video, matches) is None
+
+
+def test_match_video_to_matches_rejects_season_channel_only_updates():
+    video = {
+        "title": "GPL Season 2 - Update",
+        "channel_person_name": "Raizor",
+    }
+    matches = [
+        {
+            "season_id": "season_002",
+            "match_id": "season_002_schedule_0001",
+            "week": "1. Spieltag - Sonntag der 15.03.2015",
+            "stage": "regular_season",
+            "division": "Regular Season",
+            "player_a": "Raizor",
+            "player_b": "RegiBang",
+            "team_a": "Raizoroark",
+            "team_b": "Lucha Libres",
+        }
+    ]
+
+    assert match_video_to_matches(video, matches) is None
+
+
+def test_match_video_to_matches_accepts_team_name_opponent_from_title():
+    video = {
+        "title": "GPL [S2] - Spieltag 1 - VS. Lucha Libres",
+        "channel_person_name": "Raizor",
+    }
+    matches = [
+        {
+            "season_id": "season_002",
+            "match_id": "season_002_schedule_0001",
+            "week": "1. Spieltag - Sonntag der 15.03.2015",
+            "stage": "regular_season",
+            "division": "Regular Season",
+            "player_a": "Raizor",
+            "player_b": "RegiBang",
+            "team_a": "Raizoroark",
+            "team_b": "Lucha Libres",
+        }
+    ]
+
+    result = match_video_to_matches(video, matches)
+
+    assert result is not None
+    assert result["match_id"] == "season_002_schedule_0001"
+
+
+def test_match_video_to_matches_rejects_teambuildings_even_with_season_context():
+    video = {
+        "title": "GPL Season 2 Teambuilding - Raizoroark",
+        "channel_person_name": "Raizor",
+    }
+    matches = [
+        {
+            "season_id": "season_002",
+            "match_id": "season_002_schedule_0001",
+            "week": "1. Spieltag - Sonntag der 15.03.2015",
+            "stage": "regular_season",
+            "division": "Regular Season",
+            "player_a": "Raizor",
+            "player_b": "RegiBang",
+            "team_a": "Raizoroark",
+            "team_b": "Lucha Libres",
+        }
+    ]
+
+    assert match_video_to_matches(video, matches) is None
+
+
+def test_build_video_archive_uses_matched_season_when_title_has_no_season(tmp_path):
+    raw_dir = tmp_path / "raw" / "video_archive"
+    normalized_dir = tmp_path / "normalized"
+    raw_dir.mkdir(parents=True)
+    normalized_dir.mkdir()
+
+    (raw_dir / "channels.json").write_text(
+        json.dumps(
+            [
+                {
+                    "channelId": "UCpresent",
+                    "title": "Present",
+                    "canonical_url": "https://www.youtube.com/user/Present",
+                    "source_person_names": "PresentLP",
+                    "source_team_names": "Prekani",
+                    "source_urls": "https://www.youtube.com/user/Present",
+                    "raw_path": str(raw_dir / "present_uploads.json").replace("\\", "/"),
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    (raw_dir / "present_uploads.json").write_text(
+        json.dumps(
+            [
+                {
+                    "videoId": "abc123",
+                    "title": "GPL - Spieltag 1 - vs. Mortox: Ein wässriger Start",
+                    "publishedAt": "2014-09-14T10:00:00Z",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    _write_test_csv(
+        normalized_dir / "matches.csv",
+        [
+            {
+                "season_id": "season_001",
+                "match_id": "season_001_schedule_0001",
+                "division": "Regular Season",
+                "stage": "regular_season",
+                "week": "1. Spieltag - Sonntag der 14.09.2014",
+                "player_a": "Morbolth",
+                "player_b": "PresentLP",
+                "team_a": "Mortox",
+                "team_b": "Prekani",
+                "score_a": "0",
+                "score_b": "4",
+                "data_status": "sheet_extracted",
+            }
+        ],
+    )
+    _write_test_csv(
+        normalized_dir / "teams.csv",
+        [
+            {
+                "season_id": "season_001",
+                "person_name": "PresentLP",
+                "team_name": "Prekani",
+                "data_status": "sheet_extracted",
+            }
+        ],
+    )
+
+    archive_rows, match_rows = build_video_archive(tmp_path)
+
+    assert archive_rows[0]["detected_season_id"] == "season_001"
+    assert archive_rows[0]["detected_week"] == "1"
+    assert archive_rows[0]["match_status"] == "matched"
+    assert match_rows[0]["season_id"] == "season_001"
+    assert (normalized_dir / "video_urls.txt").read_text(encoding="utf-8").strip() == "https://www.youtube.com/watch?v=abc123"
+
+
+def test_build_video_archive_sorts_weeks_numerically(tmp_path):
+    raw_dir = tmp_path / "raw" / "video_archive"
+    normalized_dir = tmp_path / "normalized"
+    raw_dir.mkdir(parents=True)
+    normalized_dir.mkdir()
+
+    uploads_path = raw_dir / "present_uploads.json"
+    (raw_dir / "channels.json").write_text(
+        json.dumps(
+            [
+                {
+                    "channelId": "UCpresent",
+                    "title": "Present",
+                    "canonical_url": "https://www.youtube.com/user/Present",
+                    "source_person_names": "PresentLP",
+                    "source_team_names": "Prekani",
+                    "source_urls": "https://www.youtube.com/user/Present",
+                    "raw_path": str(uploads_path).replace("\\", "/"),
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    uploads_path.write_text(
+        json.dumps(
+            [
+                {"videoId": "week11", "title": "GPL S1 Spieltag 11 vs Mortox", "publishedAt": "2014-11-01T10:00:00Z"},
+                {"videoId": "week2", "title": "GPL S1 Spieltag 2 vs Mortox", "publishedAt": "2014-09-21T10:00:00Z"},
+            ]
+        ),
+        encoding="utf-8",
+    )
+    _write_test_csv(
+        normalized_dir / "matches.csv",
+        [
+            {
+                "season_id": "season_001",
+                "match_id": "season_001_schedule_0002",
+                "division": "Regular Season",
+                "stage": "regular_season",
+                "week": "2. Spieltag",
+                "player_a": "Morbolth",
+                "player_b": "PresentLP",
+                "team_a": "Mortox",
+                "team_b": "Prekani",
+                "data_status": "sheet_extracted",
+            },
+            {
+                "season_id": "season_001",
+                "match_id": "season_001_schedule_0011",
+                "division": "Regular Season",
+                "stage": "regular_season",
+                "week": "11. Spieltag",
+                "player_a": "Morbolth",
+                "player_b": "PresentLP",
+                "team_a": "Mortox",
+                "team_b": "Prekani",
+                "data_status": "sheet_extracted",
+            },
+        ],
+    )
+    _write_test_csv(normalized_dir / "teams.csv", [])
+
+    archive_rows, _ = build_video_archive(tmp_path)
+
+    assert [row["detected_week"] for row in archive_rows] == ["2", "11"]
+
+
+def _write_test_csv(path, rows):
+    fields = sorted({key for row in rows for key in row}) or ["data_status"]
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer.writeheader()
+        writer.writerows(rows)
