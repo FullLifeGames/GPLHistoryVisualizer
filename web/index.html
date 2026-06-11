@@ -34,6 +34,8 @@
         <button class="tab" data-view="battle-history" data-i18n="nav.battleHistory">Kampfverlauf</button>
         <button class="tab" data-view="video-archive" data-i18n="nav.videoArchive">Video-Archiv</button>
         <button class="tab" data-view="person-details" data-i18n="nav.personDetails">Personendetails</button>
+        <button class="tab" data-view="data-coverage" data-i18n="nav.dataCoverage">Datenlage</button>
+        <button class="tab" data-view="season-detail" data-i18n="nav.seasonDetail">Saisonakte</button>
         <button class="tab" data-view="matchup" data-i18n="nav.matchup">Matchup-Check</button>
       </nav>
 
@@ -109,11 +111,48 @@
         </div>
         <div id="person-focus" class="person-focus" hidden></div>
         <div id="person-summary-table" class="table-wrap"></div>
+        <div id="person-timeline-table" class="table-wrap stacked-table"></div>
         <div id="person-season-table" class="table-wrap stacked-table"></div>
         <div class="subsection-head">
           <h3 data-i18n="personDetails.pokemonTitle">Pokémon & Kills</h3>
         </div>
         <div id="person-pokemon-table" class="table-wrap"></div>
+        <div class="subsection-head">
+          <h3 data-i18n="personDetails.videoTitle">Videos</h3>
+        </div>
+        <div id="person-video-table" class="table-wrap"></div>
+        <div class="subsection-head">
+          <h3 data-i18n="personDetails.matchupTitle">Matchups</h3>
+        </div>
+        <div id="person-matchup-table" class="table-wrap"></div>
+        <div class="subsection-head">
+          <h3 data-i18n="personDetails.missingTitle">Offene Killlisten</h3>
+        </div>
+        <div id="person-missing-table" class="table-wrap"></div>
+      </section>
+
+      <section id="view-data-coverage" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.dataCoverageTitle">Datenlage</h2>
+          <p data-i18n="sections.dataCoverageDescription">Saisonweise Abdeckung der normalisierten CSVs und bekannte LÃ¼cken.</p>
+        </div>
+        <div id="coverage-table" class="table-wrap"></div>
+        <div class="subsection-head">
+          <h3 data-i18n="coverage.missingTitle">Bekannte LÃ¼cken</h3>
+        </div>
+        <div id="missing-data-table" class="table-wrap"></div>
+      </section>
+
+      <section id="view-season-detail" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.seasonDetailTitle">Saisonakte</h2>
+          <p data-i18n="sections.seasonDetailDescription">Tabellen, Titel, Killlisten und Videos fÃ¼r die ausgewÃ¤hlte Saison.</p>
+        </div>
+        <div id="season-detail-summary" class="summary-grid"></div>
+        <div id="season-detail-standings" class="table-wrap"></div>
+        <div id="season-detail-champions" class="table-wrap stacked-table"></div>
+        <div id="season-detail-killlists" class="table-wrap stacked-table"></div>
+        <div id="season-detail-videos" class="table-wrap stacked-table"></div>
       </section>
 
       <section id="view-matchup" class="view">

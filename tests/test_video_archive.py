@@ -94,6 +94,9 @@ def test_match_video_to_matches_prefers_same_season_week_and_people():
     assert result["perspective_person"] == "Minetube"
     assert result["opponent"] == "Bene"
     assert result["confidence"] >= 90
+    assert "season" in result["match_basis"]
+    assert "week" in result["match_basis"]
+    assert "channel" in result["match_basis"]
 
 
 def test_match_video_to_matches_rejects_explicit_week_mismatch():
@@ -257,6 +260,8 @@ def test_build_video_archive_uses_matched_season_when_title_has_no_season(tmp_pa
     assert archive_rows[0]["detected_season_id"] == "season_001"
     assert archive_rows[0]["detected_week"] == "1"
     assert archive_rows[0]["match_status"] == "matched"
+    assert archive_rows[0]["confidence_tier"] == "high"
+    assert "week" in archive_rows[0]["match_basis"]
     assert match_rows[0]["season_id"] == "season_001"
     assert (normalized_dir / "video_urls.txt").read_text(encoding="utf-8").strip() == "https://www.youtube.com/watch?v=abc123"
 

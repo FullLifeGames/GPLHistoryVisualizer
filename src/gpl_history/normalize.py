@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import unquote, urlparse
 
+from .manual import apply_manual_rows
 from .storage import playlist_url, read_json, safe_slug, video_url
 
 NORMALIZED_FIELDS = {
@@ -382,8 +383,10 @@ def normalize_all(data_dir: Path) -> NormalizedOutput:
         output.champions.extend(season_output.champions or [_champion_placeholder(season_id, "No champion evidence adapter result.")])
         output.pokemon_killlists.extend(season_output.pokemon_killlists or [_placeholder(season_id, "pokemon_killlists")])
 
+    apply_manual_rows(data_dir, output, NORMALIZED_FIELDS)
     output.people = _people_from_output(output)
     output.aliases_review = _alias_review(output)
+    apply_manual_rows(data_dir, output, {"people": NORMALIZED_FIELDS["people"], "aliases_review": NORMALIZED_FIELDS["aliases_review"]})
     write_normalized(data_dir / "normalized", output)
     return output
 

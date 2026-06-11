@@ -33,6 +33,8 @@ VIDEO_ARCHIVE_FIELDS = [
     "match_status",
     "best_match_id",
     "confidence",
+    "confidence_tier",
+    "match_basis",
     "perspective_person",
     "opponent",
     "source_urls",
@@ -369,6 +371,8 @@ def build_video_archive(data_dir: Path) -> tuple[list[dict[str, Any]], list[dict
                         "match_status": "matched",
                         "best_match_id": match["match_id"],
                         "confidence": str(match["confidence"]),
+                        "confidence_tier": _confidence_tier(match["confidence"]),
+                        "match_basis": match.get("match_basis"),
                         "perspective_person": match["perspective_person"],
                         "opponent": match["opponent"],
                     }
@@ -381,6 +385,8 @@ def build_video_archive(data_dir: Path) -> tuple[list[dict[str, Any]], list[dict
                         "match_status": video_type if video_type != "game" else "unmatched",
                         "best_match_id": None,
                         "confidence": None,
+                        "confidence_tier": None,
+                        "match_basis": None,
                         "perspective_person": _first_nonempty(_split_values(channel.get("source_person_names"))),
                         "opponent": None,
                     }
@@ -513,6 +519,17 @@ def _match_video_row(match: dict[str, Any], video: dict[str, Any]) -> dict[str, 
         "channel_url": video.get("channel_url"),
         "source_urls": video.get("source_urls"),
     }
+
+
+def _confidence_tier(value: str | int | None) -> str | None:
+    score = int(value or 0)
+    if score >= 85:
+        return "high"
+    if score >= 70:
+        return "medium"
+    if score:
+        return "low"
+    return None
 
 
 def _dedupe_match_video_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:

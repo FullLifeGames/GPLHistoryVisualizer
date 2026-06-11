@@ -146,6 +146,68 @@ export function primaryCompetitionRows(rows, selectedDivision = "all") {
   return rows.filter((row) => !(row.division === "Liga 2" && seasonsWithLeagueOne.has(row.season_id)));
 }
 
+export function seasonCoverageRows(data) {
+  const seasons = data.seasons ?? [];
+  return seasons.map((season) => {
+    const seasonId = season.season_id;
+    const standings = availableRows(data.standings, seasonId).length;
+    const matches = availableRows(data.matches, seasonId).filter((row) => row.data_status !== "source_video_only").length;
+    const championRows = availableRows(data.champions, seasonId).filter((row) => row.champion_name);
+    const killlistRows = dataRows(data.killlists, seasonId);
+    const availableKilllists = killlistRows.filter((row) => row.data_status !== "not_available").length;
+    const unavailableKilllists = killlistRows.filter((row) => row.data_status === "not_available").length;
+    const videos = (data.videos ?? []).filter((row) => row.detected_season_id === seasonId || row.season_id === seasonId);
+    const matchedVideos = videos.filter((row) => row.match_status === "matched").length;
+    const missing = [];
+    if (!standings) missing.push("standings");
+    if (!matches) missing.push("matches");
+    if (!championRows.length) missing.push("champions");
+    if (!availableKilllists) missing.push("killlists");
+    const status = missing.length ? (standings || matches || championRows.length || availableKilllists || unavailableKilllists ? "partial" : "missing") : "complete";
+    return {
+      season_id: seasonId,
+      season_label: season.season_label || seasonId,
+      standings,
+      matches,
+      killlists: availableKilllists,
+      unavailable_killlists: unavailableKilllists,
+      champions: championRows.length,
+      videos: videos.length,
+      matched_videos: matchedVideos,
+      coverage_status: status,
+      missing_data: missing.join(", "),
+      missing_source_urls: sourceUrls(killlistRows.filter((row) => row.data_status === "not_available")),
+    };
+  });
+}
+
+export function missingDataRows(data) {
+  return seasonCoverageRows(data)
+    .filter((row) => row.coverage_status !== "complete" || row.unavailable_killlists > 0)
+    .map((row) => ({
+      season_id: row.season_id,
+      season_label: row.season_label,
+      coverage_status: row.coverage_status,
+      missing_data: row.missing_data,
+      unavailable_killlists: row.unavailable_killlists,
+      source_urls: row.missing_source_urls,
+    }));
+}
+
+function dataRows(rows = [], seasonId) {
+  return rows.filter((row) => row.season_id === seasonId);
+}
+
+function availableRows(rows = [], seasonId) {
+  return dataRows(rows, seasonId).filter((row) => row.data_status !== "not_available");
+}
+
+function sourceUrls(rows) {
+  const urls = new Set();
+  rows.forEach((row) => addSourceUrls(urls, row.source_urls));
+  return [...urls].join(";");
+}
+
 export function canonicalKilllistRows(rows, selectedDivision = "all") {
   if (selectedDivision !== "all") {
     return rows.filter((row) => row.division === selectedDivision);

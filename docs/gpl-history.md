@@ -1,6 +1,6 @@
 # German Pokémon League History
 
-Generated: 2026-06-11T11:07:00.996264+00:00
+Generated: 2026-06-11T16:45:38.342527+00:00
 
 This report is generated from the normalized CSV files. Champions are recorded from sourced adapter evidence where available. Rows marked `user_provided` are explicit corrections only; unavailable playoff winners remain null.
 

@@ -4,8 +4,10 @@ import {
   canonicalKilllistRows,
   displayNumber,
   matchupOverview,
+  missingDataRows,
   personDetailKilllistRows,
   primaryCompetitionRows,
+  seasonCoverageRows,
   summarizeTrainerPokemon,
   summarizeKilllists,
   weightedRating,
@@ -227,4 +229,78 @@ assert.deepEqual(
     { name: "Bene", matches: 16, wins: 10, losses: 6, seasons_won: 1 },
     { name: "LucarioLP", matches: 10, wins: 3, losses: 7, seasons_won: 0 },
   ],
+);
+
+assert.deepEqual(
+  seasonCoverageRows({
+    seasons: [
+      { season_id: "season_001" },
+      { season_id: "season_003" },
+    ],
+    standings: [
+      { season_id: "season_001", data_status: "sheet_extracted" },
+      { season_id: "season_003", data_status: "sheet_extracted" },
+    ],
+    matches: [{ season_id: "season_001", data_status: "sheet_extracted" }],
+    champions: [{ season_id: "season_001", data_status: "source_evidenced", champion_name: "A" }],
+    killlists: [
+      { season_id: "season_001", data_status: "sheet_extracted" },
+      { season_id: "season_003", data_status: "not_available", source_urls: "https://example.test/deleted-sheet" },
+    ],
+    videos: [
+      { detected_season_id: "season_001", match_status: "matched" },
+      { detected_season_id: "season_001", match_status: "unmatched" },
+    ],
+  }).map((row) => ({
+    season_id: row.season_id,
+    standings: row.standings,
+    matches: row.matches,
+    killlists: row.killlists,
+    unavailable_killlists: row.unavailable_killlists,
+    champions: row.champions,
+    videos: row.videos,
+    matched_videos: row.matched_videos,
+    coverage_status: row.coverage_status,
+    missing_data: row.missing_data,
+    missing_source_urls: row.missing_source_urls,
+  })),
+  [
+    {
+      season_id: "season_001",
+      standings: 1,
+      matches: 1,
+      killlists: 1,
+      unavailable_killlists: 0,
+      champions: 1,
+      videos: 2,
+      matched_videos: 1,
+      coverage_status: "complete",
+      missing_data: "",
+      missing_source_urls: "",
+    },
+    {
+      season_id: "season_003",
+      standings: 1,
+      matches: 0,
+      killlists: 0,
+      unavailable_killlists: 1,
+      champions: 0,
+      videos: 0,
+      matched_videos: 0,
+      coverage_status: "partial",
+      missing_data: "matches, champions, killlists",
+      missing_source_urls: "https://example.test/deleted-sheet",
+    },
+  ],
+);
+
+assert.deepEqual(
+  missingDataRows({
+    seasons: [{ season_id: "season_003" }],
+    standings: [{ season_id: "season_003", data_status: "sheet_extracted" }],
+    matches: [],
+    champions: [],
+    killlists: [{ season_id: "season_003", data_status: "not_available", source_urls: "https://example.test/deleted-sheet" }],
+  }).map((row) => ({ season_id: row.season_id, missing_data: row.missing_data, source_urls: row.source_urls })),
+  [{ season_id: "season_003", missing_data: "matches, champions, killlists", source_urls: "https://example.test/deleted-sheet" }],
 );

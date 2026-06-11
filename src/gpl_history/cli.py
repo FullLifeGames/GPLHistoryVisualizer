@@ -13,6 +13,7 @@ from .sheets import fetch_public_sheet_tables, resolve_redirect
 from .sheets_api import SheetsApiClient, SheetsApiError
 from .storage import ensure_dir, read_json, safe_slug, write_json
 from .urls import extract_urls, resolve_google_sheets_id
+from .validate import format_issues, validate_normalized_data
 from .video_archive import build_video_archive, scan_video_archive
 from .youtube import YouTubeApiError, YouTubeClient
 
@@ -52,6 +53,10 @@ def main(argv: list[str] | None = None) -> int:
     build_videos = subparsers.add_parser("build-video-archive", help="Rebuild GPL video archive CSVs from raw scanned channel uploads.")
     build_videos.add_argument("--data-dir", default="data")
 
+    validate = subparsers.add_parser("validate", help="Validate normalized CSV schema, keys, and source coverage.")
+    validate.add_argument("--data-dir", default="data")
+    validate.add_argument("--strict", action="store_true", help="Exit non-zero on warnings as well as errors.")
+
     args = parser.parse_args(argv)
 
     if args.command == "collect":
@@ -77,6 +82,13 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "build-video-archive":
         build_video_archive(Path(args.data_dir))
         return 0
+    if args.command == "validate":
+        issues = validate_normalized_data(Path(args.data_dir))
+        if issues:
+            print(format_issues(issues))
+        errors = [issue for issue in issues if issue.level == "error"]
+        warnings = [issue for issue in issues if issue.level == "warning"]
+        return 1 if errors or (args.strict and warnings) else 0
     parser.error(f"Unknown command {args.command}")
     return 2
 

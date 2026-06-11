@@ -7,18 +7,21 @@ import {
   normalizeTheme,
   t,
 } from "./i18n.js";
-import { parseRouteHash, personRouteHash, viewRouteHash } from "./router.js";
+import { parseRouteHash, personRouteHash, seasonRouteHash, viewRouteHash } from "./router.js";
 import {
   aggregatePersonStats,
   canonicalKilllistRows,
   displayNumber,
   matchupOverview,
+  missingDataRows,
   numberValue,
   personDetailKilllistRows,
   primaryCompetitionRows,
+  seasonCoverageRows,
   summarizeKilllists,
   summarizeTrainerPokemon,
   winPercentage,
+  weightedRating,
 } from "./stats.js";
 
 const DATASETS = {
@@ -165,6 +168,14 @@ function applyRouteFromHash() {
   if (route.personKey) {
     state.personFocus = resolvePersonFocus(route.personKey);
     state.season = "all";
+    state.division = "all";
+    state.search = "";
+    seasonFilter.value = state.season;
+    divisionFilter.value = state.division;
+    searchFilter.value = "";
+  } else if (route.seasonId) {
+    state.personFocus = null;
+    state.season = route.seasonId;
     state.division = "all";
     state.search = "";
     seasonFilter.value = state.season;
@@ -439,6 +450,8 @@ function render() {
   renderBattleHistory();
   renderVideoArchive();
   renderPersonDetails();
+  renderDataCoverage();
+  renderSeasonDetail();
 }
 
 function filtered(rows) {
@@ -511,6 +524,27 @@ function matchStatusDisplay(matchStatus) {
   return matchStatus ? t(state.language, `matchStatuses.${matchStatus}`) : "";
 }
 
+function confidenceTierDisplay(tier) {
+  return tier ? t(state.language, `confidenceTiers.${tier}`) : "";
+}
+
+function coverageStatusDisplay(status) {
+  return status ? t(state.language, `coverage.status.${status}`) : "";
+}
+
+function statusDisplay(status) {
+  return status ? t(state.language, `statuses.${status}`) : "";
+}
+
+function missingDataDisplay(value) {
+  return String(value ?? "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => t(state.language, `coverage.missing.${item}`))
+    .join(", ");
+}
+
 function sourceLink(value, label = t(state.language, "values.source")) {
   const url = String(value ?? "")
     .split(";")
@@ -519,8 +553,22 @@ function sourceLink(value, label = t(state.language, "values.source")) {
   return url ? `<a href="${escapeAttr(url)}" target="_blank" rel="noreferrer">${escapeHtml(label)}</a>` : "";
 }
 
+function sourceLinks(value) {
+  const urls = String(value ?? "")
+    .split(";")
+    .map((item) => item.trim())
+    .filter((item) => item.startsWith("http"));
+  return urls
+    .map((url, index) => `<a href="${escapeAttr(url)}" target="_blank" rel="noreferrer">${escapeHtml(`${t(state.language, "values.source")} ${index + 1}`)}</a>`)
+    .join(" ");
+}
+
 function personLink(key, name) {
   return `<a class="link-button" href="${escapeAttr(personRouteHash(key))}" data-person-key="${escapeAttr(key)}" data-person-name="${escapeAttr(name)}">${escapeHtml(name)}</a>`;
+}
+
+function seasonLink(seasonId) {
+  return `<a class="link-button" href="${escapeAttr(seasonRouteHash(seasonId))}">${escapeHtml(seasonDisplay(seasonId))}</a>`;
 }
 
 function filteredPersonStats({ primaryOnly = false } = {}) {
@@ -675,13 +723,15 @@ function renderVideoArchive() {
       channel: row.channel_title,
       match_status: matchStatusDisplay(row.match_status),
       confidence: row.confidence,
+      confidence_tier: confidenceTierDisplay(row.confidence_tier),
+      match_basis: row.match_basis,
       match_id: row.best_match_id,
       published_at: row.published_at,
     }));
   renderTable(
     "#video-archive-table",
     rows,
-    ["season", "video_type", "stage", "detected_week", "perspective_person", "opponent", "title", "channel", "match_status", "confidence", "match_id", "published_at"],
+    ["season", "video_type", "stage", "detected_week", "perspective_person", "opponent", "title", "channel", "match_status", "confidence", "confidence_tier", "match_basis", "match_id", "published_at"],
     ["title"],
     {
       filename: "gpl-video-archive.csv",
@@ -697,6 +747,125 @@ function filteredVideoRows(rows) {
     const searchOk = !state.search || Object.values(row).join(" ").toLowerCase().includes(state.search);
     return seasonOk && divisionOk && searchOk;
   });
+}
+
+function renderDataCoverage() {
+  const rows = seasonCoverageRows(state.data)
+    .filter((row) => state.season === "all" || row.season_id === state.season)
+    .filter((row) => !state.search || Object.values(row).join(" ").toLowerCase().includes(state.search))
+    .map((row) => ({
+      season: seasonLink(row.season_id),
+      status: coverageStatusDisplay(row.coverage_status),
+      standings: row.standings,
+      matches: row.matches,
+      champions: row.champions,
+      killlists: row.killlists,
+      unavailable_killlists: row.unavailable_killlists,
+      videos: row.videos,
+      matched_videos: row.matched_videos,
+      missing_data: missingDataDisplay(row.missing_data),
+      source: sourceLinks(row.missing_source_urls),
+    }));
+  renderTable("#coverage-table", rows, ["season", "status", "standings", "matches", "champions", "killlists", "unavailable_killlists", "videos", "matched_videos", "missing_data", "source"], ["season", "source"]);
+
+  const missingRows = missingDataRows(state.data)
+    .filter((row) => state.season === "all" || row.season_id === state.season)
+    .map((row) => ({
+      season: seasonLink(row.season_id),
+      status: coverageStatusDisplay(row.coverage_status),
+      missing_data: missingDataDisplay(row.missing_data),
+      unavailable_killlists: row.unavailable_killlists,
+      source: sourceLinks(row.source_urls),
+    }));
+  renderTable("#missing-data-table", missingRows, ["season", "status", "missing_data", "unavailable_killlists", "source"], ["season", "source"]);
+}
+
+function renderSeasonDetail() {
+  const summary = document.querySelector("#season-detail-summary");
+  const tables = ["#season-detail-standings", "#season-detail-champions", "#season-detail-killlists", "#season-detail-videos"];
+  tables.forEach(destroyTable);
+  if (state.season === "all") {
+    summary.innerHTML = `<p class="empty">${escapeHtml(t(state.language, "empty.chooseSeasonDetail"))}</p>`;
+    tables.forEach((selector) => {
+      document.querySelector(selector).innerHTML = "";
+    });
+    return;
+  }
+
+  const coverage = seasonCoverageRows(state.data).find((row) => row.season_id === state.season);
+  summary.innerHTML = coverage
+    ? [
+        metricCard(t(state.language, "summary.coverage"), coverageStatusDisplay(coverage.coverage_status)),
+        metricCard(t(state.language, "summary.battles"), coverage.matches),
+        metricCard(t(state.language, "summary.killlists"), coverage.killlists),
+        metricCard(t(state.language, "summary.videos"), coverage.videos),
+      ].join("")
+    : "";
+
+  const standings = (state.data.standings ?? [])
+    .filter((row) => row.season_id === state.season)
+    .map((row) => ({
+      division: divisionDisplay(row.division, row.stage),
+      rank: row.rank,
+      person: row.player_name,
+      team: row.team_name,
+      matches: numberValue(row.wins) + numberValue(row.losses) + numberValue(row.draws),
+      wins: row.wins,
+      losses: row.losses,
+      draws: row.draws,
+      win_pct: winPercentage(row.wins, row.losses, row.draws),
+      points: row.points,
+      kills: row.kills,
+      deaths: row.deaths,
+      differential: row.differential,
+      status: statusDisplay(row.data_status),
+      source: sourceLinks(row.source_urls),
+    }));
+  renderTable("#season-detail-standings", standings, ["division", "rank", "person", "team", "matches", "wins", "losses", "draws", "win_pct", "points", "kills", "deaths", "differential", "status", "source"], ["source"]);
+
+  const champions = (state.data.champions ?? [])
+    .filter((row) => row.season_id === state.season)
+    .map((row) => ({
+      champion: row.champion_name,
+      team: row.champion_team,
+      evidence: row.evidence_type,
+      status: statusDisplay(row.data_status),
+      notes: row.notes,
+      source: sourceLinks(row.source_urls),
+    }));
+  renderTable("#season-detail-champions", champions, ["champion", "team", "evidence", "status", "notes", "source"], ["source"]);
+
+  const killlists = personDetailKilllistRows((state.data.killlists ?? []).filter((row) => row.season_id === state.season), state.division).map((row) => ({
+    division: divisionDisplay(row.division, row.stage),
+    pokemon: row.pokemon,
+    trainer: row.trainer,
+    team: row.team_name,
+    kills: row.kills,
+    deaths: row.deaths,
+    differential: row.differential,
+    status: statusDisplay(row.data_status),
+    source: sourceLinks(row.source_urls),
+  }));
+  renderTable("#season-detail-killlists", killlists, ["division", "pokemon", "trainer", "team", "kills", "deaths", "differential", "status", "source"], ["source"]);
+
+  const videos = (state.data.videos ?? [])
+    .filter((row) => row.detected_season_id === state.season || row.season_id === state.season)
+    .sort(compareVideoRows)
+    .map((row) => ({
+      video_type: videoTypeDisplay(row.video_type),
+      stage: stageDisplay(row.detected_stage),
+      detected_week: row.detected_week,
+      perspective_person: row.perspective_person,
+      opponent: row.opponent,
+      title: `<a href="${escapeAttr(row.video_url)}" target="_blank" rel="noreferrer">${escapeHtml(row.title || row.video_id || t(state.language, "values.video"))}</a>`,
+      channel: row.channel_title,
+      match_status: matchStatusDisplay(row.match_status),
+      confidence: row.confidence,
+      confidence_tier: confidenceTierDisplay(row.confidence_tier),
+      match_basis: row.match_basis,
+      published_at: row.published_at,
+    }));
+  renderTable("#season-detail-videos", videos, ["video_type", "stage", "detected_week", "perspective_person", "opponent", "title", "channel", "match_status", "confidence", "confidence_tier", "match_basis", "published_at"], ["title"]);
 }
 
 function videoLinksForMatch(matchId) {
@@ -826,6 +995,23 @@ function renderPersonDetails() {
         source: sourceLink(row.source_urls),
       };
     });
+  const titleSeasons = new Set(champions.map((row) => row.season_id));
+  const timelineRows = statRows
+    .sort((a, b) => seasonOrder(a.season_id) - seasonOrder(b.season_id) || divisionPriority(a.division) - divisionPriority(b.division))
+    .map((row) => ({
+      season: seasonDisplay(row.season_id),
+      division: divisionDisplay(row.division, row.stage),
+      team: row.team_name,
+      record: `${row.wins ?? 0}-${row.losses ?? 0}-${row.draws ?? 0}`,
+      win_pct: winPercentage(row.wins, row.losses, row.draws),
+      rating: weightedRating(row.wins, row.losses, row.draws),
+      points: row.points ?? "",
+      kills: row.kills ?? "",
+      deaths: row.deaths ?? "",
+      differential: row.differential ?? "",
+      title: titleSeasons.has(row.season_id) ? t(state.language, "values.yes") : "",
+      source: sourceLink(row.source_urls),
+    }));
   const pokemonRows = summarizeTrainerPokemon(
     personDetailKilllistRows(filtered(state.data.killlists ?? []), state.division),
     focusKey,
@@ -842,10 +1028,49 @@ function renderPersonDetails() {
     teams: row.teams,
     source: sourceLink(row.source_urls),
   }));
+  const personVideos = focusKey
+    ? filteredVideoRows(state.data.videos ?? [])
+        .filter((row) => isFocusedPersonValue(row.perspective_person, focusKey) || isFocusedPersonValue(row.source_person_names, focusKey))
+        .sort(compareVideoRows)
+        .map((row) => ({
+          season: seasonDisplay(row.detected_season_id),
+          video_type: videoTypeDisplay(row.video_type),
+          detected_week: row.detected_week,
+          opponent: row.opponent,
+          title: `<a href="${escapeAttr(row.video_url)}" target="_blank" rel="noreferrer">${escapeHtml(row.title || row.video_id || t(state.language, "values.video"))}</a>`,
+          match_status: matchStatusDisplay(row.match_status),
+          confidence: row.confidence,
+          confidence_tier: confidenceTierDisplay(row.confidence_tier),
+          match_basis: row.match_basis,
+          published_at: row.published_at,
+        }))
+    : [];
+  const matchupRows = focusKey
+    ? matchupOverview(
+        (state.data.matches ?? []).filter((row) => !["source_video_only", "not_available"].includes(row.data_status)),
+        focusKey.replace(/^person_/, "").replaceAll("_", " "),
+        normalizedKey,
+      )
+    : [];
+  const missingKilllistRows = (state.data.killlists ?? [])
+    .filter((row) => row.data_status === "not_available")
+    .filter((row) => !focusKey || isFocusedPersonValue(row.trainer || row.trainer_normalized, focusKey))
+    .map((row) => ({
+      season: seasonDisplay(row.season_id),
+      division: divisionDisplay(row.division, row.stage),
+      trainer: row.trainer,
+      team: row.team_name,
+      status: statusDisplay(row.data_status),
+      source: sourceLinks(row.source_urls),
+    }));
 
   renderTable("#person-summary-table", summaryRows, ["person", "seasons", "teams", "championships", "matches", "wins", "losses", "draws", "win_pct", "points", "best_rank"]);
+  renderTable("#person-timeline-table", timelineRows, ["season", "division", "team", "record", "win_pct", "rating", "points", "kills", "deaths", "differential", "title", "source"], ["source"]);
   renderTable("#person-season-table", detailRows, ["person", "season", "division", "team", "start_week", "end_week", "rank", "matches", "wins", "losses", "draws", "win_pct", "points", "source"], ["source"]);
   renderTable("#person-pokemon-table", pokemonRows, ["trainer", "pokemon", "kills", "deaths", "differential", "seasons", "divisions", "teams", "source"], ["source"]);
+  renderTable("#person-video-table", personVideos, ["season", "video_type", "detected_week", "opponent", "title", "match_status", "confidence", "confidence_tier", "match_basis", "published_at"], ["title"]);
+  renderTable("#person-matchup-table", matchupRows, ["opponent", "matches", "wins", "losses", "draws", "win_pct"]);
+  renderTable("#person-missing-table", missingKilllistRows, ["season", "division", "trainer", "team", "status", "source"], ["source"]);
 }
 
 function renderPersonFocus() {
@@ -869,6 +1094,14 @@ function rowPersonKey(row) {
 
 function championPersonKey(row) {
   return row.champion_person_id || normalizedKey(row.champion_name);
+}
+
+function isFocusedPersonValue(value, focusKey) {
+  const comparableFocus = normalizedKey(String(focusKey || "").replace(/^person_/, "").replaceAll("_", " "));
+  return String(value ?? "")
+    .split(";")
+    .map((item) => normalizedKey(item))
+    .some((key) => key && (key === focusKey || key === comparableFocus));
 }
 
 function personAggregate(name) {
@@ -1113,6 +1346,10 @@ const NUMERIC_COLUMNS = new Set([
   "trainers",
   "teams",
   "matches",
+  "standings",
+  "killlists",
+  "unavailable_killlists",
+  "matched_videos",
   "wins",
   "losses",
   "draws",
@@ -1127,7 +1364,7 @@ const NUMERIC_COLUMNS = new Set([
 ]);
 
 function minWidthFor(column) {
-  if (["name", "person", "team", "pokemon", "trainer", "player_a", "player_b", "winner", "video", "videos", "source", "title", "channel", "perspective_person", "opponent", "video_type"].includes(column)) {
+  if (["name", "person", "team", "pokemon", "trainer", "player_a", "player_b", "winner", "video", "videos", "source", "title", "channel", "perspective_person", "opponent", "video_type", "missing_data", "notes", "match_basis", "record"].includes(column)) {
     return 170;
   }
   if (column === "status") {
