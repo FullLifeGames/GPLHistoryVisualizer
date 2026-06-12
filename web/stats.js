@@ -11,6 +11,10 @@ export function displayNumber(value) {
   return Number.isFinite(parsed) ? parsed : "";
 }
 
+export function killDifferential(kills, deaths) {
+  return numberValue(kills) - numberValue(deaths);
+}
+
 export function winPercentageValue(wins, losses, draws) {
   const winCount = numberValue(wins);
   const total = winCount + numberValue(losses) + numberValue(draws);
@@ -194,6 +198,17 @@ export function missingDataRows(data) {
     }));
 }
 
+export function qualityRowsFromData(data) {
+  if ((data.dataQuality ?? []).length) {
+    return data.dataQuality;
+  }
+  return seasonCoverageRows(data);
+}
+
+export function sourceClaimsForSeason(rows = [], seasonId = "all") {
+  return rows.filter((row) => seasonId === "all" || row.season_id === seasonId);
+}
+
 function dataRows(rows = [], seasonId) {
   return rows.filter((row) => row.season_id === seasonId);
 }
@@ -324,6 +339,7 @@ export function summarizeKilllists(rows) {
       if (!key) return;
       const current = aggregate.get(key) ?? {
         pokemon: row.pokemon,
+        appearances: 0,
         kills: 0,
         deaths: 0,
         differential: 0,
@@ -331,9 +347,10 @@ export function summarizeKilllists(rows) {
         trainers: new Set(),
         teams: new Set(),
       };
+      current.appearances += numberValue(row.appearances);
       current.kills += numberValue(row.kills);
       current.deaths += numberValue(row.deaths);
-      current.differential += numberValue(row.differential);
+      current.differential += killDifferential(row.kills, row.deaths);
       if (row.season_id) current.seasons.add(row.season_id);
       if (row.trainer) current.trainers.add(row.trainer);
       if (row.team_name) current.teams.add(row.team_name);
@@ -345,6 +362,7 @@ export function summarizeKilllists(rows) {
     .map((row, index) => ({
       rank: index + 1,
       pokemon: row.pokemon,
+      appearances: row.appearances,
       kills: row.kills,
       deaths: row.deaths,
       differential: row.differential,
@@ -372,6 +390,7 @@ export function summarizeTrainerPokemon(rows, selectedPersonKey = "", normalizeK
         const current = aggregate.get(key) ?? {
           trainer: owner.name,
           pokemon: row.pokemon,
+          appearances: 0,
           kills: 0,
           deaths: 0,
           differential: 0,
@@ -382,9 +401,10 @@ export function summarizeTrainerPokemon(rows, selectedPersonKey = "", normalizeK
         };
         current.trainer = current.trainer || owner.name;
         current.pokemon = current.pokemon || row.pokemon || row.pokemon_normalized || "";
+        current.appearances += numberValue(row.appearances);
         current.kills += numberValue(row.kills);
         current.deaths += numberValue(row.deaths);
-        current.differential += numberValue(row.differential);
+        current.differential += killDifferential(row.kills, row.deaths);
         if (row.season_id) current.seasons.add(row.season_id);
         if (row.division) current.divisions.add(row.division);
         if (row.team_name) current.teams.add(row.team_name);
@@ -398,6 +418,7 @@ export function summarizeTrainerPokemon(rows, selectedPersonKey = "", normalizeK
     .map((row) => ({
       trainer: row.trainer,
       pokemon: row.pokemon,
+      appearances: row.appearances,
       kills: row.kills,
       deaths: row.deaths,
       differential: row.differential,
@@ -408,11 +429,60 @@ export function summarizeTrainerPokemon(rows, selectedPersonKey = "", normalizeK
     }));
 }
 
+export function personPokemonHighlights(rows, selectedPersonKey = "", normalizeKey = normalizedStatsKey, ownershipRows = []) {
+  return summarizeTrainerPokemon(rows, selectedPersonKey, normalizeKey, ownershipRows).slice(0, 12);
+}
+
+export function pokemonTimelineRows(rows, selectedPokemonKey, normalizeKey = normalizedStatsKey) {
+  const selectedKey = normalizeKey(selectedPokemonKey);
+  const aggregate = new Map();
+
+  rows
+    .filter((row) => row.data_status !== "not_available")
+    .filter((row) => normalizeKey(row.pokemon_normalized || row.pokemon) === selectedKey)
+    .forEach((row) => {
+      const seasonId = row.season_id || "";
+      if (!seasonId) return;
+      const current = aggregate.get(seasonId) ?? {
+        season_id: seasonId,
+        divisions: new Set(),
+        appearances: 0,
+        kills: 0,
+        deaths: 0,
+        differential: 0,
+        trainers: new Set(),
+        teams: new Set(),
+      };
+      current.appearances += numberValue(row.appearances);
+      current.kills += numberValue(row.kills);
+      current.deaths += numberValue(row.deaths);
+      current.differential += killDifferential(row.kills, row.deaths);
+      if (row.division) current.divisions.add(row.division);
+      if (row.trainer) current.trainers.add(row.trainer);
+      if (row.team_name) current.teams.add(row.team_name);
+      aggregate.set(seasonId, current);
+    });
+
+  return [...aggregate.values()]
+    .sort((a, b) => String(a.season_id).localeCompare(String(b.season_id)))
+    .map((row) => ({
+      season_id: row.season_id,
+      divisions: [...row.divisions].sort().join("; "),
+      appearances: row.appearances,
+      kills: row.kills,
+      deaths: row.deaths,
+      differential: row.differential,
+      trainers: row.trainers.size,
+      teams: row.teams.size,
+    }));
+}
+
 export function summarizePokemonDetail(rows, selectedPokemonKey, normalizeKey = normalizedStatsKey, ownershipRows = []) {
   const selectedKey = normalizeKey(selectedPokemonKey);
   const ownersByTeam = teamOwnerIndex(ownershipRows, normalizeKey);
   const summary = {
     pokemon: "",
+    appearances: 0,
     kills: 0,
     deaths: 0,
     differential: 0,
@@ -431,9 +501,11 @@ export function summarizePokemonDetail(rows, selectedPokemonKey, normalizeKey = 
       const owners = rowOwners(row, ownersByTeam, normalizeKey);
       const ownerList = owners.length ? owners : [{ key: "", name: row.trainer || "" }];
       const kills = numberValue(row.kills);
+      const appearances = numberValue(row.appearances);
       const deaths = numberValue(row.deaths);
-      const differential = numberValue(row.differential);
+      const differential = killDifferential(row.kills, row.deaths);
       summary.pokemon = summary.pokemon || row.pokemon || row.pokemon_normalized || selectedPokemonKey;
+      summary.appearances += appearances;
       summary.kills += kills;
       summary.deaths += deaths;
       summary.differential += differential;
@@ -447,6 +519,7 @@ export function summarizePokemonDetail(rows, selectedPokemonKey, normalizeKey = 
         if (!trainerKey) return;
         const current = trainers.get(trainerKey) ?? {
           trainer: owner.name,
+          appearances: 0,
           kills: 0,
           deaths: 0,
           differential: 0,
@@ -454,6 +527,7 @@ export function summarizePokemonDetail(rows, selectedPokemonKey, normalizeKey = 
           teams: new Set(),
         };
         current.trainer = current.trainer || owner.name;
+        current.appearances += appearances;
         current.kills += kills;
         current.deaths += deaths;
         current.differential += differential;
@@ -467,6 +541,7 @@ export function summarizePokemonDetail(rows, selectedPokemonKey, normalizeKey = 
         division: row.division,
         trainer: ownerList.map((owner) => owner.name).filter(Boolean).join("; "),
         team_name: row.team_name,
+        appearances,
         kills,
         deaths,
         differential,
@@ -477,6 +552,7 @@ export function summarizePokemonDetail(rows, selectedPokemonKey, normalizeKey = 
   return {
     summary: {
       pokemon: summary.pokemon,
+      appearances: summary.appearances,
       kills: summary.kills,
       deaths: summary.deaths,
       differential: summary.differential,
@@ -489,6 +565,7 @@ export function summarizePokemonDetail(rows, selectedPokemonKey, normalizeKey = 
       .sort((a, b) => b.kills - a.kills || b.differential - a.differential || a.trainer.localeCompare(b.trainer))
       .map((row) => ({
         trainer: row.trainer,
+        appearances: row.appearances,
         kills: row.kills,
         deaths: row.deaths,
         differential: row.differential,

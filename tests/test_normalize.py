@@ -127,6 +127,7 @@ def test_normalized_killlists_do_not_duplicate_identical_rows():
             row["pokemon_normalized"],
             row["trainer_normalized"],
             row["team_name"],
+            row["appearances"],
             row["kills"],
             row["deaths"],
             row["differential"],
@@ -151,9 +152,74 @@ def test_s10_killlist_uses_playoff_table_with_deaths():
     assert {row["division"] for row in rows} == {"Playoffs"}
 
     ramoth = next(row for row in rows if row["pokemon"] == "Ramoth" and row["trainer"] == "Minetube")
+    assert ramoth["appearances"] == "2"
     assert ramoth["kills"] == "3"
     assert ramoth["deaths"] == "2"
     assert ramoth["differential"] == "1"
+
+
+def test_killlists_capture_appearances_where_sources_expose_usage_columns():
+    output = normalize_all(Path("data"))
+    rows = [
+        row
+        for row in output.pokemon_killlists
+        if row["data_status"] == "sheet_extracted"
+    ]
+
+    season_007_katapuldra = next(
+        row
+        for row in rows
+        if row["season_id"] == "season_007"
+        and row["pokemon"] == "Katapuldra"
+        and row["trainer"] == "RegiBang"
+    )
+    season_008_uhafnir = next(
+        row
+        for row in rows
+        if row["season_id"] == "season_008"
+        and row["division"] == "Liga 1"
+        and row["pokemon"] == "UHaFniR"
+        and row["trainer"] == "Bene"
+    )
+    season_009_stalobor = next(
+        row
+        for row in rows
+        if row["season_id"] == "season_009"
+        and row["division"] == "Overall"
+        and row["pokemon"] == "Stalobor"
+        and row["team_name"] == "Toon World"
+    )
+
+    assert season_007_katapuldra["appearances"] == "11"
+    assert season_008_uhafnir["appearances"] == "9"
+    assert season_009_stalobor["appearances"] == "21"
+
+
+def test_killlists_mark_zero_appearances_when_usage_columns_are_present_but_empty():
+    output = normalize_all(Path("data"))
+    rows = [
+        row
+        for row in output.pokemon_killlists
+        if row["data_status"] == "sheet_extracted"
+    ]
+
+    season_007_cottomi = next(
+        row
+        for row in rows
+        if row["season_id"] == "season_007"
+        and row["pokemon"] == "Cottomi"
+        and row["trainer"] == "Nestfloh"
+    )
+    season_010_rotom_heat = next(
+        row
+        for row in rows
+        if row["season_id"] == "season_010"
+        and row["pokemon"] == "Rotom-Heat"
+        and row["trainer"] == "Nestfloh"
+    )
+
+    assert season_007_cottomi["appearances"] == "0"
+    assert season_010_rotom_heat["appearances"] == "0"
 
 
 def test_missing_killlist_placeholders_preserve_unavailable_source_urls():
@@ -184,6 +250,7 @@ def test_unavailable_bene_killlists_are_person_scoped_without_inferred_pokemon()
     assert rows["season_005"]["trainer"] == "Bene"
     assert rows["season_005"]["team_name"] == "Victini Bottom"
     assert {row["pokemon"] for row in rows.values()} == {None}
+    assert {row["appearances"] for row in rows.values()} == {None}
     assert {row["kills"] for row in rows.values()} == {None}
 
 
@@ -203,6 +270,10 @@ def test_s9_killlists_preserve_team_from_wide_summary_rows():
 
     singles_rows = [row for row in rows if row["division"] == "Singles"]
     assert {row["trainer"]: row["kills"] for row in singles_rows} == {"BelmontGabriel": "2", "El Scizor": "1"}
+    assert {row["trainer"]: row["appearances"] for row in singles_rows} == {
+        "BelmontGabriel": "3",
+        "El Scizor": "3",
+    }
 
 
 def test_s10_playoff_matches_are_in_playoff_division():
@@ -215,6 +286,25 @@ def test_s10_playoff_matches_are_in_playoff_division():
 
     assert rows
     assert {row["division"] for row in rows} == {"Playoffs"}
+
+
+def test_pokemon_typo_aliases_are_corrected_in_normalized_killlists():
+    output = normalize_all(Path("data"))
+    typo_rows = {
+        row["pokemon"]: row
+        for row in output.pokemon_killlists
+        if row["pokemon"] in {"Meistagrif", "Drifzepeli", "Schwalboss", "Shnurgarst"}
+        and row["data_status"] == "sheet_extracted"
+    }
+
+    assert "Meistergrif" not in {row["pokemon"] for row in output.pokemon_killlists}
+    assert "Drifzepli" not in {row["pokemon"] for row in output.pokemon_killlists}
+    assert "Schwallbos" not in {row["pokemon"] for row in output.pokemon_killlists}
+    assert "Shnurgast" not in {row["pokemon"] for row in output.pokemon_killlists}
+    assert typo_rows["Meistagrif"]["pokemon_normalized"] == "meistagrif"
+    assert typo_rows["Drifzepeli"]["pokemon_normalized"] == "drifzepeli"
+    assert typo_rows["Schwalboss"]["pokemon_normalized"] == "schwalboss"
+    assert typo_rows["Shnurgarst"]["pokemon_normalized"] == "shnurgarst"
 
 
 def test_s6_playoff_matches_are_filterable_as_playoffs():

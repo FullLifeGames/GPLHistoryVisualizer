@@ -6,8 +6,10 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Callable
 
+from .data_quality import check_generated_artifacts, generate_data_quality
 from .normalize import normalize_all
 from .playlists import group_gpl_playlists
+from .pokemon_names import fetch_and_write_pokemon_names
 from .report import generate_report
 from .review import generate_review_queue
 from .sheets import fetch_public_sheet_tables, resolve_redirect
@@ -37,6 +39,9 @@ def main(argv: list[str] | None = None) -> int:
     normalize = subparsers.add_parser("normalize", help="Normalize existing raw data into CSVs.")
     normalize.add_argument("--data-dir", default="data")
 
+    data_quality = subparsers.add_parser("data-quality", help="Generate normalized data quality and source claim CSVs.")
+    data_quality.add_argument("--data-dir", default="data")
+
     report = subparsers.add_parser("report", help="Generate docs/gpl-history.md from normalized CSVs.")
     report.add_argument("--data-dir", default="data")
     report.add_argument("--out", default="docs/gpl-history.md")
@@ -61,12 +66,26 @@ def main(argv: list[str] | None = None) -> int:
     review_queue = subparsers.add_parser("review-queue", help="Generate CSV review queues for missing and ambiguous data.")
     review_queue.add_argument("--data-dir", default="data")
 
+    check_generated = subparsers.add_parser("check-generated", help="Regenerate derived CSVs and fail if tracked generated artifacts drift.")
+    check_generated.add_argument("--data-dir", default="data")
+
+    pokemon_names = subparsers.add_parser("pokemon-names", help="Fetch German/English Pokémon names and build frontend sprite mapping.")
+    pokemon_names.add_argument("--data-dir", default="data")
+    pokemon_names.add_argument("--web-dir", default="web")
+
     args = parser.parse_args(argv)
 
     if args.command == "collect":
         return collect_command(args)
     if args.command == "normalize":
         normalize_all(Path(args.data_dir))
+        generate_data_quality(Path(args.data_dir))
+        generate_review_queue(Path(args.data_dir))
+        return 0
+    if args.command == "data-quality":
+        counts = generate_data_quality(Path(args.data_dir))
+        for name, count in counts.items():
+            print(f"{name}: {count}")
         return 0
     if args.command == "report":
         generate_report(Path(args.data_dir), Path(args.out))
@@ -85,6 +104,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "build-video-archive":
         build_video_archive(Path(args.data_dir))
+        generate_data_quality(Path(args.data_dir))
+        generate_review_queue(Path(args.data_dir))
         return 0
     if args.command == "validate":
         issues = validate_normalized_data(Path(args.data_dir))
@@ -97,6 +118,19 @@ def main(argv: list[str] | None = None) -> int:
         counts = generate_review_queue(Path(args.data_dir))
         for name, count in counts.items():
             print(f"{name}: {count}")
+        return 0
+    if args.command == "check-generated":
+        changed = check_generated_artifacts(Path(args.data_dir))
+        if changed:
+            print("Generated artifacts are out of date:")
+            for path in changed:
+                print(f"- {path}")
+            return 1
+        print("Generated artifacts are up to date.")
+        return 0
+    if args.command == "pokemon-names":
+        rows = fetch_and_write_pokemon_names(Path(args.data_dir), Path(args.web_dir))
+        print(f"pokemon_name_translations: {len(rows)}")
         return 0
     parser.error(f"Unknown command {args.command}")
     return 2
@@ -193,6 +227,8 @@ def collect_command(args: argparse.Namespace) -> int:
         write_json(sheets_index_path, sheets_index)
 
     normalize_all(data_dir)
+    generate_data_quality(data_dir)
+    generate_review_queue(data_dir)
     generate_report(data_dir, Path("docs/gpl-history.md"))
     return 0
 

@@ -18,6 +18,18 @@ def test_generate_review_queue_writes_missing_killlists_and_video_review_files(t
                 "team_name": "Unlimited Blade Works",
                 "data_status": "not_available",
                 "source_urls": "https://example.test/deleted-killlist",
+            },
+            {
+                "season_id": "season_001",
+                "division": "Regular Season",
+                "stage": "regular_season",
+                "pokemon": "Pikachu",
+                "trainer": "PresentLP",
+                "team_name": "PrekaKnight",
+                "appearances": "",
+                "kills": "2",
+                "data_status": "sheet_extracted",
+                "source_urls": "https://example.test/killlist-without-appearances",
             }
         ],
     )
@@ -59,8 +71,10 @@ def test_generate_review_queue_writes_missing_killlists_and_video_review_files(t
 
     assert generated == {
         "missing_killlists": 1,
+        "missing_killlist_appearances": 1,
         "low_confidence_videos": 1,
         "ambiguous_matches": 1,
+        "review_index": 4,
     }
     assert _read_csv(review / "missing_killlists.csv") == [
         {
@@ -72,10 +86,53 @@ def test_generate_review_queue_writes_missing_killlists_and_video_review_files(t
             "review_reason": "killlist_source_unavailable",
         }
     ]
+    assert _read_csv(review / "missing_killlist_appearances.csv") == [
+        {
+            "season_id": "season_001",
+            "division": "Regular Season",
+            "stage": "regular_season",
+            "pokemon": "Pikachu",
+            "trainer": "PresentLP",
+            "team_name": "PrekaKnight",
+            "kills": "2",
+            "source_urls": "https://example.test/killlist-without-appearances",
+            "review_reason": "killlist_appearances_not_in_source",
+        }
+    ]
     assert _read_csv(review / "low_confidence_videos.csv")[0]["confidence_explanation"] == (
         "season and week matched, participant evidence incomplete"
     )
     assert _read_csv(review / "ambiguous_matches.csv")[0]["review_reason"] == "unmatched_game_video"
+    assert _read_csv(review / "review_index.csv") == [
+        {
+            "review_file": "missing_killlists.csv",
+            "row_count": "1",
+            "severity": "high",
+            "review_reason": "killlist_source_unavailable",
+            "description": "Killlist source rows that are known but unavailable.",
+        },
+        {
+            "review_file": "missing_killlist_appearances.csv",
+            "row_count": "1",
+            "severity": "medium",
+            "review_reason": "killlist_appearances_not_in_source",
+            "description": "Killlist rows with kills but no appearance count in the source.",
+        },
+        {
+            "review_file": "low_confidence_videos.csv",
+            "row_count": "1",
+            "severity": "medium",
+            "review_reason": "low_or_medium_match_confidence",
+            "description": "Matched videos whose assignment should be manually reviewed.",
+        },
+        {
+            "review_file": "ambiguous_matches.csv",
+            "row_count": "1",
+            "severity": "high",
+            "review_reason": "unmatched_game_video",
+            "description": "Game-like GPL videos that could not be matched to a normalized match.",
+        },
+    ]
 
 
 def _write_csv(path, rows):

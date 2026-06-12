@@ -5,14 +5,19 @@ import {
   displayNumber,
   matchupOverview,
   missingDataRows,
+  personPokemonHighlights,
+  pokemonTimelineRows,
   personDetailKilllistRows,
   primaryCompetitionRows,
+  qualityRowsFromData,
   seasonCoverageRows,
+  sourceClaimsForSeason,
   summarizePokemonDetail,
   summarizeTrainerPokemon,
   summarizeKilllists,
   weightedRating,
   weightedRatingValue,
+  killDifferential,
   winPercentage,
   winPercentageValue,
 } from "../web/stats.js";
@@ -38,26 +43,28 @@ assert.equal(weightedRating(10, 0, 0), "72.7");
 assert.equal(displayNumber(0), 0);
 assert.equal(displayNumber("0"), 0);
 assert.equal(displayNumber(""), "");
+assert.equal(killDifferential("20", "8"), 12);
+assert.equal(killDifferential("20", ""), 20);
 
 assert.deepEqual(
   summarizeKilllists([
-    { season_id: "season_001", pokemon: "Pikachu", pokemon_normalized: "pikachu", trainer: "A", team_name: "Alpha", kills: "2", deaths: "1", differential: "1", data_status: "sheet_extracted" },
-    { season_id: "season_002", pokemon: "Pikachu", pokemon_normalized: "pikachu", trainer: "B", team_name: "Beta", kills: "3", deaths: "0", differential: "3", data_status: "sheet_extracted" },
-    { season_id: "season_001", pokemon: "Evoli", pokemon_normalized: "evoli", trainer: "A", team_name: "Alpha", kills: "1", deaths: "4", differential: "-3", data_status: "sheet_extracted" },
+    { season_id: "season_001", pokemon: "Pikachu", pokemon_normalized: "pikachu", trainer: "A", team_name: "Alpha", appearances: "1", kills: "2", deaths: "1", differential: "1", data_status: "sheet_extracted" },
+    { season_id: "season_002", pokemon: "Pikachu", pokemon_normalized: "pikachu", trainer: "B", team_name: "Beta", appearances: "2", kills: "3", deaths: "0", differential: "3", data_status: "sheet_extracted" },
+    { season_id: "season_001", pokemon: "Evoli", pokemon_normalized: "evoli", trainer: "A", team_name: "Alpha", appearances: "", kills: "1", deaths: "4", differential: "-3", data_status: "sheet_extracted" },
   ]),
   [
-    { rank: 1, pokemon: "Pikachu", kills: 5, deaths: 1, differential: 4, seasons: 2, trainers: 2, teams: 2 },
-    { rank: 2, pokemon: "Evoli", kills: 1, deaths: 4, differential: -3, seasons: 1, trainers: 1, teams: 1 },
+    { rank: 1, pokemon: "Pikachu", appearances: 3, kills: 5, deaths: 1, differential: 4, seasons: 2, trainers: 2, teams: 2 },
+    { rank: 2, pokemon: "Evoli", appearances: 0, kills: 1, deaths: 4, differential: -3, seasons: 1, trainers: 1, teams: 1 },
   ],
 );
 
 assert.deepEqual(
   summarizePokemonDetail(
     [
-      { season_id: "season_008", division: "Liga 1", pokemon: "UHaFniR", pokemon_normalized: "uhafnir", trainer: "Bene", trainer_normalized: "bene", team_name: "Victini Bottom", kills: "8", deaths: "3", differential: "5", source_urls: "https://example.test/s8", data_status: "sheet_extracted" },
-      { season_id: "season_009", division: "Doubles", pokemon: "UHaFnir", pokemon_normalized: "uhafnir", trainer: "", trainer_normalized: "", team_name: "Victory Instinct", kills: "3", deaths: "2", differential: "1", source_urls: "https://example.test/s9", data_status: "sheet_extracted" },
-      { season_id: "season_010", division: "Playoffs", pokemon: "UHaFnir", pokemon_normalized: "uhafnir", trainer: "Bene", trainer_normalized: "bene", team_name: "Wackel Backel", kills: "9", deaths: "8", differential: "1", source_urls: "https://example.test/s10", data_status: "sheet_extracted" },
-      { season_id: "season_010", division: "Playoffs", pokemon: "Ramoth", pokemon_normalized: "ramoth", trainer: "Bene", trainer_normalized: "bene", team_name: "Wackel Backel", kills: "5", deaths: "2", differential: "3", source_urls: "https://example.test/s10", data_status: "sheet_extracted" },
+      { season_id: "season_008", division: "Liga 1", pokemon: "UHaFniR", pokemon_normalized: "uhafnir", trainer: "Bene", trainer_normalized: "bene", team_name: "Victini Bottom", appearances: "9", kills: "8", deaths: "3", differential: "5", source_urls: "https://example.test/s8", data_status: "sheet_extracted" },
+      { season_id: "season_009", division: "Doubles", pokemon: "UHaFnir", pokemon_normalized: "uhafnir", trainer: "", trainer_normalized: "", team_name: "Victory Instinct", appearances: "3", kills: "3", deaths: "2", differential: "1", source_urls: "https://example.test/s9", data_status: "sheet_extracted" },
+      { season_id: "season_010", division: "Playoffs", pokemon: "UHaFnir", pokemon_normalized: "uhafnir", trainer: "Bene", trainer_normalized: "bene", team_name: "Wackel Backel", appearances: "6", kills: "9", deaths: "8", differential: "1", source_urls: "https://example.test/s10", data_status: "sheet_extracted" },
+      { season_id: "season_010", division: "Playoffs", pokemon: "Ramoth", pokemon_normalized: "ramoth", trainer: "Bene", trainer_normalized: "bene", team_name: "Wackel Backel", appearances: "2", kills: "5", deaths: "2", differential: "3", source_urls: "https://example.test/s10", data_status: "sheet_extracted" },
     ],
     "uhafnir",
     (value) =>
@@ -70,6 +77,7 @@ assert.deepEqual(
   {
     summary: {
       pokemon: "UHaFniR",
+      appearances: 18,
       kills: 20,
       deaths: 13,
       differential: 7,
@@ -78,11 +86,11 @@ assert.deepEqual(
       teams: 3,
       source_urls: "https://example.test/s8;https://example.test/s9;https://example.test/s10",
     },
-    trainerRows: [{ trainer: "Bene", kills: 20, deaths: 13, differential: 7, seasons: 3, teams: 3 }],
+    trainerRows: [{ trainer: "Bene", appearances: 18, kills: 20, deaths: 13, differential: 7, seasons: 3, teams: 3 }],
     seasonRows: [
-      { season_id: "season_008", division: "Liga 1", trainer: "Bene", team_name: "Victini Bottom", kills: 8, deaths: 3, differential: 5, source_urls: "https://example.test/s8" },
-      { season_id: "season_009", division: "Doubles", trainer: "Bene", team_name: "Victory Instinct", kills: 3, deaths: 2, differential: 1, source_urls: "https://example.test/s9" },
-      { season_id: "season_010", division: "Playoffs", trainer: "Bene", team_name: "Wackel Backel", kills: 9, deaths: 8, differential: 1, source_urls: "https://example.test/s10" },
+      { season_id: "season_008", division: "Liga 1", trainer: "Bene", team_name: "Victini Bottom", appearances: 9, kills: 8, deaths: 3, differential: 5, source_urls: "https://example.test/s8" },
+      { season_id: "season_009", division: "Doubles", trainer: "Bene", team_name: "Victory Instinct", appearances: 3, kills: 3, deaths: 2, differential: 1, source_urls: "https://example.test/s9" },
+      { season_id: "season_010", division: "Playoffs", trainer: "Bene", team_name: "Wackel Backel", appearances: 6, kills: 9, deaths: 8, differential: 1, source_urls: "https://example.test/s10" },
     ],
   },
 );
@@ -123,10 +131,10 @@ assert.deepEqual(
   summarizeTrainerPokemon(
     canonicalKilllistRows(
       [
-        { season_id: "season_009", division: "Overall", pokemon: "Pikachu", pokemon_normalized: "pikachu", trainer: "Bene", trainer_normalized: "bene", team_name: "Team Gelb", kills: "5", deaths: "2", differential: "3", source_urls: "https://example.test/s9-overall", data_status: "sheet_extracted" },
-        { season_id: "season_009", division: "Singles", pokemon: "Pikachu", pokemon_normalized: "pikachu", trainer: "Bene", trainer_normalized: "bene", team_name: "Team Gelb", kills: "99", deaths: "0", differential: "99", source_urls: "https://example.test/s9-singles", data_status: "sheet_extracted" },
-        { season_id: "season_010", division: "Playoffs", pokemon: "Pikachu", pokemon_normalized: "pikachu", trainer: "Bene", trainer_normalized: "bene", team_name: "Team Blau", kills: "4", deaths: "1", differential: "3", source_urls: "https://example.test/s10-playoffs", data_status: "sheet_extracted" },
-        { season_id: "season_010", division: "Playoffs", pokemon: "Ramoth", pokemon_normalized: "ramoth", trainer: "Minetube", trainer_normalized: "minetube", team_name: "Team Rot", kills: "3", deaths: "1", differential: "2", source_urls: "https://example.test/s10-other", data_status: "sheet_extracted" },
+        { season_id: "season_009", division: "Overall", pokemon: "Pikachu", pokemon_normalized: "pikachu", trainer: "Bene", trainer_normalized: "bene", team_name: "Team Gelb", appearances: "12", kills: "5", deaths: "2", differential: "3", source_urls: "https://example.test/s9-overall", data_status: "sheet_extracted" },
+        { season_id: "season_009", division: "Singles", pokemon: "Pikachu", pokemon_normalized: "pikachu", trainer: "Bene", trainer_normalized: "bene", team_name: "Team Gelb", appearances: "14", kills: "99", deaths: "0", differential: "99", source_urls: "https://example.test/s9-singles", data_status: "sheet_extracted" },
+        { season_id: "season_010", division: "Playoffs", pokemon: "Pikachu", pokemon_normalized: "pikachu", trainer: "Bene", trainer_normalized: "bene", team_name: "Team Blau", appearances: "4", kills: "4", deaths: "1", differential: "3", source_urls: "https://example.test/s10-playoffs", data_status: "sheet_extracted" },
+        { season_id: "season_010", division: "Playoffs", pokemon: "Ramoth", pokemon_normalized: "ramoth", trainer: "Minetube", trainer_normalized: "minetube", team_name: "Team Rot", appearances: "3", kills: "3", deaths: "1", differential: "2", source_urls: "https://example.test/s10-other", data_status: "sheet_extracted" },
       ],
       "all",
     ),
@@ -134,6 +142,7 @@ assert.deepEqual(
   ).map((row) => ({
     trainer: row.trainer,
     pokemon: row.pokemon,
+    appearances: row.appearances,
     kills: row.kills,
     deaths: row.deaths,
     differential: row.differential,
@@ -146,6 +155,7 @@ assert.deepEqual(
     {
       trainer: "Bene",
       pokemon: "Pikachu",
+      appearances: 16,
       kills: 9,
       deaths: 3,
       differential: 6,
@@ -165,10 +175,10 @@ assert.deepEqual(
       .trim();
   const rows = personDetailKilllistRows(
     [
-      { season_id: "season_008", division: "Liga 1", pokemon: "UHaFniR", pokemon_normalized: "uhafnir", trainer: "Bene", trainer_normalized: "bene", team_name: "Victini Bottom", kills: "8", deaths: "", differential: "", source_urls: "https://example.test/s8", data_status: "sheet_extracted" },
-      { season_id: "season_009", division: "Overall", pokemon: "UHaFnir", pokemon_normalized: "uhafnir", trainer: "", trainer_normalized: "", team_name: "Victory Instinct", kills: "6", deaths: "", differential: "", source_urls: "https://example.test/s9-overall", data_status: "sheet_extracted" },
-      { season_id: "season_009", division: "Doubles", pokemon: "UHaFnir", pokemon_normalized: "uhafnir", trainer: "", trainer_normalized: "", team_name: "Victory Instinct", kills: "3", deaths: "", differential: "", source_urls: "https://example.test/s9-doubles", data_status: "sheet_extracted" },
-      { season_id: "season_010", division: "Playoffs", pokemon: "UHaFnir", pokemon_normalized: "uhafnir", trainer: "Bene", trainer_normalized: "bene", team_name: "Wackel Backel", kills: "9", deaths: "8", differential: "1", source_urls: "https://example.test/s10", data_status: "sheet_extracted" },
+      { season_id: "season_008", division: "Liga 1", pokemon: "UHaFniR", pokemon_normalized: "uhafnir", trainer: "Bene", trainer_normalized: "bene", team_name: "Victini Bottom", appearances: "9", kills: "8", deaths: "", differential: "", source_urls: "https://example.test/s8", data_status: "sheet_extracted" },
+      { season_id: "season_009", division: "Overall", pokemon: "UHaFnir", pokemon_normalized: "uhafnir", trainer: "", trainer_normalized: "", team_name: "Victory Instinct", appearances: "6", kills: "6", deaths: "", differential: "", source_urls: "https://example.test/s9-overall", data_status: "sheet_extracted" },
+      { season_id: "season_009", division: "Doubles", pokemon: "UHaFnir", pokemon_normalized: "uhafnir", trainer: "", trainer_normalized: "", team_name: "Victory Instinct", appearances: "3", kills: "3", deaths: "", differential: "", source_urls: "https://example.test/s9-doubles", data_status: "sheet_extracted" },
+      { season_id: "season_010", division: "Playoffs", pokemon: "UHaFnir", pokemon_normalized: "uhafnir", trainer: "Bene", trainer_normalized: "bene", team_name: "Wackel Backel", appearances: "6", kills: "9", deaths: "8", differential: "1", source_urls: "https://example.test/s10", data_status: "sheet_extracted" },
     ],
     "all",
   );
@@ -184,6 +194,7 @@ assert.deepEqual(
     ]).map((row) => ({
       trainer: row.trainer,
       pokemon: row.pokemon,
+      appearances: row.appearances,
       kills: row.kills,
       deaths: row.deaths,
       differential: row.differential,
@@ -195,9 +206,10 @@ assert.deepEqual(
       {
         trainer: "Bene",
         pokemon: "UHaFniR",
+        appearances: 18,
         kills: 20,
         deaths: 8,
-        differential: 1,
+        differential: 12,
         seasons: 3,
         divisions: 3,
         teams: 3,
@@ -340,4 +352,72 @@ assert.deepEqual(
     killlists: [{ season_id: "season_003", data_status: "not_available", source_urls: "https://example.test/deleted-sheet" }],
   }).map((row) => ({ season_id: row.season_id, missing_data: row.missing_data, source_urls: row.source_urls })),
   [{ season_id: "season_003", missing_data: "matches, champions, killlists", source_urls: "https://example.test/deleted-sheet" }],
+);
+
+assert.deepEqual(
+  qualityRowsFromData({
+    dataQuality: [
+      {
+        season_id: "season_010",
+        coverage_status: "complete_with_review_flags",
+        standings_rows: "10",
+      },
+    ],
+    seasons: [{ season_id: "season_001" }],
+  }),
+  [
+    {
+      season_id: "season_010",
+      coverage_status: "complete_with_review_flags",
+      standings_rows: "10",
+    },
+  ],
+);
+
+assert.deepEqual(
+  sourceClaimsForSeason(
+    [
+      { season_id: "season_010", claim_type: "champion", claim_value: "Bene" },
+      { season_id: "season_009", claim_type: "champion", claim_value: "Bene + El Scizor" },
+    ],
+    "season_010",
+  ),
+  [{ season_id: "season_010", claim_type: "champion", claim_value: "Bene" }],
+);
+
+assert.deepEqual(
+  personPokemonHighlights(
+    [
+      { season_id: "season_008", division: "Liga 1", pokemon: "UHaFniR", pokemon_normalized: "uhafnir", trainer: "Bene", trainer_normalized: "bene", team_name: "Victini Bottom", appearances: "9", kills: "8", deaths: "3", source_urls: "https://example.test/s8", data_status: "sheet_extracted" },
+      { season_id: "season_010", division: "Playoffs", pokemon: "Ramoth", pokemon_normalized: "ramoth", trainer: "Bene", trainer_normalized: "bene", team_name: "Wackel Backel", appearances: "4", kills: "6", deaths: "1", source_urls: "https://example.test/s10", data_status: "sheet_extracted" },
+    ],
+    "person_bene",
+    (value) => String(value ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(),
+  ).map((row) => ({
+    pokemon: row.pokemon,
+    appearances: row.appearances,
+    kills: row.kills,
+    deaths: row.deaths,
+    differential: row.differential,
+    seasons: row.seasons,
+  })),
+  [
+    { pokemon: "UHaFniR", appearances: 9, kills: 8, deaths: 3, differential: 5, seasons: 1 },
+    { pokemon: "Ramoth", appearances: 4, kills: 6, deaths: 1, differential: 5, seasons: 1 },
+  ],
+);
+
+assert.deepEqual(
+  pokemonTimelineRows(
+    [
+      { season_id: "season_008", division: "Liga 1", pokemon: "UHaFniR", pokemon_normalized: "uhafnir", trainer: "Bene", appearances: "9", kills: "8", deaths: "3", data_status: "sheet_extracted" },
+      { season_id: "season_010", division: "Playoffs", pokemon: "UHaFnir", pokemon_normalized: "uhafnir", trainer: "Bene", appearances: "6", kills: "9", deaths: "8", data_status: "sheet_extracted" },
+    ],
+    "uhafnir",
+    (value) => String(value ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(),
+  ),
+  [
+    { season_id: "season_008", divisions: "Liga 1", appearances: 9, kills: 8, deaths: 3, differential: 5, trainers: 1, teams: 0 },
+    { season_id: "season_010", divisions: "Playoffs", appearances: 6, kills: 9, deaths: 8, differential: 1, trainers: 1, teams: 0 },
+  ],
 );

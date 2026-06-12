@@ -15,6 +15,8 @@ def generate_report(data_dir: Path, out_path: Path) -> None:
     matches = _read_csv(normalized_dir / "matches.csv")
     champions = _read_csv(normalized_dir / "champions.csv")
     killlists = _read_csv(normalized_dir / "pokemon_killlists.csv")
+    source_claims = _read_csv(normalized_dir / "source_claims.csv")
+    data_quality = _read_csv(normalized_dir / "data_quality.csv")
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     lines = [
@@ -35,8 +37,13 @@ def generate_report(data_dir: Path, out_path: Path) -> None:
         "- `data/normalized/champions.csv`",
         "- `data/normalized/pokemon_killlists.csv`",
         "- `data/normalized/aliases_review.csv`",
+        "- `data/normalized/source_claims.csv`",
+        "- `data/normalized/data_quality.csv`",
         "",
         "## Coverage",
+        "",
+        f"- Source claim rows: {len(source_claims)}",
+        f"- Data quality rows: {len(data_quality)}",
         "",
         f"- Seasons represented: {len(seasons)}",
         f"- Team rows: {_available_count(teams)} available, {_status_count(teams).get('not_available', 0)} not available",

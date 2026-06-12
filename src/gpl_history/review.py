@@ -15,6 +15,18 @@ MISSING_KILLLIST_FIELDS = [
     "review_reason",
 ]
 
+MISSING_KILLLIST_APPEARANCE_FIELDS = [
+    "season_id",
+    "division",
+    "stage",
+    "pokemon",
+    "trainer",
+    "team_name",
+    "kills",
+    "source_urls",
+    "review_reason",
+]
+
 VIDEO_REVIEW_FIELDS = [
     "video_id",
     "video_url",
@@ -31,11 +43,47 @@ VIDEO_REVIEW_FIELDS = [
     "review_reason",
 ]
 
+REVIEW_INDEX_FIELDS = [
+    "review_file",
+    "row_count",
+    "severity",
+    "review_reason",
+    "description",
+]
+
+REVIEW_INDEX_DEFINITIONS = [
+    {
+        "review_file": "missing_killlists.csv",
+        "severity": "high",
+        "review_reason": "killlist_source_unavailable",
+        "description": "Killlist source rows that are known but unavailable.",
+    },
+    {
+        "review_file": "missing_killlist_appearances.csv",
+        "severity": "medium",
+        "review_reason": "killlist_appearances_not_in_source",
+        "description": "Killlist rows with kills but no appearance count in the source.",
+    },
+    {
+        "review_file": "low_confidence_videos.csv",
+        "severity": "medium",
+        "review_reason": "low_or_medium_match_confidence",
+        "description": "Matched videos whose assignment should be manually reviewed.",
+    },
+    {
+        "review_file": "ambiguous_matches.csv",
+        "severity": "high",
+        "review_reason": "unmatched_game_video",
+        "description": "Game-like GPL videos that could not be matched to a normalized match.",
+    },
+]
+
 
 def generate_review_queue(data_dir: Path) -> dict[str, int]:
     normalized_dir = data_dir / "normalized"
     review_dir = ensure_dir(data_dir / "review")
 
+    killlists = _read_csv(normalized_dir / "pokemon_killlists.csv")
     missing_killlists = [
         {
             "season_id": row.get("season_id"),
@@ -45,8 +93,23 @@ def generate_review_queue(data_dir: Path) -> dict[str, int]:
             "source_urls": row.get("source_urls"),
             "review_reason": "killlist_source_unavailable",
         }
-        for row in _read_csv(normalized_dir / "pokemon_killlists.csv")
+        for row in killlists
         if row.get("data_status") == "not_available"
+    ]
+    missing_killlist_appearances = [
+        {
+            "season_id": row.get("season_id"),
+            "division": row.get("division"),
+            "stage": row.get("stage"),
+            "pokemon": row.get("pokemon"),
+            "trainer": row.get("trainer"),
+            "team_name": row.get("team_name"),
+            "kills": row.get("kills"),
+            "source_urls": row.get("source_urls"),
+            "review_reason": "killlist_appearances_not_in_source",
+        }
+        for row in killlists
+        if row.get("data_status") != "not_available" and row.get("kills") and not row.get("appearances")
     ]
     videos = _read_csv(normalized_dir / "video_archive.csv")
     low_confidence_videos = [
@@ -67,18 +130,44 @@ def generate_review_queue(data_dir: Path) -> dict[str, int]:
     ]
 
     _write_csv(review_dir / "missing_killlists.csv", MISSING_KILLLIST_FIELDS, missing_killlists)
+    _write_csv(
+        review_dir / "missing_killlist_appearances.csv",
+        MISSING_KILLLIST_APPEARANCE_FIELDS,
+        missing_killlist_appearances,
+    )
     _write_csv(review_dir / "low_confidence_videos.csv", VIDEO_REVIEW_FIELDS, low_confidence_videos)
     _write_csv(review_dir / "ambiguous_matches.csv", VIDEO_REVIEW_FIELDS, ambiguous_matches)
+    review_index = _review_index_rows(
+        {
+            "missing_killlists.csv": len(missing_killlists),
+            "missing_killlist_appearances.csv": len(missing_killlist_appearances),
+            "low_confidence_videos.csv": len(low_confidence_videos),
+            "ambiguous_matches.csv": len(ambiguous_matches),
+        }
+    )
+    _write_csv(review_dir / "review_index.csv", REVIEW_INDEX_FIELDS, review_index)
 
     return {
         "missing_killlists": len(missing_killlists),
+        "missing_killlist_appearances": len(missing_killlist_appearances),
         "low_confidence_videos": len(low_confidence_videos),
         "ambiguous_matches": len(ambiguous_matches),
+        "review_index": len(review_index),
     }
 
 
 def _video_review_row(row: dict[str, Any]) -> dict[str, Any]:
     return {field: row.get(field) for field in VIDEO_REVIEW_FIELDS if field != "review_reason"}
+
+
+def _review_index_rows(counts: dict[str, int]) -> list[dict[str, Any]]:
+    return [
+        {
+            **definition,
+            "row_count": counts.get(definition["review_file"], 0),
+        }
+        for definition in REVIEW_INDEX_DEFINITIONS
+    ]
 
 
 def _read_csv(path: Path) -> list[dict[str, str]]:

@@ -42,4 +42,4 @@ This document records how each season is converted from raw PresentLP playlist a
 - S3, S4, and S5 killlist links were found but currently return deleted/unavailable Google responses. The normalized killlist placeholders are scoped to Bene's affected teams, but Pokémon and kill values remain null.
 - S4 and S5 expose Liga/Tier tabs beyond the main table, but no sourced Liga 2 standings/schedule tables are present in the recovered raw data.
 
-Run `gpl-history review-queue --data-dir data` after rebuilding normalized data to refresh `data/review/missing_killlists.csv`, which currently tracks the S3, S4, and S5 unavailable killlist sources.
+Run `gpl-history review-queue --data-dir data` after rebuilding normalized data to refresh `data/review/missing_killlists.csv`, which currently tracks the S3, S4, and S5 unavailable killlist sources, and `data/review/missing_killlist_appearances.csv`, which tracks killlist rows where kills are sourced but appearances are not present in the public table.

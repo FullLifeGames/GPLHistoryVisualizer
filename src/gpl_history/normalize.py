@@ -9,6 +9,7 @@ from typing import Any
 from urllib.parse import unquote, urlparse
 
 from .manual import apply_manual_rows
+from .pokemon_names import pokemon_display_name
 from .storage import playlist_url, read_json, safe_slug, video_url
 
 NORMALIZED_FIELDS = {
@@ -132,6 +133,7 @@ NORMALIZED_FIELDS = {
         "trainer",
         "trainer_normalized",
         "team_name",
+        "appearances",
         "kills",
         "deaths",
         "differential",
@@ -145,6 +147,38 @@ NORMALIZED_FIELDS = {
         "name_b_normalized",
         "similarity_hint",
         "source",
+    ],
+    "source_claims": [
+        "claim_id",
+        "season_id",
+        "table_name",
+        "claim_type",
+        "claim_subject",
+        "claim_field",
+        "claim_value",
+        "evidence_status",
+        "confidence",
+        "source_urls",
+        "notes",
+    ],
+    "data_quality": [
+        "season_id",
+        "season_label",
+        "coverage_status",
+        "standings_rows",
+        "match_rows",
+        "playoff_match_rows",
+        "champion_rows",
+        "killlist_rows",
+        "killlist_rows_missing_appearances",
+        "unavailable_killlist_rows",
+        "video_rows",
+        "matched_video_rows",
+        "unmatched_game_video_rows",
+        "low_confidence_video_rows",
+        "missing_categories",
+        "review_flags",
+        "source_urls",
     ],
 }
 
@@ -168,6 +202,11 @@ _KNOWN_HEADERS = {
     "points",
     "punkte",
     "kills",
+    "appearances",
+    "kampfe",
+    "kaempfe",
+    "einsatze",
+    "einsaetze",
     "deaths",
     "differential",
     "diff",
@@ -337,11 +376,13 @@ class NormalizedOutput:
     champions: list[dict[str, Any]]
     pokemon_killlists: list[dict[str, Any]]
     aliases_review: list[dict[str, Any]]
+    source_claims: list[dict[str, Any]]
+    data_quality: list[dict[str, Any]]
 
 
 def normalize_all(data_dir: Path) -> NormalizedOutput:
     raw_dir = data_dir / "raw"
-    output = NormalizedOutput([], [], [], [], [], [], [], [], [])
+    output = NormalizedOutput([], [], [], [], [], [], [], [], [], [], [])
 
     for season_path in sorted(raw_dir.glob("season_*")):
         if not season_path.is_dir():
@@ -388,6 +429,9 @@ def normalize_all(data_dir: Path) -> NormalizedOutput:
     output.aliases_review = _alias_review(output)
     apply_manual_rows(data_dir, output, {"people": NORMALIZED_FIELDS["people"], "aliases_review": NORMALIZED_FIELDS["aliases_review"]})
     write_normalized(data_dir / "normalized", output)
+    from .data_quality import generate_data_quality
+
+    generate_data_quality(data_dir)
     return output
 
 
@@ -502,7 +546,7 @@ def _find_header_index(rows: list[list[str]]) -> int | None:
 
 
 def _adapt_season(season_id: str, tables: list[dict[str, Any]], videos: list[dict[str, Any]]) -> NormalizedOutput:
-    out = NormalizedOutput([], [], [], [], [], [], [], [], [])
+    out = NormalizedOutput([], [], [], [], [], [], [], [], [], [], [])
 
     out.standings.extend(_season_standings(season_id, tables))
     out.matches.extend(_season_matches(season_id, tables, videos))
@@ -1873,6 +1917,7 @@ def _missing_killlist_rows(season_id: str) -> list[dict[str, Any]]:
             "trainer": trainer,
             "trainer_normalized": _canonical_name(trainer),
             "team_name": team_name,
+            "appearances": None,
             "kills": None,
             "deaths": None,
             "differential": None,
@@ -1890,6 +1935,7 @@ def _dedupe_killlist_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         "pokemon_normalized",
         "trainer_normalized",
         "team_name",
+        "appearances",
         "kills",
         "deaths",
         "differential",
@@ -1916,17 +1962,20 @@ def _standard_killlist(season_id: str, table: dict[str, Any], division: str) -> 
             continue
         trainer = _first(record, ["trainer", "coach", "spieler", "player", "youtube", "kanal", "channel"])
         team = _first(record, ["team", "mannschaft"])
+        appearances = _killlist_appearances_from_record(record)
+        pokemon_name = pokemon_display_name(pokemon)
         trainer_name = _display_name(_person_from_standing(team, trainer, trainer))
         rows.append(
             {
                 "season_id": season_id,
                 "division": division,
                 "stage": _stage_from_division(division),
-                "pokemon": _null(pokemon),
-                "pokemon_normalized": _canonical_name(pokemon),
+                "pokemon": _null(pokemon_name),
+                "pokemon_normalized": _canonical_name(pokemon_name),
                 "trainer": trainer_name,
                 "trainer_normalized": _canonical_name(trainer_name),
                 "team_name": _null(team),
+                "appearances": appearances,
                 "kills": _number(kills),
                 "deaths": _number(_first(record, ["deaths", "tode", "death", "d"])),
                 "differential": _number(_first(record, ["differential", "diff", "+/-", "differenz"])),
@@ -1935,6 +1984,43 @@ def _standard_killlist(season_id: str, table: dict[str, Any], division: str) -> 
             }
         )
     return rows
+
+
+def _killlist_appearances_from_record(record: dict[str, str]) -> str | None:
+    explicit = _number(
+        _first(
+            record,
+            [
+                "appearances",
+                "einsatze",
+                "einsaetze",
+                "einsätze",
+                "kampfe",
+                "kaempfe",
+                "kämpfe",
+                "games",
+                "matches",
+                "uses",
+                "usage",
+            ],
+        )
+    )
+    if explicit is not None:
+        return explicit
+    return _numbered_cell_count(record)
+
+
+def _numbered_cell_count(record: dict[str, str]) -> str | None:
+    numbered_values = [value for key, value in record.items() if str(key).isdigit()]
+    if not numbered_values:
+        return None
+    count = sum(1 for value in numbered_values if _null(value) is not None)
+    return str(count)
+
+
+def _filled_cell_count(values: list[str]) -> str | None:
+    count = sum(1 for value in values if _null(value) is not None)
+    return str(count) if values else None
 
 
 def _s9_killlist(season_id: str, table: dict[str, Any], division: str) -> list[dict[str, Any]]:
@@ -1946,6 +2032,7 @@ def _s9_killlist(season_id: str, table: dict[str, Any], division: str) -> list[d
     headers = [_header(cell) for cell in table["rows"][header_index]]
     columns = {header: index for index, header in enumerate(headers) if header}
     pokemon_column = columns.get("pokemon")
+    appearances_column = columns.get("appearances")
     kills_column = columns.get("kills")
     team_column = columns.get("team")
     if pokemon_column is None or kills_column is None:
@@ -1971,16 +2058,18 @@ def _s9_killlist(season_id: str, table: dict[str, Any], division: str) -> list[d
                 rows.extend(split_rows)
                 continue
         trainer = _display_name(_s9_killlist_trainer(division, team))
+        pokemon_name = pokemon_display_name(pokemon)
         rows.append(
             {
                 "season_id": season_id,
                 "division": division,
                 "stage": _stage_from_division(division),
-                "pokemon": _null(pokemon),
-                "pokemon_normalized": _canonical_name(pokemon),
+                "pokemon": _null(pokemon_name),
+                "pokemon_normalized": _canonical_name(pokemon_name),
                 "trainer": trainer,
                 "trainer_normalized": _canonical_name(trainer),
                 "team_name": team,
+                "appearances": _number(_cell(raw, appearances_column)),
                 "kills": _number(kills),
                 "deaths": None,
                 "differential": None,
@@ -2005,16 +2094,19 @@ def _s9_victory_instinct_singles_killlist_rows(
         kills = _s9_week_kill_total(raw, headers, start_week, end_week)
         if kills is None:
             continue
+        appearances = _s9_week_appearance_count(raw, headers, start_week, end_week)
+        pokemon_name = pokemon_display_name(pokemon)
         rows.append(
             {
                 "season_id": season_id,
                 "division": division,
                 "stage": _stage_from_division(division),
-                "pokemon": _null(pokemon),
-                "pokemon_normalized": _canonical_name(pokemon),
+                "pokemon": _null(pokemon_name),
+                "pokemon_normalized": _canonical_name(pokemon_name),
                 "trainer": trainer,
                 "trainer_normalized": _canonical_name(trainer),
                 "team_name": team,
+                "appearances": appearances,
                 "kills": kills,
                 "deaths": None,
                 "differential": None,
@@ -2040,6 +2132,19 @@ def _s9_week_kill_total(row: list[str], headers: list[str], start_week: int, end
         total += float(value)
         seen = True
     return _format_number(total) if seen else None
+
+
+def _s9_week_appearance_count(row: list[str], headers: list[str], start_week: int, end_week: int) -> str | None:
+    count = 0
+    for index, header in enumerate(headers):
+        if not header.isdigit():
+            continue
+        week = int(header)
+        if week < start_week or week > end_week:
+            continue
+        if _null(_cell(row, index)) is not None:
+            count += 1
+    return str(count) if count else None
 
 
 def _s9_killlist_trainer(division: str, team: str | None) -> str | None:
@@ -2077,20 +2182,24 @@ def _s10_killlist(season_id: str, table: dict[str, Any], division: str, playoff:
         padded = raw + [""] * 60
         if playoff:
             pokemon, trainer, kills, deaths, team = padded[2], padded[4], padded[23], padded[24], None
+            appearances = _filled_cell_count(padded[6:22])
         else:
             pokemon, trainer, kills, deaths, team = padded[3], padded[5], padded[21], None, padded[23]
+            appearances = _filled_cell_count(padded[8:21])
         if not _null(pokemon) or not _null(trainer):
             continue
+        pokemon_name = pokemon_display_name(pokemon)
         rows.append(
             {
                 "season_id": season_id,
                 "division": division,
                 "stage": _stage_from_division(division),
-                "pokemon": _null(pokemon),
-                "pokemon_normalized": _canonical_name(pokemon),
+                "pokemon": _null(pokemon_name),
+                "pokemon_normalized": _canonical_name(pokemon_name),
                 "trainer": _display_name(trainer),
                 "trainer_normalized": _canonical_name(trainer),
                 "team_name": _null(team),
+                "appearances": appearances,
                 "kills": _number(kills),
                 "deaths": _number(deaths),
                 "differential": _number_difference(kills, deaths),
@@ -2293,6 +2402,15 @@ def _header(value: str) -> str:
         "punkte": "points",
         "pkt": "points",
         "kills_gesamt": "kills",
+        "kampfe": "appearances",
+        "kaempfe": "appearances",
+        "einsatze": "appearances",
+        "einsaetze": "appearances",
+        "spiele": "appearances",
+        "games": "appearances",
+        "matches": "appearances",
+        "uses": "appearances",
+        "usage": "appearances",
         "differenz": "differential",
         "sieger": "winner",
         "meister": "champion",
