@@ -63,6 +63,7 @@ Manual rows should be rare, sourced, and reviewable. The expected flow is:
 - `data/review/review_index.csv`: row counts and severity labels for every generated queue.
 
 Rows in these files are not source claims by themselves. They are worklists for adding sourced manual corrections or improving matching rules.
+The public explanation of these limits and correction rules is in `docs/known-limitations.md`.
 
 ## Source Claims and Data Quality
 

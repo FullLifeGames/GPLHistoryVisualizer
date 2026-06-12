@@ -44,6 +44,16 @@ export function weightedRating(wins, losses, draws, priorRate = 0.5, priorGames 
   return value === null ? "" : value.toFixed(1);
 }
 
+export function formatSeasonList(seasonIds = []) {
+  return [...new Set(seasonIds.filter(Boolean))]
+    .sort((a, b) => seasonNumber(a) - seasonNumber(b) || String(a).localeCompare(String(b)))
+    .map((seasonId) => {
+      const number = seasonNumber(seasonId);
+      return Number.isFinite(number) && number < 999 ? `S${number}` : String(seasonId);
+    })
+    .join(", ");
+}
+
 export function aggregatePersonStats(statRows, championRows = []) {
   const aggregate = new Map();
 
@@ -125,7 +135,9 @@ export function aggregatePersonStats(statRows, championRows = []) {
       key: row.key,
       name: row.name,
       seasons_won: row.seasonsWon.size,
+      title_seasons: formatSeasonList([...row.seasonsWon]),
       seasons: row.seasons.size,
+      season_list: formatSeasonList([...row.seasons]),
       teams: row.teams.size,
       matches: row.wins + row.losses + row.draws,
       wins: row.wins,
@@ -209,6 +221,42 @@ export function sourceClaimsForSeason(rows = [], seasonId = "all") {
   return rows.filter((row) => seasonId === "all" || row.season_id === seasonId);
 }
 
+export function filterSourceClaims(rows = [], { season = "all", claimType = "all", search = "" } = {}) {
+  const needle = String(search ?? "").trim().toLowerCase();
+  return rows.filter((row) => {
+    const seasonOk = season === "all" || row.season_id === season;
+    const typeOk = claimType === "all" || row.claim_type === claimType;
+    const searchOk = !needle || Object.values(row).join(" ").toLowerCase().includes(needle);
+    return seasonOk && typeOk && searchOk;
+  });
+}
+
+const REVIEW_DATASET_BY_FILE = {
+  "missing_killlists.csv": "missingKilllists",
+  "missing_killlist_appearances.csv": "missingKilllistAppearances",
+  "low_confidence_videos.csv": "lowConfidenceVideos",
+  "ambiguous_matches.csv": "ambiguousMatches",
+};
+
+export function reviewWorkflowRows(data = {}) {
+  return (data.reviewIndex ?? []).flatMap((queue) => {
+    const rows = data[REVIEW_DATASET_BY_FILE[queue.review_file]] ?? [];
+    return rows.map((row) => ({
+      queue: queue.review_file,
+      severity: queue.severity || "",
+      review_reason: row.review_reason || queue.review_reason || "",
+      correction_file: queue.correction_file || "",
+      suggested_action: queue.suggested_action || "",
+      season_id: row.season_id || row.detected_season_id || "",
+      subject: row.title || row.pokemon || row.trainer || row.team_name || row.video_id || "",
+      detail: row.detected_week ? `Spieltag ${row.detected_week}` : row.division || row.stage || row.match_basis || "",
+      confidence: row.confidence || "",
+      confidence_tier: row.confidence_tier || "",
+      source_urls: row.source_urls || row.video_url || "",
+    }));
+  });
+}
+
 function dataRows(rows = [], seasonId) {
   return rows.filter((row) => row.season_id === seasonId);
 }
@@ -286,6 +334,11 @@ function normalizedStatsKey(value) {
     .trim();
 }
 
+function seasonNumber(seasonId) {
+  const match = String(seasonId ?? "").match(/season_0*(\d+)/);
+  return match ? Number(match[1]) : 999;
+}
+
 function comparablePersonKey(value, normalizeKey = normalizedStatsKey) {
   const normalized = normalizeKey(value);
   return normalized.startsWith("person ") ? normalized.slice("person ".length) : normalized;
@@ -297,6 +350,20 @@ function addSourceUrls(target, value) {
     .map((item) => item.trim())
     .filter(Boolean)
     .forEach((item) => target.add(item));
+}
+
+function addAggregate(target, key, row) {
+  if (!key) return;
+  const current = target.get(key) ?? { name: key, kills: 0, differential: 0 };
+  current.kills += numberValue(row.kills);
+  current.differential += killDifferential(row.kills, row.deaths);
+  target.set(key, current);
+}
+
+function topAggregateName(target) {
+  return (
+    [...target.values()].sort((a, b) => b.kills - a.kills || b.differential - a.differential || a.name.localeCompare(b.name))[0]?.name || ""
+  );
 }
 
 function teamOwnerIndex(rows, normalizeKey) {
@@ -367,6 +434,7 @@ export function summarizeKilllists(rows) {
       deaths: row.deaths,
       differential: row.differential,
       seasons: row.seasons.size,
+      season_list: formatSeasonList([...row.seasons]),
       trainers: row.trainers.size,
       teams: row.teams.size,
     }));
@@ -423,6 +491,7 @@ export function summarizeTrainerPokemon(rows, selectedPersonKey = "", normalizeK
       deaths: row.deaths,
       differential: row.differential,
       seasons: row.seasons.size,
+      season_list: formatSeasonList([...row.seasons]),
       divisions: row.divisions.size,
       teams: row.teams.size,
       source_urls: [...row.sourceUrls].join(";"),
@@ -431,6 +500,30 @@ export function summarizeTrainerPokemon(rows, selectedPersonKey = "", normalizeK
 
 export function personPokemonHighlights(rows, selectedPersonKey = "", normalizeKey = normalizedStatsKey, ownershipRows = []) {
   return summarizeTrainerPokemon(rows, selectedPersonKey, normalizeKey, ownershipRows).slice(0, 12);
+}
+
+export function personStorySummary(statRows = [], championRows = [], pokemonRows = [], selectedPersonKey = "", normalizeKey = normalizedStatsKey) {
+  const selectedKey = comparablePersonKey(selectedPersonKey, normalizeKey);
+  const rows = statRows.filter((row) => comparablePersonKey(row.person_id || row.person_name || row.player_name, normalizeKey) === selectedKey);
+  const titleRows = championRows.filter((row) => comparablePersonKey(row.champion_person_id || row.champion_name, normalizeKey) === selectedKey);
+  const best = rows
+    .map((row) => ({
+      row,
+      ratingValue: weightedRatingValue(row.wins, row.losses, row.draws) ?? -1,
+    }))
+    .sort((a, b) => b.ratingValue - a.ratingValue || numberValue(b.row.points) - numberValue(a.row.points))[0];
+  const signature = [...pokemonRows].sort((a, b) => numberValue(b.kills) - numberValue(a.kills) || numberValue(b.differential) - numberValue(a.differential))[0];
+  const person = rows[0]?.person_name || rows[0]?.player_name || titleRows[0]?.champion_name || "";
+  return {
+    person,
+    seasons: new Set(rows.map((row) => row.season_id).filter(Boolean)).size,
+    season_list: formatSeasonList(rows.map((row) => row.season_id)),
+    title_seasons: formatSeasonList(titleRows.map((row) => row.season_id)),
+    best_season: best?.row?.season_id ? formatSeasonList([best.row.season_id]) : "",
+    best_record: best?.row ? `${numberValue(best.row.wins)}-${numberValue(best.row.losses)}-${numberValue(best.row.draws)}` : "",
+    best_rating: best?.row ? weightedRating(best.row.wins, best.row.losses, best.row.draws) : "",
+    signature_pokemon: signature?.pokemon || "",
+  };
 }
 
 export function pokemonTimelineRows(rows, selectedPokemonKey, normalizeKey = normalizedStatsKey) {
@@ -475,6 +568,31 @@ export function pokemonTimelineRows(rows, selectedPokemonKey, normalizeKey = nor
       trainers: row.trainers.size,
       teams: row.teams.size,
     }));
+}
+
+export function pokemonStorySummary(rows = [], selectedPokemonKey, normalizeKey = normalizedStatsKey) {
+  const selectedKey = normalizeKey(selectedPokemonKey);
+  const filtered = rows
+    .filter((row) => row.data_status !== "not_available")
+    .filter((row) => normalizeKey(row.pokemon_normalized || row.pokemon) === selectedKey);
+  const trainers = new Map();
+  const seasons = new Map();
+  const teams = new Map();
+  let pokemon = "";
+  filtered.forEach((row) => {
+    pokemon = pokemon || row.pokemon || row.pokemon_normalized || selectedPokemonKey;
+    addAggregate(trainers, row.trainer || "", row);
+    addAggregate(seasons, row.season_id || "", row);
+    addAggregate(teams, row.team_name || "", row);
+  });
+  return {
+    pokemon,
+    seasons: new Set(filtered.map((row) => row.season_id).filter(Boolean)).size,
+    season_list: formatSeasonList(filtered.map((row) => row.season_id)),
+    best_trainer: topAggregateName(trainers),
+    best_season: formatSeasonList([topAggregateName(seasons)]),
+    top_team: topAggregateName(teams),
+  };
 }
 
 export function summarizePokemonDetail(rows, selectedPokemonKey, normalizeKey = normalizedStatsKey, ownershipRows = []) {
@@ -570,6 +688,7 @@ export function summarizePokemonDetail(rows, selectedPokemonKey, normalizeKey = 
         deaths: row.deaths,
         differential: row.differential,
         seasons: row.seasons.size,
+        season_list: formatSeasonList([...row.seasons]),
         teams: row.teams.size,
       })),
     seasonRows: seasonRows.sort((a, b) => String(a.season_id || "").localeCompare(String(b.season_id || "")) || String(a.division || "").localeCompare(String(b.division || ""))),

@@ -3,13 +3,18 @@ import {
   aggregatePersonStats,
   canonicalKilllistRows,
   displayNumber,
+  filterSourceClaims,
+  formatSeasonList,
   matchupOverview,
   missingDataRows,
+  personStorySummary,
   personPokemonHighlights,
+  pokemonStorySummary,
   pokemonTimelineRows,
   personDetailKilllistRows,
   primaryCompetitionRows,
   qualityRowsFromData,
+  reviewWorkflowRows,
   seasonCoverageRows,
   sourceClaimsForSeason,
   summarizePokemonDetail,
@@ -45,6 +50,7 @@ assert.equal(displayNumber("0"), 0);
 assert.equal(displayNumber(""), "");
 assert.equal(killDifferential("20", "8"), 12);
 assert.equal(killDifferential("20", ""), 20);
+assert.equal(formatSeasonList(["season_010", "season_001", "season_002"]), "S1, S2, S10");
 
 assert.deepEqual(
   summarizeKilllists([
@@ -53,8 +59,8 @@ assert.deepEqual(
     { season_id: "season_001", pokemon: "Evoli", pokemon_normalized: "evoli", trainer: "A", team_name: "Alpha", appearances: "", kills: "1", deaths: "4", differential: "-3", data_status: "sheet_extracted" },
   ]),
   [
-    { rank: 1, pokemon: "Pikachu", appearances: 3, kills: 5, deaths: 1, differential: 4, seasons: 2, trainers: 2, teams: 2 },
-    { rank: 2, pokemon: "Evoli", appearances: 0, kills: 1, deaths: 4, differential: -3, seasons: 1, trainers: 1, teams: 1 },
+    { rank: 1, pokemon: "Pikachu", appearances: 3, kills: 5, deaths: 1, differential: 4, seasons: 2, season_list: "S1, S2", trainers: 2, teams: 2 },
+    { rank: 2, pokemon: "Evoli", appearances: 0, kills: 1, deaths: 4, differential: -3, seasons: 1, season_list: "S1", trainers: 1, teams: 1 },
   ],
 );
 
@@ -86,7 +92,7 @@ assert.deepEqual(
       teams: 3,
       source_urls: "https://example.test/s8;https://example.test/s9;https://example.test/s10",
     },
-    trainerRows: [{ trainer: "Bene", appearances: 18, kills: 20, deaths: 13, differential: 7, seasons: 3, teams: 3 }],
+    trainerRows: [{ trainer: "Bene", appearances: 18, kills: 20, deaths: 13, differential: 7, seasons: 3, season_list: "S8, S9, S10", teams: 3 }],
     seasonRows: [
       { season_id: "season_008", division: "Liga 1", trainer: "Bene", team_name: "Victini Bottom", appearances: 9, kills: 8, deaths: 3, differential: 5, source_urls: "https://example.test/s8" },
       { season_id: "season_009", division: "Doubles", trainer: "Bene", team_name: "Victory Instinct", appearances: 3, kills: 3, deaths: 2, differential: 1, source_urls: "https://example.test/s9" },
@@ -147,6 +153,7 @@ assert.deepEqual(
     deaths: row.deaths,
     differential: row.differential,
     seasons: row.seasons,
+    season_list: row.season_list,
     divisions: row.divisions,
     teams: row.teams,
     source_urls: row.source_urls,
@@ -160,6 +167,7 @@ assert.deepEqual(
       deaths: 3,
       differential: 6,
       seasons: 2,
+      season_list: "S9, S10",
       divisions: 2,
       teams: 2,
       source_urls: "https://example.test/s9-overall;https://example.test/s10-playoffs",
@@ -199,6 +207,7 @@ assert.deepEqual(
       deaths: row.deaths,
       differential: row.differential,
       seasons: row.seasons,
+      season_list: row.season_list,
       divisions: row.divisions,
       teams: row.teams,
     })),
@@ -211,6 +220,7 @@ assert.deepEqual(
         deaths: 8,
         differential: 12,
         seasons: 3,
+        season_list: "S8, S9, S10",
         divisions: 3,
         teams: 3,
       },
@@ -375,6 +385,56 @@ assert.deepEqual(
 );
 
 assert.deepEqual(
+  filterSourceClaims(
+    [
+      { season_id: "season_010", claim_type: "champion", claim_subject: "Bene", claim_value: "Bene" },
+      { season_id: "season_009", claim_type: "champion", claim_subject: "Bene + El Scizor", claim_value: "Bene + El Scizor" },
+      { season_id: "season_010", claim_type: "video", claim_subject: "abc", claim_value: "GPL S10 Finale" },
+    ],
+    { season: "season_010", claimType: "champion", search: "bene" },
+  ),
+  [{ season_id: "season_010", claim_type: "champion", claim_subject: "Bene", claim_value: "Bene" }],
+);
+
+assert.deepEqual(
+  reviewWorkflowRows({
+    reviewIndex: [
+      {
+        review_file: "ambiguous_matches.csv",
+        severity: "high",
+        review_reason: "unmatched_game_video",
+        correction_file: "data/manual/matches.csv",
+        suggested_action: "Map the video.",
+      },
+    ],
+    ambiguousMatches: [
+      {
+        video_id: "abc",
+        title: "GPL S10 Spieltag 2 vs Bene",
+        detected_season_id: "season_010",
+        detected_week: "2",
+        source_urls: "https://youtube.test/watch?v=abc",
+      },
+    ],
+  }),
+  [
+    {
+      queue: "ambiguous_matches.csv",
+      severity: "high",
+      review_reason: "unmatched_game_video",
+      correction_file: "data/manual/matches.csv",
+      suggested_action: "Map the video.",
+      season_id: "season_010",
+      subject: "GPL S10 Spieltag 2 vs Bene",
+      detail: "Spieltag 2",
+      confidence: "",
+      confidence_tier: "",
+      source_urls: "https://youtube.test/watch?v=abc",
+    },
+  ],
+);
+
+assert.deepEqual(
   sourceClaimsForSeason(
     [
       { season_id: "season_010", claim_type: "champion", claim_value: "Bene" },
@@ -400,10 +460,11 @@ assert.deepEqual(
     deaths: row.deaths,
     differential: row.differential,
     seasons: row.seasons,
+    season_list: row.season_list,
   })),
   [
-    { pokemon: "UHaFniR", appearances: 9, kills: 8, deaths: 3, differential: 5, seasons: 1 },
-    { pokemon: "Ramoth", appearances: 4, kills: 6, deaths: 1, differential: 5, seasons: 1 },
+    { pokemon: "UHaFniR", appearances: 9, kills: 8, deaths: 3, differential: 5, seasons: 1, season_list: "S8" },
+    { pokemon: "Ramoth", appearances: 4, kills: 6, deaths: 1, differential: 5, seasons: 1, season_list: "S10" },
   ],
 );
 
@@ -420,4 +481,49 @@ assert.deepEqual(
     { season_id: "season_008", divisions: "Liga 1", appearances: 9, kills: 8, deaths: 3, differential: 5, trainers: 1, teams: 0 },
     { season_id: "season_010", divisions: "Playoffs", appearances: 6, kills: 9, deaths: 8, differential: 1, trainers: 1, teams: 0 },
   ],
+);
+
+assert.deepEqual(
+  personStorySummary(
+    [
+      { season_id: "season_008", person_id: "person_bene", person_name: "Bene", team_name: "Victini Bottom", wins: "9", losses: "3", draws: "0", points: "27", kills: "60", deaths: "40", differential: "20", data_status: "sheet_extracted" },
+      { season_id: "season_010", person_id: "person_bene", person_name: "Bene", team_name: "Wackel Backel", wins: "10", losses: "1", draws: "0", points: "30", kills: "70", deaths: "30", differential: "40", data_status: "sheet_extracted" },
+    ],
+    [{ season_id: "season_010", champion_person_id: "person_bene", champion_name: "Bene", champion_team: "Wackel Backel", data_status: "source_evidenced" }],
+    [
+      { trainer: "Bene", pokemon: "UHaFniR", appearances: 12, kills: 15, deaths: 4, differential: 11, seasons: 2 },
+      { trainer: "Bene", pokemon: "Ramoth", appearances: 5, kills: 8, deaths: 2, differential: 6, seasons: 1 },
+    ],
+    "person_bene",
+  ),
+  {
+    person: "Bene",
+    seasons: 2,
+    season_list: "S8, S10",
+    title_seasons: "S10",
+    best_season: "S10",
+    best_record: "10-1-0",
+    best_rating: "69.6",
+    signature_pokemon: "UHaFniR",
+  },
+);
+
+assert.deepEqual(
+  pokemonStorySummary(
+    [
+      { season_id: "season_008", division: "Liga 1", pokemon: "UHaFniR", pokemon_normalized: "uhafnir", trainer: "Bene", team_name: "Victini Bottom", appearances: "9", kills: "8", deaths: "3", data_status: "sheet_extracted" },
+      { season_id: "season_010", division: "Playoffs", pokemon: "UHaFnir", pokemon_normalized: "uhafnir", trainer: "Bene", team_name: "Wackel Backel", appearances: "6", kills: "9", deaths: "8", data_status: "sheet_extracted" },
+      { season_id: "season_010", division: "Playoffs", pokemon: "UHaFnir", pokemon_normalized: "uhafnir", trainer: "Minetube", team_name: "Backel Gefackel", appearances: "4", kills: "7", deaths: "2", data_status: "sheet_extracted" },
+    ],
+    "uhafnir",
+    (value) => String(value ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(),
+  ),
+  {
+    pokemon: "UHaFniR",
+    seasons: 2,
+    season_list: "S8, S10",
+    best_trainer: "Bene",
+    best_season: "S10",
+    top_team: "Wackel Backel",
+  },
 );

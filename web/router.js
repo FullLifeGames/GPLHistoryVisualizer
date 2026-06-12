@@ -9,6 +9,8 @@ const VALID_VIEWS = new Set([
   "person-details",
   "pokemon-detail",
   "data-coverage",
+  "review-workflow",
+  "source-claims",
   "season-detail",
   "matchup",
 ]);

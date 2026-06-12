@@ -109,6 +109,8 @@ def test_generate_review_queue_writes_missing_killlists_and_video_review_files(t
             "row_count": "1",
             "severity": "high",
             "review_reason": "killlist_source_unavailable",
+            "correction_file": "data/manual/pokemon_killlists.csv",
+            "suggested_action": "Add sourced killlist rows or keep the placeholder if the source is unavailable.",
             "description": "Killlist source rows that are known but unavailable.",
         },
         {
@@ -116,6 +118,8 @@ def test_generate_review_queue_writes_missing_killlists_and_video_review_files(t
             "row_count": "1",
             "severity": "medium",
             "review_reason": "killlist_appearances_not_in_source",
+            "correction_file": "data/manual/pokemon_killlists.csv",
+            "suggested_action": "Add appearance counts only when a source explicitly provides them.",
             "description": "Killlist rows with kills but no appearance count in the source.",
         },
         {
@@ -123,6 +127,8 @@ def test_generate_review_queue_writes_missing_killlists_and_video_review_files(t
             "row_count": "1",
             "severity": "medium",
             "review_reason": "low_or_medium_match_confidence",
+            "correction_file": "data/manual/matches.csv",
+            "suggested_action": "Confirm or override the video-to-match assignment with source evidence.",
             "description": "Matched videos whose assignment should be manually reviewed.",
         },
         {
@@ -130,6 +136,8 @@ def test_generate_review_queue_writes_missing_killlists_and_video_review_files(t
             "row_count": "1",
             "severity": "high",
             "review_reason": "unmatched_game_video",
+            "correction_file": "data/manual/matches.csv",
+            "suggested_action": "Map the video to a sourced match row or leave it unmatched.",
             "description": "Game-like GPL videos that could not be matched to a normalized match.",
         },
     ]

@@ -36,6 +36,8 @@
         <button class="tab" data-view="video-archive" data-i18n="nav.videoArchive">Video-Archiv</button>
         <button class="tab" data-view="person-details" data-i18n="nav.personDetails">Personendetails</button>
         <button class="tab" data-view="data-coverage" data-i18n="nav.dataCoverage">Datenlage</button>
+        <button class="tab" data-view="review-workflow" data-i18n="nav.reviewWorkflow">Review</button>
+        <button class="tab" data-view="source-claims" data-i18n="nav.sourceClaims">Quellenclaims</button>
         <button class="tab" data-view="season-detail" data-i18n="nav.seasonDetail">Saisonakte</button>
         <button class="tab" data-view="matchup" data-i18n="nav.matchup">Matchup-Check</button>
       </nav>
@@ -124,14 +126,14 @@
           <p data-i18n="sections.personDetailsDescription">Personen, Teams, Tabellenstände und Titel über alle Saisons.</p>
         </div>
         <div id="person-focus" class="person-focus" hidden></div>
+        <div id="person-story-summary" class="summary-grid"></div>
         <div id="person-summary-table" class="table-wrap"></div>
         <div id="person-timeline-table" class="table-wrap stacked-table"></div>
         <div id="person-season-table" class="table-wrap stacked-table"></div>
         <div class="subsection-head">
           <h3 data-i18n="personDetails.pokemonTitle">Pokémon & Kills</h3>
         </div>
-        <div id="person-pokemon-highlight-table" class="table-wrap"></div>
-        <div id="person-pokemon-table" class="table-wrap stacked-table"></div>
+        <div id="person-pokemon-table" class="table-wrap"></div>
         <div class="subsection-head">
           <h3 data-i18n="personDetails.videoTitle">Videos</h3>
         </div>
@@ -160,6 +162,22 @@
           <h3 data-i18n="coverage.reviewTitle">Review-Queues</h3>
         </div>
         <div id="review-index-table" class="table-wrap"></div>
+      </section>
+
+      <section id="view-review-workflow" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.reviewWorkflowTitle">Review</h2>
+          <p data-i18n="sections.reviewWorkflowDescription">Arbeitsliste für offene Quellen-, Killlisten- und Video-Zuordnungsprüfungen.</p>
+        </div>
+        <div id="review-workflow-table" class="table-wrap"></div>
+      </section>
+
+      <section id="view-source-claims" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.sourceClaimsTitle">Quellenclaims</h2>
+          <p data-i18n="sections.sourceClaimsDescription">Feldgenaue Claim- und Quellenübersicht aus den normalisierten CSVs.</p>
+        </div>
+        <div id="source-claims-table" class="table-wrap"></div>
       </section>
 
       <section id="view-season-detail" class="view">

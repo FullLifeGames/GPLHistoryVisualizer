@@ -8,9 +8,11 @@ CSV-first reconstruction and visualization of German Pokémon League history fro
 - Normalized CSVs under `data/normalized/`.
 - Raw collected source data under `data/raw/`.
 - Static web app under `web/` with all-time table, killlists, Pokémon detail pages, table history, match plans, battle history, video archive, person details, data coverage, season detail, and matchup checker.
+- Aggregated season-count tables also show an explicit season list, so counts can be checked against the exact seasons represented.
 - Markdown source report under `docs/gpl-history.md`.
 - Review queue CSVs under `data/review/` for missing killlists, missing appearances, and video matches that need human cleanup.
 - Data quality and source claim CSVs for per-season coverage and sourced claim inspection.
+- Known limitations and correction workflow under `docs/known-limitations.md`.
 
 ## Setup
 
@@ -100,6 +102,8 @@ The web app uses Tabulator from unpkg for interactive tables and `@pkmn/img` fro
 `.github/workflows/pages.yml` publishes a lean GitHub Pages artifact containing `web/`, `data/normalized/`, `data/review/`, `docs/`, and the GPL Season 10 logo. It intentionally excludes `data/raw/`.
 
 ## Manual Corrections
+
+See `docs/known-limitations.md` for the public review and correction workflow.
 
 Reviewed corrections can be added as CSV rows under `data/manual/`. Keep every correction sourced and use `manual_override` in `data_status`. After editing manual files, run:
 

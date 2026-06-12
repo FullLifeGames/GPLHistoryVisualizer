@@ -37,6 +37,14 @@ DATA_QUALITY_FIELDS = [
     "matched_video_rows",
     "unmatched_game_video_rows",
     "low_confidence_video_rows",
+    "quality_score",
+    "tables_score",
+    "matches_score",
+    "killlists_score",
+    "videos_score",
+    "claims_score",
+    "quality_summary",
+    "priority_gaps",
     "missing_categories",
     "review_flags",
     "source_urls",
@@ -150,11 +158,23 @@ def _data_quality_rows(normalized_dir: Path) -> list[dict[str, Any]]:
         season_videos = videos.get(season_id, [])
         missing_categories = _missing_categories(season_standings, season_matches, season_champions, season_killlists)
         review_flags = _review_flags(season_killlists, unavailable_killlists, season_videos)
+        scores = _quality_scores(
+            season_standings=season_standings,
+            season_matches=season_matches,
+            season_champions=season_champions,
+            season_killlists=season_killlists,
+            unavailable_killlists=unavailable_killlists,
+            season_videos=season_videos,
+            missing_categories=missing_categories,
+            review_flags=review_flags,
+        )
+        coverage_status = _coverage_status(missing_categories, review_flags)
+        priority_gaps = [*missing_categories, *review_flags]
         rows.append(
             {
                 "season_id": season_id,
                 "season_label": labels.get(season_id) or season_id,
-                "coverage_status": _coverage_status(missing_categories, review_flags),
+                "coverage_status": coverage_status,
                 "standings_rows": len(season_standings),
                 "match_rows": len(season_matches),
                 "playoff_match_rows": sum(1 for row in season_matches if _is_playoff(row)),
@@ -166,6 +186,9 @@ def _data_quality_rows(normalized_dir: Path) -> list[dict[str, Any]]:
                 "matched_video_rows": sum(1 for row in season_videos if row.get("match_status") == "matched"),
                 "unmatched_game_video_rows": sum(1 for row in season_videos if row.get("video_type") == "game" and row.get("match_status") == "unmatched"),
                 "low_confidence_video_rows": sum(1 for row in season_videos if row.get("match_status") == "matched" and row.get("confidence_tier") in {"low", "medium"}),
+                **scores,
+                "quality_summary": f"{scores['quality_score']}/100 - {coverage_status}",
+                "priority_gaps": ";".join(priority_gaps),
                 "missing_categories": ";".join(missing_categories),
                 "review_flags": ";".join(review_flags),
                 "source_urls": _source_urls(
@@ -175,6 +198,46 @@ def _data_quality_rows(normalized_dir: Path) -> list[dict[str, Any]]:
             }
         )
     return rows
+
+
+def _quality_scores(
+    *,
+    season_standings: list[dict[str, str]],
+    season_matches: list[dict[str, str]],
+    season_champions: list[dict[str, str]],
+    season_killlists: list[dict[str, str]],
+    unavailable_killlists: list[dict[str, str]],
+    season_videos: list[dict[str, str]],
+    missing_categories: list[str],
+    review_flags: list[str],
+) -> dict[str, int]:
+    tables_score = (60 if season_standings else 0) + (40 if season_champions else 0)
+    matches_score = 100 if season_matches else 0
+    killlists_score = 100 if season_killlists else 0
+    if "missing_appearances" in review_flags:
+        killlists_score -= 35
+    if unavailable_killlists:
+        killlists_score -= 25
+    videos_score = 100 if season_videos else 0
+    if any(row.get("video_type") == "game" and row.get("match_status") == "unmatched" for row in season_videos):
+        videos_score -= 25
+    if any(row.get("match_status") == "matched" and row.get("confidence_tier") in {"low", "medium"} for row in season_videos):
+        videos_score -= 25
+    claims_score = 100 if not missing_categories else max(0, 100 - len(missing_categories) * 25)
+
+    scores = {
+        "tables_score": _clamp_score(tables_score),
+        "matches_score": _clamp_score(matches_score),
+        "killlists_score": _clamp_score(killlists_score),
+        "videos_score": _clamp_score(videos_score),
+        "claims_score": _clamp_score(claims_score),
+    }
+    scores["quality_score"] = round(sum(scores.values()) / len(scores))
+    return scores
+
+
+def _clamp_score(value: int) -> int:
+    return max(0, min(100, int(value)))
 
 
 def _read_csv(path: Path) -> list[dict[str, str]]:
