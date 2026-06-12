@@ -30,10 +30,12 @@ GERMAN_FORM_ALIASES = {
     "enamorus-therian": ["Cupidos-T", "Cupidos-Therian", "Cupidos-Tiergeistform"],
     "indeedee-male": ["Servol (männlich)", "Servol-m", "Servol-M"],
     "indeedee-female": ["Servol (weiblich)", "Servol-w", "Servol-W"],
+    "kyurem-black": ["Kyurem-Schwarz", "Schwarzes Kyurem", "Kyurem-Black", "Black Kyurem"],
+    "kyurem-white": ["Kyurem-Weiss", "Weisses Kyurem", "Kyurem-White", "White Kyurem"],
     "landorus-incarnate": ["Demeteros-I", "Demeteros-Inkarnationsform"],
     "landorus-therian": ["Demeteros-T", "Demeteros-Therian", "Demeteros-Tiergeistform"],
     "lycanroc-dusk": ["Wolwerock-Dämmerungsform", "Wolwerock-Daemmerungsform", "Wolwerock-Zwielicht"],
-    "lycanroc-midday": ["Wolwerock-Tag", "Wolwerock-Tagform"],
+    "lycanroc-midday": ["Wolwerock", "Wolwerock-Tag", "Wolwerock-Tagform"],
     "meowstic-male": ["Psiaugon (männlich)", "Psiaugon-m", "Psiaugon-M"],
     "meowstic-female": ["Psiaugon (weiblich)", "Psiaugon-w", "Psiaugon-W"],
     "ogerpon-cornerstone-mask": ["Ogerpon-Gestein"],
@@ -45,20 +47,50 @@ GERMAN_FORM_ALIASES = {
     "rotom-mow": ["Rotom-Mow", "Rotom-Schneid", "Rotom-Schneide", "Rotom (Schneide-Form)"],
     "rotom-wash": ["Rotom-W", "Rotom-Wash", "Rotom-Wasch", "Rotom (Wasch-Form)"],
     "thundurus-incarnate": ["Voltolos-I", "Voltolos-Inkarnationsform"],
-    "thundurus-therian": ["Voltolos-T", "Voltolos-Tiergeistform"],
+    "thundurus-therian": ["Voltolos-T", "Voltolos-Therian", "Voltolos-Tiergeistform"],
     "tornadus-incarnate": ["Boreos-I", "Boreos-Inkarnationsform"],
-    "tornadus-therian": ["Boreos-T", "Boreos-Tiergeistform"],
+    "tornadus-therian": ["Boreos-T", "Boreos-Therian", "Boreos-Tiergeistform"],
     "toxtricity-amped": ["Riffex-Hoch", "Riffex-Hochform"],
     "toxtricity-low-key": ["Riffex-Tief", "Riffex-Tiefform"],
     "tyranitar-mega": ["Mega-Despotar"],
     "silvally-normal": ["Amigento-Normal", "Amigento-Typ:Normal"],
-    "zygarde-50": ["Zygarde-50", "Zygarde-50%"],
+    "zygarde-50": ["Zygarde", "Zygarde-50", "Zygarde-50%"],
     "zygarde-50-power-construct": ["Zygarde-50", "Zygarde-50%"],
+}
+
+GERMAN_FORM_BASE_ALIASES = {
+    "enamorus-incarnate": ["Cupidos"],
+    "landorus-incarnate": ["Demeteros"],
+    "thundurus-incarnate": ["Voltolos"],
+    "tornadus-incarnate": ["Boreos"],
+}
+
+GERMAN_FORM_DISPLAY_NAMES = {
+    "enamorus-incarnate": "Cupidos-I",
+    "enamorus-therian": "Cupidos-T",
+    "kyurem-black": "Kyurem-Schwarz",
+    "kyurem-white": "Kyurem-Weiss",
+    "landorus-incarnate": "Demeteros-I",
+    "landorus-therian": "Demeteros-T",
+    "lycanroc-dusk": "Wolwerock-Dämmerungsform",
+    "lycanroc-midday": "Wolwerock-Tagform",
+    "rotom-fan": "Rotom-Wirbel",
+    "rotom-frost": "Rotom-Frost",
+    "rotom-heat": "Rotom-Hitze",
+    "rotom-mow": "Rotom-Schneide",
+    "rotom-wash": "Rotom-Wasch",
+    "thundurus-incarnate": "Voltolos-I",
+    "thundurus-therian": "Voltolos-T",
+    "tornadus-incarnate": "Boreos-I",
+    "tornadus-therian": "Boreos-T",
+    "zygarde-50": "Zygarde-50",
 }
 
 GERMAN_NAME_ALIASES = {
     "Drifzepeli": ["Drifzepli"],
+    "Gallopa": ["Galoppa"],
     "Meistagrif": ["Meistergrif"],
+    "Porygon2": ["Porygon 2", "Porygon-2"],
     "Schwalboss": ["Schwallbos"],
     "Shnurgarst": ["Shnurgast"],
 }
@@ -177,7 +209,7 @@ def pokemon_display_name(value: str | None) -> str | None:
     clean = str(value or "").strip()
     if not clean:
         return None
-    return GERMAN_NAME_ALIASES_BY_KEY.get(_name_key(clean), clean)
+    return POKEMON_DISPLAY_ALIASES_BY_KEY.get(_name_key(clean), clean)
 
 
 def _language_ids(languages_csv: str) -> dict[str, str]:
@@ -364,6 +396,23 @@ def _name_key(value: str) -> str:
 
 GERMAN_NAME_ALIASES_BY_KEY = {
     _name_key(alias): canonical for canonical, aliases in GERMAN_NAME_ALIASES.items() for alias in aliases
+}
+
+
+def _form_display_aliases_by_key() -> dict[str, str]:
+    aliases: dict[str, str] = {}
+    for identifier, values in GERMAN_FORM_ALIASES.items():
+        display = GERMAN_FORM_DISPLAY_NAMES.get(identifier, values[0] if values else "")
+        if not display:
+            continue
+        for alias in [display, *GERMAN_FORM_BASE_ALIASES.get(identifier, []), *values]:
+            aliases[_name_key(alias)] = display
+    return aliases
+
+
+POKEMON_DISPLAY_ALIASES_BY_KEY = {
+    **_form_display_aliases_by_key(),
+    **GERMAN_NAME_ALIASES_BY_KEY,
 }
 
 

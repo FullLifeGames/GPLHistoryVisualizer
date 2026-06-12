@@ -401,6 +401,8 @@ input:focus,
 }
 
 .table-action {
+  display: inline-flex;
+  align-items: center;
   min-height: 34px;
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -411,6 +413,7 @@ input:focus,
   font-size: 12px;
   font-weight: 850;
   padding: 6px 10px;
+  text-decoration: none;
 }
 
 .table-action:hover,
@@ -748,6 +751,54 @@ tbody tr:hover {
   font-size: 24px;
 }
 
+.entry-shell code {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface-soft);
+  padding: 2px 5px;
+}
+
+.entry-toolbar {
+  grid-template-columns: minmax(160px, 220px) minmax(220px, 1fr) minmax(280px, 1.2fr) auto;
+}
+
+.entry-checkbox {
+  align-self: end;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+}
+
+.entry-checkbox input {
+  width: auto;
+  min-height: 0;
+}
+
+.entry-actions {
+  margin-bottom: 0;
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.entry-table select {
+  min-width: 260px;
+}
+
+.entry-table .numeric {
+  text-align: right;
+  font-weight: 850;
+}
+
+.entry-muted {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 @media (max-width: 900px) {
   .summary-grid {
     grid-template-columns: repeat(2, minmax(140px, 1fr));
@@ -784,6 +835,7 @@ tbody tr:hover {
   }
 
   .toolbar,
+  .entry-toolbar,
   .matchup-form,
   .summary-grid,
   .result-grid {

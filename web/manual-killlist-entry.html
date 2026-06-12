@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="de" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GPL S3-S5 Pokémon-Zuordnung</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body id="manual-killlist-entry">
+    <header class="app-header">
+      <div class="brand-lockup">
+        <a class="brand-logo" href="./index.html#/review-workflow" aria-label="Zurueck zum GPL History Visualizer">
+          <img src="../GPL_Season_10_Logo.png" alt="GPL Season 10" />
+        </a>
+        <div class="brand-copy">
+          <h1>S3-S5 Pokémon-Zuordnung</h1>
+          <p>Manuelle Eingabemaske fuer Trainer-Zuordnungen aus den alten Killlisten.</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <a class="header-button" href="./index.html#/review-workflow">Zur Review</a>
+        <div class="status" id="entry-status">Lade Daten</div>
+      </div>
+    </header>
+
+    <main class="app-shell entry-shell">
+      <section class="section-head">
+        <div>
+          <h2>Pokémon pro Saison einem Spieler zuordnen</h2>
+          <p>
+            Der Export ist fuer <code>data/manual/pokemon_killlists.csv</code> gedacht. Kills und Quellen aus der alten
+            Tabelle bleiben erhalten; Trainer und Team kommen aus deiner Auswahl.
+          </p>
+        </div>
+      </section>
+
+      <section class="toolbar entry-toolbar" aria-label="Eingabefilter">
+        <label>
+          <span>Saison</span>
+          <select id="entry-season"></select>
+        </label>
+        <label>
+          <span>Suche</span>
+          <input id="entry-search" type="search" placeholder="Pokémon, Spieler, Saison" />
+        </label>
+        <label>
+          <span>Manuelle Quelle</span>
+          <input id="entry-source" type="text" value="data/manual/pokemon_killlists.csv" />
+        </label>
+        <label class="entry-checkbox">
+          <input id="entry-open-only" type="checkbox" />
+          <span>Nur offene Zuordnungen</span>
+        </label>
+      </section>
+
+      <section class="summary-grid" id="entry-summary" aria-label="Zuordnungsstatus"></section>
+
+      <section class="table-actions entry-actions">
+        <button class="table-action" id="entry-export" type="button">CSV herunterladen</button>
+        <button class="table-action" id="entry-copy" type="button">CSV kopieren</button>
+        <button class="table-action" id="entry-reset" type="button">Lokale Auswahl loeschen</button>
+      </section>
+
+      <section class="table-wrap" id="entry-table" aria-label="S3-S5 Pokémon-Zuordnungen"></section>
+    </main>
+
+    <script type="module" src="./manual_killlist_entry.js"></script>
+  </body>
+</html>

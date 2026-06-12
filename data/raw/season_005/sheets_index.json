@@ -72,5 +72,20 @@
     "rows": 0,
     "columns": 0,
     "api_error": "Sheets API metadata error 404 for 1oXO8WjHo3Og1gncQWS7jEPaNyAFrkJhxL-xS57holc0: Requested entity was not found."
+  },
+  {
+    "sheet_id": "1JZpA-5XDldN2bjfvhvBPHYK-1AENETLnF1UxNEpWlNA",
+    "workbook_title": "Ewige Tabelle GPL",
+    "gid": "352888197",
+    "title": "Ewige Tabelle GPL",
+    "index": 5,
+    "source_url": "https://docs.google.com/spreadsheets/d/1JZpA-5XDldN2bjfvhvBPHYK-1AENETLnF1UxNEpWlNA/edit#gid=352888197",
+    "raw_path": "data/raw/season_005/sheets/1jzpa_5xdldn2bjfvhvbphyk_1aenetlnf1uxnepwlna_ewige_tabelle_gpl_352888197.csv",
+    "status": "available",
+    "status_code": 200,
+    "error": null,
+    "rows": 425,
+    "columns": 43,
+    "fetch_method": "google_visualization_api"
   }
 ]

@@ -249,6 +249,13 @@ _MISSING_KILLLIST_SOURCES = {
     },
 }
 
+_OLD_PROJECT_KILL_SHEET_ID = "1JZpA-5XDldN2bjfvhvBPHYK-1AENETLnF1UxNEpWlNA"
+_OLD_PROJECT_KILL_COLUMNS = {
+    "season_003": ("s3", "Regular Season"),
+    "season_004": ("s4", "Regular Season"),
+    "season_005": ("s5", "Liga 1"),
+}
+
 _S9_KILLLIST_TRAINERS = {
     "Singles": {
         "akatsuki amphibianz": "Barry D. Sin of Speed",
@@ -433,6 +440,7 @@ def normalize_all(data_dir: Path) -> NormalizedOutput:
         output.pokemon_killlists.extend(season_output.pokemon_killlists or [_placeholder(season_id, "pokemon_killlists")])
 
     apply_manual_rows(data_dir, output, NORMALIZED_FIELDS)
+    output.pokemon_killlists = _replace_generated_killlists_with_manual_overrides(output.pokemon_killlists)
     output.people = _people_from_output(output)
     output.aliases_review = _alias_review(output)
     apply_manual_rows(data_dir, output, {"people": NORMALIZED_FIELDS["people"], "aliases_review": NORMALIZED_FIELDS["aliases_review"]})
@@ -456,6 +464,43 @@ def _write_csv(path: Path, fields: list[str], rows: list[dict[str, Any]]) -> Non
         writer.writeheader()
         for row in rows:
             writer.writerow({field: "" if row.get(field) is None else row.get(field) for field in fields})
+
+
+def _replace_generated_killlists_with_manual_overrides(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    manual_keys = {
+        _killlist_assignment_key(row)
+        for row in rows
+        if "manual" in str(row.get("data_status") or "") and _killlist_assignment_key(row)
+    }
+    if not manual_keys:
+        return rows
+    return [
+        row
+        for row in rows
+        if "manual" in str(row.get("data_status") or "")
+        or not _is_trainerless_generated_killlist_row(row)
+        or _killlist_assignment_key(row) not in manual_keys
+    ]
+
+
+def _is_trainerless_generated_killlist_row(row: dict[str, Any]) -> bool:
+    status = str(row.get("data_status") or "")
+    if "manual" in status or status == "not_available":
+        return False
+    return not any(_null(row.get(field)) for field in ("trainer", "trainer_normalized", "team_name"))
+
+
+def _killlist_assignment_key(row: dict[str, Any]) -> tuple[str, str, str, str] | None:
+    season_id = _null(row.get("season_id"))
+    pokemon_key = _null(row.get("pokemon_normalized")) or _canonical_name(row.get("pokemon"))
+    if not season_id or not pokemon_key:
+        return None
+    return (
+        season_id,
+        _null(row.get("division")) or "",
+        _null(row.get("stage")) or "",
+        pokemon_key,
+    )
 
 
 def _load_sheet_tables(sheets_index: list[dict[str, Any]], season_path: Path | None = None) -> list[dict[str, Any]]:
@@ -1885,6 +1930,10 @@ def _season_killlists(season_id: str, tables: list[dict[str, Any]]) -> list[dict
         "season_009": [("Kills Gesamt", "Overall"), ("Kills Singles", "Singles"), ("Kills Doubles", "Doubles")],
     }
     rows: list[dict[str, Any]] = []
+    if season_id in _OLD_PROJECT_KILL_COLUMNS:
+        rows.extend(_old_project_killlist(season_id, tables))
+        if rows:
+            return _dedupe_killlist_rows([*rows, *_missing_killlist_rows(season_id)])
     if season_id in {"season_001", "season_002"}:
         for table in [table for table in tables if _has_killlist_header(table["rows"])]:
             rows.extend(_standard_killlist(season_id, table, "Regular Season"))
@@ -1906,6 +1955,41 @@ def _season_killlists(season_id: str, tables: list[dict[str, Any]]) -> list[dict
                 rows.extend(_standard_killlist(season_id, table, division))
     rows = _dedupe_killlist_rows(rows)
     return rows or _missing_killlist_rows(season_id)
+
+
+def _old_project_killlist(season_id: str, tables: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    column_key, division = _OLD_PROJECT_KILL_COLUMNS[season_id]
+    rows: list[dict[str, Any]] = []
+    for table in tables:
+        entry = table["entry"]
+        if entry.get("sheet_id") != _OLD_PROJECT_KILL_SHEET_ID and not _title_matches(entry.get("title"), "Ewige Tabelle GPL"):
+            continue
+        source_url = _sheet_source_url(entry)
+        for record in table["records"]:
+            pokemon = _first(record, ["pokemon"])
+            kills = _number(record.get(column_key))
+            if not pokemon or kills is None or float(kills) <= 0:
+                continue
+            pokemon_name = pokemon_display_name(pokemon)
+            rows.append(
+                {
+                    "season_id": season_id,
+                    "division": division,
+                    "stage": _stage_from_division(division),
+                    "pokemon": _null(pokemon_name),
+                    "pokemon_normalized": _canonical_name(pokemon_name),
+                    "trainer": None,
+                    "trainer_normalized": None,
+                    "team_name": None,
+                    "appearances": None,
+                    "kills": _format_number(float(kills)),
+                    "deaths": None,
+                    "differential": None,
+                    "data_status": "sheet_extracted",
+                    "source_urls": source_url,
+                }
+            )
+    return rows
 
 
 def _missing_killlist_rows(season_id: str) -> list[dict[str, Any]]:

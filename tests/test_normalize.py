@@ -214,7 +214,7 @@ def test_killlists_mark_zero_appearances_when_usage_columns_are_present_but_empt
         row
         for row in rows
         if row["season_id"] == "season_010"
-        and row["pokemon"] == "Rotom-Heat"
+        and row["pokemon"] == "Rotom-Hitze"
         and row["trainer"] == "Nestfloh"
     )
 
@@ -252,6 +252,43 @@ def test_unavailable_bene_killlists_are_person_scoped_without_inferred_pokemon()
     assert {row["pokemon"] for row in rows.values()} == {None}
     assert {row["appearances"] for row in rows.values()} == {None}
     assert {row["kills"] for row in rows.values()} == {None}
+
+
+def test_old_project_sheet_supplies_s3_to_s5_pokemon_kills_without_trainer_inference():
+    output = normalize_all(Path("data"))
+    rows = [
+        row
+        for row in output.pokemon_killlists
+        if row["season_id"] in {"season_003", "season_004", "season_005"}
+        and row["data_status"] == "sheet_extracted"
+    ]
+    unavailable = [
+        row
+        for row in output.pokemon_killlists
+        if row["season_id"] in {"season_003", "season_004", "season_005"}
+        and row["data_status"] == "not_available"
+    ]
+
+    assert rows
+    assert len(unavailable) == 3
+
+    by_season_pokemon = {(row["season_id"], row["pokemon"]): row for row in rows}
+    assert by_season_pokemon[("season_003", "Snibunna")]["kills"] == "20"
+    assert by_season_pokemon[("season_004", "Snibunna")]["kills"] == "14"
+    assert by_season_pokemon[("season_005", "Snibunna")]["kills"] == "24"
+    assert by_season_pokemon[("season_003", "Demeteros-T")]["kills"] == "15"
+    assert by_season_pokemon[("season_004", "Demeteros-T")]["kills"] == "17"
+    assert by_season_pokemon[("season_005", "Demeteros-T")]["kills"] == "12"
+
+    sample = by_season_pokemon[("season_005", "Snibunna")]
+    assert sample["division"] == "Liga 1"
+    assert sample["trainer"] is None
+    assert sample["trainer_normalized"] is None
+    assert sample["team_name"] is None
+    assert sample["appearances"] is None
+    assert sample["deaths"] is None
+    assert sample["differential"] is None
+    assert "1JZpA-5XDldN2bjfvhvBPHYK-1AENETLnF1UxNEpWlNA" in sample["source_urls"]
 
 
 def test_s9_killlists_preserve_team_from_wide_summary_rows():
@@ -305,6 +342,42 @@ def test_pokemon_typo_aliases_are_corrected_in_normalized_killlists():
     assert typo_rows["Drifzepeli"]["pokemon_normalized"] == "drifzepeli"
     assert typo_rows["Schwalboss"]["pokemon_normalized"] == "schwalboss"
     assert typo_rows["Shnurgarst"]["pokemon_normalized"] == "shnurgarst"
+
+
+def test_pokemon_form_aliases_are_merged_in_normalized_killlists():
+    output = normalize_all(Path("data"))
+    rows = [
+        row
+        for row in output.pokemon_killlists
+        if row["data_status"] == "sheet_extracted"
+    ]
+
+    bene_landorus = [
+        row
+        for row in rows
+        if row["trainer_normalized"] == "bene"
+        and row["pokemon_normalized"] in {"demeteros", "demeteros i"}
+    ]
+    assert bene_landorus
+    assert {row["pokemon_normalized"] for row in bene_landorus} == {"demeteros i"}
+    assert {row["pokemon"] for row in bene_landorus} == {"Demeteros-I"}
+    assert {"season_009", "season_010"} <= {row["season_id"] for row in bene_landorus}
+
+    raizor_landorus_therian = [
+        row
+        for row in rows
+        if row["trainer_normalized"] == "raizor"
+        and row["pokemon_normalized"] in {"demeteros t", "demeteros tiergeistform"}
+    ]
+    assert {row["pokemon_normalized"] for row in raizor_landorus_therian} == {"demeteros t"}
+
+    present_rotom_wash = [
+        row
+        for row in rows
+        if row["trainer_normalized"] == "present"
+        and row["pokemon_normalized"] in {"rotom w", "rotom wash", "rotom wasch form", "rotom wasch"}
+    ]
+    assert {row["pokemon_normalized"] for row in present_rotom_wash} == {"rotom wasch"}
 
 
 def test_s6_playoff_matches_are_filterable_as_playoffs():

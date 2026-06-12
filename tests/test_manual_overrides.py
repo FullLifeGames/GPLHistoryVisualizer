@@ -2,7 +2,7 @@ import csv
 from pathlib import Path
 
 from gpl_history.manual import read_manual_table
-from gpl_history.normalize import NORMALIZED_FIELDS, normalize_all
+from gpl_history.normalize import NORMALIZED_FIELDS, _replace_generated_killlists_with_manual_overrides, normalize_all
 
 
 def test_read_manual_table_uses_declared_fields_and_skips_empty_rows(tmp_path):
@@ -68,6 +68,47 @@ def test_normalize_all_appends_manual_rows_before_people_are_built(tmp_path):
     assert output.champions[0]["champion_name"] == "Manual Champ"
     assert any(row["person_id"] == "person_manual_champ" for row in output.people)
     assert (tmp_path / "normalized" / "champions.csv").exists()
+
+
+def test_manual_killlist_rows_replace_trainerless_generated_rows():
+    rows = [
+        {
+            "season_id": "season_003",
+            "division": "Regular Season",
+            "stage": "regular_season",
+            "pokemon": "Snibunna",
+            "pokemon_normalized": "snibunna",
+            "trainer": "",
+            "trainer_normalized": "",
+            "team_name": "",
+            "appearances": "",
+            "kills": "20",
+            "deaths": "",
+            "differential": "",
+            "data_status": "sheet_extracted",
+            "source_urls": "https://example.test/old-sheet",
+        },
+        {
+            "season_id": "season_003",
+            "division": "Regular Season",
+            "stage": "regular_season",
+            "pokemon": "Snibunna",
+            "pokemon_normalized": "snibunna",
+            "trainer": "Bene",
+            "trainer_normalized": "bene",
+            "team_name": "Unlimited Blade Works",
+            "appearances": "",
+            "kills": "20",
+            "deaths": "",
+            "differential": "",
+            "data_status": "manual_override",
+            "source_urls": "https://example.test/old-sheet;data/manual/sources/s3-s5-pokemon-usage.csv",
+        },
+    ]
+
+    result = _replace_generated_killlists_with_manual_overrides(rows)
+
+    assert result == [rows[1]]
 
 
 def _write_csv(path: Path, fields: list[str], rows: list[dict[str, str]]) -> None:

@@ -3,7 +3,7 @@
     "sheet_id": "1rZd3D0JRNj3lK0ZKdMXPLvCNBofRhFsvW0AlPuBk3VE",
     "workbook_title": "GPL S4 Liga 1 Tabelle",
     "gid": "0",
-    "title": "Gesamt\u00fcbersicht",
+    "title": "Gesamtübersicht",
     "index": 0,
     "source_url": "https://docs.google.com/spreadsheets/d/1rZd3D0JRNj3lK0ZKdMXPLvCNBofRhFsvW0AlPuBk3VE/edit#gid=0",
     "raw_path": "data/raw/season_004/sheets/1rzd3d0jrnj3lk0zkdmxplvcnbofrhfsvw0alpubk3ve_gesamt_bersicht_0.csv",
@@ -372,5 +372,20 @@
     "rows": 244,
     "columns": 9,
     "fetch_method": "sheets_api"
+  },
+  {
+    "sheet_id": "1JZpA-5XDldN2bjfvhvBPHYK-1AENETLnF1UxNEpWlNA",
+    "workbook_title": "Ewige Tabelle GPL",
+    "gid": "352888197",
+    "title": "Ewige Tabelle GPL",
+    "index": 25,
+    "source_url": "https://docs.google.com/spreadsheets/d/1JZpA-5XDldN2bjfvhvBPHYK-1AENETLnF1UxNEpWlNA/edit#gid=352888197",
+    "raw_path": "data/raw/season_004/sheets/1jzpa_5xdldn2bjfvhvbphyk_1aenetlnf1uxnepwlna_ewige_tabelle_gpl_352888197.csv",
+    "status": "available",
+    "status_code": 200,
+    "error": null,
+    "rows": 425,
+    "columns": 43,
+    "fetch_method": "google_visualization_api"
   }
 ]

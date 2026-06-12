@@ -238,6 +238,23 @@ def test_build_translation_rows_maps_german_form_aliases_to_showdown_asset_ids()
     assert by_german["Deoxys-Geschwindigkeit"]["asset_id"] == "deoxysspeed"
 
 
+def test_pokemon_display_name_canonicalizes_form_aliases_for_stats_merging():
+    assert pokemon_display_name("Demeteros") == "Demeteros-I"
+    assert pokemon_display_name("Demeteros-Inkarnationsform") == "Demeteros-I"
+    assert pokemon_display_name("Demeteros-Tiergeistform") == "Demeteros-T"
+    assert pokemon_display_name("Boreos-Therian") == "Boreos-T"
+    assert pokemon_display_name("Voltolos-Therian") == "Voltolos-T"
+    assert pokemon_display_name("Kyurem-Black") == "Kyurem-Schwarz"
+    assert pokemon_display_name("Kyurem-Schwarz") == "Kyurem-Schwarz"
+    assert pokemon_display_name("Rotom-Wash") == "Rotom-Wasch"
+    assert pokemon_display_name("Rotom (Wasch-Form)") == "Rotom-Wasch"
+    assert pokemon_display_name("Galoppa") == "Gallopa"
+    assert pokemon_display_name("Wolwerock") == "Wolwerock-Tagform"
+    assert pokemon_display_name("Wolwerock-Tag") == "Wolwerock-Tagform"
+    assert pokemon_display_name("Porygon-2") == "Porygon2"
+    assert pokemon_display_name("Zygarde") == "Zygarde-50"
+
+
 def test_write_translation_outputs_writes_review_csv_and_frontend_module(tmp_path):
     csv_path = tmp_path / "pokemon_name_translations.csv"
     js_path = tmp_path / "pokemon_names.js"

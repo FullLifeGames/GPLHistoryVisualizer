@@ -114,6 +114,10 @@ gpl-history review-queue --data-dir data
 gpl-history validate --data-dir data
 ```
 
+For S3-S5 Pokémon usage assignment, open `web/manual-killlist-entry.html` through a local HTTP server and export rows for
+`data/manual/pokemon_killlists.csv`. The form keeps old kill totals and source URLs, and only adds the reviewed player/team
+assignment.
+
 ## Data Principles
 
 - Never infer champions without source evidence.

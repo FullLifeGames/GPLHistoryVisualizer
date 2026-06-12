@@ -7466,6 +7466,12 @@ export const POKEMON_NAME_TRANSLATIONS = [
     "asset_id": "tornadustherian"
   },
   {
+    "species_id": 641,
+    "german": "Boreos-Therian",
+    "english": "tornadus-therian",
+    "asset_id": "tornadustherian"
+  },
+  {
     "species_id": 642,
     "german": "Voltolos (Tiergeist)",
     "english": "thundurus-therian",
@@ -7480,6 +7486,12 @@ export const POKEMON_NAME_TRANSLATIONS = [
   {
     "species_id": 642,
     "german": "Voltolos-T",
+    "english": "thundurus-therian",
+    "asset_id": "thundurustherian"
+  },
+  {
+    "species_id": 642,
+    "german": "Voltolos-Therian",
     "english": "thundurus-therian",
     "asset_id": "thundurustherian"
   },
@@ -7521,6 +7533,24 @@ export const POKEMON_NAME_TRANSLATIONS = [
   },
   {
     "species_id": 646,
+    "german": "Kyurem-Schwarz",
+    "english": "kyurem-black",
+    "asset_id": "kyuremblack"
+  },
+  {
+    "species_id": 646,
+    "german": "Kyurem-Black",
+    "english": "kyurem-black",
+    "asset_id": "kyuremblack"
+  },
+  {
+    "species_id": 646,
+    "german": "Black Kyurem",
+    "english": "kyurem-black",
+    "asset_id": "kyuremblack"
+  },
+  {
+    "species_id": 646,
     "german": "Weißes Kyurem",
     "english": "kyurem-white",
     "asset_id": "kyuremwhite"
@@ -7528,6 +7558,24 @@ export const POKEMON_NAME_TRANSLATIONS = [
   {
     "species_id": 646,
     "german": "Kyurem-Weißes Kyurem",
+    "english": "kyurem-white",
+    "asset_id": "kyuremwhite"
+  },
+  {
+    "species_id": 646,
+    "german": "Kyurem-Weiss",
+    "english": "kyurem-white",
+    "asset_id": "kyuremwhite"
+  },
+  {
+    "species_id": 646,
+    "german": "Kyurem-White",
+    "english": "kyurem-white",
+    "asset_id": "kyuremwhite"
+  },
+  {
+    "species_id": 646,
+    "german": "White Kyurem",
     "english": "kyurem-white",
     "asset_id": "kyuremwhite"
   },
@@ -11450,6 +11498,12 @@ export const POKEMON_NAME_TRANSLATIONS = [
     "asset_id": "drifblim"
   },
   {
+    "species_id": 78,
+    "german": "Galoppa",
+    "english": "Rapidash",
+    "asset_id": "rapidash"
+  },
+  {
     "species_id": 534,
     "german": "Meistergrif",
     "english": "Conkeldurr",
@@ -11745,6 +11799,7 @@ export const POKEMON_ASSET_IDS = {
   "bissbark": "stoutland",
   "bithora": "binacle",
   "blacephalon": "blacephalon",
+  "blackkyurem": "kyuremblack",
   "blanas": "nuzleaf",
   "blastoise": "blastoise",
   "blastoisegmax": "blastoisegmax",
@@ -11770,6 +11825,7 @@ export const POKEMON_ASSET_IDS = {
   "boreosi": "tornadus",
   "boreosinkarnationsform": "tornadus",
   "boreost": "tornadustherian",
+  "boreostherian": "tornadustherian",
   "boreostiergeist": "tornadustherian",
   "boreostiergeistform": "tornadustherian",
   "botogel": "delibird",
@@ -12420,6 +12476,7 @@ export const POKEMON_ASSET_IDS = {
   "gallademega": "gallademega",
   "gallopa": "rapidash",
   "gallopagalarform": "rapidashgalar",
+  "galoppa": "rapidash",
   "galvantula": "galvantula",
   "ganovil": "sandile",
   "garados": "gyarados",
@@ -12973,7 +13030,9 @@ export const POKEMON_ASSET_IDS = {
   "kyogreprotomorphose": "kyogreprimal",
   "kyurem": "kyurem",
   "kyuremblack": "kyuremblack",
+  "kyuremschwarz": "kyuremblack",
   "kyuremschwarzeskyurem": "kyuremblack",
+  "kyuremweiss": "kyuremwhite",
   "kyuremweisseskyurem": "kyuremwhite",
   "kyuremwhite": "kyuremwhite",
   "ladypikachu": "pikachubelle",
@@ -14446,6 +14505,7 @@ export const POKEMON_ASSET_IDS = {
   "voltolosi": "thundurus",
   "voltolosinkarnationsform": "thundurus",
   "voltolost": "thundurustherian",
+  "voltolostherian": "thundurustherian",
   "voltolostiergeist": "thundurustherian",
   "voltolostiergeistform": "thundurustherian",
   "voltorb": "voltorb",
@@ -14496,6 +14556,7 @@ export const POKEMON_ASSET_IDS = {
   "whirlipede": "whirlipede",
   "whiscash": "whiscash",
   "whismur": "whismur",
+  "whitekyurem": "kyuremwhite",
   "wielie": "cradily",
   "wiesenior": "furret",
   "wieshu": "mienshao",
