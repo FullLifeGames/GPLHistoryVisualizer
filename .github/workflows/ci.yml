@@ -39,3 +39,6 @@ jobs:
 
       - name: Validate normalized CSVs
         run: gpl-history validate --data-dir data
+
+      - name: Build review queues
+        run: gpl-history review-queue --data-dir data

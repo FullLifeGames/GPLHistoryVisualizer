@@ -8,6 +8,7 @@ The repository currently keeps both normalized CSV output and the raw source sna
 - `data/raw/video_archive`: participant channel upload snapshots used to build the video archive.
 - `data/normalized`: CSVs consumed by the web app.
 - `data/manual`: header-only correction templates for reviewed future fixes.
+- `data/review`: generated review queues for missing killlists, low-confidence matched videos, and unmatched game videos.
 
 ## Large Files
 
@@ -25,6 +26,7 @@ Do not enable Git LFS attributes unless Git LFS is installed and the remote is r
 gpl-history normalize --data-dir data
 gpl-history build-video-archive --data-dir data
 gpl-history report --data-dir data --out docs/gpl-history.md
+gpl-history review-queue --data-dir data
 gpl-history validate --data-dir data
 ```
 
@@ -43,3 +45,13 @@ Manual rows should be rare, sourced, and reviewable. The expected flow is:
 2. Preserve source URLs and use empty cells for unknown fields.
 3. Run normalization and validation.
 4. Document unusual season-specific logic in `docs/gpl-season-adapters.md`.
+
+## Review Queues
+
+`gpl-history review-queue --data-dir data` writes:
+
+- `data/review/missing_killlists.csv`: sourced killlist links that are unavailable in the current raw set.
+- `data/review/low_confidence_videos.csv`: matched game videos with low or medium confidence.
+- `data/review/ambiguous_matches.csv`: game-like GPL videos that remain unmatched.
+
+Rows in these files are not source claims by themselves. They are worklists for adding sourced manual corrections or improving matching rules.

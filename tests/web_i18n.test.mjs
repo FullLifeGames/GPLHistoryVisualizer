@@ -11,6 +11,8 @@ assert.equal(nextTheme("dark"), "light");
 
 assert.equal(t("de", "nav.killlists"), "Pokémon-Killlisten");
 assert.equal(t("en", "nav.killlists"), "Pokémon Killlists");
+assert.equal(t("de", "nav.pokemonDetail"), "Pokémon-Details");
+assert.equal(t("en", "nav.pokemonDetail"), "Pokémon Details");
 assert.equal(t("de", "status.loaded"), "CSV-Daten geladen");
 assert.equal(t("de", "actions.exportCsv"), "CSV exportieren");
 assert.equal(t("en", "actions.videoUrls"), "Video URL List");
@@ -21,6 +23,8 @@ assert.equal(columnTitle("en", "pokemon"), "Pokémon");
 assert.equal(columnTitle("de", "win_pct"), "Sieg %");
 assert.equal(columnTitle("de", "rating"), "Wertung");
 assert.equal(columnTitle("de", "video_type"), "Kategorie");
+assert.equal(columnTitle("de", "confidence_explanation"), "Zuordnungserklärung");
+assert.equal(columnTitle("en", "confidence_explanation"), "Match Explanation");
 assert.equal(columnTitle("en", "seasons_won"), "Seasons Won");
 assert.equal(columnTitle("de", "opponent"), "Gegner");
 assert.equal(columnTitle("en", "trainers"), "Trainers");

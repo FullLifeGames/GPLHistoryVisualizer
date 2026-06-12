@@ -7,6 +7,7 @@ const VALID_VIEWS = new Set([
   "battle-history",
   "video-archive",
   "person-details",
+  "pokemon-detail",
   "data-coverage",
   "season-detail",
   "matchup",
@@ -20,6 +21,9 @@ export function parseRouteHash(hash) {
   }
   if (parts[0] === "season" && parts[1]) {
     return { view: "season-detail", personKey: null, seasonId: parts[1] };
+  }
+  if (parts[0] === "pokemon" && parts[1]) {
+    return { view: "pokemon-detail", personKey: null, pokemonKey: parts[1] };
   }
   const view = VALID_VIEWS.has(parts[0]) ? parts[0] : DEFAULT_VIEW;
   return { view, personKey: null };
@@ -35,4 +39,8 @@ export function personRouteHash(personKey) {
 
 export function seasonRouteHash(seasonId) {
   return `#/season/${encodeURIComponent(seasonId)}`;
+}
+
+export function pokemonRouteHash(pokemonKey) {
+  return `#/pokemon/${encodeURIComponent(pokemonKey)}`;
 }

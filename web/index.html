@@ -29,6 +29,7 @@
       <nav class="tabs" aria-label="Views">
         <button class="tab is-active" data-view="all-time" data-i18n="nav.allTime">Ewige Tabelle</button>
         <button class="tab" data-view="killlists" data-i18n="nav.killlists">Pokémon-Killlisten</button>
+        <button class="tab" data-view="pokemon-detail" data-i18n="nav.pokemonDetail">Pokémon-Details</button>
         <button class="tab" data-view="table-history" data-i18n="nav.tableHistory">Tabellenverlauf</button>
         <button class="tab" data-view="match-plan" data-i18n="nav.matchPlan">Spielplan</button>
         <button class="tab" data-view="battle-history" data-i18n="nav.battleHistory">Kampfverlauf</button>
@@ -70,6 +71,18 @@
           <p data-i18n="sections.killlistsDescription">Best-effort-Zeilen aus öffentlichen Sheets mit Pokémon-Kill/Death-Spalten.</p>
         </div>
         <div id="killlists-table" class="table-wrap"></div>
+      </section>
+
+      <section id="view-pokemon-detail" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.pokemonDetailTitle">Pokémon-Details</h2>
+          <p data-i18n="sections.pokemonDetailDescription">Pokémon-Nutzung, Trainer und Saisonzeilen aus den Killlisten.</p>
+        </div>
+        <div id="pokemon-focus" class="pokemon-focus" hidden></div>
+        <div id="pokemon-detail-summary" class="summary-grid"></div>
+        <div id="pokemon-summary-table" class="table-wrap"></div>
+        <div id="pokemon-trainer-table" class="table-wrap stacked-table"></div>
+        <div id="pokemon-season-table" class="table-wrap stacked-table"></div>
       </section>
 
       <section id="view-table-history" class="view">
@@ -176,6 +189,7 @@
     </main>
 
     <script src="https://unpkg.com/tabulator-tables@6.4.0/dist/js/tabulator.min.js"></script>
+    <script src="https://unpkg.com/@pkmn/img@0.3.4/build/index.min.js"></script>
     <script type="module" src="./app.js"></script>
   </body>
 </html>

@@ -27,6 +27,7 @@ export const TRANSLATIONS = {
     nav: {
       allTime: "Ewige Tabelle",
       killlists: "Pokémon-Killlisten",
+      pokemonDetail: "Pokémon-Details",
       tableHistory: "Tabellenverlauf",
       matchPlan: "Spielplan",
       battleHistory: "Kampfverlauf",
@@ -61,6 +62,8 @@ export const TRANSLATIONS = {
       allTimeDescription: "Aus personenspezifischen CSV-Stints aggregiert; Teamtabellen bleiben im Tabellenverlauf erhalten.",
       killlistsTitle: "Pokémon-Killlisten",
       killlistsDescription: "Summierte Pokémon-Kills über den aktuell gefilterten CSV-Datenbestand.",
+      pokemonDetailTitle: "Pokémon-Details",
+      pokemonDetailDescription: "Pokémon-Nutzung, Trainer und Saisonzeilen aus den Killlisten.",
       tableHistoryTitle: "Tabellenverlauf",
       tableHistoryDescription: "Tabellenstände je Saison mit Quellenlink pro Zeile.",
       matchPlanTitle: "Spielplan",
@@ -96,6 +99,10 @@ export const TRANSLATIONS = {
       videoTitle: "Videos",
       matchupTitle: "Matchups",
       missingTitle: "Offene Killlisten",
+    },
+    pokemonDetails: {
+      focus: "Pokémon",
+      showAll: "Alle Pokémon",
     },
     coverage: {
       missingTitle: "Bekannte Lücken",
@@ -199,6 +206,7 @@ export const TRANSLATIONS = {
       champion: "Champion",
       record: "Bilanz",
       match_basis: "Zuordnungsbasis",
+      confidence_explanation: "Zuordnungserklärung",
       wins: "Siege",
       losses: "Niederlagen",
       draws: "Remis",
@@ -266,6 +274,7 @@ export const TRANSLATIONS = {
     nav: {
       allTime: "All Time Table",
       killlists: "Pokémon Killlists",
+      pokemonDetail: "Pokémon Details",
       tableHistory: "Table History",
       matchPlan: "Match Plan",
       battleHistory: "Battle History",
@@ -300,6 +309,8 @@ export const TRANSLATIONS = {
       allTimeDescription: "Aggregated from person-specific CSV stints; team standings stay in Table History.",
       killlistsTitle: "Pokémon Killlists",
       killlistsDescription: "Summed Pokémon kills across the currently filtered CSV data.",
+      pokemonDetailTitle: "Pokémon Details",
+      pokemonDetailDescription: "Pokémon usage, trainers, and season rows from killlists.",
       tableHistoryTitle: "Table History",
       tableHistoryDescription: "Per-season standings with source links for each row.",
       matchPlanTitle: "Match Plan",
@@ -335,6 +346,10 @@ export const TRANSLATIONS = {
       videoTitle: "Videos",
       matchupTitle: "Matchups",
       missingTitle: "Open Killlists",
+    },
+    pokemonDetails: {
+      focus: "Pokémon",
+      showAll: "All Pokémon",
     },
     coverage: {
       missingTitle: "Known Gaps",
@@ -438,6 +453,7 @@ export const TRANSLATIONS = {
       champion: "Champion",
       record: "Record",
       match_basis: "Match Basis",
+      confidence_explanation: "Match Explanation",
       wins: "Wins",
       losses: "Losses",
       draws: "Draws",

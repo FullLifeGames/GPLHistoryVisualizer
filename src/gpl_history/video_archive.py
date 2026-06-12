@@ -35,6 +35,7 @@ VIDEO_ARCHIVE_FIELDS = [
     "confidence",
     "confidence_tier",
     "match_basis",
+    "confidence_explanation",
     "perspective_person",
     "opponent",
     "source_urls",
@@ -57,6 +58,7 @@ MATCH_VIDEO_FIELDS = [
     "opponent",
     "confidence",
     "match_basis",
+    "confidence_explanation",
     "channel_title",
     "channel_url",
     "source_urls",
@@ -373,6 +375,7 @@ def build_video_archive(data_dir: Path) -> tuple[list[dict[str, Any]], list[dict
                         "confidence": str(match["confidence"]),
                         "confidence_tier": _confidence_tier(match["confidence"]),
                         "match_basis": match.get("match_basis"),
+                        "confidence_explanation": match.get("confidence_explanation"),
                         "perspective_person": match["perspective_person"],
                         "opponent": match["opponent"],
                     }
@@ -387,6 +390,7 @@ def build_video_archive(data_dir: Path) -> tuple[list[dict[str, Any]], list[dict
                         "confidence": None,
                         "confidence_tier": None,
                         "match_basis": None,
+                        "confidence_explanation": None,
                         "perspective_person": _first_nonempty(_split_values(channel.get("source_person_names"))),
                         "opponent": None,
                     }
@@ -423,13 +427,16 @@ def match_video_to_matches(video: dict[str, Any], matches: list[dict[str, Any]])
             continue
         score = 0
         reasons: list[str] = []
+        explanations: list[str] = []
 
         if parsed["season_id"]:
             score += 35
             reasons.append("season")
+            explanations.append(f"matched season {parsed['season_id']}")
         if parsed["stage"] == "playoffs" and match.get("stage") == "playoffs":
             score += 15
             reasons.append("stage")
+            explanations.append("playoff title matched playoff match")
         elif parsed["stage"] == "playoffs" and match.get("stage") != "playoffs":
             continue
 
@@ -440,6 +447,7 @@ def match_video_to_matches(video: dict[str, Any], matches: list[dict[str, Any]])
         if parsed_week is not None:
             score += 25
             reasons.append("week")
+            explanations.append(f"matched week {parsed_week}")
 
         participants = _match_participants(match)
         channel_side = _find_participant(channel_people + channel_teams, participants)
@@ -452,20 +460,31 @@ def match_video_to_matches(video: dict[str, Any], matches: list[dict[str, Any]])
         if channel_side:
             score += 25
             reasons.append("channel")
+            explanations.append(f"channel identifies {channel_side.get('person') or channel_side.get('team')}")
         if title_sides:
             score += 25
             reasons.append("title")
+            explanations.append(
+                "title names "
+                + " and ".join(side.get("person") or side.get("team") or "opponent" for side in title_sides)
+                + " as opponent"
+            )
         if channel_side and title_sides:
             score += 10
             reasons.append("both_sides")
+            explanations.append("channel and title identify opposite sides")
         if not channel_side and len(title_sides) >= 2:
             score += 10
             reasons.append("title_both_sides")
+            explanations.append("title identifies both match sides")
 
         has_match_context = bool(parsed["season_id"] or parsed_week is not None or parsed["round"])
         has_title_or_round_context = bool(title_sides or parsed_week is not None or parsed["round"])
         if score < 60 or not has_match_context or not has_title_or_round_context:
             continue
+
+        if not parsed["season_id"] and match.get("season_id"):
+            explanations.insert(0, f"matched season {match.get('season_id')} from normalized match")
 
         perspective = channel_side["person"] if channel_side else None
         opponent = _opponent_name(participants, channel_side, title_sides)
@@ -475,6 +494,7 @@ def match_video_to_matches(video: dict[str, Any], matches: list[dict[str, Any]])
             "perspective_person": perspective,
             "opponent": opponent,
             "match_basis": ",".join(reasons),
+            "confidence_explanation": "; ".join(dict.fromkeys(explanations)),
         }
         candidates.append(result)
 
@@ -515,6 +535,7 @@ def _match_video_row(match: dict[str, Any], video: dict[str, Any]) -> dict[str, 
         "opponent": video.get("opponent"),
         "confidence": video.get("confidence"),
         "match_basis": match.get("match_basis"),
+        "confidence_explanation": match.get("confidence_explanation"),
         "channel_title": video.get("channel_title"),
         "channel_url": video.get("channel_url"),
         "source_urls": video.get("source_urls"),

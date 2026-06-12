@@ -408,6 +408,97 @@ export function summarizeTrainerPokemon(rows, selectedPersonKey = "", normalizeK
     }));
 }
 
+export function summarizePokemonDetail(rows, selectedPokemonKey, normalizeKey = normalizedStatsKey, ownershipRows = []) {
+  const selectedKey = normalizeKey(selectedPokemonKey);
+  const ownersByTeam = teamOwnerIndex(ownershipRows, normalizeKey);
+  const summary = {
+    pokemon: "",
+    kills: 0,
+    deaths: 0,
+    differential: 0,
+    seasons: new Set(),
+    trainers: new Set(),
+    teams: new Set(),
+    sourceUrls: new Set(),
+  };
+  const trainers = new Map();
+  const seasonRows = [];
+
+  rows
+    .filter((row) => row.data_status !== "not_available")
+    .filter((row) => normalizeKey(row.pokemon_normalized || row.pokemon) === selectedKey)
+    .forEach((row) => {
+      const owners = rowOwners(row, ownersByTeam, normalizeKey);
+      const ownerList = owners.length ? owners : [{ key: "", name: row.trainer || "" }];
+      const kills = numberValue(row.kills);
+      const deaths = numberValue(row.deaths);
+      const differential = numberValue(row.differential);
+      summary.pokemon = summary.pokemon || row.pokemon || row.pokemon_normalized || selectedPokemonKey;
+      summary.kills += kills;
+      summary.deaths += deaths;
+      summary.differential += differential;
+      if (row.season_id) summary.seasons.add(row.season_id);
+      if (row.team_name) summary.teams.add(row.team_name);
+      addSourceUrls(summary.sourceUrls, row.source_urls);
+
+      ownerList.forEach((owner) => {
+        if (owner.name) summary.trainers.add(owner.name);
+        const trainerKey = owner.key || comparablePersonKey(owner.name, normalizeKey);
+        if (!trainerKey) return;
+        const current = trainers.get(trainerKey) ?? {
+          trainer: owner.name,
+          kills: 0,
+          deaths: 0,
+          differential: 0,
+          seasons: new Set(),
+          teams: new Set(),
+        };
+        current.trainer = current.trainer || owner.name;
+        current.kills += kills;
+        current.deaths += deaths;
+        current.differential += differential;
+        if (row.season_id) current.seasons.add(row.season_id);
+        if (row.team_name) current.teams.add(row.team_name);
+        trainers.set(trainerKey, current);
+      });
+
+      seasonRows.push({
+        season_id: row.season_id,
+        division: row.division,
+        trainer: ownerList.map((owner) => owner.name).filter(Boolean).join("; "),
+        team_name: row.team_name,
+        kills,
+        deaths,
+        differential,
+        source_urls: row.source_urls || "",
+      });
+    });
+
+  return {
+    summary: {
+      pokemon: summary.pokemon,
+      kills: summary.kills,
+      deaths: summary.deaths,
+      differential: summary.differential,
+      seasons: summary.seasons.size,
+      trainers: summary.trainers.size,
+      teams: summary.teams.size,
+      source_urls: [...summary.sourceUrls].join(";"),
+    },
+    trainerRows: [...trainers.values()]
+      .sort((a, b) => b.kills - a.kills || b.differential - a.differential || a.trainer.localeCompare(b.trainer))
+      .map((row) => ({
+        trainer: row.trainer,
+        kills: row.kills,
+        deaths: row.deaths,
+        differential: row.differential,
+        seasons: row.seasons.size,
+        teams: row.teams.size,
+      })),
+    seasonRows: seasonRows.sort((a, b) => String(a.season_id || "").localeCompare(String(b.season_id || "")) || String(a.division || "").localeCompare(String(b.division || ""))),
+  };
+}
+
 export function matchupOverview(matches, selectedKey, normalizeKey) {
   const opponents = new Map();
   matches.forEach((row) => {

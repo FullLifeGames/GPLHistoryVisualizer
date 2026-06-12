@@ -27,6 +27,8 @@ Raw channel scan data is stored under `data/raw/video_archive/`. Normalized outp
 - `data/normalized/video_archive.csv`: every GPL-looking public video found on participant channels.
 - `data/normalized/match_videos.csv`: actual game videos matched to a normalized `matches.csv` row.
 - `data/normalized/video_urls.txt`: one URL per collected public GPL-looking video, intended for download managers.
+- `data/review/low_confidence_videos.csv`: matched game videos whose confidence should be reviewed.
+- `data/review/ambiguous_matches.csv`: game-like videos that remain unmatched.
 
 ## Matching Rules
 
@@ -38,6 +40,7 @@ The matcher uses conservative evidence:
 - Playoff signal: playoff/final/semifinal/quarterfinal wording.
 - Participant signal: channel owner, player names, and team names from `teams.csv`.
 - Video type signal: actual games, teambuildings, announcements, updates, recaps, reactions, draft analyses, tierlists, and other GPL videos are separated in `video_type`.
+- Confidence explanation: `confidence_explanation` records why a row matched, for example season, week, channel-side, and title-side evidence.
 
 If a title contains an explicit matchday, the normalized match must have the same matchday. Non-game categories are retained in `video_archive.csv` and `video_urls.txt` but are not added to `match_videos.csv`.
 

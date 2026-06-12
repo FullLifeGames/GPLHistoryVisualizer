@@ -444,7 +444,110 @@ input:focus,
   font-weight: 800;
 }
 
+.pokemon-focus {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(90deg, rgb(17 191 243 / 12%), transparent 58%),
+    var(--surface-soft);
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.pokemon-focus-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.pokemon-focus-card span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.pokemon-focus-card strong {
+  display: block;
+  font-size: 24px;
+}
+
+.pokemon-sprite-frame {
+  position: relative;
+  display: block;
+  width: 96px;
+  height: 96px;
+  flex: 0 0 auto;
+}
+
+.pokemon-sprite {
+  display: block;
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 14px rgb(6 35 65 / 22%));
+}
+
+.pokemon-sprite-img {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: var(--surface-soft);
+}
+
+.pokemon-sprite-fallback {
+  display: grid;
+  place-items: center;
+  border: 1px solid rgb(17 191 243 / 28%);
+  border-radius: var(--radius);
+  background: rgb(17 191 243 / 10%);
+  color: var(--accent-strong);
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.pokemon-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.pokemon-icon,
+.pokemon-icon-fallback {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 30px;
+  vertical-align: middle;
+}
+
+.pokemon-icon-fallback {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgb(17 191 243 / 12%);
+  color: var(--accent-strong);
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .person-focus .header-button {
+  width: auto;
+  color: var(--ink);
+  border-color: var(--line);
+  background: var(--surface);
+}
+
+.pokemon-focus .header-button {
   width: auto;
   color: var(--ink);
   border-color: var(--line);

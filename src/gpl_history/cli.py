@@ -9,6 +9,7 @@ from typing import Any, Callable
 from .normalize import normalize_all
 from .playlists import group_gpl_playlists
 from .report import generate_report
+from .review import generate_review_queue
 from .sheets import fetch_public_sheet_tables, resolve_redirect
 from .sheets_api import SheetsApiClient, SheetsApiError
 from .storage import ensure_dir, read_json, safe_slug, write_json
@@ -57,6 +58,9 @@ def main(argv: list[str] | None = None) -> int:
     validate.add_argument("--data-dir", default="data")
     validate.add_argument("--strict", action="store_true", help="Exit non-zero on warnings as well as errors.")
 
+    review_queue = subparsers.add_parser("review-queue", help="Generate CSV review queues for missing and ambiguous data.")
+    review_queue.add_argument("--data-dir", default="data")
+
     args = parser.parse_args(argv)
 
     if args.command == "collect":
@@ -89,6 +93,11 @@ def main(argv: list[str] | None = None) -> int:
         errors = [issue for issue in issues if issue.level == "error"]
         warnings = [issue for issue in issues if issue.level == "warning"]
         return 1 if errors or (args.strict and warnings) else 0
+    if args.command == "review-queue":
+        counts = generate_review_queue(Path(args.data_dir))
+        for name, count in counts.items():
+            print(f"{name}: {count}")
+        return 0
     parser.error(f"Unknown command {args.command}")
     return 2
 
