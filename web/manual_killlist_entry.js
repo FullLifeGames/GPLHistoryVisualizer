@@ -21,16 +21,18 @@ const DATASETS = {
   killlists: "../data/normalized/pokemon_killlists.csv",
   personStints: "../data/normalized/person_stints.csv",
   teams: "../data/normalized/teams.csv",
+  teamGraphicSlots: "../data/review/team_graphic_slots.csv",
 };
 
 const state = {
   rows: [],
   personStints: [],
   teams: [],
+  teamGraphicSlots: [],
   assignments: new Map(),
   season: "all",
   search: "",
-  openOnly: false,
+  openOnly: true,
 };
 
 const domReady = typeof document !== "undefined";
@@ -65,7 +67,15 @@ export function reviewableKilllistRows(killlists) {
   return [...byKey.values()].sort(compareEntryRows);
 }
 
-export function playerOptionsForSeason(seasonId, division, personStints, teams) {
+export function isAssignedKilllistRow(row) {
+  return Boolean(clean(row.trainer) || clean(row.trainer_normalized) || clean(row.team_name));
+}
+
+export function unassignedKilllistRows(killlists) {
+  return reviewableKilllistRows(killlists).filter((row) => !isAssignedKilllistRow(row));
+}
+
+export function playerOptionsForSeason(seasonId, division, personStints, teams, teamGraphicSlots = []) {
   const options = new Map();
   const add = (row) => {
     if (row.season_id !== seasonId) return;
@@ -87,13 +97,15 @@ export function playerOptionsForSeason(seasonId, division, personStints, teams) 
       label,
       value: personId,
     };
-    const current = options.get(personId);
+    const optionKey = `${personId}|${normalizeKey(teamName)}`;
+    const current = options.get(optionKey);
     if (!current || label.length > current.label.length) {
-      options.set(personId, option);
+      options.set(optionKey, option);
     }
   };
 
   personStints.forEach(add);
+  teamGraphicSlots.forEach(add);
   if (!options.size) {
     teams.forEach(add);
   }
@@ -145,6 +157,7 @@ async function init() {
   state.rows = reviewableKilllistRows(datasets.killlists);
   state.personStints = datasets.personStints;
   state.teams = datasets.teams;
+  state.teamGraphicSlots = datasets.teamGraphicSlots;
   restoreAssignmentsFromRows(state.rows);
   restoreSavedAssignments();
   populateSeasonFilter();
@@ -153,6 +166,7 @@ async function init() {
 }
 
 function bindControls() {
+  document.querySelector("#entry-open-only").checked = state.openOnly;
   document.querySelector("#entry-season").addEventListener("change", (event) => {
     state.season = event.target.value;
     render();
@@ -194,11 +208,12 @@ function populateSeasonFilter() {
 
 function render() {
   const rows = filteredRows();
-  const assigned = state.rows.filter((row) => state.assignments.has(assignmentKey(row))).length;
+  const assigned = state.rows.filter(isAssignedInUi).length;
+  const open = state.rows.length - assigned;
   document.querySelector("#entry-summary").innerHTML = [
     metric("Pokémon gesamt", state.rows.length),
     metric("Zugeordnet", assigned),
-    metric("Offen", state.rows.length - assigned),
+    metric("Offen", open),
     metric("Export-Zeilen", buildManualRowsFromState().length),
   ].join("");
 
@@ -240,8 +255,8 @@ function render() {
 
 function entryRowHtml(row) {
   const key = assignmentKey(row);
-  const options = playerOptionsForSeason(row.season_id, row.division, state.personStints, state.teams);
-  const selected = state.assignments.get(key);
+  const options = playerOptionsForSeason(row.season_id, row.division, state.personStints, state.teams, state.teamGraphicSlots);
+  const selected = state.assignments.get(key) || assignmentFromRow(row);
   const selectedValue = selected ? optionValue(selected) : "";
   const team = selected?.team_name || row.team_name || "";
   const sourceCount = splitSources(row.source_urls).length;
@@ -268,7 +283,7 @@ function entryRowHtml(row) {
 function filteredRows() {
   return state.rows.filter((row) => {
     if (state.season !== "all" && row.season_id !== state.season) return false;
-    if (state.openOnly && state.assignments.has(assignmentKey(row))) return false;
+    if (state.openOnly && isAssignedInUi(row)) return false;
     if (!state.search) return true;
     return [row.season_id, row.division, row.pokemon, row.kills, state.assignments.get(assignmentKey(row))?.person_name]
       .join(" ")
@@ -279,14 +294,24 @@ function filteredRows() {
 
 function restoreAssignmentsFromRows(rows) {
   for (const row of rows) {
+    if (row.data_status !== "manual_override") continue;
     if (!row.trainer && !row.trainer_normalized) continue;
-    state.assignments.set(assignmentKey(row), {
-      person_id: row.trainer_normalized ? `person_${row.trainer_normalized.replace(/[^a-z0-9]+/g, "_")}` : "",
-      person_name: row.trainer || row.trainer_normalized,
-      person_name_normalized: row.trainer_normalized || normalizeKey(row.trainer),
-      team_name: row.team_name || "",
-    });
+    state.assignments.set(assignmentKey(row), assignmentFromRow(row));
   }
+}
+
+function isAssignedInUi(row) {
+  return state.assignments.has(assignmentKey(row)) || isAssignedKilllistRow(row);
+}
+
+function assignmentFromRow(row) {
+  if (!isAssignedKilllistRow(row)) return null;
+  return {
+    person_id: row.trainer_normalized ? `person_${row.trainer_normalized.replace(/[^a-z0-9]+/g, "_")}` : "",
+    person_name: row.trainer || row.trainer_normalized,
+    person_name_normalized: row.trainer_normalized || normalizeKey(row.trainer),
+    team_name: row.team_name || "",
+  };
 }
 
 function restoreSavedAssignments() {

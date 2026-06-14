@@ -11,9 +11,15 @@ dependencies = [
 dev = [
   "pytest>=8.0.0",
 ]
+drive-archive = [
+  "google-api-python-client>=2.130.0",
+  "google-auth-oauthlib>=1.2.0",
+  "yt-dlp>=2024.5.27",
+]
 
 [project.scripts]
 gpl-history = "gpl_history.cli:main"
+gpl-drive-archive = "gpl_history.drive_archive:main"
 
 [build-system]
 requires = ["setuptools>=69", "wheel"]

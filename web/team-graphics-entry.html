@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="de" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GPL Team-Grafik-Zuordnung</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body id="team-graphics-entry">
+    <header class="app-header">
+      <div class="brand-lockup">
+        <a class="brand-logo" href="./index.html#/review-workflow" aria-label="Zurueck zum GPL History Visualizer">
+          <img src="../GPL_Season_10_Logo.png" alt="GPL Season 10" />
+        </a>
+        <div class="brand-copy">
+          <h1>Team-Grafik-Zuordnung</h1>
+          <p>Pokémon-Slots aus S3-S5-Teamgrafiken prüfen und als manuelle Quelle exportieren.</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <a class="header-button" href="./index.html#/review-workflow">Zur Review</a>
+        <div class="status" id="graphics-status">Lade Daten</div>
+      </div>
+    </header>
+
+    <main class="app-shell entry-shell">
+      <section class="section-head">
+        <div>
+          <h2>Grafik-Ausschnitte mit Pokémon-Vorschlägen</h2>
+          <p>
+            Vorschläge kommen aus den Saison-Killlisten und sind nur Startpunkte. Exportierte Zeilen gehören nach
+            <code>data/manual/team_pokemon_usage.csv</code>.
+          </p>
+        </div>
+      </section>
+
+      <section class="toolbar graphics-toolbar" aria-label="Grafikfilter">
+        <label>
+          <span>Saison</span>
+          <select id="graphics-season"></select>
+        </label>
+        <label>
+          <span>Suche</span>
+          <input id="graphics-search" type="search" placeholder="Team, Spieler, Datei" />
+        </label>
+        <label>
+          <span>Manuelle Quelle</span>
+          <input id="graphics-source" type="text" value="data/manual/team_pokemon_usage.csv" />
+        </label>
+        <label class="entry-checkbox">
+          <input id="graphics-open-only" type="checkbox" />
+          <span>Nur offene Slots</span>
+        </label>
+      </section>
+
+      <section class="summary-grid" id="graphics-summary" aria-label="Zuordnungsstatus"></section>
+
+      <section class="table-actions entry-actions">
+        <button class="table-action" id="graphics-export" type="button">CSV herunterladen</button>
+        <button class="table-action" id="graphics-copy" type="button">CSV kopieren</button>
+        <button class="table-action" id="graphics-reset" type="button">Lokale Auswahl loeschen</button>
+      </section>
+
+      <section id="graphics-groups" class="graphics-groups" aria-label="Team-Grafik-Slots"></section>
+    </main>
+
+    <script type="module" src="./team_graphics_entry.js"></script>
+  </body>
+</html>

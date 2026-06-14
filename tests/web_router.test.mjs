@@ -3,6 +3,7 @@ import { parseRouteHash, personRouteHash, pokemonRouteHash, seasonRouteHash, vie
 
 assert.deepEqual(parseRouteHash(""), { view: "all-time", personKey: null });
 assert.deepEqual(parseRouteHash("#/killlists"), { view: "killlists", personKey: null });
+assert.deepEqual(parseRouteHash("#/pokemon-drafts"), { view: "pokemon-drafts", personKey: null });
 assert.deepEqual(parseRouteHash("#/video-archive"), { view: "video-archive", personKey: null });
 assert.deepEqual(parseRouteHash("#/data-coverage"), { view: "data-coverage", personKey: null });
 assert.deepEqual(parseRouteHash("#/review-workflow"), { view: "review-workflow", personKey: null });
@@ -14,6 +15,7 @@ assert.deepEqual(parseRouteHash("#/person/person_bene?ignored=true"), { view: "p
 assert.deepEqual(parseRouteHash("#/pokemon/uhafnir"), { view: "pokemon-detail", personKey: null, pokemonKey: "uhafnir" });
 
 assert.equal(viewRouteHash("all-time"), "#/all-time");
+assert.equal(viewRouteHash("pokemon-drafts"), "#/pokemon-drafts");
 assert.equal(viewRouteHash("person-details"), "#/person-details");
 assert.equal(viewRouteHash("video-archive"), "#/video-archive");
 assert.equal(viewRouteHash("data-coverage"), "#/data-coverage");

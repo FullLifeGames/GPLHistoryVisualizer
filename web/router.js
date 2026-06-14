@@ -2,6 +2,7 @@ const DEFAULT_VIEW = "all-time";
 const VALID_VIEWS = new Set([
   "all-time",
   "killlists",
+  "pokemon-drafts",
   "table-history",
   "match-plan",
   "battle-history",

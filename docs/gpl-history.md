@@ -1,6 +1,6 @@
 # German Pokémon League History
 
-Generated: 2026-06-12T12:01:56.906744+00:00
+Generated: 2026-06-14T19:03:54.812181+00:00
 
 This report is generated from the normalized CSV files. Champions are recorded from sourced adapter evidence where available. Rows marked `user_provided` are explicit corrections only; unavailable playoff winners remain null.
 
@@ -20,7 +20,7 @@ This report is generated from the normalized CSV files. Champions are recorded f
 
 ## Coverage
 
-- Source claim rows: 27168
+- Source claim rows: 28200
 - Data quality rows: 10
 
 - Seasons represented: 10
@@ -29,7 +29,7 @@ This report is generated from the normalized CSV files. Champions are recorded f
 - Person stint rows: 158 available, 0 not available
 - Match rows: 2001 available/source-video rows, 0 not available
 - Champion rows with title evidence/corrections: 12
-- Pokémon killlist rows: 1967 available, 3 not available
+- Pokémon killlist rows: 1991 available, 3 not available
 
 ## Season CSV Source Index
 
@@ -73,7 +73,7 @@ This report is generated from the normalized CSV files. Champions are recorded f
 - Video count: 58
 - Date range: 2016-01-18T21:20:13Z to 2016-08-21T19:24:53Z
 - GPL-related heuristic: true
-- Divisions/stages represented: Liga 1: 14, Liga 2: 14, Regular Season: 584, video_source: 58
+- Divisions/stages represented: Liga 1: 14, Liga 2: 14, Regular Season: 608, video_source: 58
 
 | Claim Type | Status | Source URLs |
 | --- | --- | --- |
@@ -82,7 +82,7 @@ This report is generated from the normalized CSV files. Champions are recorded f
 | person_stints | sheet_extracted: 13, user_provided: 2 | https://docs.google.com/spreadsheets/d/13ggv8-k1WCcrrjlwXb-ZoSwhODIQlG_NVffp3TGKOgI/edit#gid=0<br>https://docs.google.com/spreadsheets/d/15MPuuKWiOBeqO8JbrOYulUHFDzWbid6_pYZLHiWVzrk/edit#gid=0 |
 | matches | sheet_extracted: 354, sheet_extracted_with_user_correction: 10, source_video_only: 58 | https://docs.google.com/spreadsheets/d/15MPuuKWiOBeqO8JbrOYulUHFDzWbid6_pYZLHiWVzrk/edit#gid=0<br>https://docs.google.com/spreadsheets/d/16r_khFZJxguj1o1wSrDQO4vlJhSDhIdN8AbUJQbnDq0/edit#gid=0<br>https://www.youtube.com/watch?v=2E6o5rdD3Vw<br>https://www.youtube.com/watch?v=e0rmXP2NVyI<br>https://www.youtube.com/watch?v=vdXTwYsuF48<br>https://www.youtube.com/watch?v=qJaqqoJufB0<br>https://www.youtube.com/watch?v=wtiixYgnqk4<br>https://www.youtube.com/watch?v=wt8v4-x8FVE |
 | champions | source_evidenced: 1 | https://docs.google.com/spreadsheets/d/13ggv8-k1WCcrrjlwXb-ZoSwhODIQlG_NVffp3TGKOgI/edit#gid=0 |
-| pokemon_killlists | not_available: 1, sheet_extracted: 176 | https://docs.google.com/spreadsheets/d/1JZpA-5XDldN2bjfvhvBPHYK-1AENETLnF1UxNEpWlNA/edit#gid=352888197<br>https://docs.google.com/spreadsheets/d/1d7DpiW3aMjnYWiY9KSpk9nSi-gnEUnSFVAK-zGpy59Q/edit#gid=0 |
+| pokemon_killlists | manual_graphic_assignment: 144, manual_override: 56, not_available: 1 | https://docs.google.com/spreadsheets/d/1JZpA-5XDldN2bjfvhvBPHYK-1AENETLnF1UxNEpWlNA/edit#gid=352888197<br>data/manual/team_pokemon_usage.csv<br>output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg<br>output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg<br>https://docs.google.com/spreadsheets/d/1d7DpiW3aMjnYWiY9KSpk9nSi-gnEUnSFVAK-zGpy59Q/edit#gid=0<br>data/manual/pokemon_killlists.csv |
 
 ### season_004: GPL [S4] - PresentLP
 
@@ -99,7 +99,7 @@ This report is generated from the normalized CSV files. Champions are recorded f
 | person_stints | sheet_extracted: 12 | https://docs.google.com/spreadsheets/d/1rZd3D0JRNj3lK0ZKdMXPLvCNBofRhFsvW0AlPuBk3VE/edit#gid=0 |
 | matches | sheet_extracted: 132, source_video_only: 44 | https://docs.google.com/spreadsheets/d/1u8AORkPkqIxR4GblUqU5faeTfuuKGjKrllUxnnUdRz0/edit#gid=992181004<br>https://www.youtube.com/watch?v=42iVDIgC7JI<br>https://www.youtube.com/watch?v=2gvscsU2vZ8<br>https://www.youtube.com/watch?v=R4pwZ1h8xIg<br>https://www.youtube.com/watch?v=BoOJXN5ZQg4<br>https://www.youtube.com/watch?v=fSZli7TEBe0<br>https://www.youtube.com/watch?v=qn9YOJjEhWA<br>https://www.youtube.com/watch?v=pORMlJexcek |
 | champions | source_evidenced: 1 | https://docs.google.com/spreadsheets/d/1rZd3D0JRNj3lK0ZKdMXPLvCNBofRhFsvW0AlPuBk3VE/edit#gid=0 |
-| pokemon_killlists | not_available: 1, sheet_extracted: 145 | https://docs.google.com/spreadsheets/d/1JZpA-5XDldN2bjfvhvBPHYK-1AENETLnF1UxNEpWlNA/edit#gid=352888197<br>https://docs.google.com/spreadsheets/d/16OVT2YZN7gtsckJEMPSdMETsCiXuCs0HTSFl5xQGdwg/edit#gid=0 |
+| pokemon_killlists | manual_graphic_assignment: 103, manual_override: 42, not_available: 1 | https://docs.google.com/spreadsheets/d/1JZpA-5XDldN2bjfvhvBPHYK-1AENETLnF1UxNEpWlNA/edit#gid=352888197<br>data/manual/team_pokemon_usage.csv<br>output/team-graphics/s4/Prekani - PresentLP.png<br>output/team-graphics/s4/Ritter der Tapukokosnuss - FullLifeGames.png<br>output/team-graphics/s4/Slicing Knights - Cabgolord.png<br>output/team-graphics/s4/Minetube - Triyolotree.png<br>output/team-graphics/s4/Suicide Squad - CaptainCrinch.png<br>output/team-graphics/s4/Shocking Shaymins - MeLevies.png |
 
 ### season_005: GPL [S5] - PresentLP
 
@@ -116,7 +116,7 @@ This report is generated from the normalized CSV files. Champions are recorded f
 | person_stints | sheet_extracted: 12 | https://docs.google.com/spreadsheets/d/1nONaKwJcrN04APGKN-HrZ8yavwZdFkfnaA59Zp1sdBU/edit#gid=1708603996 |
 | matches | sheet_extracted: 132, source_video_only: 44 | https://docs.google.com/spreadsheets/d/1nONaKwJcrN04APGKN-HrZ8yavwZdFkfnaA59Zp1sdBU/edit#gid=405850997<br>https://www.youtube.com/watch?v=Gc2QELi45fY<br>https://www.youtube.com/watch?v=olXcJI39eTo<br>https://www.youtube.com/watch?v=ke6gz8TeBW4<br>https://www.youtube.com/watch?v=BDD9A2diASM<br>https://www.youtube.com/watch?v=AQpBhvwRrXY<br>https://www.youtube.com/watch?v=m8Ru10todf0<br>https://www.youtube.com/watch?v=ZMiiSpjNxG8 |
 | champions | source_evidenced: 1 | https://docs.google.com/spreadsheets/d/1nONaKwJcrN04APGKN-HrZ8yavwZdFkfnaA59Zp1sdBU/edit#gid=1708603996 |
-| pokemon_killlists | not_available: 1, sheet_extracted: 149 | https://docs.google.com/spreadsheets/d/1JZpA-5XDldN2bjfvhvBPHYK-1AENETLnF1UxNEpWlNA/edit#gid=352888197<br>https://docs.google.com/spreadsheets/d/1oXO8WjHo3Og1gncQWS7jEPaNyAFrkJhxL-xS57holc0/edit |
+| pokemon_killlists | manual_graphic_assignment: 107, manual_override: 40, not_available: 1, sheet_extracted: 2 | https://docs.google.com/spreadsheets/d/1JZpA-5XDldN2bjfvhvBPHYK-1AENETLnF1UxNEpWlNA/edit#gid=352888197<br>data/manual/team_pokemon_usage.csv<br>output/team-graphics/s5/Victini Bottom.png<br>output/team-graphics/s5/Triyolotree.png<br>output/team-graphics/s5/Crinchilla.png<br>output/team-graphics/s5/Marvelous Speedsters.png<br>output/team-graphics/s5/Howling Commandos.png<br>output/team-graphics/s5/Prekani.png |
 
 ### season_006: GPL [S6] - PresentLP
 

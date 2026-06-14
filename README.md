@@ -30,6 +30,12 @@ $env:SHEETS_API_KEY="..."
 
 Do not commit `.env`. The checked-in `.gitignore` keeps it local.
 
+For Drive video archiving, install the optional downloader/uploader dependencies:
+
+```powershell
+python -m pip install -e ".[drive-archive]"
+```
+
 ## Common Commands
 
 Normalize existing raw data:
@@ -61,6 +67,17 @@ Rebuild the video archive from already scanned channel uploads:
 ```powershell
 gpl-history build-video-archive --data-dir data
 ```
+
+Download `gpl-video-urls.txt` videos and upload them to the AllGPLVideos Drive folder:
+
+```powershell
+gpl-drive-archive --dry-run
+gpl-drive-archive --limit 5
+gpl-drive-archive
+```
+
+The YouTube Data API does not provide video file downloads, so this command uses `yt-dlp` for the video bytes and the Google Drive API for uploads. Drive uploads require OAuth Desktop client JSON, not just an API key. Put it in ignored `.env` as a single-line `OAuth_Json={...}` value, or save it to `output/google-drive-oauth-client.json` and keep `output/` local. The command writes a resumable manifest to `output/gpl-video-drive-manifest.json` and skips videos already marked uploaded.
+If `gpl-video-urls.txt` is absent, the command falls back to `data/normalized/video_urls.txt`.
 
 Generate review queue CSVs:
 
@@ -117,6 +134,16 @@ gpl-history validate --data-dir data
 For S3-S5 Pokémon usage assignment, open `web/manual-killlist-entry.html` through a local HTTP server and export rows for
 `data/manual/pokemon_killlists.csv`. The form keeps old kill totals and source URLs, and only adds the reviewed player/team
 assignment.
+
+For S3-S5 team-graphic assignment, run `gpl-history team-graphic-slots --data-dir data --graphics-dir output/team-graphics`,
+then open `web/team-graphics-entry.html`. It shows cropped Pokémon slots from the local graphics and exports reviewed
+rows for `data/manual/team_pokemon_usage.csv`.
+After those rows are in place, rerun `gpl-history normalize --data-dir data` and use `web/manual-killlist-entry.html`
+for the remaining killlist Pokémon that still have no team/person assignment.
+
+`gpl-history normalize --data-dir data` also rebuilds `data/normalized/pokemon_draft_overview.csv`, a form-level Pokémon
+draft overview with Pokémon Showdown tiers. Use `gpl-history pokemon-draft-overview --data-dir data --refresh` to refresh
+the cached tier source under `data/raw/pokemon_showdown/`.
 
 ## Data Principles
 

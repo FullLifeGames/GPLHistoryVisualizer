@@ -9,6 +9,7 @@ import {
   missingDataRows,
   personStorySummary,
   personPokemonHighlights,
+  pokemonDraftOverviewRows,
   pokemonStorySummary,
   pokemonTimelineRows,
   personDetailKilllistRows,
@@ -62,6 +63,18 @@ assert.deepEqual(
     { rank: 1, pokemon: "Pikachu", appearances: 3, kills: 5, deaths: 1, differential: 4, seasons: 2, season_list: "S1, S2", trainers: 2, teams: 2 },
     { rank: 2, pokemon: "Evoli", appearances: 0, kills: 1, deaths: 4, differential: -3, seasons: 1, season_list: "S1", trainers: 1, teams: 1 },
   ],
+);
+
+assert.deepEqual(
+  pokemonDraftOverviewRows(
+    [
+      { rank: "1", pokemon: "Pikachu", asset_id: "pikachu", tier: "ZU", tier_rank: "13", draft_count: "2", picked_status: "picked", season_list: "S1, S2" },
+      { rank: "2", pokemon: "Mega-Glurak X", asset_id: "charizardmegax", tier: "Uber", tier_rank: "2", draft_count: "0", picked_status: "never_picked", season_list: "" },
+      { rank: "3", pokemon: "Bisasam", asset_id: "bulbasaur", tier: "LC", tier_rank: "15", draft_count: "0", picked_status: "never_picked", season_list: "" },
+    ],
+    { pickedStatus: "never_picked" },
+  ).map((row) => `${row.pokemon}:${row.draft_count}:${row.picked_status}`),
+  ["Mega-Glurak X:0:never_picked", "Bisasam:0:never_picked"],
 );
 
 assert.deepEqual(

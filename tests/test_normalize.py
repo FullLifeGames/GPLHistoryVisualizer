@@ -254,13 +254,13 @@ def test_unavailable_bene_killlists_are_person_scoped_without_inferred_pokemon()
     assert {row["kills"] for row in rows.values()} == {None}
 
 
-def test_old_project_sheet_supplies_s3_to_s5_pokemon_kills_without_trainer_inference():
+def test_old_project_sheet_supplies_s3_to_s5_pokemon_kills_with_reviewed_team_usage():
     output = normalize_all(Path("data"))
     rows = [
         row
         for row in output.pokemon_killlists
         if row["season_id"] in {"season_003", "season_004", "season_005"}
-        and row["data_status"] == "sheet_extracted"
+        and row["data_status"] != "not_available"
     ]
     unavailable = [
         row
@@ -282,13 +282,15 @@ def test_old_project_sheet_supplies_s3_to_s5_pokemon_kills_without_trainer_infer
 
     sample = by_season_pokemon[("season_005", "Snibunna")]
     assert sample["division"] == "Liga 1"
-    assert sample["trainer"] is None
-    assert sample["trainer_normalized"] is None
-    assert sample["team_name"] is None
+    assert sample["trainer"] == "Bene"
+    assert sample["trainer_normalized"] == "bene"
+    assert sample["team_name"] == "Victini Bottom"
+    assert sample["data_status"] == "manual_graphic_assignment"
     assert sample["appearances"] is None
     assert sample["deaths"] is None
     assert sample["differential"] is None
     assert "1JZpA-5XDldN2bjfvhvBPHYK-1AENETLnF1UxNEpWlNA" in sample["source_urls"]
+    assert "data/manual/team_pokemon_usage.csv" in sample["source_urls"]
 
 
 def test_s9_killlists_preserve_team_from_wide_summary_rows():

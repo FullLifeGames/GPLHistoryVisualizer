@@ -2,7 +2,12 @@ import csv
 from pathlib import Path
 
 from gpl_history.manual import read_manual_table
-from gpl_history.normalize import NORMALIZED_FIELDS, _replace_generated_killlists_with_manual_overrides, normalize_all
+from gpl_history.normalize import (
+    NORMALIZED_FIELDS,
+    _apply_team_pokemon_usage_to_killlists,
+    _replace_generated_killlists_with_manual_overrides,
+    normalize_all,
+)
 
 
 def test_read_manual_table_uses_declared_fields_and_skips_empty_rows(tmp_path):
@@ -109,6 +114,78 @@ def test_manual_killlist_rows_replace_trainerless_generated_rows():
     result = _replace_generated_killlists_with_manual_overrides(rows)
 
     assert result == [rows[1]]
+
+
+def test_team_pokemon_usage_enriches_trainerless_killlist_rows_without_changing_kills():
+    killlists = [
+        {
+            "season_id": "season_005",
+            "division": "Liga 1",
+            "stage": "full_season",
+            "pokemon": "Snibunna",
+            "pokemon_normalized": "snibunna",
+            "trainer": "",
+            "trainer_normalized": "",
+            "team_name": "",
+            "appearances": "",
+            "kills": "24",
+            "deaths": "",
+            "differential": "",
+            "data_status": "sheet_extracted",
+            "source_urls": "https://example.test/old-sheet",
+        }
+    ]
+    usage_rows = [
+        {
+            "season_id": "season_005",
+            "division": "Liga 1",
+            "team_name": "Victini Bottom",
+            "team_name_normalized": "victini bottom",
+            "person_name": "Bene",
+            "person_name_normalized": "bene",
+            "pokemon": "Snibunna",
+            "pokemon_normalized": "snibunna",
+            "slot": "1",
+            "source_file": "output/team-graphics/s5/Victini Bottom.png",
+            "source_urls": "data/manual/team_pokemon_usage.csv",
+            "data_status": "manual_override",
+        }
+    ]
+
+    enriched = _apply_team_pokemon_usage_to_killlists(killlists, usage_rows)
+
+    assert enriched[0]["trainer"] == "Bene"
+    assert enriched[0]["trainer_normalized"] == "bene"
+    assert enriched[0]["team_name"] == "Victini Bottom"
+    assert enriched[0]["kills"] == "24"
+    assert enriched[0]["data_status"] == "manual_graphic_assignment"
+    assert (
+        enriched[0]["source_urls"]
+        == "https://example.test/old-sheet;data/manual/team_pokemon_usage.csv;output/team-graphics/s5/Victini Bottom.png"
+    )
+
+
+def test_team_pokemon_usage_leaves_ambiguous_usage_rows_unassigned():
+    killlists = [
+        {
+            "season_id": "season_005",
+            "division": "Liga 1",
+            "stage": "full_season",
+            "pokemon": "Snibunna",
+            "pokemon_normalized": "snibunna",
+            "kills": "24",
+            "data_status": "sheet_extracted",
+            "source_urls": "https://example.test/old-sheet",
+        }
+    ]
+    usage_rows = [
+        {"season_id": "season_005", "pokemon_normalized": "snibunna", "person_name": "Bene", "team_name": "Victini Bottom"},
+        {"season_id": "season_005", "pokemon_normalized": "snibunna", "person_name": "PresentLP", "team_name": "Prekani"},
+    ]
+
+    enriched = _apply_team_pokemon_usage_to_killlists(killlists, usage_rows)
+
+    assert enriched == killlists
 
 
 def _write_csv(path: Path, fields: list[str], rows: list[dict[str, str]]) -> None:

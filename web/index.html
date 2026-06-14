@@ -29,6 +29,7 @@
       <nav class="tabs" aria-label="Views">
         <button class="tab is-active" data-view="all-time" data-i18n="nav.allTime">Ewige Tabelle</button>
         <button class="tab" data-view="killlists" data-i18n="nav.killlists">Pokémon-Killlisten</button>
+        <button class="tab" data-view="pokemon-drafts" data-i18n="nav.pokemonDrafts">Pokémon-Drafts</button>
         <button class="tab" data-view="pokemon-detail" data-i18n="nav.pokemonDetail">Pokémon-Details</button>
         <button class="tab" data-view="table-history" data-i18n="nav.tableHistory">Tabellenverlauf</button>
         <button class="tab" data-view="match-plan" data-i18n="nav.matchPlan">Spielplan</button>
@@ -73,6 +74,18 @@
           <p data-i18n="sections.killlistsDescription">Best-effort-Zeilen aus öffentlichen Sheets mit Pokémon-Kill/Death-Spalten.</p>
         </div>
         <div id="killlists-table" class="table-wrap"></div>
+      </section>
+
+      <section id="view-pokemon-drafts" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.pokemonDraftsTitle">Pokémon-Drafts</h2>
+          <p data-i18n="sections.pokemonDraftsDescription">Formgenaue Draft-Häufigkeit aus Killlisten und geprüften Teamgrafik-Zuordnungen.</p>
+        </div>
+        <div class="table-actions">
+          <button class="table-action is-active" type="button" data-draft-picked-status="all" data-i18n="pokemonDrafts.all">Alle Pokémon</button>
+          <button class="table-action" type="button" data-draft-picked-status="never_picked" data-i18n="pokemonDrafts.neverPicked">Nie gepickt</button>
+        </div>
+        <div id="pokemon-drafts-table" class="table-wrap"></div>
       </section>
 
       <section id="view-pokemon-detail" class="view">
@@ -171,6 +184,7 @@
         </div>
         <div class="table-actions review-shortcuts">
           <a class="table-action" href="./manual-killlist-entry.html">S3-S5 Pokémon-Zuordnung öffnen</a>
+          <a class="table-action" href="./team-graphics-entry.html">Team-Grafik-Zuordnung öffnen</a>
         </div>
         <div id="review-workflow-table" class="table-wrap"></div>
       </section>

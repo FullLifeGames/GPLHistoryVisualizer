@@ -423,6 +423,12 @@ input:focus,
   box-shadow: 0 0 0 3px rgb(255 122 26 / 14%);
 }
 
+.table-action.is-active {
+  background: var(--accent-warm);
+  border-color: var(--accent-warm);
+  color: #17110b;
+}
+
 .stacked-table {
   margin-top: 12px;
 }
@@ -799,6 +805,79 @@ tbody tr:hover {
   font-size: 12px;
 }
 
+.graphics-toolbar {
+  grid-template-columns: minmax(160px, 220px) minmax(220px, 1fr) minmax(280px, 1.2fr) auto;
+}
+
+.graphics-groups {
+  display: grid;
+  gap: 14px;
+}
+
+.graphics-group {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.graphics-group-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px;
+  border-bottom: 1px solid var(--line);
+  background:
+    linear-gradient(90deg, rgb(17 191 243 / 8%), transparent 52%),
+    var(--surface-soft);
+}
+
+.graphics-group-head p {
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+.graphics-group-team {
+  width: min(360px, 100%);
+}
+
+.graphics-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 10px;
+  padding: 12px;
+}
+
+.graphics-slot {
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+  border: 1px solid var(--cell-line);
+  border-radius: var(--radius);
+  background: var(--surface-soft);
+  padding: 9px;
+}
+
+.graphics-crop {
+  overflow: hidden;
+  border: 3px solid #ffffff;
+  border-radius: var(--radius);
+  background-repeat: no-repeat;
+  box-shadow: 0 8px 18px rgb(6 35 65 / 16%);
+}
+
+.graphics-slot-body {
+  display: grid;
+  gap: 7px;
+}
+
+.suggestion-button {
+  justify-content: center;
+  color: var(--accent-strong);
+}
+
 @media (max-width: 900px) {
   .summary-grid {
     grid-template-columns: repeat(2, minmax(140px, 1fr));
@@ -836,10 +915,19 @@ tbody tr:hover {
 
   .toolbar,
   .entry-toolbar,
+  .graphics-toolbar,
   .matchup-form,
   .summary-grid,
   .result-grid {
     grid-template-columns: 1fr;
+  }
+
+  .graphics-group-head {
+    display: block;
+  }
+
+  .graphics-group-team {
+    margin-top: 10px;
   }
 
   th,

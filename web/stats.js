@@ -440,6 +440,22 @@ export function summarizeKilllists(rows) {
     }));
 }
 
+export function pokemonDraftOverviewRows(rows = [], { pickedStatus = "all" } = {}) {
+  return rows
+    .filter((row) => pickedStatus === "all" || row.picked_status === pickedStatus)
+    .map((row) => ({
+      ...row,
+      rank: numberValue(row.rank),
+      tier_rank: numberValue(row.tier_rank),
+      draft_count: numberValue(row.draft_count),
+      season_count: numberValue(row.season_count),
+      trainer_count: numberValue(row.trainer_count),
+      team_count: numberValue(row.team_count),
+    }))
+    .sort((a, b) => b.draft_count - a.draft_count || a.tier_rank - b.tier_rank || String(a.pokemon).localeCompare(String(b.pokemon)))
+    .map((row, index) => ({ ...row, rank: index + 1 }));
+}
+
 export function summarizeTrainerPokemon(rows, selectedPersonKey = "", normalizeKey = normalizedStatsKey, ownershipRows = []) {
   const aggregate = new Map();
   const selectedKey = comparablePersonKey(selectedPersonKey, normalizeKey);

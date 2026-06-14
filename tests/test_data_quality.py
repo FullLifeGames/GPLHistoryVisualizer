@@ -187,7 +187,11 @@ def test_check_generated_artifacts_reports_drift(tmp_path):
 
     changed = check_generated_artifacts(tmp_path)
 
-    assert changed == ["data/normalized/data_quality.csv", "data/review/review_index.csv"]
+    assert changed == [
+        "data/normalized/pokemon_draft_overview.csv",
+        "data/normalized/data_quality.csv",
+        "data/review/review_index.csv",
+    ]
 
 
 def _write_csv(path: Path, rows: list[dict[str, str]]) -> None:

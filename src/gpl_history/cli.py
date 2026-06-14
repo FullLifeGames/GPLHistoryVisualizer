@@ -9,12 +9,14 @@ from typing import Any, Callable
 from .data_quality import check_generated_artifacts, generate_data_quality
 from .normalize import normalize_all
 from .playlists import group_gpl_playlists
+from .pokemon_drafts import build_and_write_pokemon_draft_overview
 from .pokemon_names import fetch_and_write_pokemon_names
 from .report import generate_report
 from .review import generate_review_queue
 from .sheets import fetch_public_sheet_tables, resolve_redirect
 from .sheets_api import SheetsApiClient, SheetsApiError
 from .storage import ensure_dir, read_json, safe_slug, write_json
+from .team_graphics import build_and_write_team_graphic_slots
 from .urls import extract_urls, resolve_google_sheets_id
 from .validate import format_issues, validate_normalized_data
 from .video_archive import build_video_archive, scan_video_archive
@@ -73,12 +75,21 @@ def main(argv: list[str] | None = None) -> int:
     pokemon_names.add_argument("--data-dir", default="data")
     pokemon_names.add_argument("--web-dir", default="web")
 
+    pokemon_drafts = subparsers.add_parser("pokemon-draft-overview", help="Build form-level Pokemon draft counts and never-picked overview.")
+    pokemon_drafts.add_argument("--data-dir", default="data")
+    pokemon_drafts.add_argument("--refresh", action="store_true", help="Refresh cached Pokemon Showdown tier data.")
+
+    team_graphics = subparsers.add_parser("team-graphic-slots", help="Build review slots from local S3-S5 team graphics.")
+    team_graphics.add_argument("--data-dir", default="data")
+    team_graphics.add_argument("--graphics-dir", default="output/team-graphics")
+
     args = parser.parse_args(argv)
 
     if args.command == "collect":
         return collect_command(args)
     if args.command == "normalize":
         normalize_all(Path(args.data_dir))
+        build_and_write_pokemon_draft_overview(Path(args.data_dir))
         generate_data_quality(Path(args.data_dir))
         generate_review_queue(Path(args.data_dir))
         return 0
@@ -131,6 +142,14 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "pokemon-names":
         rows = fetch_and_write_pokemon_names(Path(args.data_dir), Path(args.web_dir))
         print(f"pokemon_name_translations: {len(rows)}")
+        return 0
+    if args.command == "pokemon-draft-overview":
+        rows = build_and_write_pokemon_draft_overview(Path(args.data_dir), refresh=args.refresh)
+        print(f"pokemon_draft_overview: {len(rows)}")
+        return 0
+    if args.command == "team-graphic-slots":
+        rows = build_and_write_team_graphic_slots(Path(args.data_dir), Path(args.graphics_dir))
+        print(f"team_graphic_slots: {len(rows)}")
         return 0
     parser.error(f"Unknown command {args.command}")
     return 2
@@ -227,6 +246,7 @@ def collect_command(args: argparse.Namespace) -> int:
         write_json(sheets_index_path, sheets_index)
 
     normalize_all(data_dir)
+    build_and_write_pokemon_draft_overview(data_dir)
     generate_data_quality(data_dir)
     generate_review_queue(data_dir)
     generate_report(data_dir, Path("docs/gpl-history.md"))

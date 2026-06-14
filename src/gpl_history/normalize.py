@@ -8,9 +8,10 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import unquote, urlparse
 
-from .manual import apply_manual_rows
+from .manual import apply_manual_rows, read_manual_table
 from .pokemon_names import pokemon_display_name
 from .storage import playlist_url, read_json, safe_slug, video_url
+from .team_graphics import TEAM_POKEMON_USAGE_FIELDS
 
 NORMALIZED_FIELDS = {
     "seasons": [
@@ -440,6 +441,8 @@ def normalize_all(data_dir: Path) -> NormalizedOutput:
         output.pokemon_killlists.extend(season_output.pokemon_killlists or [_placeholder(season_id, "pokemon_killlists")])
 
     apply_manual_rows(data_dir, output, NORMALIZED_FIELDS)
+    team_pokemon_usage = read_manual_table(data_dir, "team_pokemon_usage", TEAM_POKEMON_USAGE_FIELDS)
+    output.pokemon_killlists = _apply_team_pokemon_usage_to_killlists(output.pokemon_killlists, team_pokemon_usage)
     output.pokemon_killlists = _replace_generated_killlists_with_manual_overrides(output.pokemon_killlists)
     output.people = _people_from_output(output)
     output.aliases_review = _alias_review(output)
@@ -464,6 +467,38 @@ def _write_csv(path: Path, fields: list[str], rows: list[dict[str, Any]]) -> Non
         writer.writeheader()
         for row in rows:
             writer.writerow({field: "" if row.get(field) is None else row.get(field) for field in fields})
+
+
+def _apply_team_pokemon_usage_to_killlists(
+    killlists: list[dict[str, Any]],
+    usage_rows: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    usage_by_key: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for usage in usage_rows:
+        season_id = _null(usage.get("season_id"))
+        pokemon_key = _null(usage.get("pokemon_normalized")) or _canonical_name(usage.get("pokemon"))
+        person = _null(usage.get("person_name")) or _null(usage.get("person_name_normalized"))
+        team = _null(usage.get("team_name"))
+        if not season_id or not pokemon_key or not (person or team):
+            continue
+        usage_by_key.setdefault((season_id, pokemon_key), []).append(usage)
+
+    result: list[dict[str, Any]] = []
+    for row in killlists:
+        key = (_null(row.get("season_id")) or "", _null(row.get("pokemon_normalized")) or _canonical_name(row.get("pokemon")) or "")
+        matches = usage_by_key.get(key, [])
+        if len(matches) != 1 or not _is_trainerless_generated_killlist_row(row):
+            result.append(row)
+            continue
+        usage = matches[0]
+        enriched = dict(row)
+        enriched["trainer"] = _null(usage.get("person_name"))
+        enriched["trainer_normalized"] = _null(usage.get("person_name_normalized")) or _canonical_name(usage.get("person_name"))
+        enriched["team_name"] = _null(usage.get("team_name"))
+        enriched["data_status"] = "manual_graphic_assignment"
+        enriched["source_urls"] = _join_source_urls(row.get("source_urls"), usage.get("source_urls"), usage.get("source_file"))
+        result.append(enriched)
+    return result
 
 
 def _replace_generated_killlists_with_manual_overrides(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:

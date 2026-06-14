@@ -19,6 +19,7 @@ import {
   numberValue,
   personStorySummary,
   personPokemonHighlights,
+  pokemonDraftOverviewRows,
   pokemonStorySummary,
   pokemonTimelineRows,
   personDetailKilllistRows,
@@ -45,6 +46,7 @@ const DATASETS = {
   matchVideos: { url: "../data/normalized/match_videos.csv", optional: true },
   champions: "../data/normalized/champions.csv",
   killlists: "../data/normalized/pokemon_killlists.csv",
+  pokemonDraftOverview: { url: "../data/normalized/pokemon_draft_overview.csv", optional: true },
   dataQuality: { url: "../data/normalized/data_quality.csv", optional: true },
   sourceClaims: { url: "../data/normalized/source_claims.csv", optional: true },
   reviewIndex: { url: "../data/review/review_index.csv", optional: true },
@@ -63,6 +65,7 @@ const state = {
   search: "",
   personFocus: null,
   pokemonFocus: null,
+  draftPickedStatus: "all",
   data: {},
 };
 
@@ -144,6 +147,13 @@ function bindControls() {
   document.querySelector("#matchup-form").addEventListener("submit", (event) => {
     event.preventDefault();
     renderMatchup();
+  });
+
+  document.querySelectorAll("[data-draft-picked-status]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.draftPickedStatus = button.dataset.draftPickedStatus || "all";
+      renderPokemonDrafts();
+    });
   });
 
   document.addEventListener("click", (event) => {
@@ -510,6 +520,7 @@ function render() {
   renderSummary();
   renderAllTime();
   renderKilllists();
+  renderPokemonDrafts();
   renderTableHistory();
   renderMatchPlan();
   renderBattleHistory();
@@ -777,6 +788,27 @@ function renderKilllists() {
     pokemon: pokemonCell(row.pokemon),
   }));
   renderTable("#killlists-table", rows, ["rank", "pokemon", "appearances", "kills", "deaths", "differential", "seasons", "season_list", "trainers", "teams"], ["pokemon"]);
+}
+
+function renderPokemonDrafts() {
+  document.querySelectorAll("[data-draft-picked-status]").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.draftPickedStatus === state.draftPickedStatus);
+  });
+  const rows = pokemonDraftOverviewRows(state.data.pokemonDraftOverview ?? [], {
+    pickedStatus: state.draftPickedStatus,
+  }).map((row) => ({
+    ...row,
+    pokemon: pokemonCell(row.pokemon),
+    picked_status: t(state.language, `values.${row.picked_status}`),
+    source: sourceLinks(row.source_urls),
+  }));
+  renderTable(
+    "#pokemon-drafts-table",
+    rows,
+    ["rank", "pokemon", "tier", "draft_count", "season_count", "season_list", "trainer_count", "team_count", "picked_status", "source"],
+    ["pokemon", "source"],
+    { filename: state.draftPickedStatus === "never_picked" ? "pokemon-never-picked.csv" : "pokemon-draft-overview.csv" },
+  );
 }
 
 function renderPokemonDetail() {
@@ -1758,6 +1790,11 @@ const NUMERIC_COLUMNS = new Set([
   "championships",
   "confidence",
   "detected_week",
+  "draft_count",
+  "season_count",
+  "trainer_count",
+  "team_count",
+  "tier_rank",
 ]);
 
 function minWidthFor(column) {
