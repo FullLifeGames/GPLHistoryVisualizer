@@ -44,6 +44,99 @@ export function weightedRating(wins, losses, draws, priorRate = 0.5, priorGames 
   return value === null ? "" : value.toFixed(1);
 }
 
+export function eloRatings(matches = [], normalizeKey = normalizedStatsKey, { initialRating = 1500, kFactor = 32 } = {}) {
+  const ratings = new Map();
+
+  const player = (name) => {
+    const key = normalizeKey(name);
+    if (!key) return null;
+    if (!ratings.has(key)) {
+      ratings.set(key, {
+        key,
+        name,
+        rating: initialRating,
+        matches: 0,
+        wins: 0,
+        losses: 0,
+        draws: 0,
+      });
+    }
+    const current = ratings.get(key);
+    if (!current.name && name) current.name = name;
+    return current;
+  };
+
+  [...matches]
+    .filter((row) => !["source_video_only", "not_available"].includes(row.data_status))
+    .sort(compareMatchChronology)
+    .forEach((row) => {
+      const left = player(row.player_a || row.team_a);
+      const right = player(row.player_b || row.team_b);
+      if (!left || !right || left.key === right.key) {
+        return;
+      }
+
+      const winner = normalizeKey(row.winner);
+      const leftScore = winner === left.key ? 1 : winner === right.key ? 0 : 0.5;
+      const rightScore = 1 - leftScore;
+      const leftExpected = expectedEloScore(left.rating, right.rating);
+      const rightExpected = expectedEloScore(right.rating, left.rating);
+
+      left.rating += kFactor * (leftScore - leftExpected);
+      right.rating += kFactor * (rightScore - rightExpected);
+      left.matches += 1;
+      right.matches += 1;
+
+      if (leftScore === 1) {
+        left.wins += 1;
+        right.losses += 1;
+      } else if (rightScore === 1) {
+        right.wins += 1;
+        left.losses += 1;
+      } else {
+        left.draws += 1;
+        right.draws += 1;
+      }
+    });
+
+  return [...ratings.values()]
+    .map((row) => ({
+      key: row.key,
+      name: row.name,
+      elo: String(Math.round(row.rating)),
+      matches: row.matches,
+      wins: row.wins,
+      losses: row.losses,
+      draws: row.draws,
+      win_pct: winPercentage(row.wins, row.losses, row.draws),
+    }))
+    .sort((a, b) => numberValue(b.elo) - numberValue(a.elo) || b.matches - a.matches || a.name.localeCompare(b.name))
+    .map((row, index) => ({ rank: index + 1, ...row }));
+}
+
+function expectedEloScore(left, right) {
+  return 1 / (1 + 10 ** ((right - left) / 400));
+}
+
+function compareMatchChronology(a, b) {
+  return (
+    seasonNumber(a.season_id) - seasonNumber(b.season_id) ||
+    matchWeekOrder(a) - matchWeekOrder(b) ||
+    String(a.match_id || "").localeCompare(String(b.match_id || "")) ||
+    String(a.player_a || a.team_a || "").localeCompare(String(b.player_a || b.team_a || ""))
+  );
+}
+
+function matchWeekOrder(row) {
+  const text = String(row.week ?? "").toLowerCase();
+  const match = text.match(/(\d+)\.\s*spieltag/);
+  if (match) return Number(match[1]);
+  if (text.includes("viertel")) return 100;
+  if (text.includes("halb")) return 110;
+  if (text.includes("final")) return 120;
+  return row.stage === "playoffs" ? 150 : 999;
+}
+
 export function formatSeasonList(seasonIds = []) {
   return [...new Set(seasonIds.filter(Boolean))]
     .sort((a, b) => seasonNumber(a) - seasonNumber(b) || String(a).localeCompare(String(b)))

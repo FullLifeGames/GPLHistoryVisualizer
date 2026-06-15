@@ -43,6 +43,7 @@ export const TRANSLATIONS = {
     filters: {
       season: "Saison",
       allSeasons: "Alle Saisons",
+      dataMode: "Datenbasis",
       division: "Liga/Bereich",
       allDivisions: "Alle Ligen/Bereiche",
       search: "Suche",
@@ -120,6 +121,12 @@ export const TRANSLATIONS = {
       tierFilter: "Tierfilter",
       allTiers: "Alle Tiers",
       excludeAgUber: "Ohne AG/Uber",
+    },
+    dataModes: {
+      primary: "Hauptliga",
+      leagueOne: "Liga 1",
+      leagueTwo: "Liga 2",
+      all: "Alle",
     },
     coverage: {
       missingTitle: "Bekannte Lücken",
@@ -243,6 +250,7 @@ export const TRANSLATIONS = {
       name: "Name",
       seasons_won: "Titel",
       rating: "Wertung",
+      elo: "Elo",
       seasons: "Saisons",
       season_list: "Saisonliste",
       title_seasons: "Titel-Saisons",
@@ -386,6 +394,7 @@ export const TRANSLATIONS = {
     filters: {
       season: "Season",
       allSeasons: "All seasons",
+      dataMode: "Data basis",
       division: "Division",
       allDivisions: "All divisions",
       search: "Search",
@@ -459,6 +468,12 @@ export const TRANSLATIONS = {
       tierFilter: "Tier filter",
       allTiers: "All tiers",
       excludeAgUber: "Without AG/Uber",
+    },
+    dataModes: {
+      primary: "Main league",
+      leagueOne: "League 1",
+      leagueTwo: "League 2",
+      all: "All",
     },
     pokemonDetails: {
       focus: "Pokémon",
@@ -586,6 +601,7 @@ export const TRANSLATIONS = {
       name: "Name",
       seasons_won: "Seasons Won",
       rating: "Rating",
+      elo: "Elo",
       seasons: "Seasons",
       season_list: "Season List",
       title_seasons: "Title Seasons",

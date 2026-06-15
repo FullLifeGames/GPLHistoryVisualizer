@@ -177,11 +177,12 @@ def _draft_instances(
         if not asset:
             return
         trainer = row.get(trainer_field) or row.get(trainer_normalized_field) or ""
+        trainer_key = _person_key(row.get(trainer_normalized_field) or row.get(trainer_field))
         team = row.get(team_field) or ""
         if not trainer and not team:
             return
         season_id = row.get("season_id", "")
-        identity = (asset, season_id, name_key(trainer), name_key(team))
+        identity = (asset, season_id, trainer_key, name_key(team))
         if identity in seen:
             return
         seen.add(identity)
@@ -189,6 +190,7 @@ def _draft_instances(
             {
                 "season_id": season_id,
                 "trainer": trainer,
+                "trainer_key": trainer_key,
                 "team": team,
                 "source_urls": row.get("source_urls", ""),
             }
@@ -223,7 +225,7 @@ def _title_seasons_by_asset(
         for draft in drafts:
             season_id = draft.get("season_id", "")
             team_key = name_key(draft.get("team", ""))
-            trainer_key = _person_key(draft.get("trainer"))
+            trainer_key = draft.get("trainer_key") or _person_key(draft.get("trainer"))
             team_matches = (season_id, team_key) in champion_team_keys
             person_matches_missing_team = not team_key and (season_id, trainer_key) in champion_person_keys_with_team
             if team_matches or person_matches_missing_team:
@@ -297,7 +299,7 @@ def _read_csv(path: Path) -> list[dict[str, str]]:
 
 def _write_csv(path: Path, fields: list[str], rows: list[dict[str, Any]]) -> None:
     with path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fields, extrasaction="ignore")
+        writer = csv.DictWriter(handle, fieldnames=fields, extrasaction="ignore", lineterminator="\n")
         writer.writeheader()
         for row in rows:
             writer.writerow({field: row.get(field, "") for field in fields})

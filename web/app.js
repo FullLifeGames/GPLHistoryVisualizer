@@ -25,6 +25,7 @@ import {
   aggregatePersonStats,
   canonicalKilllistRows,
   displayNumber,
+  eloRatings,
   filterSourceClaims,
   matchupOverview,
   missingDataRows,
@@ -72,6 +73,7 @@ const DATASETS = {
 const state = {
   view: "all-time",
   season: "all",
+  dataMode: normalizeDataMode(readPreference("gpl-data-mode", "primary")),
   division: "all",
   language: normalizeLanguage(readPreference("gpl-language", "de")),
   theme: normalizeTheme(readPreference("gpl-theme", "light")),
@@ -86,6 +88,7 @@ const state = {
 const statusEl = document.querySelector("#load-status");
 const languageToggle = document.querySelector("#language-toggle");
 const themeToggle = document.querySelector("#theme-toggle");
+const dataModeFilter = document.querySelector("#data-mode-filter");
 const seasonFilter = document.querySelector("#season-filter");
 const divisionFilter = document.querySelector("#division-filter");
 const searchFilter = document.querySelector("#search-filter");
@@ -117,12 +120,28 @@ async function init() {
 }
 
 function bindControls() {
+  dataModeFilter.value = state.dataMode;
+  dataModeFilter.addEventListener("change", () => {
+    state.dataMode = dataModeFilter.value || "primary";
+    state.dataMode = normalizeDataMode(state.dataMode);
+    savePreference("gpl-data-mode", state.dataMode);
+    state.division = "all";
+    divisionFilter.value = state.division;
+    populateDivisionFilter();
+    populateMatchupOptions();
+    render();
+    if (state.view === "matchup") {
+      renderMatchup();
+    }
+  });
+
   languageToggle.addEventListener("click", () => {
     state.language = nextLanguage(state.language);
     savePreference("gpl-language", state.language);
     applyLanguage();
     populateSeasonFilter();
     populateDivisionFilter();
+    dataModeFilter.value = state.dataMode;
     populateMatchupOptions();
     render();
     if (state.view === "matchup") {
@@ -369,6 +388,10 @@ function savePreference(key, value) {
   }
 }
 
+function normalizeDataMode(value) {
+  return new Set(["primary", "league1", "league2", "all"]).has(value) ? value : "primary";
+}
+
 async function loadDatasets() {
   const entries = await Promise.all(
     Object.entries(DATASETS).map(async ([key, spec]) => {
@@ -445,7 +468,7 @@ function populateSeasonFilter() {
 function populateDivisionFilter() {
   const divisions = new Set();
   ["standings", "personStints", "matches", "matchVideos", "teams", "killlists"].forEach((dataset) => {
-    (state.data[dataset] ?? []).forEach((row) => {
+    (state.data[dataset] ?? []).filter(applyDataMode).forEach((row) => {
       if (row.division) {
         divisions.add(row.division);
       }
@@ -554,11 +577,41 @@ function render() {
 
 function filtered(rows) {
   return rows.filter((row) => {
+    const dataModeOk = applyDataMode(row);
     const seasonOk = state.season === "all" || row.season_id === state.season;
     const divisionOk = state.division === "all" || row.division === state.division;
     const searchOk = !state.search || Object.values(row).join(" ").toLowerCase().includes(state.search);
-    return seasonOk && divisionOk && searchOk;
+    return dataModeOk && seasonOk && divisionOk && searchOk;
   });
+}
+
+function applyDataMode(row) {
+  const division = row.division || "";
+  if (!division) {
+    return state.dataMode !== "league2";
+  }
+  if (state.dataMode === "all") {
+    return true;
+  }
+  if (state.dataMode === "league1") {
+    return division === "Liga 1";
+  }
+  if (state.dataMode === "league2") {
+    return division === "Liga 2";
+  }
+  if (division !== "Liga 2") {
+    return true;
+  }
+  return !seasonHasLeagueOne(row.season_id || row.detected_season_id);
+}
+
+function seasonHasLeagueOne(seasonId) {
+  if (!seasonId) {
+    return false;
+  }
+  return ["standings", "personStints", "matches", "matchVideos", "teams", "killlists"].some((dataset) =>
+    (state.data[dataset] ?? []).some((row) => (row.season_id || row.detected_season_id) === seasonId && row.division === "Liga 1"),
+  );
 }
 
 function metricCard(label, value) {
@@ -751,12 +804,23 @@ function filteredPersonStats({ primaryOnly = false } = {}) {
 }
 
 function renderAllTime() {
-  const statRows = filteredPersonStats({ primaryOnly: true });
-  const champions = (state.data.champions ?? []).filter(
-    (row) => ["source_evidenced", "user_provided"].includes(row.data_status) && (state.season === "all" || row.season_id === state.season),
-  );
-  const rows = aggregatePersonStats(statRows, champions)
-    .map((row, index) => ({
+  const statRows = filteredPersonStats({ primaryOnly: state.dataMode === "primary" });
+  const champions = filtered(state.data.champions ?? []).filter((row) => ["source_evidenced", "user_provided"].includes(row.data_status));
+  const eloIndex = new Map(eloRatings(availableMatchRows(), normalizedKey).map((row) => [row.key, row]));
+  const personRows = aggregatePersonStats(statRows, champions)
+    .map((row) => ({
+      ...row,
+      elo: eloIndex.get(personComparableKey(row.key))?.elo || "",
+    }))
+    .sort(
+      (a, b) =>
+        numberValue(b.seasons_won) - numberValue(a.seasons_won) ||
+        numberValue(b.elo) - numberValue(a.elo) ||
+        numberValue(b.rating) - numberValue(a.rating) ||
+        numberValue(b.points) - numberValue(a.points) ||
+        String(a.name).localeCompare(String(b.name)),
+    );
+  const rows = personRows.map((row, index) => ({
       rank: index + 1,
       name: personLink(row.key, row.name),
       seasons_won: row.seasons_won,
@@ -764,6 +828,7 @@ function renderAllTime() {
       seasons: row.seasons,
       season_list: row.season_list,
       teams: row.teams,
+      elo: row.elo,
       matches: row.matches,
       wins: displayNumber(row.wins),
       losses: displayNumber(row.losses),
@@ -778,6 +843,14 @@ function renderAllTime() {
     }));
 
   renderTable("#all-time-table", rows, ALL_TIME_COLUMNS, ["name"]);
+}
+
+function availableMatchRows() {
+  return filtered(state.data.matches ?? []).filter((row) => !["source_video_only", "not_available"].includes(row.data_status));
+}
+
+function personComparableKey(value) {
+  return normalizedKey(String(value || "").replace(/^person_/, "").replaceAll("_", " "));
 }
 
 function renderKilllists() {
@@ -1083,10 +1156,11 @@ function renderVideoArchive() {
 
 function filteredVideoRows(rows) {
   return rows.filter((row) => {
+    const dataModeOk = applyDataMode(row);
     const seasonOk = state.season === "all" || row.detected_season_id === state.season || row.season_id === state.season;
     const divisionOk = state.division === "all" || row.division === state.division;
     const searchOk = !state.search || Object.values(row).join(" ").toLowerCase().includes(state.search);
-    return seasonOk && divisionOk && searchOk;
+    return dataModeOk && seasonOk && divisionOk && searchOk;
   });
 }
 
@@ -1222,8 +1296,7 @@ function renderSeasonDetail() {
       ].join("")
     : "";
 
-  const standings = (state.data.standings ?? [])
-    .filter((row) => row.season_id === state.season)
+  const standings = filtered(state.data.standings ?? [])
     .map((row) => ({
       division: divisionDisplay(row.division, row.stage),
       rank: row.rank,
@@ -1243,8 +1316,7 @@ function renderSeasonDetail() {
     }));
   renderTable("#season-detail-standings", standings, SEASON_STANDINGS_COLUMNS, ["source"]);
 
-  const champions = (state.data.champions ?? [])
-    .filter((row) => row.season_id === state.season)
+  const champions = filtered(state.data.champions ?? [])
     .map((row) => ({
       champion: row.champion_name,
       team: row.champion_team,
@@ -1255,7 +1327,7 @@ function renderSeasonDetail() {
     }));
   renderTable("#season-detail-champions", champions, ["champion", "team", "evidence", "status", "notes", "source"], ["source"]);
 
-  const killlists = personDetailKilllistRows((state.data.killlists ?? []).filter((row) => row.season_id === state.season), state.division).map((row) => ({
+  const killlists = personDetailKilllistRows(filtered(state.data.killlists ?? []), state.division).map((row) => ({
     division: divisionDisplay(row.division, row.stage),
     pokemon: pokemonCell(row.pokemon, row.pokemon_normalized || normalizedKey(row.pokemon)),
     trainer: row.trainer,
@@ -1269,8 +1341,7 @@ function renderSeasonDetail() {
   }));
   renderTable("#season-detail-killlists", killlists, ["division", "pokemon", "trainer", "team", "appearances", "kills", "deaths", "differential", "status", "source"], ["pokemon", "source"]);
 
-  const videos = (state.data.videos ?? [])
-    .filter((row) => row.detected_season_id === state.season || row.season_id === state.season)
+  const videos = filteredVideoRows(state.data.videos ?? [])
     .sort(compareVideoRows)
     .map((row) => ({
       video_type: videoTypeDisplay(row.video_type),
@@ -1502,12 +1573,12 @@ function renderPersonDetails() {
     : [];
   const matchupRows = focusKey
     ? matchupOverview(
-        (state.data.matches ?? []).filter((row) => !["source_video_only", "not_available"].includes(row.data_status)),
+        availableMatchRows(),
         focusKey.replace(/^person_/, "").replaceAll("_", " "),
         normalizedKey,
       )
     : [];
-  const missingKilllistRows = (state.data.killlists ?? [])
+  const missingKilllistRows = filtered(state.data.killlists ?? [])
     .filter((row) => row.data_status === "not_available")
     .filter((row) => !focusKey || isFocusedPersonValue(row.trainer || row.trainer_normalized, focusKey))
     .map((row) => ({
@@ -1582,7 +1653,7 @@ function renderMatchup() {
     return;
   }
 
-  const availableMatches = (state.data.matches ?? []).filter((row) => !["source_video_only", "not_available"].includes(row.data_status));
+  const availableMatches = availableMatchRows();
   if (!b) {
     const overviewRows = matchupOverview(availableMatches, a, normalizedKey);
     result.innerHTML = overviewRows.length
@@ -1800,6 +1871,7 @@ const NUMERIC_COLUMNS = new Set([
   "seasons_won",
   "titles",
   "title_count",
+  "elo",
   "rating",
   "seasons",
   "divisions",

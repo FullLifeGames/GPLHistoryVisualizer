@@ -1,4 +1,4 @@
-from gpl_history.pokemon_drafts import build_pokemon_draft_overview, parse_showdown_tiers
+from gpl_history.pokemon_drafts import _write_csv, build_pokemon_draft_overview, parse_showdown_tiers
 
 
 FORMATS_DATA = """
@@ -24,6 +24,14 @@ def test_parse_showdown_tiers_reads_format_data_blocks():
 
     assert tiers["bulbasaur"]["tier"] == "LC"
     assert tiers["charizardmegax"]["tier"] == "Uber"
+
+
+def test_pokemon_draft_csv_writer_uses_lf_line_endings(tmp_path):
+    path = tmp_path / "drafts.csv"
+
+    _write_csv(path, ["name"], [{"name": "Bene"}])
+
+    assert path.read_bytes() == b"name\nBene\n"
 
 
 def test_build_pokemon_draft_overview_is_form_level_and_marks_never_picked():
@@ -187,3 +195,46 @@ def test_build_pokemon_draft_overview_counts_titles_by_champion_person_when_kill
 
     assert rows[0]["title_count"] == "1"
     assert rows[0]["title_seasons"] == "S10"
+
+
+def test_build_pokemon_draft_overview_counts_titles_with_normalized_champion_person_fallback():
+    translations = [
+        {"species_id": "59", "german": "Arkani", "english": "Arcanine", "asset_id": "arcanine", "source_url": "pokeapi"},
+    ]
+    killlists = [
+        {
+            "season_id": "season_001",
+            "pokemon": "Arkani",
+            "pokemon_normalized": "arkani",
+            "trainer": "PresentLP",
+            "trainer_normalized": "present",
+            "team_name": "",
+            "data_status": "sheet_extracted",
+            "source_urls": "s1-killlist",
+        },
+        {
+            "season_id": "season_001",
+            "pokemon": "Arkani",
+            "pokemon_normalized": "arkani",
+            "trainer": "SteveParker",
+            "trainer_normalized": "steveparker",
+            "team_name": "",
+            "data_status": "sheet_extracted",
+            "source_urls": "s1-other-usage",
+        },
+    ]
+    champions = [
+        {
+            "season_id": "season_001",
+            "champion_name": "PresentLP",
+            "champion_person_id": "person_present",
+            "champion_team": "Prekani",
+            "data_status": "source_evidenced",
+        },
+    ]
+
+    rows = build_pokemon_draft_overview(translations, killlists, [], FORMATS_DATA, champions)
+
+    assert rows[0]["draft_count"] == "2"
+    assert rows[0]["title_count"] == "1"
+    assert rows[0]["title_seasons"] == "S1"

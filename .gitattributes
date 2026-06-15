@@ -1,0 +1,2 @@
+data/normalized/*.csv text eol=lf
+data/review/*.csv text eol=lf

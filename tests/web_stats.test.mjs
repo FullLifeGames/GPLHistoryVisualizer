@@ -3,6 +3,7 @@ import {
   aggregatePersonStats,
   canonicalKilllistRows,
   displayNumber,
+  eloRatings,
   filterSourceClaims,
   formatSeasonList,
   matchupOverview,
@@ -53,6 +54,31 @@ assert.equal(displayNumber(""), "");
 assert.equal(killDifferential("20", "8"), 12);
 assert.equal(killDifferential("20", ""), 20);
 assert.equal(formatSeasonList(["season_010", "season_001", "season_002"]), "S1, S2, S10");
+
+assert.deepEqual(
+  eloRatings(
+    [
+      { season_id: "season_001", week: "1. Spieltag", player_a: "Bene", player_b: "PresentLP", winner: "Bene", data_status: "sheet_extracted" },
+      { season_id: "season_001", week: "2. Spieltag", player_a: "Bene", player_b: "Nestfloh", winner: "Nestfloh", data_status: "sheet_extracted" },
+      { season_id: "season_002", week: "1. Spieltag", player_a: "Bene", player_b: "PresentLP", winner: "", data_status: "sheet_extracted" },
+      { season_id: "season_002", week: "2. Spieltag", player_a: "Bene", player_b: "", winner: "Bene", data_status: "sheet_extracted" },
+    ],
+    (value) => String(value ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(),
+  ).map((row) => ({
+    name: row.name,
+    matches: row.matches,
+    wins: row.wins,
+    losses: row.losses,
+    draws: row.draws,
+    win_pct: row.win_pct,
+    elo: row.elo,
+  })),
+  [
+    { name: "Nestfloh", matches: 1, wins: 1, losses: 0, draws: 0, win_pct: "100.0%", elo: "1517" },
+    { name: "Bene", matches: 3, wins: 1, losses: 1, draws: 1, win_pct: "33.3%", elo: "1499" },
+    { name: "PresentLP", matches: 2, wins: 0, losses: 1, draws: 1, win_pct: "0.0%", elo: "1485" },
+  ],
+);
 
 assert.deepEqual(
   summarizeKilllists([

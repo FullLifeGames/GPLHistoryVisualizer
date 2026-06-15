@@ -17,6 +17,7 @@ function recordWindow(columns) {
 }
 
 assert.equal(ALL_TIME_COLUMNS.includes("teams"), false);
+assert.equal(ALL_TIME_COLUMNS.includes("elo"), true);
 assert.deepEqual(recordWindow(ALL_TIME_COLUMNS), ["matches", "win_pct", "wins", "losses", "draws"]);
 
 assert.equal(POKEMON_DRAFT_COLUMNS.includes("team_count"), false);

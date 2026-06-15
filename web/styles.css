@@ -253,7 +253,7 @@ h3 {
 
 .toolbar {
   display: grid;
-  grid-template-columns: minmax(180px, 260px) minmax(170px, 240px) minmax(240px, 1fr);
+  grid-template-columns: minmax(150px, 220px) minmax(180px, 240px) minmax(170px, 240px) minmax(240px, 1fr);
   gap: 12px;
   margin: 8px 0 14px;
   padding: 12px;

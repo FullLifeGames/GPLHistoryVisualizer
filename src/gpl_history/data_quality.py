@@ -253,7 +253,7 @@ def _read_csv(path: Path) -> list[dict[str, str]]:
 def _write_csv(path: Path, fields: list[str], rows: list[dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fields, extrasaction="ignore")
+        writer = csv.DictWriter(handle, fieldnames=fields, extrasaction="ignore", lineterminator="\n")
         writer.writeheader()
         for row in rows:
             writer.writerow({field: "" if row.get(field) is None else row.get(field) for field in fields})

@@ -47,7 +47,7 @@ def test_write_csv_retries_transient_windows_invalid_argument(tmp_path, monkeypa
 
     _write_csv(path, ["name"], [{"name": "Bene"}])
 
-    assert path.read_text(encoding="utf-8") == "name\nBene\n"
+    assert path.read_bytes() == b"name\nBene\n"
     assert calls == 1
     assert _display_name("CabgoLord") == "Fnupa"
 

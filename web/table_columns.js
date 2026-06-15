@@ -5,7 +5,7 @@ function withRecordColumns(prefix, suffix = []) {
 }
 
 export const ALL_TIME_COLUMNS = withRecordColumns(
-  ["rank", "name", "seasons_won", "title_seasons", "rating", "seasons", "season_list"],
+  ["rank", "name", "seasons_won", "title_seasons", "rating", "elo", "seasons", "season_list"],
   ["points", "kills", "deaths", "differential", "best_rank"],
 );
 

@@ -468,7 +468,7 @@ def _write_csv(path: Path, fields: list[str], rows: list[dict[str, Any]]) -> Non
     for attempt in range(attempts):
         try:
             with path.open("w", encoding="utf-8", newline="") as handle:
-                writer = csv.DictWriter(handle, fieldnames=fields, extrasaction="ignore")
+                writer = csv.DictWriter(handle, fieldnames=fields, extrasaction="ignore", lineterminator="\n")
                 writer.writeheader()
                 for row in rows:
                     writer.writerow({field: "" if row.get(field) is None else row.get(field) for field in fields})

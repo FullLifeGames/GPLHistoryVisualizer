@@ -192,7 +192,7 @@ def write_translation_outputs(
     ensure_dir(csv_path.parent)
     ensure_dir(js_path.parent)
     with csv_path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=TRANSLATION_FIELDS)
+        writer = csv.DictWriter(handle, fieldnames=TRANSLATION_FIELDS, lineterminator="\n")
         writer.writeheader()
         for row in rows:
             writer.writerow({**row, "source_url": source_url})
