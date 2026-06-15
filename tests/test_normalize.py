@@ -8,6 +8,7 @@ from gpl_history.normalize import (
     _person_id,
     _records_from_rows,
     _schedule_matches_from_rows,
+    _write_csv,
     normalize_all,
 )
 
@@ -28,6 +29,26 @@ def test_aliases_merge_to_preferred_person_display_names():
     assert _display_name("ProfessorN") == "Professor N"
     assert _canonical_name("CabgoLord") == "fnupa"
     assert _person_id("Cabgolord") == "person_fnupa"
+
+
+def test_write_csv_retries_transient_windows_invalid_argument(tmp_path, monkeypatch):
+    path = tmp_path / "rows.csv"
+    original_open = Path.open
+    calls = 0
+
+    def flaky_open(self, *args, **kwargs):
+        nonlocal calls
+        if self == path and calls == 0:
+            calls += 1
+            raise OSError(22, "Invalid argument")
+        return original_open(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", flaky_open)
+
+    _write_csv(path, ["name"], [{"name": "Bene"}])
+
+    assert path.read_text(encoding="utf-8") == "name\nBene\n"
+    assert calls == 1
     assert _display_name("CabgoLord") == "Fnupa"
 
 

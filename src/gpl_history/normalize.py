@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import csv
+import errno
 import re
+import time
 import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
@@ -462,11 +464,19 @@ def write_normalized(out_dir: Path, output: NormalizedOutput) -> None:
 
 
 def _write_csv(path: Path, fields: list[str], rows: list[dict[str, Any]]) -> None:
-    with path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fields, extrasaction="ignore")
-        writer.writeheader()
-        for row in rows:
-            writer.writerow({field: "" if row.get(field) is None else row.get(field) for field in fields})
+    attempts = 3
+    for attempt in range(attempts):
+        try:
+            with path.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=fields, extrasaction="ignore")
+                writer.writeheader()
+                for row in rows:
+                    writer.writerow({field: "" if row.get(field) is None else row.get(field) for field in fields})
+            return
+        except OSError as error:
+            if error.errno not in {errno.EINVAL, errno.EACCES} or attempt == attempts - 1:
+                raise
+            time.sleep(0.1 * (attempt + 1))
 
 
 def _apply_team_pokemon_usage_to_killlists(
