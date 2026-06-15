@@ -39,6 +39,8 @@ FORM_SPECIES_NAMES = (
 641,9,Tornadus,
 645,6,Demeteros,
 645,9,Landorus,
+720,6,Hoopa,
+720,9,Hoopa,
 1017,6,Ogerpon,
 1017,9,Ogerpon,
 """
@@ -50,6 +52,8 @@ POKEMON_ROWS = """id,identifier,species_id,height,weight,base_experience,order,i
 479,rotom,479,3,3,154,587,1
 641,tornadus-incarnate,641,15,630,261,764,1
 645,landorus-incarnate,645,15,680,270,770,1
+720,hoopa,720,5,90,270,820,1
+10086,hoopa-unbound,720,65,4900,306,821,0
 1017,ogerpon,1017,12,398,275,1101,1
 10003,deoxys-speed,386,17,608,270,517,0
 10008,rotom-heat,479,3,3,182,588,0
@@ -72,6 +76,7 @@ POKEMON_FORMS = """id,identifier,form_identifier,pokemon_id,introduced_in_versio
 10062,rotom-mow,mow,10012,9,1,0,0,6,642
 10079,tornadus-therian,therian,10019,14,1,0,0,2,848
 10081,landorus-therian,therian,10021,14,1,0,0,2,854
+10235,hoopa-unbound,unbound,10086,16,0,0,0,2,822
 10149,tyranitar-mega,mega,10049,15,1,1,1,2,380
 10442,ogerpon-wellspring-mask,wellspring-mask,10273,26,1,0,0,2,1430
 10444,ogerpon-cornerstone-mask,cornerstone-mask,10275,26,1,0,0,4,1432
@@ -96,6 +101,8 @@ POKEMON_FORM_NAMES = """pokemon_form_id,local_language_id,form_name,pokemon_name
 10079,9,Therian Forme,Therian Tornadus
 10081,6,Tiergeistform,Demeteros (Tiergeist)
 10081,9,Therian Forme,Therian Landorus
+10235,6,Entfesseltes Hoopa,Hoopa
+10235,9,Unbound,Hoopa Unbound
 10149,6,Mega-Form,Mega-Despotar
 10149,9,Mega Tyranitar,Mega Tyranitar
 10442,9,Wellspring Mask,Wellspring Mask Ogerpon
@@ -236,6 +243,7 @@ def test_build_translation_rows_maps_german_form_aliases_to_showdown_asset_ids()
     assert by_german["Rotom-Schneide"]["asset_id"] == "rotommow"
     assert by_german["Boreos-Tiergeistform"]["asset_id"] == "tornadustherian"
     assert by_german["Deoxys-Geschwindigkeit"]["asset_id"] == "deoxysspeed"
+    assert by_german["Hoopa-Entfesselt"]["asset_id"] == "hoopaunbound"
 
 
 def test_pokemon_display_name_canonicalizes_form_aliases_for_stats_merging():
@@ -253,6 +261,8 @@ def test_pokemon_display_name_canonicalizes_form_aliases_for_stats_merging():
     assert pokemon_display_name("Wolwerock-Tag") == "Wolwerock-Tagform"
     assert pokemon_display_name("Porygon-2") == "Porygon2"
     assert pokemon_display_name("Zygarde") == "Zygarde-50"
+    assert pokemon_display_name("Hoopa-Entfesseltes Hoopa") == "Hoopa-Entfesselt"
+    assert pokemon_display_name("hoopa entfesseltes hoopa") == "Hoopa-Entfesselt"
 
 
 def test_write_translation_outputs_writes_review_csv_and_frontend_module(tmp_path):

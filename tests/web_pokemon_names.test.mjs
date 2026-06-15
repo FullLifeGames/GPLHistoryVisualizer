@@ -33,6 +33,8 @@ assert.equal(pokemonAssetId("Boreos-Tiergeistform"), "tornadustherian");
 assert.equal(pokemonAssetId("Boreos-T"), "tornadustherian");
 assert.equal(pokemonAssetId("Boreos-I"), "tornadus");
 assert.equal(pokemonAssetId("Deoxys-Geschwindigkeit"), "deoxysspeed");
+assert.equal(pokemonAssetId("hoopa entfesseltes hoopa"), "hoopaunbound");
+assert.equal(pokemonAssetId("Hoopa-Entfesselt"), "hoopaunbound");
 assert.equal(pokemonAssetId("Cupidos-Therian"), "enamorustherian");
 assert.equal(pokemonAssetId("Keldeo"), "keldeo");
 assert.equal(pokemonAssetId("Amigento-Normal"), "silvally");

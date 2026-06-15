@@ -8834,6 +8834,12 @@ export const POKEMON_NAME_TRANSLATIONS = [
     "asset_id": "hoopaunbound"
   },
   {
+    "species_id": 720,
+    "german": "Hoopa-Entfesselt",
+    "english": "hoopa-unbound",
+    "asset_id": "hoopaunbound"
+  },
+  {
     "species_id": 323,
     "german": "Mega-Camerupt",
     "english": "camerupt-mega",
@@ -12757,6 +12763,7 @@ export const POKEMON_ASSET_IDS = {
   "honweisel": "vespiquen",
   "hooh": "hooh",
   "hoopa": "hoopa",
+  "hoopaentfesselt": "hoopaunbound",
   "hoopaentfesselteshoopa": "hoopaunbound",
   "hoopagebannteshoopa": "hoopa",
   "hoopaunbound": "hoopaunbound",

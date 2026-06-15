@@ -30,6 +30,7 @@ GERMAN_FORM_ALIASES = {
     "enamorus-therian": ["Cupidos-T", "Cupidos-Therian", "Cupidos-Tiergeistform"],
     "indeedee-male": ["Servol (männlich)", "Servol-m", "Servol-M"],
     "indeedee-female": ["Servol (weiblich)", "Servol-w", "Servol-W"],
+    "hoopa-unbound": ["Hoopa-Entfesselt", "Entfesseltes Hoopa", "Hoopa-Entfesseltes Hoopa"],
     "kyurem-black": ["Kyurem-Schwarz", "Schwarzes Kyurem", "Kyurem-Black", "Black Kyurem"],
     "kyurem-white": ["Kyurem-Weiss", "Weisses Kyurem", "Kyurem-White", "White Kyurem"],
     "landorus-incarnate": ["Demeteros-I", "Demeteros-Inkarnationsform"],
@@ -68,6 +69,7 @@ GERMAN_FORM_BASE_ALIASES = {
 GERMAN_FORM_DISPLAY_NAMES = {
     "enamorus-incarnate": "Cupidos-I",
     "enamorus-therian": "Cupidos-T",
+    "hoopa-unbound": "Hoopa-Entfesselt",
     "kyurem-black": "Kyurem-Schwarz",
     "kyurem-white": "Kyurem-Weiss",
     "landorus-incarnate": "Demeteros-I",
