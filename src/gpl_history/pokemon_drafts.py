@@ -24,6 +24,8 @@ POKEMON_DRAFT_OVERVIEW_FIELDS = [
     "draft_count",
     "season_count",
     "season_list",
+    "title_count",
+    "title_seasons",
     "trainer_count",
     "team_count",
     "picked_status",
@@ -58,6 +60,7 @@ def build_and_write_pokemon_draft_overview(data_dir: Path, refresh: bool = False
         _read_csv(data_dir / "normalized" / "pokemon_killlists.csv"),
         _read_csv(data_dir / "manual" / "team_pokemon_usage.csv"),
         formats_text,
+        _read_csv(data_dir / "normalized" / "champions.csv"),
     )
     out_path = data_dir / "normalized" / "pokemon_draft_overview.csv"
     ensure_dir(out_path.parent)
@@ -70,16 +73,19 @@ def build_pokemon_draft_overview(
     killlists: list[dict[str, str]],
     team_usage: list[dict[str, str]],
     formats_data: str,
+    champions: list[dict[str, str]] | None = None,
 ) -> list[dict[str, Any]]:
     tier_lookup = parse_showdown_tiers(formats_data)
     forms = _translation_forms(translations)
     aliases = _translation_aliases(translations)
     draft_map = _draft_instances(killlists, team_usage, aliases)
+    title_seasons_by_asset = _title_seasons_by_asset(draft_map, champions or [])
 
     rows: list[dict[str, Any]] = []
     for asset, form in forms.items():
         drafts = draft_map.get(asset, [])
         seasons = sorted({draft["season_id"] for draft in drafts if draft.get("season_id")}, key=_season_sort)
+        title_seasons = title_seasons_by_asset.get(asset, [])
         trainers = {draft["trainer"] for draft in drafts if draft.get("trainer")}
         teams = {draft["team"] for draft in drafts if draft.get("team")}
         sources = _join_sources(form.get("source_url"), *(draft.get("source_urls") for draft in drafts))
@@ -96,6 +102,8 @@ def build_pokemon_draft_overview(
                 "draft_count": len(drafts),
                 "season_count": len(seasons),
                 "season_list": _format_season_list(seasons),
+                "title_count": len(title_seasons),
+                "title_seasons": _format_season_list(title_seasons),
                 "trainer_count": len(trainers),
                 "team_count": len(teams),
                 "picked_status": "picked" if drafts else "never_picked",
@@ -106,7 +114,7 @@ def build_pokemon_draft_overview(
     rows.sort(key=lambda row: (-int(row["draft_count"]), int(row["tier_rank"]), row["pokemon"]))
     for index, row in enumerate(rows, start=1):
         row["rank"] = index
-        for field in ("tier_rank", "draft_count", "season_count", "trainer_count", "team_count"):
+        for field in ("tier_rank", "draft_count", "season_count", "title_count", "trainer_count", "team_count"):
             row[field] = str(row[field])
     return rows
 
@@ -191,6 +199,44 @@ def _draft_instances(
     for row in team_usage:
         add(row, trainer_field="person_name", trainer_normalized_field="person_name_normalized", team_field="team_name")
     return drafts
+
+
+def _title_seasons_by_asset(
+    draft_map: dict[str, list[dict[str, str]]],
+    champions: list[dict[str, str]],
+) -> dict[str, list[str]]:
+    champion_team_keys: set[tuple[str, str]] = set()
+    champion_person_keys_with_team: set[tuple[str, str]] = set()
+    for row in champions:
+        if row.get("data_status") == "not_available":
+            continue
+        season_id = row.get("season_id", "")
+        team_key = name_key(row.get("champion_team", ""))
+        if season_id and team_key:
+            champion_team_keys.add((season_id, team_key))
+            person_key = _person_key(row.get("champion_person_id") or row.get("champion_name"))
+            if person_key:
+                champion_person_keys_with_team.add((season_id, person_key))
+
+    title_seasons: dict[str, set[str]] = {}
+    for asset, drafts in draft_map.items():
+        for draft in drafts:
+            season_id = draft.get("season_id", "")
+            team_key = name_key(draft.get("team", ""))
+            trainer_key = _person_key(draft.get("trainer"))
+            team_matches = (season_id, team_key) in champion_team_keys
+            person_matches_missing_team = not team_key and (season_id, trainer_key) in champion_person_keys_with_team
+            if team_matches or person_matches_missing_team:
+                title_seasons.setdefault(asset, set()).add(season_id)
+
+    return {asset: sorted(seasons, key=_season_sort) for asset, seasons in title_seasons.items()}
+
+
+def _person_key(value: str | None) -> str:
+    text = str(value or "").strip()
+    if text.startswith("person_"):
+        text = text[len("person_") :]
+    return name_key(text)
 
 
 def _asset_for_row(row: dict[str, str], aliases: dict[str, str]) -> str:

@@ -1,6 +1,6 @@
 # German Pokémon League History
 
-Generated: 2026-06-14T19:03:54.812181+00:00
+Generated: 2026-06-15T05:27:05.586403+00:00
 
 This report is generated from the normalized CSV files. Champions are recorded from sourced adapter evidence where available. Rows marked `user_provided` are explicit corrections only; unavailable playoff winners remain null.
 
@@ -20,7 +20,7 @@ This report is generated from the normalized CSV files. Champions are recorded f
 
 ## Coverage
 
-- Source claim rows: 28200
+- Source claim rows: 28336
 - Data quality rows: 10
 
 - Seasons represented: 10
@@ -29,7 +29,7 @@ This report is generated from the normalized CSV files. Champions are recorded f
 - Person stint rows: 158 available, 0 not available
 - Match rows: 2001 available/source-video rows, 0 not available
 - Champion rows with title evidence/corrections: 12
-- Pokémon killlist rows: 1991 available, 3 not available
+- Pokémon killlist rows: 2025 available, 3 not available
 
 ## Season CSV Source Index
 
@@ -73,7 +73,7 @@ This report is generated from the normalized CSV files. Champions are recorded f
 - Video count: 58
 - Date range: 2016-01-18T21:20:13Z to 2016-08-21T19:24:53Z
 - GPL-related heuristic: true
-- Divisions/stages represented: Liga 1: 14, Liga 2: 14, Regular Season: 608, video_source: 58
+- Divisions/stages represented: Liga 1: 14, Liga 2: 14, Regular Season: 584, video_source: 58
 
 | Claim Type | Status | Source URLs |
 | --- | --- | --- |
@@ -82,7 +82,7 @@ This report is generated from the normalized CSV files. Champions are recorded f
 | person_stints | sheet_extracted: 13, user_provided: 2 | https://docs.google.com/spreadsheets/d/13ggv8-k1WCcrrjlwXb-ZoSwhODIQlG_NVffp3TGKOgI/edit#gid=0<br>https://docs.google.com/spreadsheets/d/15MPuuKWiOBeqO8JbrOYulUHFDzWbid6_pYZLHiWVzrk/edit#gid=0 |
 | matches | sheet_extracted: 354, sheet_extracted_with_user_correction: 10, source_video_only: 58 | https://docs.google.com/spreadsheets/d/15MPuuKWiOBeqO8JbrOYulUHFDzWbid6_pYZLHiWVzrk/edit#gid=0<br>https://docs.google.com/spreadsheets/d/16r_khFZJxguj1o1wSrDQO4vlJhSDhIdN8AbUJQbnDq0/edit#gid=0<br>https://www.youtube.com/watch?v=2E6o5rdD3Vw<br>https://www.youtube.com/watch?v=e0rmXP2NVyI<br>https://www.youtube.com/watch?v=vdXTwYsuF48<br>https://www.youtube.com/watch?v=qJaqqoJufB0<br>https://www.youtube.com/watch?v=wtiixYgnqk4<br>https://www.youtube.com/watch?v=wt8v4-x8FVE |
 | champions | source_evidenced: 1 | https://docs.google.com/spreadsheets/d/13ggv8-k1WCcrrjlwXb-ZoSwhODIQlG_NVffp3TGKOgI/edit#gid=0 |
-| pokemon_killlists | manual_graphic_assignment: 144, manual_override: 56, not_available: 1 | https://docs.google.com/spreadsheets/d/1JZpA-5XDldN2bjfvhvBPHYK-1AENETLnF1UxNEpWlNA/edit#gid=352888197<br>data/manual/team_pokemon_usage.csv<br>output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg<br>output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg<br>https://docs.google.com/spreadsheets/d/1d7DpiW3aMjnYWiY9KSpk9nSi-gnEUnSFVAK-zGpy59Q/edit#gid=0<br>data/manual/pokemon_killlists.csv |
+| pokemon_killlists | manual_graphic_assignment: 120, manual_override: 56, not_available: 1 | https://docs.google.com/spreadsheets/d/1JZpA-5XDldN2bjfvhvBPHYK-1AENETLnF1UxNEpWlNA/edit#gid=352888197<br>data/manual/team_pokemon_usage.csv<br>output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg<br>output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg<br>https://docs.google.com/spreadsheets/d/1d7DpiW3aMjnYWiY9KSpk9nSi-gnEUnSFVAK-zGpy59Q/edit#gid=0<br>data/manual/pokemon_killlists.csv |
 
 ### season_004: GPL [S4] - PresentLP
 
@@ -192,7 +192,7 @@ This report is generated from the normalized CSV files. Champions are recorded f
 - Video count: 161
 - Date range: 2025-10-04T16:01:45Z to 2025-12-14T17:01:29Z
 - GPL-related heuristic: true
-- Divisions/stages represented: Playoffs: 134, Regular Season: 133, video_source: 161
+- Divisions/stages represented: Playoffs: 134, Regular Season: 191, video_source: 161
 
 | Claim Type | Status | Source URLs |
 | --- | --- | --- |
@@ -201,7 +201,7 @@ This report is generated from the normalized CSV files. Champions are recorded f
 | person_stints | sheet_extracted: 21 | https://docs.google.com/spreadsheets/d/13smsrG2BGYxr_omJWcgr-sUDr39bvOJPNL5RPt4DSow/edit#gid=1405051186<br>https://docs.google.com/spreadsheets/d/13smsrG2BGYxr_omJWcgr-sUDr39bvOJPNL5RPt4DSow/edit#gid=1215904780<br>https://docs.google.com/spreadsheets/d/13smsrG2BGYxr_omJWcgr-sUDr39bvOJPNL5RPt4DSow/edit#gid=1953790464 |
 | matches | sheet_extracted: 97, source_video_only: 161 | https://docs.google.com/spreadsheets/d/13smsrG2BGYxr_omJWcgr-sUDr39bvOJPNL5RPt4DSow/edit#gid=1215904780<br>https://docs.google.com/spreadsheets/d/13smsrG2BGYxr_omJWcgr-sUDr39bvOJPNL5RPt4DSow/edit#gid=1953790464<br>https://www.youtube.com/watch?v=0UElsZUhmV8<br>https://www.youtube.com/watch?v=Z54svnNXqgs<br>https://www.youtube.com/watch?v=GaPbTTkh8rc<br>https://www.youtube.com/watch?v=9w2c9TJoTiE<br>https://www.youtube.com/watch?v=wk3cVdGCv4A<br>https://www.youtube.com/watch?v=wtB514Weelc |
 | champions | source_evidenced: 1 | https://docs.google.com/spreadsheets/d/13smsrG2BGYxr_omJWcgr-sUDr39bvOJPNL5RPt4DSow/edit#gid=1215904780<br>https://docs.google.com/spreadsheets/d/13smsrG2BGYxr_omJWcgr-sUDr39bvOJPNL5RPt4DSow/edit#gid=1953790464 |
-| pokemon_killlists | sheet_extracted: 107 | https://docs.google.com/spreadsheets/d/13smsrG2BGYxr_omJWcgr-sUDr39bvOJPNL5RPt4DSow/edit#gid=71150222 |
+| pokemon_killlists | sheet_extracted: 165 | https://docs.google.com/spreadsheets/d/13smsrG2BGYxr_omJWcgr-sUDr39bvOJPNL5RPt4DSow/edit#gid=71150222<br>https://docs.google.com/spreadsheets/d/13smsrG2BGYxr_omJWcgr-sUDr39bvOJPNL5RPt4DSow/edit#gid=1934543062 |
 
 ## Data Gaps
 

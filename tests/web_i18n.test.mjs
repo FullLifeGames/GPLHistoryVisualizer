@@ -13,6 +13,8 @@ assert.equal(t("de", "nav.killlists"), "Pokémon-Killlisten");
 assert.equal(t("en", "nav.killlists"), "Pokémon Killlists");
 assert.equal(t("de", "nav.pokemonDetail"), "Pokémon-Details");
 assert.equal(t("en", "nav.pokemonDetail"), "Pokémon Details");
+assert.equal(t("de", "nav.pokemonDrafts"), "Pokémon-Drafts");
+assert.equal(t("de", "sections.pokemonDraftsDescription"), "Formgenaue Draft-Häufigkeit aus Killlisten und geprüften Teamgrafik-Zuordnungen.");
 assert.equal(t("de", "status.loaded"), "CSV-Daten geladen");
 assert.equal(t("de", "actions.exportCsv"), "CSV exportieren");
 assert.equal(t("en", "actions.videoUrls"), "Video URL List");
@@ -28,3 +30,9 @@ assert.equal(columnTitle("en", "confidence_explanation"), "Match Explanation");
 assert.equal(columnTitle("en", "seasons_won"), "Seasons Won");
 assert.equal(columnTitle("de", "opponent"), "Gegner");
 assert.equal(columnTitle("en", "trainers"), "Trainers");
+
+assert.doesNotMatch(JSON.stringify({
+  nav: t("de", "nav"),
+  sections: t("de", "sections"),
+  pokemonDrafts: t("de", "pokemonDrafts"),
+}), /Ã/);

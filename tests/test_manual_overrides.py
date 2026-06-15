@@ -116,6 +116,47 @@ def test_manual_killlist_rows_replace_trainerless_generated_rows():
     assert result == [rows[1]]
 
 
+def test_manual_killlist_rows_replace_graphic_assigned_generated_rows():
+    rows = [
+        {
+            "season_id": "season_003",
+            "division": "Regular Season",
+            "stage": "regular_season",
+            "pokemon": "Heatran",
+            "pokemon_normalized": "heatran",
+            "trainer": "Bene",
+            "trainer_normalized": "bene",
+            "team_name": "Unlimited Blade Works",
+            "appearances": "",
+            "kills": "20",
+            "deaths": "",
+            "differential": "",
+            "data_status": "manual_graphic_assignment",
+            "source_urls": "https://example.test/old-sheet;data/manual/team_pokemon_usage.csv",
+        },
+        {
+            "season_id": "season_003",
+            "division": "Regular Season",
+            "stage": "regular_season",
+            "pokemon": "Heatran",
+            "pokemon_normalized": "heatran",
+            "trainer": "Bene",
+            "trainer_normalized": "bene",
+            "team_name": "Unlimited Blade Works",
+            "appearances": "",
+            "kills": "20",
+            "deaths": "",
+            "differential": "",
+            "data_status": "manual_override",
+            "source_urls": "https://example.test/old-sheet;data/manual/team_pokemon_usage.csv;data/manual/pokemon_killlists.csv",
+        },
+    ]
+
+    result = _replace_generated_killlists_with_manual_overrides(rows)
+
+    assert result == [rows[1]]
+
+
 def test_team_pokemon_usage_enriches_trainerless_killlist_rows_without_changing_kills():
     killlists = [
         {

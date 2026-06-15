@@ -149,13 +149,37 @@ def test_s10_killlist_uses_playoff_table_with_deaths():
     ]
 
     assert rows
-    assert {row["division"] for row in rows} == {"Playoffs"}
+    assert "Playoffs" in {row["division"] for row in rows}
 
     ramoth = next(row for row in rows if row["pokemon"] == "Ramoth" and row["trainer"] == "Minetube")
     assert ramoth["appearances"] == "2"
     assert ramoth["kills"] == "3"
     assert ramoth["deaths"] == "2"
     assert ramoth["differential"] == "1"
+
+
+def test_s10_killlist_keeps_regular_season_only_pokemon():
+    output = normalize_all(Path("data"))
+    rows = [
+        row
+        for row in output.pokemon_killlists
+        if row["season_id"] == "season_010" and row["data_status"] == "sheet_extracted"
+    ]
+
+    riesenzahn = next(row for row in rows if row["pokemon"] == "Riesenzahn")
+    eisenhand = next(row for row in rows if row["pokemon"] == "Eisenhand")
+
+    assert riesenzahn["division"] == "Regular Season"
+    assert riesenzahn["trainer"] == "Sirazoa"
+    assert riesenzahn["team_name"] == "Eon Engine"
+    assert riesenzahn["appearances"] == "11"
+    assert riesenzahn["kills"] == "10"
+
+    assert eisenhand["division"] == "Regular Season"
+    assert eisenhand["trainer"] == "KingBlex"
+    assert eisenhand["team_name"] == "Cyber End Jugulis"
+    assert eisenhand["appearances"] == "12"
+    assert eisenhand["kills"] == "13"
 
 
 def test_killlists_capture_appearances_where_sources_expose_usage_columns():

@@ -429,6 +429,26 @@ input:focus,
   color: #17110b;
 }
 
+.table-select-filter {
+  display: inline-flex;
+  align-items: center;
+  grid-auto-flow: column;
+  gap: 7px;
+  min-height: 34px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.table-select-filter select {
+  min-width: 150px;
+  min-height: 34px;
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .stacked-table {
   margin-top: 12px;
 }
@@ -640,7 +660,8 @@ tbody tr:hover {
   border-top-color: var(--accent-strong);
 }
 
-.tabulator .tabulator-header-filter input {
+.tabulator .tabulator-header-filter input,
+.tabulator .tabulator-header-filter select {
   min-height: 28px;
   border-radius: 6px;
   background: var(--surface);

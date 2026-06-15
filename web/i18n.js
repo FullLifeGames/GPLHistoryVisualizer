@@ -26,7 +26,7 @@ export const TRANSLATIONS = {
     },
     nav: {
       allTime: "Ewige Tabelle",
-      pokemonDrafts: "PokÃ©mon-Drafts",
+      pokemonDrafts: "Pokémon-Drafts",
       killlists: "Pokémon-Killlisten",
       pokemonDetail: "Pokémon-Details",
       tableHistory: "Tabellenverlauf",
@@ -48,6 +48,7 @@ export const TRANSLATIONS = {
       search: "Suche",
       searchPlaceholder: "Team, Trainer, Pokémon, Video",
       header: "Filtern",
+      allValues: "Alle",
     },
     summary: {
       archiveLabel: "Gefilterte Archiv-Zusammenfassung",
@@ -63,8 +64,8 @@ export const TRANSLATIONS = {
     sections: {
       allTimeTitle: "Ewige Tabelle",
       allTimeDescription: "Aus personenspezifischen CSV-Stints aggregiert; Teamtabellen bleiben im Tabellenverlauf erhalten.",
-      pokemonDraftsTitle: "PokÃ©mon-Drafts",
-      pokemonDraftsDescription: "Formgenaue Draft-HÃ¤ufigkeit aus Killlisten und geprÃ¼ften Teamgrafik-Zuordnungen.",
+      pokemonDraftsTitle: "Pokémon-Drafts",
+      pokemonDraftsDescription: "Formgenaue Draft-Häufigkeit aus Killlisten und geprüften Teamgrafik-Zuordnungen.",
       killlistsTitle: "Pokémon-Killlisten",
       killlistsDescription: "Summierte Pokémon-Kills über den aktuell gefilterten CSV-Datenbestand.",
       pokemonDetailTitle: "Pokémon-Details",
@@ -114,8 +115,11 @@ export const TRANSLATIONS = {
       showAll: "Alle Pokémon",
     },
     pokemonDrafts: {
-      all: "Alle PokÃ©mon",
+      all: "Alle Pokémon",
       neverPicked: "Nie gepickt",
+      tierFilter: "Tierfilter",
+      allTiers: "Alle Tiers",
+      excludeAgUber: "Ohne AG/Uber",
     },
     coverage: {
       missingTitle: "Bekannte Lücken",
@@ -250,6 +254,8 @@ export const TRANSLATIONS = {
       trainers: "Trainer",
       draft_count: "Drafts",
       season_count: "Saisons",
+      title_count: "Titel",
+      titles: "Titel",
       trainer_count: "Trainer",
       team_count: "Teams",
       tier: "Tier",
@@ -363,7 +369,7 @@ export const TRANSLATIONS = {
     },
     nav: {
       allTime: "All Time Table",
-      pokemonDrafts: "Pokemon Drafts",
+      pokemonDrafts: "Pokémon Drafts",
       killlists: "Pokémon Killlists",
       pokemonDetail: "Pokémon Details",
       tableHistory: "Table History",
@@ -385,6 +391,7 @@ export const TRANSLATIONS = {
       search: "Search",
       searchPlaceholder: "Team, trainer, Pokémon, video",
       header: "Filter",
+      allValues: "All",
     },
     summary: {
       archiveLabel: "Filtered archive summary",
@@ -400,7 +407,7 @@ export const TRANSLATIONS = {
     sections: {
       allTimeTitle: "All Time Table",
       allTimeDescription: "Aggregated from person-specific CSV stints; team standings stay in Table History.",
-      pokemonDraftsTitle: "Pokemon Drafts",
+      pokemonDraftsTitle: "Pokémon Drafts",
       pokemonDraftsDescription: "Form-level draft frequency from killlists and reviewed team-graphic assignments.",
       killlistsTitle: "Pokémon Killlists",
       killlistsDescription: "Summed Pokémon kills across the currently filtered CSV data.",
@@ -447,8 +454,11 @@ export const TRANSLATIONS = {
       missingTitle: "Open Killlists",
     },
     pokemonDrafts: {
-      all: "All Pokemon",
+      all: "All Pokémon",
       neverPicked: "Never picked",
+      tierFilter: "Tier filter",
+      allTiers: "All tiers",
+      excludeAgUber: "Without AG/Uber",
     },
     pokemonDetails: {
       focus: "Pokémon",
@@ -587,6 +597,8 @@ export const TRANSLATIONS = {
       trainers: "Trainers",
       draft_count: "Drafts",
       season_count: "Seasons",
+      title_count: "Titles",
+      titles: "Titles",
       trainer_count: "Trainers",
       team_count: "Teams",
       tier: "Tier",

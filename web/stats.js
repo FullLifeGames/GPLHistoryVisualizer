@@ -291,7 +291,7 @@ export function canonicalKilllistRows(rows, selectedDivision = "all") {
     }
     const playoffRows = seasonRows.filter((row) => row.division === "Playoffs");
     if (season === "season_010" && playoffRows.length) {
-      return playoffRows;
+      return [...playoffRows, ...regularOnlyKilllistRows(playoffRows, seasonRows)];
     }
     return seasonRows;
   });
@@ -319,9 +319,18 @@ export function personDetailKilllistRows(rows, selectedDivision = "all") {
     }
     const playoffRows = seasonRows.filter((row) => row.division === "Playoffs");
     if (season === "season_010" && playoffRows.length) {
-      return playoffRows;
+      return [...playoffRows, ...regularOnlyKilllistRows(playoffRows, seasonRows)];
     }
     return seasonRows;
+  });
+}
+
+function regularOnlyKilllistRows(canonicalRows, seasonRows) {
+  const canonicalPokemon = new Set(canonicalRows.map((row) => row.pokemon_normalized || normalizedStatsKey(row.pokemon)).filter(Boolean));
+  return seasonRows.filter((row) => {
+    if (row.division !== "Regular Season") return false;
+    const key = row.pokemon_normalized || normalizedStatsKey(row.pokemon);
+    return key && !canonicalPokemon.has(key);
   });
 }
 
@@ -440,20 +449,61 @@ export function summarizeKilllists(rows) {
     }));
 }
 
-export function pokemonDraftOverviewRows(rows = [], { pickedStatus = "all" } = {}) {
+export function pokemonDraftOverviewRows(rows = [], { pickedStatus = "all", excludedTiers = [] } = {}) {
+  const excludedTierValues = new Set(excludedTiers.map((tier) => String(tier ?? "").toLowerCase()));
   return rows
     .filter((row) => pickedStatus === "all" || row.picked_status === pickedStatus)
+    .filter((row) => !excludedTierValues.has(String(row.tier ?? "").toLowerCase()))
     .map((row) => ({
       ...row,
       rank: numberValue(row.rank),
       tier_rank: numberValue(row.tier_rank),
       draft_count: numberValue(row.draft_count),
       season_count: numberValue(row.season_count),
+      title_count: numberValue(row.title_count),
       trainer_count: numberValue(row.trainer_count),
       team_count: numberValue(row.team_count),
     }))
     .sort((a, b) => b.draft_count - a.draft_count || a.tier_rank - b.tier_rank || String(a.pokemon).localeCompare(String(b.pokemon)))
     .map((row, index) => ({ ...row, rank: index + 1 }));
+}
+
+export function pokemonTitleIndex(rows = [], normalizeKey = normalizedStatsKey) {
+  const index = new Map();
+  rows.forEach((row) => {
+    const info = {
+      titles: numberValue(row.title_count ?? row.titles),
+      title_seasons: row.title_seasons || "",
+    };
+    [row.pokemon_normalized, row.pokemon, row.asset_id, row.english].forEach((value) => {
+      addPokemonTitleAlias(index, value, info, normalizeKey);
+    });
+  });
+  return index;
+}
+
+function addPokemonTitleAlias(index, value, info, normalizeKey) {
+  const key = normalizeKey(value);
+  if (!key) return;
+  const compactKey = compactStatsKey(key);
+  setPokemonTitleInfo(index, key, info);
+  setPokemonTitleInfo(index, compactKey, info);
+}
+
+function setPokemonTitleInfo(index, key, info) {
+  const current = index.get(key);
+  if (!current || info.titles > current.titles || (!current.title_seasons && info.title_seasons)) {
+    index.set(key, info);
+  }
+}
+
+function pokemonTitleInfo(index, value, normalizeKey = normalizedStatsKey) {
+  const key = normalizeKey(value);
+  return index.get(key) || index.get(compactStatsKey(key)) || { titles: 0, title_seasons: "" };
+}
+
+function compactStatsKey(value) {
+  return String(value ?? "").replace(/\s+/g, "");
 }
 
 export function summarizeTrainerPokemon(rows, selectedPersonKey = "", normalizeKey = normalizedStatsKey, ownershipRows = []) {
@@ -586,8 +636,9 @@ export function pokemonTimelineRows(rows, selectedPokemonKey, normalizeKey = nor
     }));
 }
 
-export function pokemonStorySummary(rows = [], selectedPokemonKey, normalizeKey = normalizedStatsKey) {
+export function pokemonStorySummary(rows = [], selectedPokemonKey, normalizeKey = normalizedStatsKey, titleIndex = new Map()) {
   const selectedKey = normalizeKey(selectedPokemonKey);
+  const titles = pokemonTitleInfo(titleIndex, selectedKey, normalizeKey);
   const filtered = rows
     .filter((row) => row.data_status !== "not_available")
     .filter((row) => normalizeKey(row.pokemon_normalized || row.pokemon) === selectedKey);
@@ -605,6 +656,8 @@ export function pokemonStorySummary(rows = [], selectedPokemonKey, normalizeKey 
     pokemon,
     seasons: new Set(filtered.map((row) => row.season_id).filter(Boolean)).size,
     season_list: formatSeasonList(filtered.map((row) => row.season_id)),
+    titles: titles.titles,
+    title_seasons: titles.title_seasons,
     best_trainer: topAggregateName(trainers),
     best_season: formatSeasonList([topAggregateName(seasons)]),
     top_team: topAggregateName(teams),

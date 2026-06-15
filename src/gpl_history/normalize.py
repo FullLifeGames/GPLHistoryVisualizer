@@ -505,17 +505,21 @@ def _replace_generated_killlists_with_manual_overrides(rows: list[dict[str, Any]
     manual_keys = {
         _killlist_assignment_key(row)
         for row in rows
-        if "manual" in str(row.get("data_status") or "") and _killlist_assignment_key(row)
+        if _is_manual_killlist_override(row) and _killlist_assignment_key(row)
     }
     if not manual_keys:
         return rows
     return [
         row
         for row in rows
-        if "manual" in str(row.get("data_status") or "")
-        or not _is_trainerless_generated_killlist_row(row)
+        if _is_manual_killlist_override(row)
+        or str(row.get("data_status") or "") == "not_available"
         or _killlist_assignment_key(row) not in manual_keys
     ]
+
+
+def _is_manual_killlist_override(row: dict[str, Any]) -> bool:
+    return str(row.get("data_status") or "") == "manual_override"
 
 
 def _is_trainerless_generated_killlist_row(row: dict[str, Any]) -> bool:
@@ -1974,14 +1978,15 @@ def _season_killlists(season_id: str, tables: list[dict[str, Any]]) -> list[dict
             rows.extend(_standard_killlist(season_id, table, "Regular Season"))
         return _dedupe_killlist_rows(rows)
     if season_id == "season_010":
+        regular_rows: list[dict[str, Any]] = []
+        for table in _tables_by_title(tables, "Killliste"):
+            regular_rows.extend(_s10_killlist(season_id, table, "Regular Season", playoff=False))
         playoff_rows: list[dict[str, Any]] = []
         for table in _tables_by_title(tables, "Playoffs Killliste"):
             playoff_rows.extend(_s10_killlist(season_id, table, "Playoffs", playoff=True))
         if playoff_rows:
-            return _dedupe_killlist_rows(playoff_rows)
-        for table in _tables_by_title(tables, "Killliste"):
-            rows.extend(_s10_killlist(season_id, table, "Regular Season", playoff=False))
-        return _dedupe_killlist_rows(rows)
+            return _dedupe_killlist_rows([*playoff_rows, *_regular_only_killlist_rows(playoff_rows, regular_rows)])
+        return _dedupe_killlist_rows(regular_rows)
     for title, division in title_specs.get(season_id, []):
         for table in _tables_by_title(tables, title or ""):
             if season_id == "season_009":
@@ -2077,6 +2082,11 @@ def _dedupe_killlist_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         seen.add(key)
         unique.append(row)
     return unique
+
+
+def _regular_only_killlist_rows(canonical_rows: list[dict[str, Any]], regular_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    canonical_pokemon = {row.get("pokemon_normalized") for row in canonical_rows if row.get("pokemon_normalized")}
+    return [row for row in regular_rows if row.get("pokemon_normalized") and row.get("pokemon_normalized") not in canonical_pokemon]
 
 
 def _standard_killlist(season_id: str, table: dict[str, Any], division: str) -> list[dict[str, Any]]:

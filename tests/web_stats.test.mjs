@@ -10,6 +10,7 @@ import {
   personStorySummary,
   personPokemonHighlights,
   pokemonDraftOverviewRows,
+  pokemonTitleIndex,
   pokemonStorySummary,
   pokemonTimelineRows,
   personDetailKilllistRows,
@@ -70,11 +71,49 @@ assert.deepEqual(
     [
       { rank: "1", pokemon: "Pikachu", asset_id: "pikachu", tier: "ZU", tier_rank: "13", draft_count: "2", picked_status: "picked", season_list: "S1, S2" },
       { rank: "2", pokemon: "Mega-Glurak X", asset_id: "charizardmegax", tier: "Uber", tier_rank: "2", draft_count: "0", picked_status: "never_picked", season_list: "" },
-      { rank: "3", pokemon: "Bisasam", asset_id: "bulbasaur", tier: "LC", tier_rank: "15", draft_count: "0", picked_status: "never_picked", season_list: "" },
+      { rank: "3", pokemon: "Miraidon", asset_id: "miraidon", tier: "AG", tier_rank: "1", draft_count: "0", picked_status: "never_picked", season_list: "" },
+      { rank: "4", pokemon: "Bisasam", asset_id: "bulbasaur", tier: "LC", tier_rank: "15", draft_count: "0", picked_status: "never_picked", season_list: "" },
     ],
     { pickedStatus: "never_picked" },
   ).map((row) => `${row.pokemon}:${row.draft_count}:${row.picked_status}`),
-  ["Mega-Glurak X:0:never_picked", "Bisasam:0:never_picked"],
+  ["Miraidon:0:never_picked", "Mega-Glurak X:0:never_picked", "Bisasam:0:never_picked"],
+);
+
+assert.deepEqual(
+  pokemonDraftOverviewRows(
+    [
+      { pokemon: "Pikachu", tier: "ZU", tier_rank: "13", draft_count: "2", picked_status: "picked" },
+      { pokemon: "Mega-Glurak X", tier: "Uber", tier_rank: "2", draft_count: "0", picked_status: "never_picked" },
+      { pokemon: "Miraidon", tier: "AG", tier_rank: "1", draft_count: "0", picked_status: "never_picked" },
+      { pokemon: "Bisasam", tier: "LC", tier_rank: "15", draft_count: "0", picked_status: "never_picked" },
+    ],
+    { pickedStatus: "never_picked", excludedTiers: ["AG", "Uber"] },
+  ).map((row) => `${row.pokemon}:${row.tier}`),
+  ["Bisasam:LC"],
+);
+
+assert.deepEqual(
+  pokemonDraftOverviewRows(
+    [
+      { pokemon: "Pikachu", tier: "ZU", tier_rank: "13", draft_count: "2", title_count: "1", picked_status: "picked", title_seasons: "S9" },
+      { pokemon: "Bisasam", tier: "LC", tier_rank: "15", draft_count: "0", title_count: "", picked_status: "never_picked", title_seasons: "" },
+    ],
+  ).map((row) => ({ pokemon: row.pokemon, title_count: row.title_count, title_seasons: row.title_seasons })),
+  [
+    { pokemon: "Pikachu", title_count: 1, title_seasons: "S9" },
+    { pokemon: "Bisasam", title_count: 0, title_seasons: "" },
+  ],
+);
+
+assert.deepEqual(
+  pokemonTitleIndex(
+    [
+      { pokemon: "Demeteros-I", pokemon_normalized: "demeteros i", title_count: "2", title_seasons: "S9, S10" },
+      { pokemon: "Bisasam", pokemon_normalized: "bisasam", title_count: "", title_seasons: "" },
+    ],
+    (value) => String(value ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(),
+  ).get("demeteros i"),
+  { titles: 2, title_seasons: "S9, S10" },
 );
 
 assert.deepEqual(
@@ -122,6 +161,7 @@ assert.deepEqual(
       { season_id: "season_009", division: "Doubles", pokemon: "Pikachu" },
       { season_id: "season_010", division: "Regular Season", pokemon: "Ramoth" },
       { season_id: "season_010", division: "Playoffs", pokemon: "Ramoth" },
+      { season_id: "season_010", division: "Regular Season", pokemon: "Riesenzahn", pokemon_normalized: "riesenzahn" },
       { season_id: "season_008", division: "Liga 1", pokemon: "Evoli" },
       { season_id: "season_008", division: "Liga 2", pokemon: "Relaxo" },
     ],
@@ -130,6 +170,7 @@ assert.deepEqual(
   [
     "season_009:Overall:Pikachu",
     "season_010:Playoffs:Ramoth",
+    "season_010:Regular Season:Riesenzahn",
     "season_008:Liga 1:Evoli",
     "season_008:Liga 2:Relaxo",
   ],
@@ -200,13 +241,14 @@ assert.deepEqual(
       { season_id: "season_009", division: "Overall", pokemon: "UHaFnir", pokemon_normalized: "uhafnir", trainer: "", trainer_normalized: "", team_name: "Victory Instinct", appearances: "6", kills: "6", deaths: "", differential: "", source_urls: "https://example.test/s9-overall", data_status: "sheet_extracted" },
       { season_id: "season_009", division: "Doubles", pokemon: "UHaFnir", pokemon_normalized: "uhafnir", trainer: "", trainer_normalized: "", team_name: "Victory Instinct", appearances: "3", kills: "3", deaths: "", differential: "", source_urls: "https://example.test/s9-doubles", data_status: "sheet_extracted" },
       { season_id: "season_010", division: "Playoffs", pokemon: "UHaFnir", pokemon_normalized: "uhafnir", trainer: "Bene", trainer_normalized: "bene", team_name: "Wackel Backel", appearances: "6", kills: "9", deaths: "8", differential: "1", source_urls: "https://example.test/s10", data_status: "sheet_extracted" },
+      { season_id: "season_010", division: "Regular Season", pokemon: "Riesenzahn", pokemon_normalized: "riesenzahn", trainer: "Sirazoa", trainer_normalized: "sirazoa", team_name: "Eon Engine", appearances: "10", kills: "9", deaths: "", differential: "", source_urls: "https://example.test/s10-regular", data_status: "sheet_extracted" },
     ],
     "all",
   );
 
   assert.deepEqual(
     rows.map((row) => `${row.season_id}:${row.division}:${row.kills}`),
-    ["season_008:Liga 1:8", "season_009:Doubles:3", "season_010:Playoffs:9"],
+    ["season_008:Liga 1:8", "season_009:Doubles:3", "season_010:Playoffs:9", "season_010:Regular Season:9"],
   );
 
   assert.deepEqual(
@@ -489,6 +531,7 @@ assert.deepEqual(
     ],
     "uhafnir",
     (value) => String(value ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(),
+    new Map([["uhafnir", { titles: 2, title_seasons: "S8, S10" }]]),
   ),
   [
     { season_id: "season_008", divisions: "Liga 1", appearances: 9, kills: 8, deaths: 3, differential: 5, trainers: 1, teams: 0 },
@@ -530,11 +573,14 @@ assert.deepEqual(
     ],
     "uhafnir",
     (value) => String(value ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(),
+    new Map([["uhafnir", { titles: 2, title_seasons: "S8, S10" }]]),
   ),
   {
     pokemon: "UHaFniR",
     seasons: 2,
     season_list: "S8, S10",
+    titles: 2,
+    title_seasons: "S8, S10",
     best_trainer: "Bene",
     best_season: "S10",
     top_team: "Wackel Backel",

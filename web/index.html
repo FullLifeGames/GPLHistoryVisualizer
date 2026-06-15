@@ -58,8 +58,6 @@
         </label>
       </section>
 
-      <section class="summary-grid" id="summary-grid" aria-label="Gefilterte Archiv-Zusammenfassung"></section>
-
       <section id="view-all-time" class="view is-active">
         <div class="section-head">
           <h2 data-i18n="sections.allTimeTitle">Ewige Tabelle</h2>
@@ -84,6 +82,13 @@
         <div class="table-actions">
           <button class="table-action is-active" type="button" data-draft-picked-status="all" data-i18n="pokemonDrafts.all">Alle Pokémon</button>
           <button class="table-action" type="button" data-draft-picked-status="never_picked" data-i18n="pokemonDrafts.neverPicked">Nie gepickt</button>
+          <label class="table-select-filter">
+            <span data-i18n="pokemonDrafts.tierFilter">Tierfilter</span>
+            <select id="draft-tier-filter">
+              <option value="all" data-i18n="pokemonDrafts.allTiers">Alle Tiers</option>
+              <option value="exclude_ag_uber" data-i18n="pokemonDrafts.excludeAgUber">Ohne AG/Uber</option>
+            </select>
+          </label>
         </div>
         <div id="pokemon-drafts-table" class="table-wrap"></div>
       </section>
@@ -164,11 +169,11 @@
       <section id="view-data-coverage" class="view">
         <div class="section-head">
           <h2 data-i18n="sections.dataCoverageTitle">Datenlage</h2>
-          <p data-i18n="sections.dataCoverageDescription">Saisonweise Abdeckung der normalisierten CSVs und bekannte LÃ¼cken.</p>
+          <p data-i18n="sections.dataCoverageDescription">Saisonweise Abdeckung der normalisierten CSVs und bekannte Lücken.</p>
         </div>
         <div id="coverage-table" class="table-wrap"></div>
         <div class="subsection-head">
-          <h3 data-i18n="coverage.missingTitle">Bekannte LÃ¼cken</h3>
+          <h3 data-i18n="coverage.missingTitle">Bekannte Lücken</h3>
         </div>
         <div id="missing-data-table" class="table-wrap"></div>
         <div class="subsection-head">
@@ -200,7 +205,7 @@
       <section id="view-season-detail" class="view">
         <div class="section-head">
           <h2 data-i18n="sections.seasonDetailTitle">Saisonakte</h2>
-          <p data-i18n="sections.seasonDetailDescription">Tabellen, Titel, Killlisten und Videos fÃ¼r die ausgewÃ¤hlte Saison.</p>
+          <p data-i18n="sections.seasonDetailDescription">Tabellen, Titel, Killlisten und Videos für die ausgewählte Saison.</p>
         </div>
         <div id="season-detail-summary" class="summary-grid"></div>
         <div id="season-detail-standings" class="table-wrap"></div>

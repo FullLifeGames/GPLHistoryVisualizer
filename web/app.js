@@ -10,6 +10,18 @@ import {
 import { parseRouteHash, personRouteHash, pokemonRouteHash, seasonRouteHash, viewRouteHash } from "./router.js";
 import { pokemonAssetId } from "./pokemon_names.js";
 import {
+  ALL_TIME_COLUMNS,
+  MATCHUP_COLUMNS,
+  PERSON_SEASON_COLUMNS,
+  PERSON_SUMMARY_COLUMNS,
+  POKEMON_DETAIL_SUMMARY_COLUMNS,
+  POKEMON_DRAFT_COLUMNS,
+  POKEMON_KILLLIST_COLUMNS,
+  SEASON_STANDINGS_COLUMNS,
+  TABLE_HISTORY_COLUMNS,
+} from "./table_columns.js";
+import { tableHeaderFilterConfig } from "./table_filters.js";
+import {
   aggregatePersonStats,
   canonicalKilllistRows,
   displayNumber,
@@ -20,6 +32,7 @@ import {
   personStorySummary,
   personPokemonHighlights,
   pokemonDraftOverviewRows,
+  pokemonTitleIndex,
   pokemonStorySummary,
   pokemonTimelineRows,
   personDetailKilllistRows,
@@ -66,6 +79,7 @@ const state = {
   personFocus: null,
   pokemonFocus: null,
   draftPickedStatus: "all",
+  draftTierFilter: "all",
   data: {},
 };
 
@@ -75,7 +89,6 @@ const themeToggle = document.querySelector("#theme-toggle");
 const seasonFilter = document.querySelector("#season-filter");
 const divisionFilter = document.querySelector("#division-filter");
 const searchFilter = document.querySelector("#search-filter");
-const summaryGrid = document.querySelector("#summary-grid");
 const matchupA = document.querySelector("#matchup-a");
 const matchupB = document.querySelector("#matchup-b");
 const tableInstances = new Map();
@@ -155,6 +168,14 @@ function bindControls() {
       renderPokemonDrafts();
     });
   });
+
+  const draftTierFilter = document.querySelector("#draft-tier-filter");
+  if (draftTierFilter) {
+    draftTierFilter.addEventListener("change", () => {
+      state.draftTierFilter = draftTierFilter.value || "all";
+      renderPokemonDrafts();
+    });
+  }
 
   document.addEventListener("click", (event) => {
     const personLink = event.target.closest("[data-person-key]");
@@ -312,7 +333,6 @@ function applyLanguage() {
     element.setAttribute("placeholder", t(state.language, element.dataset.i18nPlaceholder));
   });
 
-  summaryGrid.setAttribute("aria-label", t(state.language, "summary.archiveLabel"));
   languageToggle.textContent = t(state.language, "controls.language");
   languageToggle.setAttribute("aria-label", state.language === "de" ? "Switch to English" : "Auf Deutsch wechseln");
   updateThemeToggle();
@@ -517,7 +537,6 @@ function render() {
   if (!state.data.seasons) {
     return;
   }
-  renderSummary();
   renderAllTime();
   renderKilllists();
   renderPokemonDrafts();
@@ -540,27 +559,6 @@ function filtered(rows) {
     const searchOk = !state.search || Object.values(row).join(" ").toLowerCase().includes(state.search);
     return seasonOk && divisionOk && searchOk;
   });
-}
-
-function renderSummary() {
-  const standings = filtered(state.data.standings ?? []).filter((row) => row.data_status !== "not_available");
-  const matches = filtered(state.data.matches ?? []).filter((row) => row.data_status !== "not_available");
-  const people = new Set();
-  standings.forEach((row) => {
-    const key = row.person_id || normalizedKey(row.player_name);
-    if (key) people.add(key);
-  });
-
-  const games = standings.reduce((total, row) => total + numberValue(row.wins) + numberValue(row.losses) + numberValue(row.draws), 0);
-  const wins = standings.reduce((total, row) => total + numberValue(row.wins), 0);
-  const winRate = games ? `${((wins / games) * 100).toFixed(1)}%` : "";
-
-  summaryGrid.innerHTML = [
-    metricCard(t(state.language, "summary.seasons"), new Set(standings.map((row) => row.season_id)).size || filtered(state.data.seasons ?? []).length),
-    metricCard(t(state.language, "summary.people"), people.size),
-    metricCard(t(state.language, "summary.battles"), matches.length),
-    metricCard(t(state.language, "summary.winRate"), winRate || t(state.language, "summary.notAvailable")),
-  ].join("");
 }
 
 function metricCard(label, value) {
@@ -779,23 +777,30 @@ function renderAllTime() {
       best_rank: row.best_rank,
     }));
 
-  renderTable("#all-time-table", rows, ["rank", "name", "seasons_won", "title_seasons", "rating", "seasons", "season_list", "teams", "matches", "wins", "losses", "draws", "win_pct", "points", "kills", "deaths", "differential", "best_rank"], ["name"]);
+  renderTable("#all-time-table", rows, ALL_TIME_COLUMNS, ["name"]);
 }
 
 function renderKilllists() {
+  const titles = pokemonTitleIndex(state.data.pokemonDraftOverview ?? [], normalizedKey);
   const rows = summarizeKilllists(canonicalKilllistRows(filtered(state.data.killlists ?? []), state.division)).map((row) => ({
     ...row,
+    ...titleInfoForPokemon(titles, row.pokemon),
     pokemon: pokemonCell(row.pokemon),
   }));
-  renderTable("#killlists-table", rows, ["rank", "pokemon", "appearances", "kills", "deaths", "differential", "seasons", "season_list", "trainers", "teams"], ["pokemon"]);
+  renderTable("#killlists-table", rows, POKEMON_KILLLIST_COLUMNS, ["pokemon"]);
 }
 
 function renderPokemonDrafts() {
   document.querySelectorAll("[data-draft-picked-status]").forEach((button) => {
     button.classList.toggle("is-active", button.dataset.draftPickedStatus === state.draftPickedStatus);
   });
+  const draftTierFilter = document.querySelector("#draft-tier-filter");
+  if (draftTierFilter) {
+    draftTierFilter.value = state.draftTierFilter;
+  }
   const rows = pokemonDraftOverviewRows(state.data.pokemonDraftOverview ?? [], {
     pickedStatus: state.draftPickedStatus,
+    excludedTiers: excludedDraftTierValues(state.draftTierFilter),
   }).map((row) => ({
     ...row,
     pokemon: pokemonCell(row.pokemon),
@@ -805,14 +810,26 @@ function renderPokemonDrafts() {
   renderTable(
     "#pokemon-drafts-table",
     rows,
-    ["rank", "pokemon", "tier", "draft_count", "season_count", "season_list", "trainer_count", "team_count", "picked_status", "source"],
+    POKEMON_DRAFT_COLUMNS,
     ["pokemon", "source"],
-    { filename: state.draftPickedStatus === "never_picked" ? "pokemon-never-picked.csv" : "pokemon-draft-overview.csv" },
+    { filename: draftOverviewFilename() },
   );
+}
+
+function excludedDraftTierValues(filter) {
+  if (filter === "exclude_ag_uber") return ["AG", "Uber"];
+  return [];
+}
+
+function draftOverviewFilename() {
+  const picked = state.draftPickedStatus === "never_picked" ? "pokemon-never-picked" : "pokemon-draft-overview";
+  const tier = state.draftTierFilter === "exclude_ag_uber" ? "-without-ag-uber" : "";
+  return `${picked}${tier}.csv`;
 }
 
 function renderPokemonDetail() {
   const focus = state.pokemonFocus;
+  const titles = pokemonTitleIndex(state.data.pokemonDraftOverview ?? [], normalizedKey);
   renderPokemonFocus();
   const summaryTarget = document.querySelector("#pokemon-detail-summary");
   const detailTables = ["#pokemon-trainer-table", "#pokemon-timeline-table", "#pokemon-season-table"];
@@ -825,9 +842,10 @@ function renderPokemonDetail() {
     });
     const rows = summarizeKilllists(canonicalKilllistRows(filtered(state.data.killlists ?? []), state.division)).map((row) => ({
       ...row,
+      ...titleInfoForPokemon(titles, row.pokemon),
       pokemon: pokemonCell(row.pokemon),
     }));
-    renderTable("#pokemon-summary-table", rows, ["rank", "pokemon", "appearances", "kills", "deaths", "differential", "seasons", "season_list", "trainers", "teams"], ["pokemon"]);
+    renderTable("#pokemon-summary-table", rows, POKEMON_KILLLIST_COLUMNS, ["pokemon"]);
     return;
   }
 
@@ -837,19 +855,21 @@ function renderPokemonDetail() {
     normalizedKey,
     state.data.teams ?? [],
   );
-  const story = pokemonStorySummary(personDetailKilllistRows(filtered(state.data.killlists ?? []), state.division), focus.key, normalizedKey);
+  const story = pokemonStorySummary(personDetailKilllistRows(filtered(state.data.killlists ?? []), state.division), focus.key, normalizedKey, titles);
   summaryTarget.innerHTML = [
     metricCard(t(state.language, "columns.appearances"), displayNumber(detail.summary.appearances)),
     metricCard(t(state.language, "columns.kills"), displayNumber(detail.summary.kills)),
     metricCard(t(state.language, "columns.deaths"), displayNumber(detail.summary.deaths)),
     metricCard(t(state.language, "columns.differential"), displayNumber(detail.summary.differential)),
+    metricCard(t(state.language, "columns.titles"), displayNumber(story.titles)),
+    metricCard(t(state.language, "columns.title_seasons"), story.title_seasons || t(state.language, "summary.notAvailable")),
     metricCard(t(state.language, "columns.season_list"), story.season_list || t(state.language, "summary.notAvailable")),
     metricCard(t(state.language, "columns.best_trainer"), story.best_trainer || t(state.language, "summary.notAvailable")),
     metricCard(t(state.language, "columns.best_season"), story.best_season || t(state.language, "summary.notAvailable")),
     metricCard(t(state.language, "columns.top_team"), story.top_team || t(state.language, "summary.notAvailable")),
   ].join("");
 
-  renderTable("#pokemon-summary-table", [pokemonSummaryRow(detail.summary, story)], ["pokemon", "appearances", "kills", "deaths", "differential", "seasons", "season_list", "trainers", "teams", "source"], ["pokemon", "source"]);
+  renderTable("#pokemon-summary-table", [pokemonSummaryRow(detail.summary, story)], POKEMON_DETAIL_SUMMARY_COLUMNS, ["pokemon", "source"]);
   renderTable(
     "#pokemon-trainer-table",
     detail.trainerRows.map((row) => ({
@@ -907,10 +927,17 @@ function pokemonSummaryRow(summary, story = {}) {
     differential: displayNumber(summary.differential),
     seasons: summary.seasons,
     season_list: story.season_list || "",
+    titles: displayNumber(story.titles),
+    title_seasons: story.title_seasons || "",
     trainers: summary.trainers,
     teams: summary.teams,
     source: sourceLinks(summary.source_urls),
   };
+}
+
+function titleInfoForPokemon(titleIndex, pokemon) {
+  const key = normalizedKey(pokemon);
+  return titleIndex.get(key) || titleIndex.get(key.replace(/\s+/g, "")) || { titles: 0, title_seasons: "" };
 }
 
 function renderPokemonFocus() {
@@ -952,7 +979,7 @@ function renderTableHistory() {
     differential: row.differential,
     source: sourceLink(row.source_urls),
   }));
-  renderTable("#table-history-table", rows, ["season", "division", "rank", "person", "team", "matches", "wins", "losses", "draws", "win_pct", "points", "kills", "deaths", "differential", "source"], ["source"]);
+  renderTable("#table-history-table", rows, TABLE_HISTORY_COLUMNS, ["source"]);
 }
 
 function renderMatchPlan() {
@@ -1214,7 +1241,7 @@ function renderSeasonDetail() {
       status: statusDisplay(row.data_status),
       source: sourceLinks(row.source_urls),
     }));
-  renderTable("#season-detail-standings", standings, ["division", "rank", "person", "team", "matches", "wins", "losses", "draws", "win_pct", "points", "kills", "deaths", "differential", "status", "source"], ["source"]);
+  renderTable("#season-detail-standings", standings, SEASON_STANDINGS_COLUMNS, ["source"]);
 
   const champions = (state.data.champions ?? [])
     .filter((row) => row.season_id === state.season)
@@ -1492,12 +1519,12 @@ function renderPersonDetails() {
       source: sourceLinks(row.source_urls),
     }));
 
-  renderTable("#person-summary-table", summaryRows, ["person", "seasons", "season_list", "teams", "championships", "title_seasons", "matches", "wins", "losses", "draws", "win_pct", "points", "best_rank"]);
+  renderTable("#person-summary-table", summaryRows, PERSON_SUMMARY_COLUMNS);
   renderTable("#person-timeline-table", timelineRows, ["season", "division", "team", "record", "win_pct", "rating", "points", "kills", "deaths", "differential", "title", "source"], ["source"]);
-  renderTable("#person-season-table", detailRows, ["person", "season", "division", "team", "start_week", "end_week", "rank", "matches", "wins", "losses", "draws", "win_pct", "points", "source"], ["source"]);
+  renderTable("#person-season-table", detailRows, PERSON_SEASON_COLUMNS, ["source"]);
   renderTable("#person-pokemon-table", pokemonRows, ["trainer", "pokemon", "appearances", "kills", "deaths", "differential", "seasons", "season_list", "divisions", "teams", "source"], ["pokemon", "source"]);
   renderTable("#person-video-table", personVideos, ["season", "video_type", "detected_week", "opponent", "title", "match_status", "confidence", "confidence_tier", "match_basis", "confidence_explanation", "published_at"], ["title"]);
-  renderTable("#person-matchup-table", matchupRows, ["opponent", "matches", "wins", "losses", "draws", "win_pct"]);
+  renderTable("#person-matchup-table", matchupRows, MATCHUP_COLUMNS);
   renderTable("#person-missing-table", missingKilllistRows, ["season", "division", "trainer", "team", "status", "source"], ["source"]);
 }
 
@@ -1559,7 +1586,7 @@ function renderMatchup() {
   if (!b) {
     const overviewRows = matchupOverview(availableMatches, a, normalizedKey);
     result.innerHTML = overviewRows.length
-      ? `<div class="table-wrap">${tableHtml(overviewRows, ["opponent", "matches", "wins", "losses", "draws", "win_pct"])}</div>`
+      ? `<div class="table-wrap">${tableHtml(overviewRows, MATCHUP_COLUMNS)}</div>`
       : `<p class="empty">${escapeHtml(t(state.language, "matchup.empty"))}</p>`;
     return;
   }
@@ -1629,7 +1656,7 @@ function renderTable(selector, rows, columns, html = false, options = {}) {
   }
 
   const htmlColumns = new Set(html === true ? ["video"] : Array.isArray(html) ? html : []);
-  const tabulatorColumns = buildTabulatorColumns(columns, htmlColumns);
+  const tabulatorColumns = buildTabulatorColumns(columns, htmlColumns, rows);
   appendHiddenSortColumns(tabulatorColumns, rows);
   const table = new window.Tabulator(host, {
     data: rows,
@@ -1655,15 +1682,18 @@ function destroyTable(selector) {
   }
 }
 
-function buildTabulatorColumns(columns, htmlColumns) {
+function buildTabulatorColumns(columns, htmlColumns, rows = []) {
   return columns.map((column) => {
     const numeric = NUMERIC_COLUMNS.has(column);
+    const filterConfig = tableHeaderFilterConfig(column, rows, {
+      allLabel: t(state.language, "filters.allValues"),
+      placeholder: t(state.language, "filters.header"),
+    });
     return {
       title: columnTitle(state.language, column),
       field: column,
       sorter: sorterFor(column),
-      headerFilter: ["video", "videos", "source"].includes(column) ? false : "input",
-      headerFilterPlaceholder: t(state.language, "filters.header"),
+      ...filterConfig,
       formatter: formatterFor(column, htmlColumns),
       hozAlign: numeric ? "right" : "left",
       headerHozAlign: numeric ? "right" : "left",
@@ -1768,6 +1798,8 @@ function percentSortValue(value) {
 const NUMERIC_COLUMNS = new Set([
   "rank",
   "seasons_won",
+  "titles",
+  "title_count",
   "rating",
   "seasons",
   "divisions",
