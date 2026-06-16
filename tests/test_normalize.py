@@ -29,6 +29,8 @@ def test_aliases_merge_to_preferred_person_display_names():
     assert _display_name("ProfessorN") == "Professor N"
     assert _canonical_name("CabgoLord") == "fnupa"
     assert _person_id("Cabgolord") == "person_fnupa"
+    assert _display_name("CabgoLord") == "Cabgolord"
+    assert _display_name("Fnupa") == "Cabgolord"
 
 
 def test_write_csv_retries_transient_windows_invalid_argument(tmp_path, monkeypatch):
@@ -49,7 +51,6 @@ def test_write_csv_retries_transient_windows_invalid_argument(tmp_path, monkeypa
 
     assert path.read_bytes() == b"name\nBene\n"
     assert calls == 1
-    assert _display_name("CabgoLord") == "Fnupa"
 
 
 def test_person_labels_drop_result_and_rule_notes_before_aliasing():

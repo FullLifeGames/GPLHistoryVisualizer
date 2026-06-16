@@ -391,7 +391,7 @@ _PREFERRED_DISPLAY = {
     "tabasco tv": "Tabasco TV",
     "belmontgabriel": "BelmontGabriel",
     "diaswordplay": "DiaSwordPlay",
-    "fnupa": "Fnupa",
+    "fnupa": "Cabgolord",
     "king blex": "KingBlex",
     "og dnz": "OGDNZ",
 }

@@ -352,8 +352,8 @@ assert.deepEqual(
     (value) => String(value ?? "").toLowerCase().replace(/[^a-z0-9]+/g, ""),
   ),
   [
-    { opponent: "Nestfloh", matches: 1, wins: 1, losses: 0, draws: 0, win_pct: "100.0%" },
-    { opponent: "PresentLP", matches: 2, wins: 1, losses: 1, draws: 0, win_pct: "50.0%" },
+    { opponent_key: "nestfloh", opponent: "Nestfloh", matches: 1, wins: 1, losses: 0, draws: 0, win_pct: "100.0%" },
+    { opponent_key: "presentlp", opponent: "PresentLP", matches: 2, wins: 1, losses: 1, draws: 0, win_pct: "50.0%" },
   ],
 );
 

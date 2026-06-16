@@ -868,6 +868,7 @@ export function matchupOverview(matches, selectedKey, normalizeKey) {
     const opponentKey = leftKey === selectedKey ? rightKey : leftKey;
     const opponentName = leftKey === selectedKey ? row.player_b || row.team_b : row.player_a || row.team_a;
     const current = opponents.get(opponentKey) ?? {
+      opponent_key: opponentKey,
       opponent: opponentName,
       matches: 0,
       wins: 0,

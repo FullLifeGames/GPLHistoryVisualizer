@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="de" data-theme="light">
   <head>
     <meta charset="utf-8" />
@@ -26,21 +26,26 @@
     </header>
 
     <main class="app-shell">
-      <nav class="tabs" aria-label="Views">
-        <button class="tab is-active" data-view="all-time" data-i18n="nav.allTime">Ewige Tabelle</button>
-        <button class="tab" data-view="killlists" data-i18n="nav.killlists">Pokémon-Killlisten</button>
-        <button class="tab" data-view="pokemon-drafts" data-i18n="nav.pokemonDrafts">Pokémon-Drafts</button>
-        <button class="tab" data-view="pokemon-detail" data-i18n="nav.pokemonDetail">Pokémon-Details</button>
-        <button class="tab" data-view="table-history" data-i18n="nav.tableHistory">Tabellenverlauf</button>
-        <button class="tab" data-view="match-plan" data-i18n="nav.matchPlan">Spielplan</button>
-        <button class="tab" data-view="battle-history" data-i18n="nav.battleHistory">Kampfverlauf</button>
-        <button class="tab" data-view="video-archive" data-i18n="nav.videoArchive">Video-Archiv</button>
-        <button class="tab" data-view="person-details" data-i18n="nav.personDetails">Personendetails</button>
-        <button class="tab" data-view="data-coverage" data-i18n="nav.dataCoverage">Datenlage</button>
-        <button class="tab" data-view="review-workflow" data-i18n="nav.reviewWorkflow">Review</button>
-        <button class="tab" data-view="source-claims" data-i18n="nav.sourceClaims">Quellenclaims</button>
-        <button class="tab" data-view="season-detail" data-i18n="nav.seasonDetail">Saisonakte</button>
-        <button class="tab" data-view="matchup" data-i18n="nav.matchup">Matchup-Check</button>
+      <nav class="primary-tabs" aria-label="Hauptbereiche">
+        <button class="nav-group-tab is-active" type="button" data-view-group="people" data-i18n="navGroups.people">Personen</button>
+        <button class="nav-group-tab" type="button" data-view-group="pokemon" data-i18n="navGroups.pokemon">PokÃ©mon</button>
+        <button class="nav-group-tab" type="button" data-view-group="seasons" data-i18n="navGroups.seasons">Saisons & KÃ¤mpfe</button>
+        <button class="nav-group-tab" type="button" data-view-group="data" data-i18n="navGroups.data">Daten & Review</button>
+      </nav>
+
+      <nav class="tabs sub-tabs" aria-label="Ansichten">
+        <button class="tab is-active" data-view-group="people" data-view="all-time" data-i18n="nav.allTime">Ewige Tabelle</button>
+        <button class="tab" data-view-group="pokemon" data-view="killlists" data-i18n="nav.killlists">Pokémon-Killlisten</button>
+        <button class="tab" data-view-group="pokemon" data-view="pokemon-drafts" data-i18n="nav.pokemonDrafts">Pokémon-Drafts</button>
+        <button class="tab" data-view-group="seasons" data-view="table-history" data-i18n="nav.tableHistory">Tabellenverlauf</button>
+        <button class="tab" data-view-group="seasons" data-view="match-plan" data-i18n="nav.matchPlan">Spielplan</button>
+        <button class="tab" data-view-group="seasons" data-view="battle-history" data-i18n="nav.battleHistory">Spielbaum</button>
+        <button class="tab" data-view-group="seasons" data-view="video-archive" data-i18n="nav.videoArchive">Video-Archiv</button>
+        <button class="tab" data-view-group="data" data-view="data-coverage" data-i18n="nav.dataCoverage">Datenlage</button>
+        <button class="tab" data-view-group="data" data-view="review-workflow" data-i18n="nav.reviewWorkflow">Review</button>
+        <button class="tab" data-view-group="data" data-view="source-claims" data-i18n="nav.sourceClaims">Quellenclaims</button>
+        <button class="tab" data-view-group="seasons" data-view="season-detail" data-i18n="nav.seasonDetail">Saisonakte</button>
+        <button class="tab" data-view-group="people" data-view="matchup" data-i18n="nav.matchup">Matchup-Check</button>
       </nav>
 
       <section class="toolbar">
@@ -58,6 +63,16 @@
         <label>
           <span data-i18n="filters.division">Liga/Bereich</span>
           <select id="division-filter"></select>
+        </label>
+        <label>
+          <span data-i18n="filters.columns">Spalten</span>
+          <select id="column-profile-filter">
+            <option value="compact" data-i18n="columnProfiles.compact">Kompakt</option>
+            <option value="performance" data-i18n="columnProfiles.performance">Leistung</option>
+            <option value="history" data-i18n="columnProfiles.history">Historie</option>
+            <option value="sources" data-i18n="columnProfiles.sources">Quellen</option>
+            <option value="full" data-i18n="columnProfiles.full">Alles</option>
+          </select>
         </label>
         <label>
           <span data-i18n="filters.search">Suche</span>
@@ -107,10 +122,18 @@
         </div>
         <div id="pokemon-focus" class="pokemon-focus" hidden></div>
         <div id="pokemon-detail-summary" class="summary-grid"></div>
-        <div id="pokemon-summary-table" class="table-wrap"></div>
-        <div id="pokemon-trainer-table" class="table-wrap stacked-table"></div>
-        <div id="pokemon-timeline-table" class="table-wrap stacked-table"></div>
-        <div id="pokemon-season-table" class="table-wrap stacked-table"></div>
+        <details class="detail-table-section" id="pokemon-trainer-section" open>
+          <summary data-i18n="pokemonDetails.trainerTableTitle">Trainer</summary>
+          <div id="pokemon-trainer-table" class="table-wrap"></div>
+        </details>
+        <details class="detail-table-section" id="pokemon-timeline-section" open>
+          <summary data-i18n="pokemonDetails.timelineTableTitle">Saisonverlauf</summary>
+          <div id="pokemon-timeline-table" class="table-wrap"></div>
+        </details>
+        <details class="detail-table-section" id="pokemon-season-section" open>
+          <summary data-i18n="pokemonDetails.seasonRowsTableTitle">Einzelzeilen</summary>
+          <div id="pokemon-season-table" class="table-wrap"></div>
+        </details>
       </section>
 
       <section id="view-table-history" class="view">
@@ -123,10 +146,10 @@
 
       <section id="view-battle-history" class="view">
         <div class="section-head">
-          <h2 data-i18n="sections.battleHistoryTitle">Kampfverlauf</h2>
-          <p data-i18n="sections.battleHistoryDescription">Kampfzeilen aus den normalisierten CSV-Daten, mit Videoquellen wenn vorhanden.</p>
+          <h2 data-i18n="sections.battleHistoryTitle">Spielbaum & Gruppen</h2>
+          <p data-i18n="sections.battleHistoryDescription">Grafische Sicht auf Playoffs, Gruppenphasen und belegte Matchwege der gewählten Saison.</p>
         </div>
-        <div id="battle-history-table" class="table-wrap"></div>
+        <div id="bracket-overview" class="bracket-board"></div>
       </section>
 
       <section id="view-match-plan" class="view">
@@ -152,25 +175,30 @@
         </div>
         <div id="person-focus" class="person-focus" hidden></div>
         <div id="person-story-summary" class="summary-grid"></div>
-        <div id="person-summary-table" class="table-wrap"></div>
-        <div id="person-timeline-table" class="table-wrap stacked-table"></div>
-        <div id="person-season-table" class="table-wrap stacked-table"></div>
-        <div class="subsection-head">
-          <h3 data-i18n="personDetails.pokemonTitle">Pokémon & Kills</h3>
-        </div>
-        <div id="person-pokemon-table" class="table-wrap"></div>
-        <div class="subsection-head">
-          <h3 data-i18n="personDetails.videoTitle">Videos</h3>
-        </div>
-        <div id="person-video-table" class="table-wrap"></div>
-        <div class="subsection-head">
-          <h3 data-i18n="personDetails.matchupTitle">Matchups</h3>
-        </div>
-        <div id="person-matchup-table" class="table-wrap"></div>
-        <div class="subsection-head">
-          <h3 data-i18n="personDetails.missingTitle">Offene Killlisten</h3>
-        </div>
-        <div id="person-missing-table" class="table-wrap"></div>
+        <details class="detail-table-section" id="person-timeline-section" open>
+          <summary data-i18n="personDetails.timelineTitle">Saisonverlauf</summary>
+          <div id="person-timeline-table" class="table-wrap"></div>
+        </details>
+        <details class="detail-table-section" id="person-season-section" open>
+          <summary data-i18n="personDetails.seasonRowsTitle">Stints & Tabellenzeilen</summary>
+          <div id="person-season-table" class="table-wrap"></div>
+        </details>
+        <details class="detail-table-section" id="person-pokemon-section" open>
+          <summary data-i18n="personDetails.pokemonTitle">Pokémon & Kills</summary>
+          <div id="person-pokemon-table" class="table-wrap"></div>
+        </details>
+        <details class="detail-table-section" id="person-video-section">
+          <summary data-i18n="personDetails.videoTitle">Videos</summary>
+          <div id="person-video-table" class="table-wrap"></div>
+        </details>
+        <details class="detail-table-section" id="person-matchup-section">
+          <summary data-i18n="personDetails.matchupTitle">Matchups</summary>
+          <div id="person-matchup-table" class="table-wrap"></div>
+        </details>
+        <details class="detail-table-section" id="person-missing-section">
+          <summary data-i18n="personDetails.missingTitle">Offene Killlisten</summary>
+          <div id="person-missing-table" class="table-wrap"></div>
+        </details>
       </section>
 
       <section id="view-data-coverage" class="view">

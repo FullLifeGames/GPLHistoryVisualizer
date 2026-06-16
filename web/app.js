@@ -9,12 +9,13 @@ import {
 } from "./i18n.js";
 import { parseRouteHash, personRouteHash, pokemonRouteHash, seasonRouteHash, viewRouteHash } from "./router.js";
 import { pokemonAssetId } from "./pokemon_names.js";
+import { defaultViewForGroup, viewGroupForView } from "./view_config.js";
 import {
   ALL_TIME_COLUMNS,
+  columnsForProfile,
   MATCHUP_COLUMNS,
+  normalizeColumnProfile,
   PERSON_SEASON_COLUMNS,
-  PERSON_SUMMARY_COLUMNS,
-  POKEMON_DETAIL_SUMMARY_COLUMNS,
   POKEMON_DRAFT_COLUMNS,
   POKEMON_KILLLIST_COLUMNS,
   SEASON_STANDINGS_COLUMNS,
@@ -74,6 +75,7 @@ const state = {
   view: "all-time",
   season: "all",
   dataMode: normalizeDataMode(readPreference("gpl-data-mode", "primary")),
+  columnProfile: normalizeColumnProfile(readPreference("gpl-column-profile", "full")),
   division: "all",
   language: normalizeLanguage(readPreference("gpl-language", "de")),
   theme: normalizeTheme(readPreference("gpl-theme", "light")),
@@ -89,6 +91,7 @@ const statusEl = document.querySelector("#load-status");
 const languageToggle = document.querySelector("#language-toggle");
 const themeToggle = document.querySelector("#theme-toggle");
 const dataModeFilter = document.querySelector("#data-mode-filter");
+const columnProfileFilter = document.querySelector("#column-profile-filter");
 const seasonFilter = document.querySelector("#season-filter");
 const divisionFilter = document.querySelector("#division-filter");
 const searchFilter = document.querySelector("#search-filter");
@@ -121,6 +124,7 @@ async function init() {
 
 function bindControls() {
   dataModeFilter.value = state.dataMode;
+  columnProfileFilter.value = state.columnProfile;
   dataModeFilter.addEventListener("change", () => {
     state.dataMode = dataModeFilter.value || "primary";
     state.dataMode = normalizeDataMode(state.dataMode);
@@ -129,6 +133,16 @@ function bindControls() {
     divisionFilter.value = state.division;
     populateDivisionFilter();
     populateMatchupOptions();
+    render();
+    if (state.view === "matchup") {
+      renderMatchup();
+    }
+  });
+
+  columnProfileFilter.addEventListener("change", () => {
+    state.columnProfile = normalizeColumnProfile(columnProfileFilter.value);
+    columnProfileFilter.value = state.columnProfile;
+    savePreference("gpl-column-profile", state.columnProfile);
     render();
     if (state.view === "matchup") {
       renderMatchup();
@@ -153,6 +167,12 @@ function bindControls() {
     state.theme = nextTheme(state.theme);
     savePreference("gpl-theme", state.theme);
     applyTheme();
+  });
+
+  document.querySelectorAll(".nav-group-tab").forEach((button) => {
+    button.addEventListener("click", () => {
+      navigateToView(defaultViewForGroup(button.dataset.viewGroup));
+    });
   });
 
   document.querySelectorAll(".tab").forEach((button) => {
@@ -197,6 +217,12 @@ function bindControls() {
   }
 
   document.addEventListener("click", (event) => {
+    const matchupLink = event.target.closest("[data-matchup-select]");
+    if (matchupLink) {
+      event.preventDefault();
+      selectMatchupParticipant(matchupLink.dataset.matchupSelect, matchupLink.dataset.matchupSlot, matchupLink.dataset.matchupPrimary);
+      return;
+    }
     const personLink = event.target.closest("[data-person-key]");
     if (personLink) {
       event.preventDefault();
@@ -211,11 +237,11 @@ function bindControls() {
     }
     if (event.target.closest("[data-clear-person-focus]")) {
       event.preventDefault();
-      navigateToView("person-details");
+      navigateToView("all-time");
     }
     if (event.target.closest("[data-clear-pokemon-focus]")) {
       event.preventDefault();
-      navigateToView("pokemon-detail");
+      navigateToView("all-time");
     }
   });
 
@@ -239,6 +265,36 @@ function navigateToHash(hash) {
     return;
   }
   window.location.hash = hash;
+}
+
+function selectMatchupParticipant(value, slot = "b", primary = "") {
+  if (primary) {
+    setMatchupSelectValue(matchupA, primary);
+  }
+  if (slot === "a") {
+    setMatchupSelectValue(matchupA, value);
+  } else if (slot === "b") {
+    setMatchupSelectValue(matchupB, value);
+  } else if (!matchupA.value) {
+    setMatchupSelectValue(matchupA, value);
+  } else {
+    setMatchupSelectValue(matchupB, value);
+  }
+  if (state.view !== "matchup") {
+    navigateToView("matchup");
+    return;
+  }
+  renderMatchup();
+}
+
+function setMatchupSelectValue(select, value) {
+  const key = matchupSelectKey(value);
+  if (!key) return false;
+  if (![...select.options].some((option) => option.value === key)) {
+    return false;
+  }
+  select.value = key;
+  return true;
 }
 
 function applyRouteFromHash() {
@@ -280,7 +336,14 @@ function applyRouteFromHash() {
 function setActiveView(viewName) {
   state.view = viewName;
   document.querySelectorAll(".tab").forEach((item) => {
+    const activeGroup = viewGroupForView(viewName);
+    const inActiveGroup = item.dataset.viewGroup === activeGroup;
+    item.hidden = !inActiveGroup;
+    item.setAttribute("aria-hidden", String(!inActiveGroup));
     item.classList.toggle("is-active", item.dataset.view === viewName);
+  });
+  document.querySelectorAll(".nav-group-tab").forEach((item) => {
+    item.classList.toggle("is-active", item.dataset.viewGroup === viewGroupForView(viewName));
   });
   document.querySelectorAll(".view").forEach((view) => {
     view.classList.toggle("is-active", view.id === `view-${viewName}`);
@@ -565,7 +628,7 @@ function render() {
   renderPokemonDrafts();
   renderTableHistory();
   renderMatchPlan();
-  renderBattleHistory();
+  renderBracketOverview();
   renderVideoArchive();
   renderPersonDetails();
   renderPokemonDetail();
@@ -749,10 +812,14 @@ function pokemonSprite(name) {
   const id = pokemonAssetId(name);
   const fallback = `<span class="pokemon-sprite pokemon-sprite-fallback" aria-hidden="true">${escapeHtml(String(name || "?").slice(0, 2).toUpperCase())}</span>`;
   try {
-    const sprite = sprites?.getDexPokemon?.(id) || sprites?.getPokemon?.(id);
+    const animatedSprite = sprites?.getPokemon?.(id, { gen: "ani" });
+    const isAnimated = /\.gif(?:$|\?)/i.test(animatedSprite?.url || "");
+    const sprite = isAnimated ? animatedSprite : sprites?.getDexPokemon?.(id) || sprites?.getPokemon?.(id);
     if (sprite?.url) {
       const rendering = sprite.pixelated ? "image-rendering: pixelated;" : "";
-      return `<span class="pokemon-sprite-frame">${fallback}<img class="pokemon-sprite pokemon-sprite-img" src="${escapeAttr(sprite.url)}" width="${escapeAttr(sprite.w || 96)}" height="${escapeAttr(sprite.h || 96)}" alt="${escapeAttr(name)}" style="${rendering}" onerror="this.hidden=true" /></span>`;
+      const modeClass = isAnimated ? " pokemon-sprite-animated" : "";
+      const mode = isAnimated ? "animated" : "static";
+      return `<span class="pokemon-sprite-frame"><img class="pokemon-sprite pokemon-sprite-img${modeClass}" src="${escapeAttr(sprite.url)}" width="${escapeAttr(sprite.w || 96)}" height="${escapeAttr(sprite.h || 96)}" alt="${escapeAttr(name)}" data-sprite-mode="${mode}" style="${rendering}" loading="lazy" decoding="async" onerror="this.hidden=true" /></span>`;
     }
   } catch {
     // Keep the detail page useful even when a local or German name has no sprite mapping.
@@ -888,6 +955,8 @@ function renderPokemonDetail() {
   renderPokemonFocus();
   const summaryTarget = document.querySelector("#pokemon-detail-summary");
   const detailTables = ["#pokemon-trainer-table", "#pokemon-timeline-table", "#pokemon-season-table"];
+  const focusedSections = ["#pokemon-trainer-section", "#pokemon-timeline-section", "#pokemon-season-section"];
+  setDetailSections(focusedSections, Boolean(focus));
 
   if (!focus) {
     summaryTarget.innerHTML = "";
@@ -895,12 +964,6 @@ function renderPokemonDetail() {
       destroyTable(selector);
       document.querySelector(selector).innerHTML = "";
     });
-    const rows = summarizeKilllists(canonicalKilllistRows(filtered(state.data.killlists ?? []), state.division)).map((row) => ({
-      ...row,
-      ...titleInfoForPokemon(titles, row.pokemon),
-      pokemon: pokemonCell(row.pokemon),
-    }));
-    renderTable("#pokemon-summary-table", rows, POKEMON_KILLLIST_COLUMNS, ["pokemon"]);
     return;
   }
 
@@ -924,7 +987,6 @@ function renderPokemonDetail() {
     metricCard(t(state.language, "columns.top_team"), story.top_team || t(state.language, "summary.notAvailable")),
   ].join("");
 
-  renderTable("#pokemon-summary-table", [pokemonSummaryRow(detail.summary, story)], POKEMON_DETAIL_SUMMARY_COLUMNS, ["pokemon", "source"]);
   renderTable(
     "#pokemon-trainer-table",
     detail.trainerRows.map((row) => ({
@@ -973,21 +1035,13 @@ function renderPokemonDetail() {
   );
 }
 
-function pokemonSummaryRow(summary, story = {}) {
-  return {
-    pokemon: pokemonCell(summary.pokemon, normalizedKey(summary.pokemon)),
-    appearances: displayNumber(summary.appearances),
-    kills: displayNumber(summary.kills),
-    deaths: displayNumber(summary.deaths),
-    differential: displayNumber(summary.differential),
-    seasons: summary.seasons,
-    season_list: story.season_list || "",
-    titles: displayNumber(story.titles),
-    title_seasons: story.title_seasons || "",
-    trainers: summary.trainers,
-    teams: summary.teams,
-    source: sourceLinks(summary.source_urls),
-  };
+function setDetailSections(selectors, visible) {
+  selectors.forEach((selector) => {
+    const section = document.querySelector(selector);
+    if (section) {
+      section.hidden = !visible;
+    }
+  });
 }
 
 function titleInfoForPokemon(titleIndex, pokemon) {
@@ -1084,22 +1138,169 @@ function weekOrder(row) {
   return row.stage === "playoffs" ? 150 : 999;
 }
 
-function renderBattleHistory() {
+function renderBracketOverview() {
+  const target = document.querySelector("#bracket-overview");
+  if (!target) return;
+  if (state.season === "all") {
+    target.innerHTML = `<p class="empty">${escapeHtml(t(state.language, "empty.chooseSeason"))}</p>`;
+    return;
+  }
+
   const rows = filtered(state.data.matches ?? [])
     .filter((row) => !["source_video_only", "not_available"].includes(row.data_status))
-    .map((row) => ({
-      season: seasonDisplay(row.season_id),
-      division: divisionDisplay(row.division, row.stage),
-      stage: stageDisplay(row.stage),
-      week: row.week,
-      player_a: row.player_a || row.team_a,
-      player_b: row.player_b || row.team_b,
-      winner: row.winner,
-      score: row.score_a || row.score_b ? `${row.score_a || "?"} - ${row.score_b || "?"}` : "",
-      videos: videoLinksForMatch(row.match_id) || (row.video_url ? `<a href="${escapeAttr(row.video_url)}" target="_blank" rel="noreferrer">${escapeHtml(row.video_title || row.video_id || t(state.language, "values.video"))}</a>` : ""),
-      source: sourceLink(row.source_urls),
-    }));
-  renderTable("#battle-history-table", rows, ["season", "division", "stage", "week", "player_a", "player_b", "winner", "score", "videos", "source"], ["videos", "source"]);
+    .filter((row) => row.player_a || row.player_b || row.team_a || row.team_b || row.winner)
+    .sort(compareMatches);
+  const playoffRows = rows.filter(isPlayoffMatch);
+  const groupRows = rows.filter((row) => !isPlayoffMatch(row));
+
+  if (!rows.length) {
+    target.innerHTML = `<p class="empty">${escapeHtml(t(state.language, "empty.table"))}</p>`;
+    return;
+  }
+
+  target.innerHTML = `
+    ${playoffRows.length ? renderPlayoffBracket(playoffRows) : renderBracketNotice(t(state.language, "bracket.noPlayoffs"))}
+    ${groupRows.length ? renderGroupPhase(groupRows) : renderBracketNotice(t(state.language, "bracket.noGroupMatches"))}
+  `;
+}
+
+function renderPlayoffBracket(rows) {
+  const rounds = groupRows(rows, playoffRoundLabel);
+  const roundEntries = [...rounds.entries()].sort((a, b) => playoffRoundOrder(a[0]) - playoffRoundOrder(b[0]) || a[0].localeCompare(b[0]));
+  return `
+    <section class="bracket-section">
+      <div class="bracket-section-head">
+        <h3>${escapeHtml(t(state.language, "bracket.playoffsTitle"))}</h3>
+        <span>${escapeHtml(String(rows.length))}</span>
+      </div>
+      <div class="bracket-rounds">
+        ${roundEntries
+          .map(
+            ([round, matches]) => `
+              <article class="bracket-round">
+                <h4>${escapeHtml(round)}</h4>
+                <div class="bracket-match-list">
+                  ${matches.map((row) => bracketMatchCard(row)).join("")}
+                </div>
+              </article>
+            `,
+          )
+          .join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderGroupPhase(rows) {
+  const divisions = groupRows(rows, (row) => divisionDisplay(row.division, row.stage) || t(state.language, "divisions.regularSeason"));
+  return `
+    <section class="bracket-section">
+      <div class="bracket-section-head">
+        <h3>${escapeHtml(t(state.language, "bracket.groupsTitle"))}</h3>
+        <span>${escapeHtml(String(rows.length))}</span>
+      </div>
+      <div class="group-phase-grid">
+        ${[...divisions.entries()]
+          .sort((a, b) => a[0].localeCompare(b[0]))
+          .map(([division, divisionRows]) => renderGroupDivision(division, divisionRows))
+          .join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderGroupDivision(division, rows) {
+  const weeks = groupRows(rows, (row) => row.week || t(state.language, "values.unknown"));
+  const weekEntries = [...weeks.entries()].sort((a, b) => weekOrder(a[1][0]) - weekOrder(b[1][0]) || a[0].localeCompare(b[0]));
+  return `
+    <article class="group-panel">
+      <h4>${escapeHtml(division)}</h4>
+      <div class="group-week-list">
+        ${weekEntries
+          .map(
+            ([week, matches]) => `
+              <section class="group-week">
+                <h5>${escapeHtml(week)}</h5>
+                ${matches.map((row) => bracketMatchCard(row, { compact: true })).join("")}
+              </section>
+            `,
+          )
+          .join("")}
+      </div>
+    </article>
+  `;
+}
+
+function bracketMatchCard(row, options = {}) {
+  const playerA = row.player_a || row.team_a || "";
+  const playerB = row.player_b || row.team_b || "";
+  const winner = row.winner || "";
+  const links = bracketLinks(row);
+  return `
+    <article class="bracket-match ${options.compact ? "is-compact" : ""}">
+      ${options.compact ? "" : `<div class="bracket-match-kicker">${escapeHtml(row.week || stageDisplay(row.stage) || "")}</div>`}
+      ${bracketParticipant(playerA, row.score_a, winner)}
+      ${playerB ? bracketParticipant(playerB, row.score_b, winner) : `<div class="bracket-participant is-empty">${escapeHtml(t(state.language, "values.unknown"))}</div>`}
+      ${links ? `<div class="bracket-links">${links}</div>` : ""}
+    </article>
+  `;
+}
+
+function bracketParticipant(name, score, winner) {
+  const isWinner = name && winner && normalizedKey(name) === normalizedKey(winner);
+  return `
+    <div class="bracket-participant ${isWinner ? "is-winner" : ""}">
+      <span>${escapeHtml(name || t(state.language, "values.unknown"))}</span>
+      <strong>${escapeHtml(score || "")}</strong>
+    </div>
+  `;
+}
+
+function bracketLinks(row) {
+  return [videoLinksForMatch(row.match_id, { compact: true }), sourceLink(row.source_urls)]
+    .filter(Boolean)
+    .map((link) => `<span>${link}</span>`)
+    .join("");
+}
+
+function renderBracketNotice(message) {
+  return `<section class="bracket-section is-muted"><p>${escapeHtml(message)}</p></section>`;
+}
+
+function isPlayoffMatch(row) {
+  const text = `${row.stage || ""} ${row.division || ""} ${row.week || ""}`.toLowerCase();
+  return text.includes("playoff") || text.includes("viertel") || text.includes("halbfinal") || text.includes("finale") || text.includes("final");
+}
+
+function playoffRoundLabel(row) {
+  const text = String(row.week || "").toLowerCase();
+  if (text.includes("vorrunde")) return t(state.language, "bracket.rounds.opening");
+  if (text.includes("viertel")) return t(state.language, "bracket.rounds.quarter");
+  if (text.includes("halb")) return t(state.language, "bracket.rounds.semi");
+  if (text.includes("platz 3")) return t(state.language, "bracket.rounds.thirdPlace");
+  if (text.includes("final")) return t(state.language, "bracket.rounds.final");
+  return row.week || stageDisplay(row.stage) || t(state.language, "bracket.playoffsTitle");
+}
+
+function playoffRoundOrder(round) {
+  const order = new Map([
+    [t(state.language, "bracket.rounds.opening"), 10],
+    [t(state.language, "bracket.rounds.quarter"), 20],
+    [t(state.language, "bracket.rounds.semi"), 30],
+    [t(state.language, "bracket.rounds.thirdPlace"), 40],
+    [t(state.language, "bracket.rounds.final"), 50],
+  ]);
+  return order.get(round) ?? 90;
+}
+
+function groupRows(rows, keyFn) {
+  return rows.reduce((groups, row) => {
+    const key = keyFn(row) || t(state.language, "values.unknown");
+    const group = groups.get(key) ?? [];
+    group.push(row);
+    groups.set(key, group);
+    return groups;
+  }, new Map());
 }
 
 function renderVideoArchive() {
@@ -1356,14 +1557,14 @@ function renderSeasonDetail() {
   renderTable("#season-detail-claims", claims, ["claim_type", "claim_subject", "claim_field", "claim_value", "evidence_status", "confidence", "source", "notes"], ["source"]);
 }
 
-function videoLinksForMatch(matchId) {
+function videoLinksForMatch(matchId, options = {}) {
   const rows = (state.data.matchVideos ?? []).filter((row) => row.match_id === matchId);
   if (!rows.length) {
     return "";
   }
   return rows
-    .map((row) => {
-      const label = row.perspective_person || row.channel_title || row.video_title || t(state.language, "values.video");
+    .map((row, index) => {
+      const label = options.compact && rows.length > 1 ? `${t(state.language, "values.video")} ${index + 1}` : row.perspective_person || row.channel_title || row.video_title || t(state.language, "values.video");
       return `<a href="${escapeAttr(row.video_url)}" target="_blank" rel="noreferrer">${escapeHtml(label)}</a>`;
     })
     .join(" ");
@@ -1405,65 +1606,21 @@ function videoTypePriority(value) {
 
 function renderPersonDetails() {
   const focusKey = state.personFocus?.key;
-  const teams = filtered(state.data.teams ?? [])
-    .filter((row) => row.data_status !== "not_available")
-    .filter((row) => !focusKey || rowPersonKey(row) === focusKey);
+  const focusedSections = [
+    "#person-timeline-section",
+    "#person-season-section",
+    "#person-pokemon-section",
+    "#person-video-section",
+    "#person-matchup-section",
+    "#person-missing-section",
+  ];
   const statRows = filteredPersonStats().filter((row) => !focusKey || rowPersonKey(row) === focusKey);
   const champions = filtered(state.data.champions ?? [])
     .filter((row) => ["source_evidenced", "user_provided"].includes(row.data_status))
     .filter((row) => !focusKey || championPersonKey(row) === focusKey);
-  const people = new Map();
 
   renderPersonFocus();
-
-  teams.forEach((row) => {
-    const key = rowPersonKey(row);
-    if (!key) return;
-    const current = people.get(key) ?? personAggregate(row.person_name);
-    current.seasons.add(row.season_id);
-    if (row.team_name) current.teams.add(`${row.season_id}: ${row.team_name}`);
-    people.set(key, current);
-  });
-
-  statRows.forEach((row) => {
-    const key = rowPersonKey(row);
-    if (!key) return;
-    const current = people.get(key) ?? personAggregate(row.person_name || row.player_name);
-    current.seasons.add(row.season_id);
-    if (row.team_name) current.teams.add(`${row.season_id}: ${row.team_name}`);
-    current.wins += numberValue(row.wins);
-    current.losses += numberValue(row.losses);
-    current.draws += numberValue(row.draws);
-    current.points += numberValue(row.points);
-    current.bestRank = Math.min(current.bestRank, numberValue(row.rank) || Number.POSITIVE_INFINITY);
-    people.set(key, current);
-  });
-
-  champions.forEach((row) => {
-    const key = championPersonKey(row);
-    if (!key) return;
-    const current = people.get(key) ?? personAggregate(row.champion_name);
-    current.championships.add(row.season_id);
-    people.set(key, current);
-  });
-
-  const summaryRows = [...people.values()]
-    .sort((a, b) => b.championships.size - a.championships.size || b.points - a.points || a.name.localeCompare(b.name))
-    .map((row) => ({
-      person: row.name,
-      seasons: row.seasons.size,
-      season_list: seasonListDisplay([...row.seasons]),
-      teams: row.teams.size,
-      championships: row.championships.size,
-      title_seasons: seasonListDisplay([...row.championships]),
-      matches: row.wins + row.losses + row.draws,
-      wins: displayNumber(row.wins),
-      losses: displayNumber(row.losses),
-      draws: displayNumber(row.draws),
-      win_pct: winPercentage(row.wins, row.losses, row.draws),
-      points: displayNumber(row.points),
-      best_rank: Number.isFinite(row.bestRank) ? row.bestRank : "",
-    }));
+  setDetailSections(focusedSections, Boolean(focusKey));
 
   const detailRows = statRows
     .sort((a, b) => (a.person_name || a.player_name || "").localeCompare(b.person_name || b.player_name || "") || a.season_id.localeCompare(b.season_id))
@@ -1554,12 +1711,16 @@ function renderPersonDetails() {
           published_at: row.published_at,
         }))
     : [];
+  const matchupPrimary = matchupSelectKey(focusKey);
   const matchupRows = focusKey
     ? matchupOverview(
         availableMatchRows(),
         focusKey.replace(/^person_/, "").replaceAll("_", " "),
         normalizedKey,
-      )
+      ).map((row) => ({
+        ...row,
+        opponent: matchupSelectButton(row.opponent_key, row.opponent, "b", matchupPrimary),
+      }))
     : [];
   const missingKilllistRows = filtered(state.data.killlists ?? [])
     .filter((row) => row.data_status === "not_available")
@@ -1573,12 +1734,11 @@ function renderPersonDetails() {
       source: sourceLinks(row.source_urls),
     }));
 
-  renderTable("#person-summary-table", summaryRows, PERSON_SUMMARY_COLUMNS);
   renderTable("#person-timeline-table", timelineRows, ["season", "division", "team", "record", "win_pct", "rating", "points", "kills", "deaths", "differential", "title", "source"], ["source"]);
   renderTable("#person-season-table", detailRows, PERSON_SEASON_COLUMNS, ["source"]);
   renderTable("#person-pokemon-table", pokemonRows, ["trainer", "pokemon", "appearances", "kills", "deaths", "differential", "seasons", "season_list", "divisions", "teams", "source"], ["pokemon", "source"]);
   renderTable("#person-video-table", personVideos, ["season", "video_type", "detected_week", "opponent", "title", "match_status", "confidence", "confidence_tier", "match_basis", "confidence_explanation", "published_at"], ["title"]);
-  renderTable("#person-matchup-table", matchupRows, MATCHUP_COLUMNS);
+  renderTable("#person-matchup-table", matchupRows, MATCHUP_COLUMNS, ["opponent"]);
   renderTable("#person-missing-table", missingKilllistRows, ["season", "division", "trainer", "team", "status", "source"], ["source"]);
 }
 
@@ -1613,20 +1773,6 @@ function isFocusedPersonValue(value, focusKey) {
     .some((key) => key && (key === focusKey || key === comparableFocus));
 }
 
-function personAggregate(name) {
-  return {
-    name: name || t(state.language, "values.unknown"),
-    seasons: new Set(),
-    teams: new Set(),
-    championships: new Set(),
-    wins: 0,
-    losses: 0,
-    draws: 0,
-    points: 0,
-    bestRank: Number.POSITIVE_INFINITY,
-  };
-}
-
 function renderMatchup() {
   const result = document.querySelector("#matchup-result");
   const a = matchupA.value;
@@ -1638,9 +1784,13 @@ function renderMatchup() {
 
   const availableMatches = availableMatchRows();
   if (!b) {
-    const overviewRows = matchupOverview(availableMatches, a, normalizedKey);
+    const overviewRows = matchupOverview(availableMatches, a, normalizedKey).map((row) => ({
+      ...row,
+      opponent: matchupSelectButton(row.opponent_key, row.opponent, "b", a),
+    }));
+    const overviewColumns = columnsForProfile(MATCHUP_COLUMNS, state.columnProfile);
     result.innerHTML = overviewRows.length
-      ? `<div class="table-wrap">${tableHtml(overviewRows, MATCHUP_COLUMNS)}</div>`
+      ? `<div class="table-wrap">${tableHtml(overviewRows, overviewColumns, ["opponent"])}</div>`
       : `<p class="empty">${escapeHtml(t(state.language, "matchup.empty"))}</p>`;
     return;
   }
@@ -1659,25 +1809,44 @@ function renderMatchup() {
     if (winner === b) bWins += 1;
   });
 
-  const matchRows = matches.slice(0, 25).map((row) => ({
+  const matchRows = matches.slice(0, 25).map((row) => {
+    const playerA = row.player_a || row.team_a;
+    const playerB = row.player_b || row.team_b;
+    return {
     season: seasonDisplay(row.season_id),
     division: divisionDisplay(row.division, row.stage),
     week: row.week,
-    player_a: row.player_a || row.team_a,
-    player_b: row.player_b || row.team_b,
+    player_a: matchupSelectButton(playerA, playerA, "a"),
+    player_b: matchupSelectButton(playerB, playerB, "b"),
     winner: row.winner,
     score: row.score_a || row.score_b ? `${row.score_a || "?"} - ${row.score_b || "?"}` : "",
     source: sourceLink(row.video_url || row.source_urls, row.video_title || row.video_id || t(state.language, "values.source")),
-  }));
+    };
+  });
 
+  const matchColumns = columnsForProfile(["season", "division", "week", "player_a", "player_b", "score", "winner", "source"], state.columnProfile);
   result.innerHTML = `
     <div class="result-grid">
       <div class="metric"><span class="muted">${escapeHtml(t(state.language, "matchup.matches"))}</span><strong>${matches.length}</strong></div>
       <div class="metric"><span class="muted">${escapeHtml(t(state.language, "matchup.firstWins"))}</span><strong>${aWins}</strong></div>
       <div class="metric"><span class="muted">${escapeHtml(t(state.language, "matchup.secondWins"))}</span><strong>${bWins}</strong></div>
     </div>
-    ${matches.length ? `<div class="table-wrap">${tableHtml(matchRows, ["season", "division", "week", "player_a", "player_b", "score", "winner", "source"], ["source"])}</div>` : `<p class="empty">${escapeHtml(t(state.language, "matchup.empty"))}</p>`}
+    ${matches.length ? `<div class="table-wrap">${tableHtml(matchRows, matchColumns, ["player_a", "player_b", "source"])}</div>` : `<p class="empty">${escapeHtml(t(state.language, "matchup.empty"))}</p>`}
   `;
+}
+
+function matchupSelectButton(value, label = value, slot = "b", primary = "") {
+  const key = matchupSelectKey(value);
+  const text = String(label ?? "").trim();
+  if (!key || !text) {
+    return escapeHtml(text);
+  }
+  const primaryAttr = primary ? ` data-matchup-primary="${escapeAttr(matchupSelectKey(primary))}"` : "";
+  return `<button type="button" class="link-button" data-matchup-select="${escapeAttr(key)}" data-matchup-slot="${escapeAttr(slot)}"${primaryAttr}>${escapeHtml(text)}</button>`;
+}
+
+function matchupSelectKey(value) {
+  return normalizedKey(String(value ?? "").replace(/^person_/, "").replaceAll("_", " "));
 }
 
 function renderTable(selector, rows, columns, html = false, options = {}) {
@@ -1688,6 +1857,8 @@ function renderTable(selector, rows, columns, html = false, options = {}) {
     return;
   }
   const extraActions = options.extraActions ?? [];
+  const visibleColumns = columnsForProfile(columns, state.columnProfile);
+  target.dataset.columnProfile = state.columnProfile;
   target.innerHTML = `
     <div class="table-actions">
       <button class="table-action" type="button" data-table-export>${escapeHtml(t(state.language, "actions.exportCsv"))}</button>
@@ -1697,7 +1868,7 @@ function renderTable(selector, rows, columns, html = false, options = {}) {
   `;
   const host = target.querySelector(".table-host");
   target.querySelector("[data-table-export]").addEventListener("click", () => {
-    downloadRowsAsCsv(options.filename || filenameForSelector(selector), rows, columns);
+    downloadRowsAsCsv(options.filename || filenameForSelector(selector), rows, visibleColumns);
   });
   target.querySelectorAll("[data-extra-action]").forEach((button) => {
     const action = extraActions[Number(button.dataset.extraAction)];
@@ -1705,12 +1876,12 @@ function renderTable(selector, rows, columns, html = false, options = {}) {
   });
 
   if (!window.Tabulator) {
-    host.innerHTML = tableHtml(rows, columns, html);
+    host.innerHTML = tableHtml(rows, visibleColumns, html);
     return;
   }
 
   const htmlColumns = new Set(html === true ? ["video"] : Array.isArray(html) ? html : []);
-  const tabulatorColumns = buildTabulatorColumns(columns, htmlColumns, rows);
+  const tabulatorColumns = buildTabulatorColumns(visibleColumns, htmlColumns, rows);
   appendHiddenSortColumns(tabulatorColumns, rows);
   const table = new window.Tabulator(host, {
     data: rows,
@@ -1723,7 +1894,7 @@ function renderTable(selector, rows, columns, html = false, options = {}) {
     paginationSize: 100,
     paginationSizeSelector: [25, 50, 100, 250, true],
     placeholder: t(state.language, "empty.table"),
-    initialSort: initialSort(columns),
+    initialSort: initialSort(visibleColumns),
   });
   tableInstances.set(selector, table);
 }

@@ -1,6 +1,6 @@
 # German Pokémon League History
 
-Generated: 2026-06-16T06:18:51.863278+00:00
+Generated: 2026-06-16T10:09:07.126279+00:00
 
 This report is generated from the normalized CSV files. Champions are recorded from sourced adapter evidence where available. Rows marked `user_provided` are explicit corrections only; unavailable playoff winners remain null.
 
@@ -210,4 +210,4 @@ Blank fields represent null/unknown values. They were not inferred.
 
 ## Name Normalization
 
-Names are normalized conservatively by lowercasing, trimming whitespace, folding common German characters, and applying reviewed aliases. Current explicit aliases include `FullLifeGames -> Bene`, `Kaffecone/Kaffeecone -> Art'n'Gaming`, and `CabgoLord -> Fnupa`. Possible additional merges are listed in `data/normalized/aliases_review.csv` for human review.
+Names are normalized conservatively by lowercasing, trimming whitespace, folding common German characters, and applying reviewed aliases. Current explicit aliases include `FullLifeGames -> Bene`, `Kaffecone/Kaffeecone -> Art'n'Gaming`, and `CabgoLord/Fnupa -> Cabgolord`. Possible additional merges are listed in `data/normalized/aliases_review.csv` for human review.

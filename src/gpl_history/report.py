@@ -91,7 +91,7 @@ def generate_report(data_dir: Path, out_path: Path) -> None:
             "",
             "## Name Normalization",
             "",
-            "Names are normalized conservatively by lowercasing, trimming whitespace, folding common German characters, and applying reviewed aliases. Current explicit aliases include `FullLifeGames -> Bene`, `Kaffecone/Kaffeecone -> Art'n'Gaming`, and `CabgoLord -> Fnupa`. Possible additional merges are listed in `data/normalized/aliases_review.csv` for human review.",
+            "Names are normalized conservatively by lowercasing, trimming whitespace, folding common German characters, and applying reviewed aliases. Current explicit aliases include `FullLifeGames -> Bene`, `Kaffecone/Kaffeecone -> Art'n'Gaming`, and `CabgoLord/Fnupa -> Cabgolord`. Possible additional merges are listed in `data/normalized/aliases_review.csv` for human review.",
             "",
         ]
     )
