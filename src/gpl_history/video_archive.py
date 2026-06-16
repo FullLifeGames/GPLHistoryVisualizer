@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 
 from .normalize import _canonical_name, _display_name
 from .storage import ensure_dir, read_json, safe_slug, video_url, write_json
-from .urls import normalize_url
+from .urls import extract_urls, normalize_url
 from .youtube import YouTubeApiError, YouTubeClient
 
 VIDEO_ARCHIVE_FIELDS = [
@@ -227,8 +227,10 @@ def classify_video_type(title: str | None) -> str:
 
 def discover_channel_candidates(data_dir: Path, include_description_channels: bool = False) -> list[dict[str, Any]]:
     candidates: dict[tuple[str, str], dict[str, Any]] = {}
+    team_rows = _read_csv(data_dir / "normalized" / "teams.csv")
+    team_lookup = _team_rows_by_description_label(team_rows)
 
-    for row in _read_csv(data_dir / "normalized" / "teams.csv"):
+    for row in team_rows:
         candidate = channel_candidate_from_url(row.get("channel_url"))
         if not candidate:
             continue
@@ -251,24 +253,35 @@ def discover_channel_candidates(data_dir: Path, include_description_channels: bo
         candidates[key] = current
 
     if include_description_channels:
-        for path in (data_dir / "raw").glob("season_*/description_urls.json"):
-            for entry in read_json(path, []):
-                candidate = channel_candidate_from_url(entry.get("url"))
-                if not candidate:
-                    continue
-                key = (candidate["kind"], candidate["value"].lower())
-                current = candidates.get(key) or {
-                    **candidate,
-                    "sources": set(),
-                    "person_ids": set(),
-                    "person_names": set(),
-                    "team_names": set(),
-                    "seasons": set(),
-                    "divisions": set(),
-                }
-                _add_nonempty(current["sources"], entry.get("url"))
-                _add_nonempty(current["seasons"], path.parent.name)
-                candidates[key] = current
+        for mention in _description_participant_channel_mentions(data_dir):
+            candidate = channel_candidate_from_url(mention.get("url"))
+            if not candidate:
+                continue
+            matched_rows = _matched_team_rows_for_description_label(
+                team_lookup,
+                mention.get("season_id"),
+                mention.get("label"),
+            )
+            if not matched_rows:
+                continue
+            key = (candidate["kind"], candidate["value"].lower())
+            current = candidates.get(key) or {
+                **candidate,
+                "sources": set(),
+                "person_ids": set(),
+                "person_names": set(),
+                "team_names": set(),
+                "seasons": set(),
+                "divisions": set(),
+            }
+            _add_nonempty(current["sources"], mention.get("url"))
+            for row in matched_rows:
+                _add_nonempty(current["person_ids"], row.get("person_id"))
+                _add_nonempty(current["person_names"], row.get("person_name"))
+                _add_nonempty(current["team_names"], row.get("team_name"))
+                _add_nonempty(current["seasons"], row.get("season_id"))
+                _add_nonempty(current["divisions"], row.get("division"))
+            candidates[key] = current
 
     rows = []
     for current in candidates.values():
@@ -284,6 +297,110 @@ def discover_channel_candidates(data_dir: Path, include_description_channels: bo
             }
         )
     return sorted(rows, key=lambda row: (row["source_person_names"], row["canonical_url"]))
+
+
+def _description_participant_channel_mentions(data_dir: Path) -> list[dict[str, str]]:
+    seen: set[tuple[str, str, str]] = set()
+    mentions: list[dict[str, str]] = []
+    for path in sorted((data_dir / "raw").glob("season_*/videos.json")):
+        season_id = path.parent.name
+        for video in read_json(path, []):
+            for mention in _participant_channel_mentions_from_description(video.get("description")):
+                key = (season_id, _name_key(mention["label"]), mention["url"])
+                if key in seen:
+                    continue
+                seen.add(key)
+                mentions.append({"season_id": season_id, **mention})
+    return mentions
+
+
+def _participant_channel_mentions_from_description(description: str | None) -> list[dict[str, str]]:
+    mentions: list[dict[str, str]] = []
+    in_participant_block = False
+    current_label: str | None = None
+    found_mention = False
+
+    for raw_line in str(description or "").splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        folded = _fold_text(line)
+        if "alle teilnehmer" in folded:
+            in_participant_block = True
+            current_label = None
+            continue
+        if not in_participant_block:
+            continue
+        if _looks_like_description_separator(line) and found_mention:
+            break
+
+        urls = extract_urls(line)
+        if urls:
+            label = _clean_description_participant_label(line.split(urls[0], 1)[0]) or current_label
+            current_label = None
+            if not label or _is_description_section_label(label):
+                continue
+            for url in urls:
+                if channel_candidate_from_url(url):
+                    mentions.append({"label": label, "url": url})
+                    found_mention = True
+            continue
+
+        label = _clean_description_participant_label(line)
+        current_label = None if not label or _is_description_section_label(label) else label
+
+    return mentions
+
+
+def _team_rows_by_description_label(rows: list[dict[str, str]]) -> dict[tuple[str, str], list[dict[str, str]]]:
+    lookup: dict[tuple[str, str], list[dict[str, str]]] = defaultdict(list)
+    for row in rows:
+        season_id = row.get("season_id")
+        if not season_id:
+            continue
+        labels = [row.get("person_name"), row.get("team_name"), *_split_values(row.get("aliases"))]
+        for label in labels:
+            for key in {_name_key(label), _name_key(_display_name(label))}:
+                if key:
+                    lookup[(season_id, key)].append(row)
+    return lookup
+
+
+def _matched_team_rows_for_description_label(
+    lookup: dict[tuple[str, str], list[dict[str, str]]],
+    season_id: str | None,
+    label: str | None,
+) -> list[dict[str, str]]:
+    if not season_id or not label:
+        return []
+    keys = {_name_key(label), _name_key(_display_name(label))}
+    matched: list[dict[str, str]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for key in keys:
+        for row in lookup.get((season_id, key), []):
+            row_key = (row.get("season_id") or "", row.get("person_id") or "", row.get("team_id") or row.get("team_name") or "")
+            if row_key in seen:
+                continue
+            seen.add(row_key)
+            matched.append(row)
+    return matched
+
+
+def _clean_description_participant_label(value: str | None) -> str | None:
+    label = str(value or "").strip()
+    label = re.sub(r"^[^\w@]+", "", label, flags=re.UNICODE)
+    label = re.sub(r"\s+", " ", label).strip(" :-\t")
+    return label or None
+
+
+def _is_description_section_label(value: str | None) -> bool:
+    folded = _fold_text(value).strip(" :")
+    return folded in {"liga 1", "liga 2", "sun conference", "moon conference", "teilnehmer", "alle teilnehmer"}
+
+
+def _looks_like_description_separator(value: str | None) -> bool:
+    text = str(value or "").strip()
+    return len(text) >= 8 and not re.search(r"[A-Za-z0-9]", text)
 
 
 def scan_video_archive(

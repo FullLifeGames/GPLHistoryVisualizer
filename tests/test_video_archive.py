@@ -5,6 +5,7 @@ from gpl_history.video_archive import (
     build_video_archive,
     channel_candidate_from_url,
     classify_video_type,
+    discover_channel_candidates,
     match_video_to_matches,
     parse_gpl_video_title,
 )
@@ -27,6 +28,64 @@ def test_channel_candidate_from_common_youtube_url_shapes():
         "canonical_url": "https://www.youtube.com/channel/UCabc123",
     }
     assert channel_candidate_from_url("https://www.youtube.com/watch?v=abc") is None
+
+
+def test_discover_channel_candidates_maps_participant_description_links(tmp_path):
+    raw_dir = tmp_path / "raw" / "season_007"
+    normalized_dir = tmp_path / "normalized"
+    raw_dir.mkdir(parents=True)
+    normalized_dir.mkdir()
+
+    _write_test_csv(
+        normalized_dir / "teams.csv",
+        [
+            {
+                "season_id": "season_007",
+                "division": "Regular Season",
+                "person_id": "person_tabasco_tv",
+                "person_name": "Tabasco TV",
+                "team_name": "Aggron Berlin",
+                "channel_url": "https://www.youtube.com/user/TabascoTV",
+                "data_status": "sheet_extracted",
+            }
+        ],
+    )
+    (raw_dir / "videos.json").write_text(
+        json.dumps(
+            [
+                {
+                    "videoId": "present_s7_01",
+                    "title": "GPL [S7] - Spieltag 01 - vs. Igalima Impoleon",
+                    "description": "\n".join(
+                        [
+                            "Zweitkanal:",
+                            "https://www.youtube.com/channel/UCnotParticipant",
+                            "",
+                            "Alle Teilnehmer:",
+                            "",
+                            "TabascoTV:",
+                            "https://www.youtube.com/channel/UCIgpF-qa1qagv0Xg2O5_6RQ",
+                        ]
+                    ),
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    candidates = discover_channel_candidates(tmp_path, include_description_channels=True)
+
+    participant = next(
+        candidate
+        for candidate in candidates
+        if candidate["canonical_url"] == "https://www.youtube.com/channel/UCIgpF-qa1qagv0Xg2O5_6RQ"
+    )
+    assert participant["source_person_names"] == "Tabasco TV"
+    assert participant["source_team_names"] == "Aggron Berlin"
+    assert participant["source_seasons"] == "season_007"
+    assert "https://www.youtube.com/channel/UCnotParticipant" not in {
+        candidate["canonical_url"] for candidate in candidates
+    }
 
 
 def test_parse_gpl_video_title_extracts_season_week_and_playoff_round():
