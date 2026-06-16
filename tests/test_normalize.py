@@ -491,6 +491,97 @@ def test_playoff_rows_are_available_for_s7_and_s10_tables_and_plan():
     assert s10_final[0]["data_status"] == "sheet_extracted"
 
 
+def test_liga2_sources_from_video_descriptions_are_partitioned_by_division():
+    output = normalize_all(Path("data"))
+    standings = [
+        row
+        for row in output.standings
+        if row["season_id"] in {"season_002", "season_004", "season_005"} and row["is_primary"] == "true"
+    ]
+    counts = Counter((row["season_id"], row["division"]) for row in standings)
+
+    assert counts[("season_002", "Regular Season")] == 14
+    assert counts[("season_002", "Liga 2")] == 14
+    assert counts[("season_004", "Regular Season")] == 12
+    assert counts[("season_004", "Liga 2")] == 12
+    assert counts[("season_005", "Liga 1")] == 12
+    assert counts[("season_005", "Liga 2")] == 12
+
+    s2_liga2_first = next(
+        row
+        for row in standings
+        if row["season_id"] == "season_002" and row["division"] == "Liga 2" and row["rank"] == "1"
+    )
+    s4_liga2_first = next(
+        row
+        for row in standings
+        if row["season_id"] == "season_004" and row["division"] == "Liga 2" and row["rank"] == "1"
+    )
+    s5_liga2_first = next(
+        row
+        for row in standings
+        if row["season_id"] == "season_005" and row["division"] == "Liga 2" and row["rank"] == "1"
+    )
+
+    assert s2_liga2_first["player_name"] == "Parsifani"
+    assert s2_liga2_first["team_name"] == "Duelling Luca-Ri-Oh"
+    assert s4_liga2_first["team_name"] == "Insirnapes"
+    assert s5_liga2_first["player_name"] == "BelmontGabriel"
+    assert s5_liga2_first["team_name"] == "Symphonic Swellow"
+
+
+def test_liga2_video_description_schedules_are_imported_without_changing_s2_champion():
+    output = normalize_all(Path("data"))
+
+    s2_match = next(
+        row
+        for row in output.matches
+        if row["season_id"] == "season_002"
+        and row["division"] == "Liga 2"
+        and row["player_a"] == "LucarioLP"
+        and row["player_b"] == "Zant017"
+        and row["week"].startswith("1. Spieltag")
+    )
+    s4_match = next(
+        row
+        for row in output.matches
+        if row["season_id"] == "season_004"
+        and row["division"] == "Liga 2"
+        and row["player_a"] == "Scoutley"
+        and row["player_b"] == "BlackLink"
+        and row["week"].startswith("1. Spieltag")
+    )
+    s5_match = next(
+        row
+        for row in output.matches
+        if row["season_id"] == "season_005"
+        and row["division"] == "Liga 2"
+        and row["player_a"] == "Craycom"
+        and row["player_b"] == "Asalakoren"
+        and row["week"].startswith("1. Spieltag")
+    )
+
+    assert (s2_match["score_a"], s2_match["score_b"], s2_match["winner"]) == ("6", "0", "LucarioLP")
+    assert (s4_match["score_a"], s4_match["score_b"], s4_match["winner"]) == ("0", "3", "BlackLink")
+    assert (s5_match["score_a"], s5_match["score_b"], s5_match["winner"]) == ("4", "0", "Craycom")
+
+    s2_champion = next(row for row in output.champions if row["season_id"] == "season_002")
+    assert s2_champion["champion_name"] == "SteveParker"
+    assert s2_champion["champion_team"] == "ToxicBlast"
+
+
+def test_s2_liga2_killlist_from_video_description_is_not_mixed_into_regular_season():
+    output = normalize_all(Path("data"))
+    rows = [
+        row
+        for row in output.pokemon_killlists
+        if row["season_id"] == "season_002" and row["pokemon"] == "Scherox" and row["trainer"] == "LucarioLP"
+    ]
+
+    assert any(row["division"] == "Liga 2" and row["kills"] == "40" for row in rows)
+    assert not any(row["division"] == "Regular Season" and row["source_urls"] and "1odsNRAZ" in row["source_urls"] for row in rows)
+
+
 def test_mid_season_team_controller_changes_are_kept_as_person_stints():
     output = normalize_all(Path("data"))
     stints = output.person_stints

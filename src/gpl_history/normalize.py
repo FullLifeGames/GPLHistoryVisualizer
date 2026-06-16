@@ -259,6 +259,20 @@ _OLD_PROJECT_KILL_COLUMNS = {
     "season_005": ("s5", "Liga 1"),
 }
 
+_S2_L1_SCHEDULE_SHEET_ID = "16wGz0QnHeyqfcAhKdYvDqUZAvKxXKuAHchszJjhpp-o"
+_S2_L1_STANDINGS_SHEET_ID = "1vJ-pioe3RZKSZ3LIGEA3FVTv_KEE_XKIQAXSIUNNd-Q"
+_S2_L1_KILLLIST_SHEET_ID = "1FUsClf5qEny-BHY5Djp8rIwRJKBSJDvygJ8LBa62FEo"
+_S2_L2_SCHEDULE_SHEET_ID = "1Jc6mBqbU8wYKfz3WxfpxsWbj_6xaZB6OmoCRPGzGJLM"
+_S2_L2_STANDINGS_SHEET_ID = "1ACnJyxD1hx-mbOcZXoJ5BjXDOwUF1TYmfgkqtJgFRXk"
+_S2_L2_KILLLIST_SHEET_ID = "1odsNRAZStW1GzmpXwmg27dqjOlch7w8syZOZ5Z2OQRg"
+
+_S4_L1_SCHEDULE_SHEET_ID = "1u8AORkPkqIxR4GblUqU5faeTfuuKGjKrllUxnnUdRz0"
+_S4_L2_SCHEDULE_SHEET_ID = "1NKXigWOr5wX73nBCnJrqO0_OprQy7Q5ncRmxnsQencI"
+_S4_L2_STANDINGS_SHEET_ID = "1iwPqphIOO1ID-4NV3sv5CrIsmpQF-saq1sNE9Sxo9oE"
+
+_S5_L1_MAIN_SHEET_ID = "1nONaKwJcrN04APGKN-HrZ8yavwZdFkfnaA59Zp1sdBU"
+_S5_L2_MAIN_SHEET_ID = "1Jej38dwkqOARMHvKaUfQeHME0pLqP9GE6vPZQMUxMcg"
+
 _S9_KILLLIST_TRAINERS = {
     "Singles": {
         "akatsuki amphibianz": "Barry D. Sin of Speed",
@@ -663,21 +677,46 @@ def _adapt_season(season_id: str, tables: list[dict[str, Any]], videos: list[dic
 
 
 def _season_standings(season_id: str, tables: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    if season_id in {"season_001", "season_002", "season_003"}:
+    if season_id in {"season_001", "season_003"}:
         return _standard_standings_from_tables(
             season_id,
             [table for table in tables if _has_standings_header(table["rows"])],
             division="Regular Season",
             primary=True,
         )
+    if season_id == "season_002":
+        rows = []
+        rows.extend(
+            _standard_standings_from_tables(
+                season_id, _tables_by_sheet_id(tables, _S2_L1_STANDINGS_SHEET_ID), "Regular Season", True
+            )
+        )
+        rows.extend(
+            _standard_standings_from_tables(
+                season_id, _tables_by_sheet_id(tables, _S2_L2_STANDINGS_SHEET_ID), "Liga 2", True
+            )
+        )
+        return rows
     if season_id == "season_004":
-        return _standard_standings_from_tables(
+        rows = _standard_standings_from_tables(
             season_id, _tables_by_title(tables, "Gesamtübersicht"), division="Regular Season", primary=True
         )
-    if season_id == "season_005":
-        return _standard_standings_from_tables(
-            season_id, _tables_by_title(tables, "Liga 1 Tabelle"), division="Liga 1", primary=True
+        rows.extend(
+            _standard_standings_from_tables(
+                season_id, _tables_by_sheet_id(tables, _S4_L2_STANDINGS_SHEET_ID), "Liga 2", True
+            )
         )
+        return rows
+    if season_id == "season_005":
+        rows = _standard_standings_from_tables(
+            season_id, _tables_by_sheet_id(tables, _S5_L1_MAIN_SHEET_ID, "Liga 1 Tabelle"), division="Liga 1", primary=True
+        )
+        rows.extend(
+            _standard_standings_from_tables(
+                season_id, _tables_by_sheet_id(tables, _S5_L2_MAIN_SHEET_ID, "Liga 2 Tabelle"), "Liga 2", True
+            )
+        )
+        return rows
     if season_id == "season_006":
         rows = []
         rows.extend(
@@ -1503,10 +1542,7 @@ def _season_extra_teams(season_id: str, tables: list[dict[str, Any]]) -> list[di
 def _season_matches(season_id: str, tables: list[dict[str, Any]], videos: list[dict[str, Any]]) -> list[dict[str, Any]]:
     table_specs = {
         "season_001": [("schedule_header", None, "Regular Season")],
-        "season_002": [("schedule_header", None, "Regular Season")],
         "season_003": [("title", "Spielplan", "Regular Season")],
-        "season_004": [("title", "Spielplan [Mit Ergebnissen - Spoiler]", "Regular Season")],
-        "season_005": [("title", "Liga 1 Spielplan - [Mit Ergebnissen - Spoiler!]", "Liga 1")],
         "season_006": [("title", "Spielplan - Sun Con.", "Sun Conference"), ("title", "Spielplan - Moon Con.", "Moon Conference")],
         "season_007": [("title", "Spielplan [Mit Spoilern]", "Regular Season")],
         "season_008": [("title", "Spielplan L1", "Liga 1"), ("title", "Spielplan L2", "Liga 2")],
@@ -1515,8 +1551,33 @@ def _season_matches(season_id: str, tables: list[dict[str, Any]], videos: list[d
     }
     rows: list[dict[str, Any]] = []
     counter = 1
-    for selector_type, title, division in table_specs.get(season_id, []):
-        selected = _tables_with_schedule_scores(tables) if selector_type == "schedule_header" else _tables_by_title(tables, title or "")
+    selected_specs: list[tuple[list[dict[str, Any]], str]]
+    if season_id == "season_002":
+        selected_specs = [
+            (_tables_by_sheet_id(tables, _S2_L1_SCHEDULE_SHEET_ID), "Regular Season"),
+            (_tables_by_sheet_id(tables, _S2_L2_SCHEDULE_SHEET_ID), "Liga 2"),
+        ]
+    elif season_id == "season_004":
+        selected_specs = [
+            (_tables_by_sheet_id(tables, _S4_L1_SCHEDULE_SHEET_ID, "Spielplan [Mit Ergebnissen - Spoiler]"), "Regular Season"),
+            (_tables_by_sheet_id(tables, _S4_L2_SCHEDULE_SHEET_ID, "Spielplan [Mit Ergebnissen - Spoiler]"), "Liga 2"),
+        ]
+    elif season_id == "season_005":
+        selected_specs = [
+            (_tables_by_sheet_id(tables, _S5_L1_MAIN_SHEET_ID, "Liga 1 Spielplan - [Mit Ergebnissen - Spoiler!]"), "Liga 1"),
+            (_tables_by_sheet_id(tables, _S5_L2_MAIN_SHEET_ID, "Liga 2 Spielplan - [Mit Ergebnissen - Spoiler!]"), "Liga 2"),
+        ]
+    else:
+        selected_specs = [
+            (
+                _tables_with_schedule_scores(tables)
+                if selector_type == "schedule_header"
+                else _tables_by_title(tables, title or ""),
+                division,
+            )
+            for selector_type, title, division in table_specs.get(season_id, [])
+        ]
+    for selected, division in selected_specs:
         for table in selected:
             matches = _schedule_matches_from_rows(
                 season_id,
@@ -1863,6 +1924,11 @@ def _season_champions(
         if first:
             return [_champion_from_standing(season_id, first, "Liga 1 first place in the final standings.")]
         return [_champion_placeholder(season_id, "No Liga 1 rank-1 standings row found.")]
+    if season_id == "season_005":
+        first = _first_ranked(standings, division="Liga 1")
+        if first:
+            return [_champion_from_standing(season_id, first, "Liga 1 first place in the final standings.")]
+        return [_champion_placeholder(season_id, "No Liga 1 rank-1 standings row found.")]
     if season_id == "season_009":
         overall = _s9_standings(season_id, _tables_by_title(tables, "Tabelle"), "Overall Tag Team", False)
         first = _first_ranked(overall)
@@ -1896,6 +1962,12 @@ def _season_champions(
                 return rows
             return [_champion_from_standing(season_id, first, "Rank 1 in the overall tag-team final standings.")]
         return [_champion_placeholder(season_id, "No overall rank-1 standings row found.")]
+
+    if season_id in {"season_002", "season_003", "season_004"}:
+        first = _first_ranked(standings, division="Regular Season")
+        if first:
+            return [_champion_from_standing(season_id, first, "Rank 1 in the main final standings, using the user-provided season rule.")]
+        return [_champion_placeholder(season_id, "No main-league rank-1 final standings row found.")]
 
     first = _first_ranked(standings)
     if first:
@@ -1983,7 +2055,13 @@ def _season_killlists(season_id: str, tables: list[dict[str, Any]]) -> list[dict
         rows.extend(_old_project_killlist(season_id, tables))
         if rows:
             return _dedupe_killlist_rows([*rows, *_missing_killlist_rows(season_id)])
-    if season_id in {"season_001", "season_002"}:
+    if season_id == "season_002":
+        for table in _tables_by_sheet_id(tables, _S2_L1_KILLLIST_SHEET_ID):
+            rows.extend(_standard_killlist(season_id, table, "Regular Season"))
+        for table in _tables_by_sheet_id(tables, _S2_L2_KILLLIST_SHEET_ID):
+            rows.extend(_standard_killlist(season_id, table, "Liga 2"))
+        return _dedupe_killlist_rows(rows)
+    if season_id == "season_001":
         for table in [table for table in tables if _has_killlist_header(table["rows"])]:
             rows.extend(_standard_killlist(season_id, table, "Regular Season"))
         return _dedupe_killlist_rows(rows)
@@ -2737,6 +2815,13 @@ def _has_participant_pair_list(rows: list[list[str]]) -> bool:
 
 def _tables_by_title(tables: list[dict[str, Any]], title: str) -> list[dict[str, Any]]:
     return [table for table in tables if _title_matches(table["entry"].get("title"), title)]
+
+
+def _tables_by_sheet_id(tables: list[dict[str, Any]], sheet_id: str, title: str | None = None) -> list[dict[str, Any]]:
+    selected = [table for table in tables if table["entry"].get("sheet_id") == sheet_id]
+    if title is None:
+        return selected
+    return [table for table in selected if _title_matches(table["entry"].get("title"), title)]
 
 
 def _title_matches(actual: str | None, wanted: str) -> bool:

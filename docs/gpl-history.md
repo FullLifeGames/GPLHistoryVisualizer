@@ -1,6 +1,6 @@
 # German Pokémon League History
 
-Generated: 2026-06-16T05:27:13.790717+00:00
+Generated: 2026-06-16T06:18:51.863278+00:00
 
 This report is generated from the normalized CSV files. Champions are recorded from sourced adapter evidence where available. Rows marked `user_provided` are explicit corrections only; unavailable playoff winners remain null.
 
@@ -20,16 +20,16 @@ This report is generated from the normalized CSV files. Champions are recorded f
 
 ## Coverage
 
-- Source claim rows: 28314
+- Source claim rows: 30458
 - Data quality rows: 10
 
 - Seasons represented: 10
-- Team rows: 194 available, 0 not available
-- Standing rows: 164 available, 0 not available
-- Person stint rows: 158 available, 0 not available
-- Match rows: 2001 available/source-video rows, 0 not available
+- Team rows: 232 available, 0 not available
+- Standing rows: 202 available, 0 not available
+- Person stint rows: 196 available, 0 not available
+- Match rows: 2447 available/source-video rows, 0 not available
 - Champion rows with title evidence/corrections: 12
-- Pokémon killlist rows: 2025 available, 3 not available
+- Pokémon killlist rows: 2224 available, 3 not available
 
 ## Season CSV Source Index
 
@@ -56,16 +56,16 @@ This report is generated from the normalized CSV files. Champions are recorded f
 - Video count: 27
 - Date range: 2015-03-15T12:23:13Z to 2015-09-20T17:20:26Z
 - GPL-related heuristic: true
-- Divisions/stages represented: Regular Season: 361, video_source: 27
+- Divisions/stages represented: Liga 2: 423, Regular Season: 361, video_source: 27
 
 | Claim Type | Status | Source URLs |
 | --- | --- | --- |
-| teams | sheet_extracted: 14 | https://docs.google.com/spreadsheets/d/1vJ-pioe3RZKSZ3LIGEA3FVTv_KEE_XKIQAXSIUNNd-Q/edit#gid=0 |
-| standings | sheet_extracted: 14 | https://docs.google.com/spreadsheets/d/1vJ-pioe3RZKSZ3LIGEA3FVTv_KEE_XKIQAXSIUNNd-Q/edit#gid=0 |
-| person_stints | sheet_extracted: 14 | https://docs.google.com/spreadsheets/d/1vJ-pioe3RZKSZ3LIGEA3FVTv_KEE_XKIQAXSIUNNd-Q/edit#gid=0 |
-| matches | sheet_extracted: 182, source_video_only: 27 | https://docs.google.com/spreadsheets/d/16wGz0QnHeyqfcAhKdYvDqUZAvKxXKuAHchszJjhpp-o/edit#gid=0<br>https://www.youtube.com/watch?v=yKQhgFBa7ZY<br>https://www.youtube.com/watch?v=CjTQyiGpSDw<br>https://www.youtube.com/watch?v=nwYsAP7br8E<br>https://www.youtube.com/watch?v=iR3mDP-5sQ0<br>https://www.youtube.com/watch?v=IrqyFNa4BYM<br>https://www.youtube.com/watch?v=ZdO9pZuN984<br>https://www.youtube.com/watch?v=FySH_eo1VhU |
+| teams | sheet_extracted: 28 | https://docs.google.com/spreadsheets/d/1vJ-pioe3RZKSZ3LIGEA3FVTv_KEE_XKIQAXSIUNNd-Q/edit#gid=0<br>https://docs.google.com/spreadsheets/d/1ACnJyxD1hx-mbOcZXoJ5BjXDOwUF1TYmfgkqtJgFRXk/edit#gid=0 |
+| standings | sheet_extracted: 28 | https://docs.google.com/spreadsheets/d/1vJ-pioe3RZKSZ3LIGEA3FVTv_KEE_XKIQAXSIUNNd-Q/edit#gid=0<br>https://docs.google.com/spreadsheets/d/1ACnJyxD1hx-mbOcZXoJ5BjXDOwUF1TYmfgkqtJgFRXk/edit#gid=0 |
+| person_stints | sheet_extracted: 28 | https://docs.google.com/spreadsheets/d/1vJ-pioe3RZKSZ3LIGEA3FVTv_KEE_XKIQAXSIUNNd-Q/edit#gid=0<br>https://docs.google.com/spreadsheets/d/1ACnJyxD1hx-mbOcZXoJ5BjXDOwUF1TYmfgkqtJgFRXk/edit#gid=0 |
+| matches | sheet_extracted: 364, source_video_only: 27 | https://docs.google.com/spreadsheets/d/16wGz0QnHeyqfcAhKdYvDqUZAvKxXKuAHchszJjhpp-o/edit#gid=0<br>https://docs.google.com/spreadsheets/d/1Jc6mBqbU8wYKfz3WxfpxsWbj_6xaZB6OmoCRPGzGJLM/edit#gid=0<br>https://www.youtube.com/watch?v=yKQhgFBa7ZY<br>https://www.youtube.com/watch?v=CjTQyiGpSDw<br>https://www.youtube.com/watch?v=nwYsAP7br8E<br>https://www.youtube.com/watch?v=iR3mDP-5sQ0<br>https://www.youtube.com/watch?v=IrqyFNa4BYM<br>https://www.youtube.com/watch?v=ZdO9pZuN984 |
 | champions | source_evidenced: 1 | https://docs.google.com/spreadsheets/d/1vJ-pioe3RZKSZ3LIGEA3FVTv_KEE_XKIQAXSIUNNd-Q/edit#gid=0 |
-| pokemon_killlists | sheet_extracted: 137 | https://docs.google.com/spreadsheets/d/1FUsClf5qEny-BHY5Djp8rIwRJKBSJDvygJ8LBa62FEo/edit#gid=0 |
+| pokemon_killlists | sheet_extracted: 336 | https://docs.google.com/spreadsheets/d/1FUsClf5qEny-BHY5Djp8rIwRJKBSJDvygJ8LBa62FEo/edit#gid=0<br>https://docs.google.com/spreadsheets/d/1odsNRAZStW1GzmpXwmg27dqjOlch7w8syZOZ5Z2OQRg/edit#gid=0 |
 
 ### season_003: Infos zu GPL S3!; GPL [S3] - PresentLP
 
@@ -90,14 +90,14 @@ This report is generated from the normalized CSV files. Champions are recorded f
 - Video count: 44
 - Date range: 2017-03-11T16:00:00Z to 2017-08-13T10:00:04Z
 - GPL-related heuristic: true
-- Divisions/stages represented: Regular Season: 313, video_source: 44
+- Divisions/stages represented: Liga 2: 168, Regular Season: 313, video_source: 44
 
 | Claim Type | Status | Source URLs |
 | --- | --- | --- |
-| teams | sheet_extracted: 12 | https://docs.google.com/spreadsheets/d/1rZd3D0JRNj3lK0ZKdMXPLvCNBofRhFsvW0AlPuBk3VE/edit#gid=0 |
-| standings | sheet_extracted: 12 | https://docs.google.com/spreadsheets/d/1rZd3D0JRNj3lK0ZKdMXPLvCNBofRhFsvW0AlPuBk3VE/edit#gid=0 |
-| person_stints | sheet_extracted: 12 | https://docs.google.com/spreadsheets/d/1rZd3D0JRNj3lK0ZKdMXPLvCNBofRhFsvW0AlPuBk3VE/edit#gid=0 |
-| matches | sheet_extracted: 132, source_video_only: 44 | https://docs.google.com/spreadsheets/d/1u8AORkPkqIxR4GblUqU5faeTfuuKGjKrllUxnnUdRz0/edit#gid=992181004<br>https://www.youtube.com/watch?v=42iVDIgC7JI<br>https://www.youtube.com/watch?v=2gvscsU2vZ8<br>https://www.youtube.com/watch?v=R4pwZ1h8xIg<br>https://www.youtube.com/watch?v=BoOJXN5ZQg4<br>https://www.youtube.com/watch?v=fSZli7TEBe0<br>https://www.youtube.com/watch?v=qn9YOJjEhWA<br>https://www.youtube.com/watch?v=pORMlJexcek |
+| teams | sheet_extracted: 24 | https://docs.google.com/spreadsheets/d/1rZd3D0JRNj3lK0ZKdMXPLvCNBofRhFsvW0AlPuBk3VE/edit#gid=0<br>https://docs.google.com/spreadsheets/d/1iwPqphIOO1ID-4NV3sv5CrIsmpQF-saq1sNE9Sxo9oE/edit#gid=0 |
+| standings | sheet_extracted: 24 | https://docs.google.com/spreadsheets/d/1rZd3D0JRNj3lK0ZKdMXPLvCNBofRhFsvW0AlPuBk3VE/edit#gid=0<br>https://docs.google.com/spreadsheets/d/1iwPqphIOO1ID-4NV3sv5CrIsmpQF-saq1sNE9Sxo9oE/edit#gid=0 |
+| person_stints | sheet_extracted: 24 | https://docs.google.com/spreadsheets/d/1rZd3D0JRNj3lK0ZKdMXPLvCNBofRhFsvW0AlPuBk3VE/edit#gid=0<br>https://docs.google.com/spreadsheets/d/1iwPqphIOO1ID-4NV3sv5CrIsmpQF-saq1sNE9Sxo9oE/edit#gid=0 |
+| matches | sheet_extracted: 264, source_video_only: 44 | https://docs.google.com/spreadsheets/d/1u8AORkPkqIxR4GblUqU5faeTfuuKGjKrllUxnnUdRz0/edit#gid=992181004<br>https://docs.google.com/spreadsheets/d/1NKXigWOr5wX73nBCnJrqO0_OprQy7Q5ncRmxnsQencI/edit#gid=2071855674<br>https://www.youtube.com/watch?v=42iVDIgC7JI<br>https://www.youtube.com/watch?v=2gvscsU2vZ8<br>https://www.youtube.com/watch?v=R4pwZ1h8xIg<br>https://www.youtube.com/watch?v=BoOJXN5ZQg4<br>https://www.youtube.com/watch?v=fSZli7TEBe0<br>https://www.youtube.com/watch?v=qn9YOJjEhWA |
 | champions | source_evidenced: 1 | https://docs.google.com/spreadsheets/d/1rZd3D0JRNj3lK0ZKdMXPLvCNBofRhFsvW0AlPuBk3VE/edit#gid=0 |
 | pokemon_killlists | manual_graphic_assignment: 103, manual_override: 42, not_available: 1 | https://docs.google.com/spreadsheets/d/1JZpA-5XDldN2bjfvhvBPHYK-1AENETLnF1UxNEpWlNA/edit#gid=352888197<br>data/manual/team_pokemon_usage.csv<br>output/team-graphics/s4/Prekani - PresentLP.png<br>output/team-graphics/s4/Ritter der Tapukokosnuss - FullLifeGames.png<br>output/team-graphics/s4/Slicing Knights - Cabgolord.png<br>output/team-graphics/s4/Minetube - Triyolotree.png<br>output/team-graphics/s4/Suicide Squad - CaptainCrinch.png<br>output/team-graphics/s4/Shocking Shaymins - MeLevies.png |
 
@@ -107,14 +107,14 @@ This report is generated from the normalized CSV files. Champions are recorded f
 - Video count: 44
 - Date range: 2018-03-10T13:00:01Z to 2018-08-12T11:00:07Z
 - GPL-related heuristic: true
-- Divisions/stages represented: Liga 1: 317, video_source: 44
+- Divisions/stages represented: Liga 1: 317, Liga 2: 168, video_source: 44
 
 | Claim Type | Status | Source URLs |
 | --- | --- | --- |
-| teams | sheet_extracted: 12 | https://docs.google.com/spreadsheets/d/1nONaKwJcrN04APGKN-HrZ8yavwZdFkfnaA59Zp1sdBU/edit#gid=1708603996 |
-| standings | sheet_extracted: 12 | https://docs.google.com/spreadsheets/d/1nONaKwJcrN04APGKN-HrZ8yavwZdFkfnaA59Zp1sdBU/edit#gid=1708603996 |
-| person_stints | sheet_extracted: 12 | https://docs.google.com/spreadsheets/d/1nONaKwJcrN04APGKN-HrZ8yavwZdFkfnaA59Zp1sdBU/edit#gid=1708603996 |
-| matches | sheet_extracted: 132, source_video_only: 44 | https://docs.google.com/spreadsheets/d/1nONaKwJcrN04APGKN-HrZ8yavwZdFkfnaA59Zp1sdBU/edit#gid=405850997<br>https://www.youtube.com/watch?v=Gc2QELi45fY<br>https://www.youtube.com/watch?v=olXcJI39eTo<br>https://www.youtube.com/watch?v=ke6gz8TeBW4<br>https://www.youtube.com/watch?v=BDD9A2diASM<br>https://www.youtube.com/watch?v=AQpBhvwRrXY<br>https://www.youtube.com/watch?v=m8Ru10todf0<br>https://www.youtube.com/watch?v=ZMiiSpjNxG8 |
+| teams | sheet_extracted: 24 | https://docs.google.com/spreadsheets/d/1nONaKwJcrN04APGKN-HrZ8yavwZdFkfnaA59Zp1sdBU/edit#gid=1708603996<br>https://docs.google.com/spreadsheets/d/1Jej38dwkqOARMHvKaUfQeHME0pLqP9GE6vPZQMUxMcg/edit#gid=1613120774 |
+| standings | sheet_extracted: 24 | https://docs.google.com/spreadsheets/d/1nONaKwJcrN04APGKN-HrZ8yavwZdFkfnaA59Zp1sdBU/edit#gid=1708603996<br>https://docs.google.com/spreadsheets/d/1Jej38dwkqOARMHvKaUfQeHME0pLqP9GE6vPZQMUxMcg/edit#gid=1613120774 |
+| person_stints | sheet_extracted: 24 | https://docs.google.com/spreadsheets/d/1nONaKwJcrN04APGKN-HrZ8yavwZdFkfnaA59Zp1sdBU/edit#gid=1708603996<br>https://docs.google.com/spreadsheets/d/1Jej38dwkqOARMHvKaUfQeHME0pLqP9GE6vPZQMUxMcg/edit#gid=1613120774 |
+| matches | sheet_extracted: 264, source_video_only: 44 | https://docs.google.com/spreadsheets/d/1nONaKwJcrN04APGKN-HrZ8yavwZdFkfnaA59Zp1sdBU/edit#gid=405850997<br>https://docs.google.com/spreadsheets/d/1Jej38dwkqOARMHvKaUfQeHME0pLqP9GE6vPZQMUxMcg/edit#gid=2102144361<br>https://www.youtube.com/watch?v=Gc2QELi45fY<br>https://www.youtube.com/watch?v=olXcJI39eTo<br>https://www.youtube.com/watch?v=ke6gz8TeBW4<br>https://www.youtube.com/watch?v=BDD9A2diASM<br>https://www.youtube.com/watch?v=AQpBhvwRrXY<br>https://www.youtube.com/watch?v=m8Ru10todf0 |
 | champions | source_evidenced: 1 | https://docs.google.com/spreadsheets/d/1nONaKwJcrN04APGKN-HrZ8yavwZdFkfnaA59Zp1sdBU/edit#gid=1708603996 |
 | pokemon_killlists | manual_graphic_assignment: 107, manual_override: 40, not_available: 1, sheet_extracted: 2 | https://docs.google.com/spreadsheets/d/1JZpA-5XDldN2bjfvhvBPHYK-1AENETLnF1UxNEpWlNA/edit#gid=352888197<br>data/manual/team_pokemon_usage.csv<br>output/team-graphics/s5/Victini Bottom.png<br>output/team-graphics/s5/Triyolotree.png<br>output/team-graphics/s5/Crinchilla.png<br>output/team-graphics/s5/Marvelous Speedsters.png<br>output/team-graphics/s5/Howling Commandos.png<br>output/team-graphics/s5/Prekani.png |
 

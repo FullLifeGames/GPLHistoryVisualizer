@@ -1,2 +1,6 @@
 name_a,name_b,name_a_normalized,name_b_normalized,similarity_hint,source
+Glebber,glebber,glebber,glebber,same_canonical_form,normalized_csv
+LetsKayze,letsKayze,letskayze,letskayze,same_canonical_form,normalized_csv
 Little Litleos,Little Litleos*,little litleos,little litleos,same_canonical_form,normalized_csv
+PentaPlayer,Pentaplayer,pentaplayer,pentaplayer,same_canonical_form,normalized_csv
+PokeBree,PokéBree,pokebree,pokebree,same_canonical_form,normalized_csv

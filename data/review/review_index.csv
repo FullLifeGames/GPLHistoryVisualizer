@@ -1,5 +1,5 @@
 review_file,row_count,severity,review_reason,correction_file,suggested_action,description
 missing_killlists.csv,3,high,killlist_source_unavailable,data/manual/pokemon_killlists.csv,Add sourced killlist rows or keep the placeholder if the source is unavailable.,Killlist source rows that are known but unavailable.
-missing_killlist_appearances.csv,1118,medium,killlist_appearances_not_in_source,data/manual/pokemon_killlists.csv,Add appearance counts only when a source explicitly provides them.,Killlist rows with kills but no appearance count in the source.
-low_confidence_videos.csv,560,medium,low_or_medium_match_confidence,data/manual/matches.csv,Confirm or override the video-to-match assignment with source evidence.,Matched videos whose assignment should be manually reviewed.
-ambiguous_matches.csv,246,high,unmatched_game_video,data/manual/matches.csv,Map the video to a sourced match row or leave it unmatched.,Game-like GPL videos that could not be matched to a normalized match.
+missing_killlist_appearances.csv,1317,medium,killlist_appearances_not_in_source,data/manual/pokemon_killlists.csv,Add appearance counts only when a source explicitly provides them.,Killlist rows with kills but no appearance count in the source.
+low_confidence_videos.csv,63,medium,low_or_medium_match_confidence,data/manual/matches.csv,Confirm or override the video-to-match assignment with source evidence.,Matched videos whose assignment should be manually reviewed.
+ambiguous_matches.csv,224,high,unmatched_game_video,data/manual/matches.csv,Map the video to a sourced match row or leave it unmatched.,Game-like GPL videos that could not be matched to a normalized match.
