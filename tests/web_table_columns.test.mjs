@@ -18,6 +18,8 @@ function recordWindow(columns) {
 
 assert.equal(ALL_TIME_COLUMNS.includes("teams"), false);
 assert.equal(ALL_TIME_COLUMNS.includes("elo"), true);
+assert.equal(ALL_TIME_COLUMNS.at(-1), "elo");
+assert.ok(ALL_TIME_COLUMNS.indexOf("rating") < ALL_TIME_COLUMNS.indexOf("elo"));
 assert.deepEqual(recordWindow(ALL_TIME_COLUMNS), ["matches", "win_pct", "wins", "losses", "draws"]);
 
 assert.equal(POKEMON_DRAFT_COLUMNS.includes("team_count"), false);
@@ -37,16 +39,17 @@ assert.deepEqual(recordWindow(PERSON_SEASON_COLUMNS), ["matches", "win_pct", "wi
 assert.deepEqual(MATCHUP_COLUMNS, ["opponent", "matches", "win_pct", "wins", "losses", "draws"]);
 
 assert.deepEqual(COLUMN_PROFILE_KEYS, ["compact", "performance", "history", "sources", "full"]);
-assert.deepEqual(columnsForProfile(ALL_TIME_COLUMNS, "compact"), ["rank", "name", "seasons_won", "rating", "elo", "seasons", "matches", "win_pct", "points"]);
+assert.deepEqual(columnsForProfile(ALL_TIME_COLUMNS, "compact"), ["rank", "name", "seasons_won", "rating", "seasons", "matches", "win_pct", "points", "elo"]);
 assert.equal(columnsForProfile(POKEMON_KILLLIST_COLUMNS, "compact").includes("seasons"), true);
 assert.equal(columnsForProfile(POKEMON_DRAFT_COLUMNS, "compact").includes("season_count"), true);
 assert.deepEqual(columnsForProfile(ALL_TIME_COLUMNS), ALL_TIME_COLUMNS);
+assert.equal(columnsForProfile(["season", "videos", "source"], "compact").includes("videos"), true);
+assert.equal(columnsForProfile(["season", "videos", "source"], "sources").includes("videos"), true);
 assert.deepEqual(columnsForProfile(ALL_TIME_COLUMNS, "performance"), [
   "rank",
   "name",
   "seasons_won",
   "rating",
-  "elo",
   "seasons",
   "matches",
   "win_pct",
@@ -58,6 +61,7 @@ assert.deepEqual(columnsForProfile(ALL_TIME_COLUMNS, "performance"), [
   "deaths",
   "differential",
   "best_rank",
+  "elo",
 ]);
 assert.deepEqual(columnsForProfile(ALL_TIME_COLUMNS, "history"), ["rank", "name", "seasons_won", "title_seasons", "seasons", "season_list", "best_rank"]);
 assert.deepEqual(columnsForProfile(ALL_TIME_COLUMNS, "full"), ALL_TIME_COLUMNS);

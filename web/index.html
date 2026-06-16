@@ -25,6 +25,20 @@
       </div>
     </header>
 
+    <div id="app-loading" class="loading-overlay" role="status" aria-live="polite">
+      <div class="loading-card">
+        <img src="../GPL_Season_10_Logo.png" alt="" aria-hidden="true" />
+        <div>
+          <h2 data-i18n="loading.title">GPL-Daten werden geladen</h2>
+          <p id="loading-detail" data-i18n="loading.subtitle">CSV-Dateien werden vorbereitet.</p>
+        </div>
+        <div class="loading-progress" aria-hidden="true">
+          <div id="loading-progress-bar" class="loading-progress-bar"></div>
+        </div>
+        <strong id="loading-progress-text">0 / 0 Dateien</strong>
+      </div>
+    </div>
+
     <main class="app-shell">
       <nav class="primary-tabs" aria-label="Hauptbereiche">
         <button class="nav-group-tab is-active" type="button" data-view-group="people" data-i18n="navGroups.people">Personen</button>

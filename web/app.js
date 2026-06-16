@@ -33,6 +33,7 @@ import {
   numberValue,
   personStorySummary,
   personPokemonHighlights,
+  personOptionsFromAllTimeRows,
   pokemonDraftOverviewRows,
   pokemonTitleIndex,
   pokemonStorySummary,
@@ -50,17 +51,20 @@ import {
   weightedRating,
 } from "./stats.js";
 
-const DATASETS = {
+const CORE_DATASETS = {
   seasons: "../data/normalized/seasons.csv",
   people: "../data/normalized/people.csv",
   teams: "../data/normalized/teams.csv",
   standings: "../data/normalized/standings.csv",
   personStints: "../data/normalized/person_stints.csv",
   matches: "../data/normalized/matches.csv",
-  videos: { url: "../data/normalized/video_archive.csv", optional: true },
-  matchVideos: { url: "../data/normalized/match_videos.csv", optional: true },
   champions: "../data/normalized/champions.csv",
   killlists: "../data/normalized/pokemon_killlists.csv",
+};
+
+const LAZY_DATASETS = {
+  videos: { url: "../data/normalized/video_archive.csv", optional: true },
+  matchVideos: { url: "../data/normalized/match_videos.csv", optional: true },
   pokemonDraftOverview: { url: "../data/normalized/pokemon_draft_overview.csv", optional: true },
   dataQuality: { url: "../data/normalized/data_quality.csv", optional: true },
   sourceClaims: { url: "../data/normalized/source_claims.csv", optional: true },
@@ -69,6 +73,46 @@ const DATASETS = {
   missingKilllistAppearances: { url: "../data/review/missing_killlist_appearances.csv", optional: true },
   lowConfidenceVideos: { url: "../data/review/low_confidence_videos.csv", optional: true },
   ambiguousMatches: { url: "../data/review/ambiguous_matches.csv", optional: true },
+};
+
+const DATASETS = { ...CORE_DATASETS, ...LAZY_DATASETS };
+
+const VIEW_DATASETS = {
+  "all-time": [],
+  matchup: ["matchVideos"],
+  killlists: ["pokemonDraftOverview"],
+  "pokemon-drafts": ["pokemonDraftOverview"],
+  "pokemon-detail": ["pokemonDraftOverview"],
+  "table-history": [],
+  "match-plan": ["matchVideos"],
+  "battle-history": ["matchVideos"],
+  "video-archive": ["videos"],
+  "person-details": ["videos"],
+  "data-coverage": ["dataQuality", "reviewIndex"],
+  "review-workflow": ["reviewIndex", "missingKilllists", "missingKilllistAppearances", "lowConfidenceVideos", "ambiguousMatches"],
+  "source-claims": ["sourceClaims"],
+  "season-detail": ["videos", "sourceClaims"],
+};
+
+const DATASET_LABELS = {
+  seasons: "Saisons",
+  people: "Personen",
+  teams: "Teams",
+  standings: "Tabellen",
+  personStints: "Personen-Stints",
+  matches: "Kämpfe",
+  champions: "Titel",
+  killlists: "Killlisten",
+  videos: "Video-Archiv",
+  matchVideos: "Video-Match-Zuordnungen",
+  pokemonDraftOverview: "Pokémon-Drafts",
+  dataQuality: "Datenlage",
+  sourceClaims: "Quellenclaims",
+  reviewIndex: "Review-Index",
+  missingKilllists: "Fehlende Killlisten",
+  missingKilllistAppearances: "Offene Einsätze",
+  lowConfidenceVideos: "Video-Review",
+  ambiguousMatches: "Mehrdeutige Matches",
 };
 
 const state = {
@@ -85,9 +129,15 @@ const state = {
   draftPickedStatus: "all",
   draftTierFilter: "all",
   data: {},
+  loadedDatasets: new Set(),
+  loadingDatasets: new Map(),
 };
 
 const statusEl = document.querySelector("#load-status");
+const loadingOverlay = document.querySelector("#app-loading");
+const loadingDetail = document.querySelector("#loading-detail");
+const loadingProgressBar = document.querySelector("#loading-progress-bar");
+const loadingProgressText = document.querySelector("#loading-progress-text");
 const languageToggle = document.querySelector("#language-toggle");
 const themeToggle = document.querySelector("#theme-toggle");
 const dataModeFilter = document.querySelector("#data-mode-filter");
@@ -105,18 +155,22 @@ async function init() {
   applyTheme();
   applyLanguage();
   bindControls();
+  showLoadingOverlay();
   try {
-    state.data = await loadDatasets();
+    await loadCoreDatasets();
     applyRouteFromHash();
+    await ensureDatasetsForView(state.view);
     populateSeasonFilter();
     populateDivisionFilter();
     populateMatchupOptions();
     render();
     statusEl.textContent = t(state.language, "status.loaded");
     statusEl.classList.add("is-ready");
+    hideLoadingOverlay();
   } catch (error) {
     statusEl.textContent = t(state.language, "status.failed");
     statusEl.classList.add("is-error");
+    hideLoadingOverlay();
     console.error(error);
     renderError(error);
   }
@@ -183,16 +237,19 @@ function bindControls() {
 
   seasonFilter.addEventListener("change", () => {
     state.season = seasonFilter.value;
+    populateMatchupOptions();
     render();
   });
 
   divisionFilter.addEventListener("change", () => {
     state.division = divisionFilter.value;
+    populateMatchupOptions();
     render();
   });
 
   searchFilter.addEventListener("input", () => {
     state.search = searchFilter.value.trim().toLowerCase();
+    populateMatchupOptions();
     render();
   });
 
@@ -246,12 +303,25 @@ function bindControls() {
   });
 
   window.addEventListener("hashchange", () => {
-    applyRouteFromHash();
-    render();
-    if (state.view === "matchup") {
-      renderMatchup();
-    }
+    void handleRouteChange();
   });
+}
+
+async function handleRouteChange() {
+  applyRouteFromHash();
+  populateDivisionFilter();
+  populateMatchupOptions();
+  const loadedLazyDatasets = await ensureDatasetsForView(state.view);
+  if (loadedLazyDatasets) {
+    populateDivisionFilter();
+    populateMatchupOptions();
+    statusEl.textContent = t(state.language, "status.loaded");
+    statusEl.classList.add("is-ready");
+  }
+  render();
+  if (state.view === "matchup") {
+    renderMatchup();
+  }
 }
 
 function navigateToView(viewName) {
@@ -455,22 +525,125 @@ function normalizeDataMode(value) {
   return value === "league2" ? "league2" : "primary";
 }
 
-async function loadDatasets() {
+async function loadCoreDatasets() {
+  state.data = await loadDatasetKeys(Object.keys(CORE_DATASETS), { overlay: true });
+}
+
+async function ensureDatasetsForView(viewName) {
+  const pending = (VIEW_DATASETS[viewName] ?? []).filter((key) => !state.loadedDatasets.has(key));
+  if (pending.length) {
+    renderViewLoadingState(viewName, pending);
+  }
+  return ensureDatasets(pending);
+}
+
+async function ensureDatasets(keys = []) {
+  const pending = keys.filter((key) => !state.loadedDatasets.has(key));
+  if (!pending.length) {
+    return false;
+  }
+  statusEl.classList.remove("is-ready", "is-error");
+  await loadDatasetKeys(pending, { overlay: !Object.keys(state.data).length });
+  return true;
+}
+
+function renderViewLoadingState(viewName, keys) {
+  const view = document.querySelector(`#view-${viewName}`);
+  if (!view) return;
+  const labels = keys.map(datasetLabel).join(", ");
+  const message = formatMessage(t(state.language, "loading.dataset"), { name: labels });
+  view.querySelectorAll(".table-wrap, .result-box, .summary-grid, .bracket-board").forEach((target) => {
+    if (target.id) {
+      destroyTable(`#${target.id}`);
+    }
+    target.innerHTML = `<p class="empty">${escapeHtml(message)}</p>`;
+  });
+}
+
+async function loadDatasetKeys(keys, options = {}) {
+  let completed = 0;
+  const total = keys.length;
+  updateLoadingProgress({ completed, total, dataset: "" });
   const entries = await Promise.all(
-    Object.entries(DATASETS).map(async ([key, spec]) => {
-      const url = typeof spec === "string" ? spec : spec.url;
-      const optional = typeof spec === "string" ? false : Boolean(spec.optional);
-      const response = await fetch(url, { cache: "no-store" });
-      if (!response.ok && optional) {
-        return [key, []];
-      }
-      if (!response.ok) {
-        throw new Error(`${url} returned ${response.status}`);
-      }
-      return [key, parseCsv(await response.text())];
+    keys.map(async (key) => {
+      const rows = await loadDataset(key);
+      completed += 1;
+      updateLoadingProgress({ completed, total, dataset: datasetLabel(key) });
+      return [key, rows];
     }),
   );
+  if (options.overlay && completed >= total) {
+    updateLoadingProgress({ completed, total, dataset: t(state.language, "loading.ready") });
+  }
   return Object.fromEntries(entries);
+}
+
+async function loadDataset(key) {
+  if (state.loadedDatasets.has(key)) {
+    return state.data[key] ?? [];
+  }
+  if (state.loadingDatasets.has(key)) {
+    return state.loadingDatasets.get(key);
+  }
+  const promise = fetchDataset(key).then((rows) => {
+    state.data[key] = rows;
+    state.loadedDatasets.add(key);
+    state.loadingDatasets.delete(key);
+    return rows;
+  });
+  state.loadingDatasets.set(key, promise);
+  return promise;
+}
+
+async function fetchDataset(key) {
+  const spec = DATASETS[key];
+  if (!spec) {
+    throw new Error(`Unknown dataset ${key}`);
+  }
+  const url = typeof spec === "string" ? spec : spec.url;
+  const optional = typeof spec === "string" ? false : Boolean(spec.optional);
+  const response = await fetch(url);
+  if (!response.ok && optional) {
+    return [];
+  }
+  if (!response.ok) {
+    throw new Error(`${url} returned ${response.status}`);
+  }
+  return parseCsv(await response.text());
+}
+
+function datasetLabel(key) {
+  return DATASET_LABELS[key] || key;
+}
+
+function showLoadingOverlay() {
+  if (loadingOverlay) {
+    loadingOverlay.hidden = false;
+  }
+}
+
+function hideLoadingOverlay() {
+  if (loadingOverlay) {
+    loadingOverlay.hidden = true;
+  }
+}
+
+function updateLoadingProgress({ completed = 0, total = 0, dataset = "" } = {}) {
+  const percent = total ? Math.round((completed / total) * 100) : 0;
+  if (loadingProgressBar) {
+    loadingProgressBar.style.width = `${percent}%`;
+  }
+  if (loadingProgressText) {
+    loadingProgressText.textContent = formatMessage(t(state.language, "loading.progress"), { completed, total });
+  }
+  if (loadingDetail) {
+    loadingDetail.textContent = dataset ? formatMessage(t(state.language, "loading.dataset"), { name: dataset }) : t(state.language, "loading.subtitle");
+  }
+  statusEl.textContent = dataset ? `${formatMessage(t(state.language, "loading.dataset"), { name: dataset })} (${completed}/${total})` : t(state.language, "status.loading");
+}
+
+function formatMessage(template, values) {
+  return Object.entries(values).reduce((text, [key, value]) => text.replaceAll(`{${key}}`, String(value)), template);
 }
 
 function parseCsv(text) {
@@ -582,41 +755,9 @@ function populateMatchupOptions() {
 }
 
 function matchupOptions() {
-  const choices = new Map();
-  const add = (value, preferred = false) => {
-    const label = String(value ?? "").trim();
-    const key = normalizedKey(label);
-    if (!label || !key) return;
-    const current = choices.get(key);
-    if (!current || preferred || label.length < current.label.length) {
-      choices.set(key, { value: key, label });
-    }
-  };
-
-  (state.data.people ?? []).forEach((row) => add(row.person_name, true));
-  (state.data.matches ?? [])
-    .filter((row) => row.data_status !== "source_video_only" && row.data_status !== "not_available")
-    .forEach((row) => {
-      add(row.player_a);
-      add(row.player_b);
-      add(row.team_a);
-      add(row.team_b);
-      add(row.winner);
-    });
-  (state.data.standings ?? [])
-    .filter((row) => row.data_status !== "not_available")
-    .forEach((row) => {
-      add(row.player_name, true);
-      add(row.team_name);
-    });
-  (state.data.teams ?? [])
-    .filter((row) => row.data_status !== "not_available")
-    .forEach((row) => {
-      add(row.person_name, true);
-      add(row.team_name);
-    });
-
-  return [...choices.values()].sort((a, b) => a.label.localeCompare(b.label));
+  const statRows = filteredPersonStats({ primaryOnly: state.dataMode === "primary" });
+  const champions = filtered(state.data.champions ?? []).filter((row) => ["source_evidenced", "user_provided"].includes(row.data_status));
+  return personOptionsFromAllTimeRows(statRows, champions, normalizedKey);
 }
 
 function render() {
@@ -864,8 +1005,8 @@ function renderAllTime() {
     .sort(
       (a, b) =>
         numberValue(b.seasons_won) - numberValue(a.seasons_won) ||
-        numberValue(b.elo) - numberValue(a.elo) ||
         numberValue(b.rating) - numberValue(a.rating) ||
+        numberValue(b.elo) - numberValue(a.elo) ||
         numberValue(b.points) - numberValue(a.points) ||
         String(a.name).localeCompare(String(b.name)),
     );
@@ -1820,18 +1961,19 @@ function renderMatchup() {
     player_b: matchupSelectButton(playerB, playerB, "b"),
     winner: row.winner,
     score: row.score_a || row.score_b ? `${row.score_a || "?"} - ${row.score_b || "?"}` : "",
+    videos: videoLinksForMatch(row.match_id),
     source: sourceLink(row.video_url || row.source_urls, row.video_title || row.video_id || t(state.language, "values.source")),
     };
   });
 
-  const matchColumns = columnsForProfile(["season", "division", "week", "player_a", "player_b", "score", "winner", "source"], state.columnProfile);
+  const matchColumns = columnsForProfile(["season", "division", "week", "player_a", "player_b", "score", "winner", "videos", "source"], state.columnProfile);
   result.innerHTML = `
     <div class="result-grid">
       <div class="metric"><span class="muted">${escapeHtml(t(state.language, "matchup.matches"))}</span><strong>${matches.length}</strong></div>
       <div class="metric"><span class="muted">${escapeHtml(t(state.language, "matchup.firstWins"))}</span><strong>${aWins}</strong></div>
       <div class="metric"><span class="muted">${escapeHtml(t(state.language, "matchup.secondWins"))}</span><strong>${bWins}</strong></div>
     </div>
-    ${matches.length ? `<div class="table-wrap">${tableHtml(matchRows, matchColumns, ["player_a", "player_b", "source"])}</div>` : `<p class="empty">${escapeHtml(t(state.language, "matchup.empty"))}</p>`}
+    ${matches.length ? `<div class="table-wrap">${tableHtml(matchRows, matchColumns, ["player_a", "player_b", "videos", "source"])}</div>` : `<p class="empty">${escapeHtml(t(state.language, "matchup.empty"))}</p>`}
   `;
 }
 

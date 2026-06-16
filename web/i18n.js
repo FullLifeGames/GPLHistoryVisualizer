@@ -20,6 +20,13 @@ export const TRANSLATIONS = {
       loaded: "CSV-Daten geladen",
       failed: "CSV-Laden fehlgeschlagen",
     },
+    loading: {
+      title: "GPL-Daten werden geladen",
+      subtitle: "CSV-Dateien werden vorbereitet.",
+      progress: "{completed} / {total} Dateien",
+      dataset: "Lade {name}",
+      ready: "Daten bereit",
+    },
     actions: {
       exportCsv: "CSV exportieren",
       videoUrls: "Video-URL-Liste",
@@ -400,6 +407,13 @@ export const TRANSLATIONS = {
       loading: "Loading CSV data",
       loaded: "CSV data loaded",
       failed: "CSV load failed",
+    },
+    loading: {
+      title: "Loading GPL data",
+      subtitle: "Preparing CSV files.",
+      progress: "{completed} / {total} files",
+      dataset: "Loading {name}",
+      ready: "Data ready",
     },
     actions: {
       exportCsv: "Export CSV",

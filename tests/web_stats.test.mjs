@@ -10,6 +10,7 @@ import {
   missingDataRows,
   personStorySummary,
   personPokemonHighlights,
+  personOptionsFromAllTimeRows,
   pokemonDraftOverviewRows,
   pokemonTitleIndex,
   pokemonStorySummary,
@@ -368,6 +369,25 @@ assert.deepEqual(
   [
     { name: "Bene", matches: 16, wins: 10, losses: 6, seasons_won: 1 },
     { name: "LucarioLP", matches: 10, wins: 3, losses: 7, seasons_won: 0 },
+  ],
+);
+
+assert.deepEqual(
+  personOptionsFromAllTimeRows(
+    [
+      { season_id: "season_010", person_id: "person_bene", person_name: "Bene", team_name: "Victini Bottom", wins: "10", losses: "2" },
+      { season_id: "season_010", person_id: "person_nestfloh", person_name: "Nestfloh", team_name: "Rotom Rally", wins: "9", losses: "3" },
+    ],
+    [{ season_id: "season_010", champion_person_id: "person_bene", champion_name: "Bene", champion_team: "Victini Bottom" }],
+    (value) =>
+      String(value ?? "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim(),
+  ),
+  [
+    { value: "bene", label: "Bene" },
+    { value: "nestfloh", label: "Nestfloh" },
   ],
 );
 

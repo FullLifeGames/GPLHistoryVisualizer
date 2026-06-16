@@ -247,6 +247,20 @@ export function aggregatePersonStats(statRows, championRows = []) {
     }));
 }
 
+export function personOptionsFromAllTimeRows(statRows = [], championRows = [], normalizeKey = normalizedStatsKey) {
+  const choices = new Map();
+  aggregatePersonStats(statRows, championRows).forEach((row) => {
+    const label = String(row.name ?? "").trim();
+    const value = normalizeKey(label);
+    if (!label || !value) return;
+    const current = choices.get(value);
+    if (!current || label.length < current.label.length) {
+      choices.set(value, { value, label });
+    }
+  });
+  return [...choices.values()].sort((a, b) => a.label.localeCompare(b.label));
+}
+
 export function primaryCompetitionRows(rows, selectedDivision = "all") {
   if (selectedDivision !== "all") {
     return rows.filter((row) => row.division === selectedDivision);
