@@ -123,10 +123,8 @@ export const TRANSLATIONS = {
       excludeAgUber: "Ohne AG/Uber",
     },
     dataModes: {
-      primary: "Hauptliga",
-      leagueOne: "Liga 1",
+      primary: "Gesamtübersicht",
       leagueTwo: "Liga 2",
-      all: "Alle",
     },
     coverage: {
       missingTitle: "Bekannte Lücken",
@@ -470,10 +468,8 @@ export const TRANSLATIONS = {
       excludeAgUber: "Without AG/Uber",
     },
     dataModes: {
-      primary: "Main league",
-      leagueOne: "League 1",
+      primary: "Overall",
       leagueTwo: "League 2",
-      all: "All",
     },
     pokemonDetails: {
       focus: "Pokémon",

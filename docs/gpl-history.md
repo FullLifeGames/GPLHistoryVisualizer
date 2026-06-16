@@ -1,6 +1,6 @@
 # German Pokémon League History
 
-Generated: 2026-06-15T19:08:14.077580+00:00
+Generated: 2026-06-16T05:27:13.790717+00:00
 
 This report is generated from the normalized CSV files. Champions are recorded from sourced adapter evidence where available. Rows marked `user_provided` are explicit corrections only; unavailable playoff winners remain null.
 
@@ -20,7 +20,7 @@ This report is generated from the normalized CSV files. Champions are recorded f
 
 ## Coverage
 
-- Source claim rows: 28336
+- Source claim rows: 28314
 - Data quality rows: 10
 
 - Seasons represented: 10

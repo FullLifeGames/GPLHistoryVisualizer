@@ -35,12 +35,21 @@ def test_parse_gpl_video_title_extracts_season_week_and_playoff_round():
     assert parsed["season_id"] == "season_010"
     assert parsed["week_number"] == 7
     assert parsed["stage"] == "regular_season"
+    assert parsed["division"] is None
 
     playoff = parse_gpl_video_title("German Pokémon League S7 Playoffs Finale vs Nestfloh")
     assert playoff["is_gpl"] is True
     assert playoff["season_id"] == "season_007"
     assert playoff["stage"] == "playoffs"
     assert playoff["round"] == "finale"
+
+    league_two = parse_gpl_video_title("GPL [S5] [Liga 2] - Spieltag 01 - vs. Elekid's Club")
+    assert league_two["season_id"] == "season_005"
+    assert league_two["week_number"] == 1
+    assert league_two["division"] == "Liga 2"
+
+    storyline = parse_gpl_video_title("GPL [S4] - Spieltag 22 - vs. Enteikutierung: Relegation oder Liga 1?")
+    assert storyline["division"] is None
 
 
 def test_classify_video_type_distinguishes_games_teambuildings_and_other_gpl_videos():
@@ -192,6 +201,28 @@ def test_match_video_to_matches_rejects_teambuildings_even_with_season_context()
     assert match_video_to_matches(video, matches) is None
 
 
+def test_match_video_to_matches_rejects_explicit_division_mismatch():
+    video = {
+        "title": "Die GPL Cypher beginnt! - GPL [S5] [Liga 2] - Spieltag 01 - vs. Elekid's Club",
+        "channel_person_name": "PokeBazi",
+    }
+    matches = [
+        {
+            "season_id": "season_005",
+            "match_id": "season_005_schedule_0001",
+            "week": "1. Spieltag - Sonntag der 11.03.2018",
+            "stage": "regular_season",
+            "division": "Liga 1",
+            "player_a": "Bene",
+            "player_b": "Lauris",
+            "team_a": "Victini Bottom",
+            "team_b": "Shockwaving Magearnas",
+        }
+    ]
+
+    assert match_video_to_matches(video, matches) is None
+
+
 def test_build_video_archive_uses_matched_season_when_title_has_no_season(tmp_path):
     raw_dir = tmp_path / "raw" / "video_archive"
     normalized_dir = tmp_path / "normalized"
@@ -267,6 +298,71 @@ def test_build_video_archive_uses_matched_season_when_title_has_no_season(tmp_pa
     assert "matched season" in archive_rows[0]["confidence_explanation"]
     assert match_rows[0]["season_id"] == "season_001"
     assert (normalized_dir / "video_urls.txt").read_text(encoding="utf-8").strip() == "https://www.youtube.com/watch?v=abc123"
+
+
+def test_build_video_archive_keeps_explicit_liga2_video_without_wrong_match(tmp_path):
+    raw_dir = tmp_path / "raw" / "video_archive"
+    normalized_dir = tmp_path / "normalized"
+    raw_dir.mkdir(parents=True)
+    normalized_dir.mkdir()
+
+    uploads_path = raw_dir / "pokebazi_uploads.json"
+    (raw_dir / "channels.json").write_text(
+        json.dumps(
+            [
+                {
+                    "channelId": "UCbazi",
+                    "title": "PokeBazi",
+                    "canonical_url": "https://www.youtube.com/c/PokeBazi",
+                    "source_person_names": "PokeBazi",
+                    "source_team_names": "Krebuknackis",
+                    "source_urls": "https://www.youtube.com/c/PokeBazi",
+                    "raw_path": str(uploads_path).replace("\\", "/"),
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    uploads_path.write_text(
+        json.dumps(
+            [
+                {
+                    "videoId": "liga2s5",
+                    "title": "Die GPL Cypher beginnt! - GPL [S5] [Liga 2] - Spieltag 01 - vs. Elekid's Club",
+                    "publishedAt": "2018-03-11T10:00:00Z",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    _write_test_csv(
+        normalized_dir / "matches.csv",
+        [
+            {
+                "season_id": "season_005",
+                "match_id": "season_005_schedule_0001",
+                "division": "Liga 1",
+                "stage": "regular_season",
+                "week": "1. Spieltag - Sonntag der 11.03.2018",
+                "player_a": "Bene",
+                "player_b": "Lauris",
+                "team_a": "Victini Bottom",
+                "team_b": "Shockwaving Magearnas",
+                "data_status": "sheet_extracted",
+            }
+        ],
+    )
+    _write_test_csv(normalized_dir / "teams.csv", [])
+
+    archive_rows, match_rows = build_video_archive(tmp_path)
+
+    assert len(archive_rows) == 1
+    assert archive_rows[0]["division"] == "Liga 2"
+    assert archive_rows[0]["detected_season_id"] == "season_005"
+    assert archive_rows[0]["detected_week"] == "1"
+    assert archive_rows[0]["match_status"] == "unmatched"
+    assert archive_rows[0]["best_match_id"] is None
+    assert match_rows == []
 
 
 def test_build_video_archive_sorts_weeks_numerically(tmp_path):

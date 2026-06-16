@@ -19,7 +19,7 @@ assert.equal(t("de", "status.loaded"), "CSV-Daten geladen");
 assert.equal(t("de", "actions.exportCsv"), "CSV exportieren");
 assert.equal(t("en", "actions.videoUrls"), "Video URL List");
 assert.equal(t("de", "filters.dataMode"), "Datenbasis");
-assert.equal(t("de", "dataModes.primary"), "Hauptliga");
+assert.equal(t("de", "dataModes.primary"), "Gesamtübersicht");
 assert.equal(t("de", "dataModes.leagueTwo"), "Liga 2");
 assert.equal(t("en", "columns.elo"), "Elo");
 assert.equal(t("de", "videoTypes.draft_analysis"), "Draftanalyse");

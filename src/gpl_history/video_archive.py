@@ -26,6 +26,7 @@ VIDEO_ARCHIVE_FIELDS = [
     "source_person_names",
     "source_team_names",
     "source_seasons",
+    "division",
     "detected_season_id",
     "detected_week",
     "detected_stage",
@@ -181,11 +182,29 @@ def parse_gpl_video_title(title: str | None) -> dict[str, Any]:
     return {
         "is_gpl": bool(_GPL_RE.search(text)),
         "season_id": f"season_{int(season_match.group(1)):03d}" if season_match else None,
+        "division": _division_from_title(text),
         "week_number": int(week_match.group(1)) if week_match else None,
         "stage": stage,
         "round": round_label,
         "video_type": classify_video_type(text),
     }
+
+
+def _division_from_title(title: str | None) -> str | None:
+    folded = _fold_text(title)
+    if re.search(r"\b(?:oder|or)\s+liga\s*[12]\b", folded):
+        return None
+    if re.search(r"\bliga\s*1\s*(?:und|and)?\s*2\b", folded):
+        return None
+    has_league_one = bool(re.search(r"\bliga\s*1\b|\bl1\b", folded))
+    has_league_two = bool(re.search(r"\bliga\s*2\b|\bl2\b", folded))
+    if has_league_one and has_league_two:
+        return None
+    if has_league_one:
+        return "Liga 1"
+    if has_league_two:
+        return "Liga 2"
+    return None
 
 
 def classify_video_type(title: str | None) -> str:
@@ -348,6 +367,7 @@ def build_video_archive(data_dir: Path) -> tuple[list[dict[str, Any]], list[dict
                 "source_person_names": channel.get("source_person_names"),
                 "source_team_names": channel.get("source_team_names"),
                 "source_seasons": channel.get("source_seasons"),
+                "division": parsed["division"],
                 "detected_season_id": parsed["season_id"],
                 "detected_week": str(parsed["week_number"]) if parsed["week_number"] is not None else None,
                 "detected_stage": parsed["stage"],
@@ -364,6 +384,7 @@ def build_video_archive(data_dir: Path) -> tuple[list[dict[str, Any]], list[dict
             )
             if match:
                 video_row["detected_season_id"] = video_row.get("detected_season_id") or match.get("season_id")
+                video_row["division"] = video_row.get("division") or match.get("division")
                 video_row["detected_week"] = video_row.get("detected_week") or (
                     str(_week_number(match.get("week"))) if _week_number(match.get("week")) is not None else None
                 )
@@ -424,6 +445,8 @@ def match_video_to_matches(video: dict[str, Any], matches: list[dict[str, Any]])
     candidates: list[dict[str, Any]] = []
     for match in matches:
         if parsed["season_id"] and match.get("season_id") != parsed["season_id"]:
+            continue
+        if parsed["division"] and match.get("division") != parsed["division"]:
             continue
         score = 0
         reasons: list[str] = []

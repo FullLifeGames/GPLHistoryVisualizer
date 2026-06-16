@@ -389,7 +389,7 @@ function savePreference(key, value) {
 }
 
 function normalizeDataMode(value) {
-  return new Set(["primary", "league1", "league2", "all"]).has(value) ? value : "primary";
+  return value === "league2" ? "league2" : "primary";
 }
 
 async function loadDatasets() {
@@ -467,7 +467,7 @@ function populateSeasonFilter() {
 
 function populateDivisionFilter() {
   const divisions = new Set();
-  ["standings", "personStints", "matches", "matchVideos", "teams", "killlists"].forEach((dataset) => {
+  ["standings", "personStints", "matches", "matchVideos", "teams", "killlists", "videos"].forEach((dataset) => {
     (state.data[dataset] ?? []).filter(applyDataMode).forEach((row) => {
       if (row.division) {
         divisions.add(row.division);
@@ -590,28 +590,10 @@ function applyDataMode(row) {
   if (!division) {
     return state.dataMode !== "league2";
   }
-  if (state.dataMode === "all") {
-    return true;
-  }
-  if (state.dataMode === "league1") {
-    return division === "Liga 1";
-  }
   if (state.dataMode === "league2") {
     return division === "Liga 2";
   }
-  if (division !== "Liga 2") {
-    return true;
-  }
-  return !seasonHasLeagueOne(row.season_id || row.detected_season_id);
-}
-
-function seasonHasLeagueOne(seasonId) {
-  if (!seasonId) {
-    return false;
-  }
-  return ["standings", "personStints", "matches", "matchVideos", "teams", "killlists"].some((dataset) =>
-    (state.data[dataset] ?? []).some((row) => (row.season_id || row.detected_season_id) === seasonId && row.division === "Liga 1"),
-  );
+  return division !== "Liga 2";
 }
 
 function metricCard(label, value) {
@@ -1127,6 +1109,7 @@ function renderVideoArchive() {
       _season_order: seasonOrder(row.detected_season_id),
       _week_order: weekNumber(row.detected_week),
       season: seasonDisplay(row.detected_season_id),
+      division: divisionDisplay(row.division, row.detected_stage),
       video_type: videoTypeDisplay(row.video_type),
       stage: stageDisplay(row.detected_stage),
       detected_week: row.detected_week,
@@ -1145,7 +1128,7 @@ function renderVideoArchive() {
   renderTable(
     "#video-archive-table",
     rows,
-    ["season", "video_type", "stage", "detected_week", "perspective_person", "opponent", "title", "channel", "match_status", "confidence", "confidence_tier", "match_basis", "confidence_explanation", "match_id", "published_at"],
+    ["season", "division", "video_type", "stage", "detected_week", "perspective_person", "opponent", "title", "channel", "match_status", "confidence", "confidence_tier", "match_basis", "confidence_explanation", "match_id", "published_at"],
     ["title"],
     {
       filename: "gpl-video-archive.csv",
