@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { columnTitle, nextLanguage, nextTheme, normalizeLanguage, normalizeTheme, t } from "../web/i18n.js";
+import { TABULATOR_LANGS, columnTitle, nextLanguage, nextTheme, normalizeLanguage, normalizeTheme, t } from "../web/i18n.js";
 
 assert.equal(normalizeLanguage("fr-FR"), "de");
 assert.equal(normalizeLanguage("en-US"), "en");
@@ -16,13 +16,29 @@ assert.equal(t("en", "nav.pokemonDetail"), "Pokémon Details");
 assert.equal(t("de", "nav.pokemonDrafts"), "Pokémon-Drafts");
 assert.equal(t("de", "nav.teamRosters"), "Kaderübersichten");
 assert.equal(t("de", "sections.pokemonDraftsDescription"), "Formgenaue Draft-Häufigkeit aus Killlisten und geprüften Teamgrafik-Zuordnungen.");
+assert.equal(t("de", "sections.killlistsDescription"), "Summierte Pokémon-Kills über den aktuell gefilterten CSV-Datenbestand.");
+assert.equal(t("de", "sections.tableHistoryDescription"), "Tabellenstände je Saison mit Quellenlink pro Zeile.");
+assert.equal(t("de", "sections.battleHistoryDescription"), "Grafische Sicht auf Playoffs, Gruppenphasen und belegte Matchwege der gewählten Saison.");
+assert.equal(t("de", "sections.videoArchiveDescription"), "Öffentliche GPL-Videos aus Teilnehmerkanälen mit Best-effort-Zuordnung zu Spieltagen.");
+assert.equal(t("de", "sections.dataCoverageDescription"), "Saisonweise Abdeckung der normalisierten CSVs und bekannte Lücken.");
+assert.equal(t("de", "sections.matchupDescription"), "Vergleiche zwei Trainer oder Teams anhand verfügbarer Match-Zeilen.");
 assert.equal(t("en", "sections.teamRostersTitle"), "Roster Overview");
+assert.equal(t("de", "empty.table"), "Für diese Ansicht gibt es noch keine belegten Zeilen.");
+assert.equal(t("de", "empty.chooseSeason"), "Wähle eine einzelne Saison aus, um den Spielplan zu sehen.");
+assert.equal(t("de", "empty.chooseSeasonDetail"), "Wähle eine einzelne Saison aus, um die Saisonakte zu sehen.");
+assert.equal(t("de", "empty.loadError"), "Normalisierte CSV-Dateien konnten nicht geladen werden. Führe zuerst den Collector aus.");
 assert.equal(t("de", "status.loaded"), "CSV-Daten geladen");
 assert.equal(t("de", "actions.exportCsv"), "CSV exportieren");
 assert.equal(t("en", "actions.videoUrls"), "Video URL List");
 assert.equal(t("de", "filters.dataMode"), "Datenbasis");
 assert.equal(t("de", "dataModes.primary"), "Gesamtübersicht");
 assert.equal(t("de", "dataModes.leagueTwo"), "Liga 2");
+assert.equal(t("de", "coverage.missingTitle"), "Bekannte Lücken");
+assert.equal(t("de", "coverage.status.complete"), "vollständig");
+assert.equal(t("de", "coverage.status.complete_with_review_flags"), "vollständig mit Review-Hinweisen");
+assert.equal(TABULATOR_LANGS.de.pagination.page_size, "Einträge");
+assert.equal(TABULATOR_LANGS.de.pagination.prev, "Zurück");
+assert.equal(TABULATOR_LANGS.de.pagination.next_title, "Nächste Seite");
 assert.equal(t("en", "columns.elo"), "Elo");
 assert.equal(t("de", "videoTypes.draft_analysis"), "Draftanalyse");
 assert.equal(t("en", "matchStatuses.unmatched"), "Unmatched");
@@ -47,5 +63,8 @@ assert.equal(columnTitle("en", "trainers"), "Trainers");
 assert.doesNotMatch(JSON.stringify({
   nav: t("de", "nav"),
   sections: t("de", "sections"),
+  empty: t("de", "empty"),
+  coverage: t("de", "coverage"),
   pokemonDrafts: t("de", "pokemonDrafts"),
-}), /Ã/);
+  tabulator: TABULATOR_LANGS.de,
+}), /Ã|\?ber|W\?hle|Tabellenstnde|gewhlten|Teilnehmerkanlen|Fr diese|Fhre|Lcken|verfgbarer|vollstndig|Eintrge|Zurck|Nchste/);

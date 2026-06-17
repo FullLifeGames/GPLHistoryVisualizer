@@ -189,7 +189,7 @@ function bindControls() {
     setStatus("CSV in Zwischenablage kopiert");
   });
   document.querySelector("#entry-reset").addEventListener("click", () => {
-    if (!confirm("Alle lokalen Zuordnungen fuer diese Maske loeschen?")) return;
+    if (!confirm("Alle lokalen Zuordnungen für diese Maske löschen?")) return;
     state.assignments.clear();
     localStorage.removeItem(storageKey());
     render();
@@ -219,7 +219,7 @@ function render() {
 
   const target = document.querySelector("#entry-table");
   if (!rows.length) {
-    target.innerHTML = '<p class="empty">Keine Zeilen fuer diesen Filter.</p>';
+    target.innerHTML = '<p class="empty">Keine Zeilen für diesen Filter.</p>';
     return;
   }
   target.innerHTML = `

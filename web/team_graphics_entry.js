@@ -165,7 +165,7 @@ function bindControls() {
     setStatus("CSV in Zwischenablage kopiert");
   });
   document.querySelector("#graphics-reset").addEventListener("click", () => {
-    if (!confirm("Alle lokalen Grafik-Zuordnungen loeschen?")) return;
+    if (!confirm("Alle lokalen Grafik-Zuordnungen löschen?")) return;
     state.pokemonAssignments.clear();
     state.groupAssignments.clear();
     localStorage.removeItem(storageKey());
@@ -195,7 +195,7 @@ function render() {
 
   const target = document.querySelector("#graphics-groups");
   if (!visibleGroups.length) {
-    target.innerHTML = '<p class="empty">Keine Grafik-Slots fuer diesen Filter.</p>';
+    target.innerHTML = '<p class="empty">Keine Grafik-Slots für diesen Filter.</p>';
     return;
   }
   target.innerHTML = visibleGroups.map(groupHtml).join("");
