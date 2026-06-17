@@ -22,6 +22,7 @@ assert.equal(viewGroupForView("season-detail"), "seasons");
 assert.equal(viewGroupForView("table-history"), "seasons");
 assert.equal(viewGroupForView("match-plan"), "seasons");
 assert.equal(viewGroupForView("battle-history"), "seasons");
+assert.equal(viewGroupForView("team-rosters"), "seasons");
 assert.equal(viewGroupForView("video-archive"), "seasons");
 assert.equal(viewGroupForView("data-coverage"), "data");
 assert.equal(viewGroupForView("review-workflow"), "data");
@@ -30,4 +31,4 @@ assert.equal(viewGroupForView("missing"), "people");
 
 assert.deepEqual(subviewsForGroup("people"), ["all-time", "matchup"]);
 assert.deepEqual(subviewsForGroup("pokemon"), ["killlists", "pokemon-drafts"]);
-assert.deepEqual(subviewsForGroup("seasons"), ["season-detail", "table-history", "match-plan", "battle-history", "video-archive"]);
+assert.deepEqual(subviewsForGroup("seasons"), ["season-detail", "table-history", "match-plan", "battle-history", "team-rosters", "video-archive"]);

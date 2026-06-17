@@ -2712,6 +2712,8 @@ def _clean_person_label(value: str | None) -> str | None:
 
 
 def _fold_text(value: str) -> str:
+    value = value.replace("ä", "ae").replace("ö", "oe").replace("ü", "ue").replace("ß", "ss")
+    value = value.replace("Ä", "Ae").replace("Ö", "Oe").replace("Ü", "Ue").replace("é", "e")
     value = value.replace("Ã¤", "ae").replace("Ã¶", "oe").replace("Ã¼", "ue").replace("ÃŸ", "ss")
     value = value.replace("Ã„", "Ae").replace("Ã–", "Oe").replace("Ãœ", "Ue").replace("Ã©", "e")
     normalized = unicodedata.normalize("NFKD", value)

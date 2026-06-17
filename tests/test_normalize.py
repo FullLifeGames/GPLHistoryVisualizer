@@ -325,6 +325,7 @@ def test_old_project_sheet_supplies_s3_to_s5_pokemon_kills_with_reviewed_team_us
     assert by_season_pokemon[("season_003", "Demeteros-T")]["kills"] == "15"
     assert by_season_pokemon[("season_004", "Demeteros-T")]["kills"] == "17"
     assert by_season_pokemon[("season_005", "Demeteros-T")]["kills"] == "12"
+    assert by_season_pokemon[("season_005", "Zygarde-50")]["kills"] == "20"
 
     sample = by_season_pokemon[("season_005", "Snibunna")]
     assert sample["division"] == "Liga 1"
@@ -337,6 +338,16 @@ def test_old_project_sheet_supplies_s3_to_s5_pokemon_kills_with_reviewed_team_us
     assert sample["differential"] is None
     assert "1JZpA-5XDldN2bjfvhvBPHYK-1AENETLnF1UxNEpWlNA" in sample["source_urls"]
     assert "data/manual/team_pokemon_usage.csv" in sample["source_urls"]
+
+    zygarde = by_season_pokemon[("season_005", "Zygarde-50")]
+    assert zygarde["division"] == "Liga 1"
+    assert zygarde["trainer"] == "Bene"
+    assert zygarde["trainer_normalized"] == "bene"
+    assert zygarde["team_name"] == "Victini Bottom"
+    assert zygarde["data_status"] == "manual_override"
+    assert "1JZpA-5XDldN2bjfvhvBPHYK-1AENETLnF1UxNEpWlNA" in zygarde["source_urls"]
+    assert "data/manual/team_pokemon_usage.csv" in zygarde["source_urls"]
+    assert "data/manual/pokemon_killlists.csv" in zygarde["source_urls"]
 
 
 def test_s9_killlists_preserve_team_from_wide_summary_rows():

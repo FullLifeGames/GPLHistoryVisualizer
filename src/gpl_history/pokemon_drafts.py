@@ -55,10 +55,14 @@ TIER_ORDER = {
 
 def build_and_write_pokemon_draft_overview(data_dir: Path, refresh: bool = False) -> list[dict[str, Any]]:
     formats_text = _read_or_fetch_formats_data(data_dir, refresh)
+    team_usage = [
+        *_read_csv(data_dir / "manual" / "team_pokemon_usage.csv"),
+        *_read_csv(data_dir / "normalized" / "team_rosters.csv"),
+    ]
     rows = build_pokemon_draft_overview(
         _read_csv(data_dir / "normalized" / "pokemon_name_translations.csv"),
         _read_csv(data_dir / "normalized" / "pokemon_killlists.csv"),
-        _read_csv(data_dir / "manual" / "team_pokemon_usage.csv"),
+        team_usage,
         formats_text,
         _read_csv(data_dir / "normalized" / "champions.csv"),
     )
@@ -84,12 +88,15 @@ def build_pokemon_draft_overview(
     rows: list[dict[str, Any]] = []
     for asset, form in forms.items():
         drafts = draft_map.get(asset, [])
+        tier_info = tier_lookup.get(asset, {})
+        if not drafts and not _is_gen9_natdex_candidate(tier_info):
+            continue
         seasons = sorted({draft["season_id"] for draft in drafts if draft.get("season_id")}, key=_season_sort)
         title_seasons = title_seasons_by_asset.get(asset, [])
         trainers = {draft["trainer"] for draft in drafts if draft.get("trainer")}
         teams = {draft["team"] for draft in drafts if draft.get("team")}
         sources = _join_sources(form.get("source_url"), *(draft.get("source_urls") for draft in drafts))
-        tier = tier_lookup.get(asset, {}).get("tier", "")
+        tier = tier_info.get("tier", "")
         rows.append(
             {
                 "species_id": form.get("species_id", ""),
@@ -125,9 +132,20 @@ def parse_showdown_tiers(formats_data: str) -> dict[str, dict[str, str]]:
         asset = match.group(1)
         block = match.group(2)
         tier_match = re.search(r'tier:\s*"([^"]+)"', block)
-        if tier_match:
-            tiers[asset] = {"tier": tier_match.group(1)}
+        natdex_tier_match = re.search(r'natDexTier:\s*"([^"]+)"', block)
+        if tier_match or natdex_tier_match:
+            standard_tier = tier_match.group(1) if tier_match else ""
+            natdex_tier = natdex_tier_match.group(1) if natdex_tier_match else ""
+            tiers[asset] = {
+                "tier": natdex_tier or standard_tier,
+                "standard_tier": standard_tier,
+                "natdex_tier": natdex_tier,
+            }
     return tiers
+
+
+def _is_gen9_natdex_candidate(tier_info: dict[str, str]) -> bool:
+    return bool(tier_info.get("natdex_tier"))
 
 
 def _translation_forms(translations: list[dict[str, str]]) -> dict[str, dict[str, str]]:

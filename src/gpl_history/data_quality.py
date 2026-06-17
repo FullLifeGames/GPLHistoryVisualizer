@@ -59,6 +59,7 @@ CLAIM_TABLES = {
 }
 
 GENERATED_ARTIFACTS = [
+    (Path("normalized") / "team_rosters.csv", "data/normalized/team_rosters.csv"),
     (Path("normalized") / "pokemon_draft_overview.csv", "data/normalized/pokemon_draft_overview.csv"),
     (Path("normalized") / "data_quality.csv", "data/normalized/data_quality.csv"),
     (Path("normalized") / "source_claims.csv", "data/normalized/source_claims.csv"),
@@ -82,11 +83,13 @@ def check_generated_artifacts(data_dir: Path) -> list[str]:
         for relative_path, logical_path in GENERATED_ARTIFACTS
     }
 
-    generate_data_quality(data_dir)
     from .pokemon_drafts import build_and_write_pokemon_draft_overview
     from .review import generate_review_queue
+    from .team_rosters import build_and_write_team_rosters
 
+    build_and_write_team_rosters(data_dir)
     build_and_write_pokemon_draft_overview(data_dir)
+    generate_data_quality(data_dir)
     generate_review_queue(data_dir)
 
     changed = []

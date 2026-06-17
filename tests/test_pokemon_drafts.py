@@ -5,12 +5,22 @@ FORMATS_DATA = """
 export const FormatsData = {
   bulbasaur: {
     tier: "LC",
+    natDexTier: "LC",
   },
   charizard: {
     tier: "ZU",
   },
   charizardmegax: {
     tier: "Uber",
+  },
+  gengarmega: {
+    isNonstandard: "Past",
+    tier: "Illegal",
+    natDexTier: "OU",
+  },
+  gengargmax: {
+    isNonstandard: "Past",
+    tier: "Illegal",
   },
   pikachu: {
     tier: "ZU",
@@ -81,9 +91,40 @@ def test_build_pokemon_draft_overview_is_form_level_and_marks_never_picked():
     assert by_asset["charizardmegax"]["season_list"] == "S3"
     assert by_asset["pikachu"]["draft_count"] == "1"
     assert by_asset["pikachu"]["source_urls"] == "pokeapi;kill-source"
-    assert by_asset["charizard"]["draft_count"] == "0"
-    assert by_asset["charizard"]["picked_status"] == "never_picked"
+    assert "charizard" not in by_asset
     assert int(by_asset["bulbasaur"]["tier_rank"]) > int(by_asset["charizardmegax"]["tier_rank"])
+
+
+def test_build_pokemon_draft_overview_uses_gen9_natdex_for_never_picked_forms():
+    translations = [
+        {"species_id": "94", "german": "Mega-Gengar", "english": "gengar-mega", "asset_id": "gengarmega", "source_url": "pokeapi"},
+        {"species_id": "94", "german": "Giga-Gengar", "english": "gengar-gmax", "asset_id": "gengargmax", "source_url": "pokeapi"},
+        {"species_id": "25", "german": "Pikachu", "english": "Pikachu", "asset_id": "pikachu", "source_url": "pokeapi"},
+    ]
+    killlists = [
+        {
+            "season_id": "season_008",
+            "pokemon": "Giga-Gengar",
+            "pokemon_normalized": "giga gengar",
+            "trainer": "A",
+            "team_name": "Alpha",
+            "data_status": "sheet_extracted",
+            "source_urls": "picked-gmax-source",
+        },
+    ]
+
+    rows = build_pokemon_draft_overview(translations, killlists, [], FORMATS_DATA)
+    by_asset = {row["asset_id"]: row for row in rows}
+
+    assert by_asset["gengarmega"]["picked_status"] == "never_picked"
+    assert by_asset["gengarmega"]["tier"] == "OU"
+    assert by_asset["gengarmega"]["tier_rank"] == "3"
+    assert by_asset["gengargmax"]["picked_status"] == "picked"
+    assert by_asset["gengargmax"]["draft_count"] == "1"
+
+    never_picked_assets = {row["asset_id"] for row in rows if row["picked_status"] == "never_picked"}
+    assert "gengarmega" in never_picked_assets
+    assert "gengargmax" not in never_picked_assets
 
 
 def test_build_pokemon_draft_overview_counts_titles_from_champion_teams_once_per_season():

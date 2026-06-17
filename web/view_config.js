@@ -17,7 +17,7 @@ export const VIEW_GROUPS = [
     id: "seasons",
     labelKey: "navGroups.seasons",
     defaultView: "season-detail",
-    views: ["season-detail", "table-history", "match-plan", "battle-history", "video-archive"],
+    views: ["season-detail", "table-history", "match-plan", "battle-history", "team-rosters", "video-archive"],
   },
   {
     id: "data",

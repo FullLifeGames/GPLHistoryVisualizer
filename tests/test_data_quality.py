@@ -169,8 +169,11 @@ def test_generate_data_quality_writes_source_claims_and_quality_rows(tmp_path):
 def test_check_generated_artifacts_reports_drift(tmp_path):
     normalized = tmp_path / "normalized"
     review = tmp_path / "review"
+    showdown_cache = tmp_path / "raw" / "pokemon_showdown"
     normalized.mkdir()
     review.mkdir()
+    showdown_cache.mkdir(parents=True)
+    (showdown_cache / "formats-data.ts").write_text("export const FormatsData = {};\n", encoding="utf-8")
     _write_csv(normalized / "seasons.csv", [{"season_id": "season_001", "season_label": "Season 1"}])
     _write_csv(normalized / "standings.csv", [])
     _write_csv(normalized / "matches.csv", [])
@@ -188,6 +191,7 @@ def test_check_generated_artifacts_reports_drift(tmp_path):
     changed = check_generated_artifacts(tmp_path)
 
     assert changed == [
+        "data/normalized/team_rosters.csv",
         "data/normalized/pokemon_draft_overview.csv",
         "data/normalized/data_quality.csv",
         "data/review/review_index.csv",

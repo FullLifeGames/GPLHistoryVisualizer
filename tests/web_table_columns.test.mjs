@@ -8,6 +8,8 @@ import {
   POKEMON_KILLLIST_COLUMNS,
   SEASON_STANDINGS_COLUMNS,
   TABLE_HISTORY_COLUMNS,
+  TEAM_ROSTER_COLUMNS,
+  TEAM_ROSTER_POKEMON_COLUMNS,
   columnsForProfile,
 } from "../web/table_columns.js";
 
@@ -43,6 +45,34 @@ assert.deepEqual(columnsForProfile(ALL_TIME_COLUMNS, "compact"), ["rank", "name"
 assert.equal(columnsForProfile(POKEMON_KILLLIST_COLUMNS, "compact").includes("seasons"), true);
 assert.equal(columnsForProfile(POKEMON_DRAFT_COLUMNS, "compact").includes("season_count"), true);
 assert.deepEqual(columnsForProfile(ALL_TIME_COLUMNS), ALL_TIME_COLUMNS);
+assert.deepEqual(TEAM_ROSTER_COLUMNS.slice(0, 11), [
+  "rank",
+  "season",
+  "division",
+  "person",
+  "team",
+  "roster_score",
+  "power_score",
+  "performance_score",
+  "balance_score",
+  "history_score",
+  "confidence_score",
+]);
+assert.deepEqual(TEAM_ROSTER_POKEMON_COLUMNS.slice(0, 12), [
+  "rank",
+  "season",
+  "division",
+  "person",
+  "team",
+  "slot",
+  "pokemon",
+  "pokemon_score",
+  "power_score",
+  "performance_score",
+  "history_score",
+  "confidence_score",
+]);
+assert.deepEqual(columnsForProfile(TEAM_ROSTER_COLUMNS, "compact"), ["rank", "season", "division", "person", "team", "roster_score", "pokemon_count", "roster_flags"]);
 assert.equal(columnsForProfile(["season", "videos", "source"], "compact").includes("videos"), true);
 assert.equal(columnsForProfile(["season", "videos", "source"], "sources").includes("videos"), true);
 assert.deepEqual(columnsForProfile(ALL_TIME_COLUMNS, "performance"), [

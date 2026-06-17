@@ -38,6 +38,53 @@ export const POKEMON_KILLLIST_COLUMNS = [
   "teams",
 ];
 
+export const TEAM_ROSTER_COLUMNS = [
+  "rank",
+  "season",
+  "division",
+  "person",
+  "team",
+  "roster_score",
+  "power_score",
+  "performance_score",
+  "balance_score",
+  "history_score",
+  "confidence_score",
+  "pokemon_count",
+  "avg_tier_rank",
+  "top_pokemon",
+  "appearances",
+  "kills",
+  "deaths",
+  "differential",
+  "roster_flags",
+  "source",
+];
+
+export const TEAM_ROSTER_POKEMON_COLUMNS = [
+  "rank",
+  "season",
+  "division",
+  "person",
+  "team",
+  "slot",
+  "pokemon",
+  "pokemon_score",
+  "power_score",
+  "performance_score",
+  "history_score",
+  "confidence_score",
+  "tier",
+  "tier_rank",
+  "draft_count",
+  "title_count",
+  "appearances",
+  "kills",
+  "deaths",
+  "differential",
+  "source",
+];
+
 export const TABLE_HISTORY_COLUMNS = withRecordColumns(
   ["season", "division", "rank", "person", "team"],
   ["points", "kills", "deaths", "differential", "source"],
@@ -98,6 +145,10 @@ const COMPACT_COLUMNS = new Set([
   "status",
   "match_status",
   "quality_score",
+  "roster_score",
+  "pokemon_score",
+  "pokemon_count",
+  "roster_flags",
 ]);
 
 const PERFORMANCE_COLUMNS = new Set([
@@ -118,6 +169,16 @@ const PERFORMANCE_COLUMNS = new Set([
   "tier",
   "tier_rank",
   "picked_status",
+  "roster_score",
+  "pokemon_score",
+  "power_score",
+  "performance_score",
+  "balance_score",
+  "history_score",
+  "confidence_score",
+  "pokemon_count",
+  "avg_tier_rank",
+  "roster_flags",
   "tables_score",
   "matches_score",
   "killlists_score",
@@ -160,6 +221,8 @@ const HISTORY_COLUMNS = new Set([
   "best_rank",
   "best_season",
   "signature_pokemon",
+  "top_pokemon",
+  "roster_flags",
 ]);
 
 const SOURCE_COLUMNS = new Set([
@@ -188,6 +251,7 @@ const SOURCE_COLUMNS = new Set([
   "match_id",
   "videos",
   "source",
+  "roster_flags",
   "notes",
   "review_file",
   "row_count",

@@ -20,6 +20,8 @@ import {
   POKEMON_KILLLIST_COLUMNS,
   SEASON_STANDINGS_COLUMNS,
   TABLE_HISTORY_COLUMNS,
+  TEAM_ROSTER_COLUMNS,
+  TEAM_ROSTER_POKEMON_COLUMNS,
 } from "./table_columns.js";
 import { tableHeaderFilterConfig } from "./table_filters.js";
 import {
@@ -47,6 +49,8 @@ import {
   summarizePokemonDetail,
   summarizeKilllists,
   summarizeTrainerPokemon,
+  teamRosterOverviewRows,
+  teamRosterPokemonRows,
   winPercentage,
   weightedRating,
 } from "./stats.js";
@@ -66,6 +70,8 @@ const LAZY_DATASETS = {
   videos: { url: "../data/normalized/video_archive.csv", optional: true },
   matchVideos: { url: "../data/normalized/match_videos.csv", optional: true },
   pokemonDraftOverview: { url: "../data/normalized/pokemon_draft_overview.csv", optional: true },
+  teamPokemonUsage: { url: "../data/manual/team_pokemon_usage.csv", optional: true },
+  teamRosters: { url: "../data/normalized/team_rosters.csv", optional: true },
   dataQuality: { url: "../data/normalized/data_quality.csv", optional: true },
   sourceClaims: { url: "../data/normalized/source_claims.csv", optional: true },
   reviewIndex: { url: "../data/review/review_index.csv", optional: true },
@@ -86,6 +92,7 @@ const VIEW_DATASETS = {
   "table-history": [],
   "match-plan": ["matchVideos"],
   "battle-history": ["matchVideos"],
+  "team-rosters": ["pokemonDraftOverview", "teamPokemonUsage", "teamRosters"],
   "video-archive": ["videos"],
   "person-details": ["videos"],
   "data-coverage": ["dataQuality", "reviewIndex"],
@@ -106,6 +113,7 @@ const DATASET_LABELS = {
   videos: "Video-Archiv",
   matchVideos: "Video-Match-Zuordnungen",
   pokemonDraftOverview: "Pokémon-Drafts",
+  teamPokemonUsage: "Team-Pokémon-Zuordnungen",
   dataQuality: "Datenlage",
   sourceClaims: "Quellenclaims",
   reviewIndex: "Review-Index",
@@ -128,6 +136,7 @@ const state = {
   pokemonFocus: null,
   draftPickedStatus: "all",
   draftTierFilter: "all",
+  rosterCardLimit: 24,
   data: {},
   loadedDatasets: new Set(),
   loadingDatasets: new Map(),
@@ -184,6 +193,7 @@ function bindControls() {
     state.dataMode = normalizeDataMode(state.dataMode);
     savePreference("gpl-data-mode", state.dataMode);
     state.division = "all";
+    resetRosterCardLimit();
     divisionFilter.value = state.division;
     populateDivisionFilter();
     populateMatchupOptions();
@@ -237,18 +247,21 @@ function bindControls() {
 
   seasonFilter.addEventListener("change", () => {
     state.season = seasonFilter.value;
+    resetRosterCardLimit();
     populateMatchupOptions();
     render();
   });
 
   divisionFilter.addEventListener("change", () => {
     state.division = divisionFilter.value;
+    resetRosterCardLimit();
     populateMatchupOptions();
     render();
   });
 
   searchFilter.addEventListener("input", () => {
     state.search = searchFilter.value.trim().toLowerCase();
+    resetRosterCardLimit();
     populateMatchupOptions();
     render();
   });
@@ -299,6 +312,11 @@ function bindControls() {
     if (event.target.closest("[data-clear-pokemon-focus]")) {
       event.preventDefault();
       navigateToView("all-time");
+    }
+    if (event.target.closest("[data-show-more-rosters]")) {
+      event.preventDefault();
+      state.rosterCardLimit += defaultRosterCardLimit();
+      renderTeamRosters();
     }
   });
 
@@ -552,7 +570,7 @@ function renderViewLoadingState(viewName, keys) {
   if (!view) return;
   const labels = keys.map(datasetLabel).join(", ");
   const message = formatMessage(t(state.language, "loading.dataset"), { name: labels });
-  view.querySelectorAll(".table-wrap, .result-box, .summary-grid, .bracket-board").forEach((target) => {
+  view.querySelectorAll(".table-wrap, .result-box, .summary-grid, .bracket-board, .roster-grid").forEach((target) => {
     if (target.id) {
       destroyTable(`#${target.id}`);
     }
@@ -703,7 +721,7 @@ function populateSeasonFilter() {
 
 function populateDivisionFilter() {
   const divisions = new Set();
-  ["standings", "personStints", "matches", "matchVideos", "teams", "killlists", "videos"].forEach((dataset) => {
+  ["standings", "personStints", "matches", "matchVideos", "teams", "killlists", "teamPokemonUsage", "teamRosters", "videos"].forEach((dataset) => {
     (state.data[dataset] ?? []).filter(applyDataMode).forEach((row) => {
       if (row.division) {
         divisions.add(row.division);
@@ -770,6 +788,7 @@ function render() {
   renderTableHistory();
   renderMatchPlan();
   renderBracketOverview();
+  renderTeamRosters();
   renderVideoArchive();
   renderPersonDetails();
   renderPokemonDetail();
@@ -919,6 +938,18 @@ function sourceLinks(value) {
   return urls
     .map((url, index) => `<a href="${escapeAttr(url)}" target="_blank" rel="noreferrer">${escapeHtml(`${t(state.language, "values.source")} ${index + 1}`)}</a>`)
     .join(" ");
+}
+
+function sourceCell(value) {
+  const links = sourceLinks(value);
+  if (links) return links;
+  const labels = String(value ?? "")
+    .split(";")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 2)
+    .join(", ");
+  return labels ? `<span class="muted">${escapeHtml(labels)}</span>` : "";
 }
 
 function personLink(key, name) {
@@ -1088,6 +1119,174 @@ function draftOverviewFilename() {
   const picked = state.draftPickedStatus === "never_picked" ? "pokemon-never-picked" : "pokemon-draft-overview";
   const tier = state.draftTierFilter === "exclude_ag_uber" ? "-without-ag-uber" : "";
   return `${picked}${tier}.csv`;
+}
+
+function renderTeamRosters() {
+  const rosterUsageRows = [...(state.data.teamPokemonUsage ?? []), ...(state.data.teamRosters ?? [])];
+  const pokemonRows = teamRosterPokemonRows(
+    {
+      teamUsage: filtered(rosterUsageRows),
+      killlists: canonicalKilllistRows(filtered(state.data.killlists ?? []), state.division),
+      pokemonDraftOverview: state.data.pokemonDraftOverview ?? [],
+    },
+    normalizedKey,
+  );
+  const overviewRows = teamRosterOverviewRows(pokemonRows, filtered(state.data.standings ?? []));
+  renderRosterCards(overviewRows, pokemonRows);
+  renderTable(
+    "#team-roster-overview-table",
+    overviewRows.map(rosterOverviewTableRow),
+    TEAM_ROSTER_COLUMNS,
+    ["season", "person", "roster_score", "top_pokemon", "source"],
+    { filename: "team-roster-ranking.csv" },
+  );
+  renderTable(
+    "#team-roster-pokemon-table",
+    pokemonRows.map((row, index) => rosterPokemonTableRow(row, index + 1)),
+    TEAM_ROSTER_POKEMON_COLUMNS,
+    ["season", "person", "pokemon", "pokemon_score", "source"],
+    { filename: "team-roster-pokemon.csv" },
+  );
+}
+
+function rosterOverviewTableRow(row) {
+  return {
+    ...row,
+    season: seasonLink(row.season_id),
+    division: divisionDisplay(row.division),
+    person: row.person ? personLink(personIdForName(row.person), row.person) : "",
+    roster_score: scoreFormulaCell(row.roster_score, rosterScoreFormula(row)),
+    top_pokemon: topPokemonLinks(row.top_pokemon),
+    source: sourceCell(row.source_urls),
+  };
+}
+
+function rosterPokemonTableRow(row, rank) {
+  return {
+    ...row,
+    rank,
+    season: seasonLink(row.season_id),
+    division: divisionDisplay(row.division),
+    person: row.person ? personLink(personIdForName(row.person), row.person) : "",
+    pokemon: pokemonCell(row.pokemon, row.pokemon_key || normalizedKey(row.pokemon)),
+    pokemon_score: scoreFormulaCell(row.pokemon_score, pokemonScoreFormula(row)),
+    source: sourceCell(row.source_urls),
+  };
+}
+
+function renderRosterCards(overviewRows, pokemonRows) {
+  const target = document.querySelector("#team-roster-cards");
+  if (!target) return;
+  if (!overviewRows.length) {
+    target.innerHTML = `<p class="empty">${escapeHtml(t(state.language, "empty.table"))}</p>`;
+    return;
+  }
+  const pokemonByRoster = new Map();
+  pokemonRows.forEach((row) => {
+    const key = rosterIdentityKey(row);
+    const current = pokemonByRoster.get(key) ?? [];
+    current.push(row);
+    pokemonByRoster.set(key, current);
+  });
+  const limit = state.rosterCardLimit || defaultRosterCardLimit();
+  const cards = overviewRows
+    .slice(0, limit)
+    .map((row) => rosterCard(row, pokemonByRoster.get(rosterIdentityKey(row)) ?? []))
+    .join("");
+  const showMore =
+    overviewRows.length > limit
+      ? `<button class="show-more-button" type="button" data-show-more-rosters>${escapeHtml(t(state.language, "rosters.showMore"))}</button>`
+      : "";
+  target.innerHTML = `${cards}${showMore}`;
+}
+
+function rosterCard(row, pokemonRows) {
+  const sortedPokemon = [...pokemonRows].sort(
+    (a, b) => numberValue(b.pokemon_score) - numberValue(a.pokemon_score) || String(a.pokemon).localeCompare(String(b.pokemon)),
+  );
+  const flags = row.roster_flags ? `<p class="roster-flags">${escapeHtml(row.roster_flags)}</p>` : "";
+  return `
+    <article class="roster-card">
+      <div class="roster-card-head">
+        <span class="roster-rank">#${escapeHtml(row.rank)}</span>
+        <div>
+          <h3>${row.person ? personLink(personIdForName(row.person), row.person) : escapeHtml(row.team || "")}</h3>
+          <p>${escapeHtml([seasonDisplay(row.season_id), divisionDisplay(row.division), row.team].filter(Boolean).join(" · "))}</p>
+        </div>
+        <strong title="${escapeAttr(rosterScoreFormula(row))}">${escapeHtml(String(row.roster_score))}</strong>
+      </div>
+      <div class="roster-metrics">
+        ${rosterMetric("columns.pokemon_count", row.pokemon_count)}
+        ${rosterMetric("columns.avg_tier_rank", row.avg_tier_rank || "n/a")}
+        ${rosterMetric("columns.kills", row.kills)}
+        ${rosterMetric("columns.differential", row.differential)}
+      </div>
+      <div class="roster-pokemon-list">
+        ${sortedPokemon.map((pokemon) => rosterPokemonChip(pokemon)).join("")}
+      </div>
+      ${flags}
+    </article>
+  `;
+}
+
+function rosterMetric(labelKey, value) {
+  return `<span><small>${escapeHtml(t(state.language, labelKey))}</small><strong>${escapeHtml(String(value))}</strong></span>`;
+}
+
+function rosterPokemonChip(row) {
+  return `<span class="roster-pokemon-chip">${pokemonCell(row.pokemon, row.pokemon_key || normalizedKey(row.pokemon))}<small title="${escapeAttr(pokemonScoreFormula(row))}">${escapeHtml(String(row.pokemon_score))}</small></span>`;
+}
+
+function rosterIdentityKey(row) {
+  return [row.season_id, row.division, normalizedKey(row.team), normalizedKey(row.person)].join("\u0000");
+}
+
+function defaultRosterCardLimit() {
+  return state.season === "all" ? 24 : 48;
+}
+
+function resetRosterCardLimit() {
+  state.rosterCardLimit = defaultRosterCardLimit();
+}
+
+function scoreFormulaCell(value, formula) {
+  return `<span class="score-formula" title="${escapeAttr(formula)}">${escapeHtml(String(value))}</span>`;
+}
+
+function rosterScoreFormula(row) {
+  return [
+    "Balanced Kaderscore = 30% Power + 40% Performance + 15% Balance + 10% Historie + 5% Confidence.",
+    `Teilwerte: Power ${row.power_score}, Performance ${row.performance_score}, Balance ${row.balance_score}, Historie ${row.history_score}, Confidence ${row.confidence_score}.`,
+    `Angezeigt: Score ${row.roster_score}, Pokémon ${row.pokemon_count}, Ø Tier-Rang ${row.avg_tier_rank || "n/a"}.`,
+    "Balance nutzt Kadergröße bis 11, Tier-Streuung und Top-Mon-Konzentration. Fehlende Todesdaten werden geschätzt und senken Confidence.",
+  ].join(" ");
+}
+
+function pokemonScoreFormula(row) {
+  const appearances = numberValue(row.appearances);
+  const kills = numberValue(row.kills);
+  const deathsNote = row.deaths_estimated
+    ? `Tode geschätzt über erwartete Todesrate ${row.expected_death_rate}.`
+    : "Tode aus Quelle übernommen.";
+  const performanceNote = appearances
+    ? "Performance vergleicht Kills/Einsätze und Differential/Einsätze mit erwarteten Raten und dämpft kleine Samples."
+    : kills
+      ? "Performance nutzt hier kills-only: 50 + min(Kills, 30) / 30 * 25, weil Einsätze fehlen."
+      : "Performance nutzt den Fallback 45, weil Einsätze und Kills fehlen.";
+  return [
+    "Pokémon-Score = 35% Power + 45% Performance + 12% Historie + 8% Confidence.",
+    `Teilwerte: Power ${row.power_score}, Performance ${row.performance_score}, Historie ${row.history_score}, Confidence ${row.confidence_score}.`,
+    performanceNote,
+    `${deathsNote} Werte: Einsätze ${appearances}, Kills ${row.kills}, Tode ${row.deaths}, Differential ${row.differential}.`,
+  ].join(" ");
+}
+function topPokemonLinks(value) {
+  return String(value ?? "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((name) => pokemonCell(name, normalizedKey(name)))
+    .join(" ");
 }
 
 function renderPokemonDetail() {
@@ -2195,10 +2394,20 @@ const NUMERIC_COLUMNS = new Set([
   "trainer_count",
   "team_count",
   "tier_rank",
+  "slot",
+  "roster_score",
+  "pokemon_score",
+  "power_score",
+  "performance_score",
+  "balance_score",
+  "history_score",
+  "confidence_score",
+  "pokemon_count",
+  "avg_tier_rank",
 ]);
 
 function minWidthFor(column) {
-  if (["name", "person", "team", "pokemon", "trainer", "player_a", "player_b", "winner", "video", "videos", "source", "title", "channel", "perspective_person", "opponent", "video_type", "missing_data", "notes", "match_basis", "confidence_explanation", "record"].includes(column)) {
+  if (["name", "person", "team", "pokemon", "trainer", "player_a", "player_b", "winner", "video", "videos", "source", "title", "channel", "perspective_person", "opponent", "video_type", "missing_data", "notes", "match_basis", "confidence_explanation", "record", "top_pokemon", "roster_flags"].includes(column)) {
     return 170;
   }
   if (column === "status") {
@@ -2248,6 +2457,10 @@ function normalizeName(value) {
     .replaceAll("ö", "oe")
     .replaceAll("ü", "ue")
     .replaceAll("ß", "ss")
+    .replaceAll("Ã¤", "ae")
+    .replaceAll("Ã¶", "oe")
+    .replaceAll("Ã¼", "ue")
+    .replaceAll("ÃŸ", "ss")
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
 }
@@ -2256,16 +2469,20 @@ function normalizedKey(value) {
   const folded = String(value ?? "")
     .trim()
     .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
     .replaceAll("ä", "ae")
     .replaceAll("ö", "oe")
     .replaceAll("ü", "ue")
     .replaceAll("ß", "ss")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .replaceAll("Ã¤", "ae")
     .replaceAll("Ã¶", "oe")
     .replaceAll("Ã¼", "ue")
     .replaceAll("ÃŸ", "ss")
+    .replaceAll("ÃƒÂ¤", "ae")
+    .replaceAll("ÃƒÂ¶", "oe")
+    .replaceAll("ÃƒÂ¼", "ue")
+    .replaceAll("ÃƒÅ¸", "ss")
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
   return {

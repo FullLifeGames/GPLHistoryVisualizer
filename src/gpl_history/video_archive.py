@@ -81,6 +81,7 @@ _TEAMBUILDING_TOKENS = {
 _CATEGORY_TOKENS = {
     "announcement": {
         "ankundigung",
+        "ankuendigung",
         "announcement",
         "info",
         "infos",
@@ -119,6 +120,7 @@ _CATEGORY_TOKENS = {
 _OTHER_VIDEO_TOKENS = {
     "update",
     "ankundigung",
+    "ankuendigung",
     "announcement",
     "reaction",
     "recap",
@@ -797,7 +799,15 @@ def _name_key(value: str | None) -> str:
 
 
 def _fold_text(value: str | None) -> str:
-    text = unicodedata.normalize("NFD", str(value or "").lower())
+    raw = (
+        str(value or "")
+        .lower()
+        .replace("ä", "ae")
+        .replace("ö", "oe")
+        .replace("ü", "ue")
+        .replace("ß", "ss")
+    )
+    text = unicodedata.normalize("NFD", raw)
     text = "".join(char for char in text if unicodedata.category(char) != "Mn")
     text = (
         text.replace("Ã¤", "ae")

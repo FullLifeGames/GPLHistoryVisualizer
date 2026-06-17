@@ -42,8 +42,8 @@
     <main class="app-shell">
       <nav class="primary-tabs" aria-label="Hauptbereiche">
         <button class="nav-group-tab is-active" type="button" data-view-group="people" data-i18n="navGroups.people">Personen</button>
-        <button class="nav-group-tab" type="button" data-view-group="pokemon" data-i18n="navGroups.pokemon">PokÃ©mon</button>
-        <button class="nav-group-tab" type="button" data-view-group="seasons" data-i18n="navGroups.seasons">Saisons & KÃ¤mpfe</button>
+        <button class="nav-group-tab" type="button" data-view-group="pokemon" data-i18n="navGroups.pokemon">Pokémon</button>
+        <button class="nav-group-tab" type="button" data-view-group="seasons" data-i18n="navGroups.seasons">Saisons & Kämpfe</button>
         <button class="nav-group-tab" type="button" data-view-group="data" data-i18n="navGroups.data">Daten & Review</button>
       </nav>
 
@@ -54,6 +54,7 @@
         <button class="tab" data-view-group="seasons" data-view="table-history" data-i18n="nav.tableHistory">Tabellenverlauf</button>
         <button class="tab" data-view-group="seasons" data-view="match-plan" data-i18n="nav.matchPlan">Spielplan</button>
         <button class="tab" data-view-group="seasons" data-view="battle-history" data-i18n="nav.battleHistory">Spielbaum</button>
+        <button class="tab" data-view-group="seasons" data-view="team-rosters" data-i18n="nav.teamRosters">Kaderübersichten</button>
         <button class="tab" data-view-group="seasons" data-view="video-archive" data-i18n="nav.videoArchive">Video-Archiv</button>
         <button class="tab" data-view-group="data" data-view="data-coverage" data-i18n="nav.dataCoverage">Datenlage</button>
         <button class="tab" data-view-group="data" data-view="review-workflow" data-i18n="nav.reviewWorkflow">Review</button>
@@ -164,6 +165,22 @@
           <p data-i18n="sections.battleHistoryDescription">Grafische Sicht auf Playoffs, Gruppenphasen und belegte Matchwege der gewählten Saison.</p>
         </div>
         <div id="bracket-overview" class="bracket-board"></div>
+      </section>
+
+      <section id="view-team-rosters" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.teamRostersTitle">Kaderübersichten</h2>
+          <p data-i18n="sections.teamRostersDescription">Kader aus Teamgrafik-Zuordnungen, Killlisten, Draft-Tiers und GPL-Historie mit transparentem Kaderscore.</p>
+        </div>
+        <div id="team-roster-cards" class="roster-grid"></div>
+        <details class="detail-table-section" open>
+          <summary data-i18n="rosters.rankingTitle">Kader-Ranking</summary>
+          <div id="team-roster-overview-table" class="table-wrap"></div>
+        </details>
+        <details class="detail-table-section">
+          <summary data-i18n="rosters.pokemonRowsTitle">Pokémon im Kader</summary>
+          <div id="team-roster-pokemon-table" class="table-wrap"></div>
+        </details>
       </section>
 
       <section id="view-match-plan" class="view">

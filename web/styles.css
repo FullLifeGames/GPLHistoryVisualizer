@@ -553,6 +553,163 @@ input:focus,
   margin-top: 12px;
 }
 
+.roster-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 12px;
+  margin: 0 0 12px;
+}
+
+.roster-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.roster-card-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-bottom: 1px solid var(--line);
+  background:
+    linear-gradient(90deg, rgb(17 191 243 / 10%), transparent 62%),
+    var(--surface-soft);
+}
+
+.roster-card-head h3 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.roster-card-head p {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.roster-card-head > strong {
+  color: var(--accent-strong);
+  font-size: 24px;
+  line-height: 1;
+}
+
+.roster-rank {
+  display: inline-grid;
+  place-items: center;
+  min-width: 42px;
+  min-height: 32px;
+  border: 1px solid rgb(17 191 243 / 28%);
+  border-radius: 6px;
+  background: rgb(17 191 243 / 12%);
+  color: var(--accent-strong);
+  font-weight: 900;
+}
+
+.roster-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-bottom: 1px solid var(--line);
+}
+
+.roster-metrics span {
+  padding: 9px 10px;
+  border-right: 1px solid var(--cell-line);
+}
+
+.roster-metrics span:last-child {
+  border-right: 0;
+}
+
+.roster-metrics small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.roster-metrics strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 16px;
+}
+
+.roster-pokemon-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 10px;
+}
+
+.roster-pokemon-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-soft);
+  padding: 3px 7px 3px 4px;
+}
+
+.roster-pokemon-chip .pokemon-cell {
+  min-width: 0;
+}
+
+.roster-pokemon-chip .link-button {
+  max-width: 170px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.roster-pokemon-chip small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.score-formula,
+.roster-card-head > strong,
+.roster-pokemon-chip small {
+  cursor: help;
+}
+
+.roster-flags {
+  margin: 0;
+  padding: 8px 10px 10px;
+  border-top: 1px solid var(--line);
+  color: var(--warn);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.show-more-button {
+  align-self: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 800;
+  grid-column: 1 / -1;
+  justify-self: center;
+  padding: 0.7rem 1.1rem;
+}
+
+.show-more-button:hover,
+.show-more-button:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+  outline: none;
+}
+
 .subsection-head {
   margin: 16px 0 8px;
 }
@@ -1292,6 +1449,10 @@ tbody tr:hover {
   .summary-grid,
   .result-grid {
     grid-template-columns: 1fr;
+  }
+
+  .roster-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .graphics-group-head {
