@@ -47,6 +47,7 @@ import {
   primaryCompetitionRows,
   qualityRowsFromData,
   reviewWorkflowRows,
+  rosterKilllistRows,
   seasonCoverageRows,
   seasonCountFromList,
   sourceClaimsForSeason,
@@ -1362,7 +1363,7 @@ function renderTeamRosters() {
   const pokemonRows = teamRosterPokemonRows(
     {
       teamUsage: filtered(rosterUsageRows),
-      killlists: canonicalKilllistRows(filtered(state.data.killlists ?? []), state.division),
+      killlists: rosterKilllistRows(filtered(state.data.killlists ?? []), state.division),
       pokemonDraftOverview: state.data.pokemonDraftOverview ?? [],
     },
     normalizedKey,
