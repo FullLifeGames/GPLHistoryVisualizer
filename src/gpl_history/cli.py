@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Callable
 
+from .aggregates import build_and_write_aggregates
 from .data_quality import check_generated_artifacts, generate_data_quality
 from .normalize import normalize_all
 from .playlists import group_gpl_playlists
@@ -44,6 +45,9 @@ def main(argv: list[str] | None = None) -> int:
 
     data_quality = subparsers.add_parser("data-quality", help="Generate normalized data quality and source claim CSVs.")
     data_quality.add_argument("--data-dir", default="data")
+
+    aggregates = subparsers.add_parser("aggregates", help="Generate precomputed frontend aggregate CSVs.")
+    aggregates.add_argument("--data-dir", default="data")
 
     report = subparsers.add_parser("report", help="Generate docs/gpl-history.md from normalized CSVs.")
     report.add_argument("--data-dir", default="data")
@@ -96,10 +100,19 @@ def main(argv: list[str] | None = None) -> int:
         build_and_write_team_rosters(Path(args.data_dir))
         build_and_write_pokemon_draft_overview(Path(args.data_dir))
         generate_data_quality(Path(args.data_dir))
+        build_and_write_aggregates(Path(args.data_dir))
         generate_review_queue(Path(args.data_dir))
         return 0
     if args.command == "data-quality":
         counts = generate_data_quality(Path(args.data_dir))
+        aggregate_counts = build_and_write_aggregates(Path(args.data_dir))
+        for name, count in counts.items():
+            print(f"{name}: {count}")
+        for name, count in aggregate_counts.items():
+            print(f"{name}: {count}")
+        return 0
+    if args.command == "aggregates":
+        counts = build_and_write_aggregates(Path(args.data_dir))
         for name, count in counts.items():
             print(f"{name}: {count}")
         return 0
@@ -121,6 +134,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "build-video-archive":
         build_video_archive(Path(args.data_dir))
         generate_data_quality(Path(args.data_dir))
+        build_and_write_aggregates(Path(args.data_dir))
         generate_review_queue(Path(args.data_dir))
         return 0
     if args.command == "validate":
@@ -259,6 +273,7 @@ def collect_command(args: argparse.Namespace) -> int:
     build_and_write_team_rosters(data_dir)
     build_and_write_pokemon_draft_overview(data_dir)
     generate_data_quality(data_dir)
+    build_and_write_aggregates(data_dir)
     generate_review_queue(data_dir)
     generate_report(data_dir, Path("docs/gpl-history.md"))
     return 0

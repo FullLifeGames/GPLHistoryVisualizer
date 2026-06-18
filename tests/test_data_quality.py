@@ -191,6 +191,11 @@ def test_check_generated_artifacts_reports_drift(tmp_path):
     changed = check_generated_artifacts(tmp_path)
 
     assert changed == [
+        "data/normalized/person_all_time.csv",
+        "data/normalized/pokemon_all_time.csv",
+        "data/normalized/matchup_summary.csv",
+        "data/normalized/roster_scores.csv",
+        "data/normalized/season_storylines.csv",
         "data/normalized/team_rosters.csv",
         "data/normalized/pokemon_draft_overview.csv",
         "data/normalized/data_quality.csv",

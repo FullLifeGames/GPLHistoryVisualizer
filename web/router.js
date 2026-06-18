@@ -1,6 +1,7 @@
-import { isValidView } from "./view_config.js";
+import { VIEW_GROUPS, defaultViewForGroup, isValidView } from "./view_config.js";
 
 const DEFAULT_VIEW = "all-time";
+const GROUP_IDS = new Set(VIEW_GROUPS.map((group) => group.id));
 
 export function parseRouteHash(hash) {
   const raw = String(hash ?? "").replace(/^#/, "").split("?")[0].replace(/^\/+/, "");
@@ -13,6 +14,9 @@ export function parseRouteHash(hash) {
   }
   if (parts[0] === "pokemon" && parts[1]) {
     return { view: "pokemon-detail", personKey: null, pokemonKey: parts[1] };
+  }
+  if (GROUP_IDS.has(parts[0])) {
+    return { view: defaultViewForGroup(parts[0]), personKey: null };
   }
   const view = isValidView(parts[0]) ? parts[0] : DEFAULT_VIEW;
   return { view, personKey: null };

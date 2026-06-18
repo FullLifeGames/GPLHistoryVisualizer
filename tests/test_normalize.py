@@ -20,8 +20,17 @@ def test_aliases_merge_to_preferred_person_display_names():
 
     assert _canonical_name("Kaffecone") == "art n gaming"
     assert _canonical_name("Kaffeecone") == "art n gaming"
+    assert _canonical_name("TJLH100") == "art n gaming"
     assert _person_id("Kaffeecone") == "person_art_n_gaming"
+    assert _person_id("TJLH100") == "person_art_n_gaming"
     assert _display_name("Kaffecone") == "Art'n'Gaming"
+    assert _display_name("TJLH100") == "Art'n'Gaming"
+    assert _canonical_name("TheHerbertLP") == "daumenkino"
+    assert _person_id("TheHerbertLP") == "person_daumenkino"
+    assert _display_name("TheHerbertLP") == "DaumenkinoLP"
+    assert _canonical_name("FinaALFaNtAsyLP") == "silva"
+    assert _person_id("FinaALFaNtAsyLP") == "person_silva"
+    assert _display_name("FinaALFaNtAsyLP") == "Silva"
     assert _display_name("TeamMauni") == "Maxi von Vogel"
     assert _display_name("Maxi [Team Mauni]") == "Maxi von Vogel"
     assert _display_name("DauniDaunstar") == "Dauni Daunstar"
@@ -56,7 +65,7 @@ def test_write_csv_retries_transient_windows_invalid_argument(tmp_path, monkeypa
 def test_person_labels_drop_result_and_rule_notes_before_aliasing():
     assert _display_name("PresentLP nach Brechen der Item Clause") == "PresentLP"
     assert _display_name("Oktopaul; Draw nach Time Out") == "Oktopaul"
-    assert _display_name("DaumenKinoLP; Sieg für Paul nach Time Out") == "DaumenKinoLP"
+    assert _display_name("DaumenKinoLP; Sieg für Paul nach Time Out") == "DaumenkinoLP"
     assert _display_name("Crowd [Freewin]") == "CrowdController"
     assert _display_name("Morbolth Daumenkino Sieg") == "Morbolth"
 
@@ -105,7 +114,7 @@ def test_schedule_matches_from_rows_extracts_explicit_scored_cells_with_week_con
             "season_id": "season_001",
             "match_id": "season_001_schedule_0001",
             "week": "1. Spieltag - Sonntag der 14.09.2014",
-            "player_a": "DaumenKinoLP",
+            "player_a": "DaumenkinoLP",
             "player_b": "SurskitTV",
             "team_a": None,
             "team_b": None,
@@ -390,7 +399,7 @@ def test_pokemon_typo_aliases_are_corrected_in_normalized_killlists():
         row["pokemon"]: row
         for row in output.pokemon_killlists
         if row["pokemon"] in {"Meistagrif", "Drifzepeli", "Schwalboss", "Shnurgarst"}
-        and row["data_status"] == "sheet_extracted"
+        and row["data_status"] != "not_available"
     }
 
     assert "Meistergrif" not in {row["pokemon"] for row in output.pokemon_killlists}
@@ -598,6 +607,19 @@ def test_mid_season_team_controller_changes_are_kept_as_person_stints():
     output = normalize_all(Path("data"))
     stints = output.person_stints
 
+    s1_nocturne = [
+        row
+        for row in stints
+        if row["season_id"] == "season_001" and row["team_id"] == "season_001_nocturne"
+    ]
+    assert {row["person_name"] for row in s1_nocturne} == {"PokemonFakten", "FanmadeLetsPlay"}
+    assert {row["person_name"]: (row["start_week"], row["end_week"]) for row in s1_nocturne} == {
+        "PokemonFakten": ("1", "11"),
+        "FanmadeLetsPlay": ("12", "22"),
+    }
+    assert all(row["data_status"] == "user_provided" for row in s1_nocturne)
+    assert all(row["kills"] is None for row in s1_nocturne)
+
     s3_ubw = [
         row
         for row in stints
@@ -636,3 +658,15 @@ def test_mid_season_team_controller_changes_are_kept_as_person_stints():
 
     s9_champions = [row["champion_name"] for row in output.champions if row["season_id"] == "season_009"]
     assert set(s9_champions) == {"BelmontGabriel", "El Scizor", "Bene"}
+
+
+def test_s1_killlist_is_marked_partial_because_source_stops_at_week_7():
+    output = normalize_all(Path("data"))
+    s1_rows = [
+        row
+        for row in output.pokemon_killlists
+        if row["season_id"] == "season_001" and row["data_status"] != "not_available"
+    ]
+
+    assert s1_rows
+    assert {row["data_status"] for row in s1_rows} == {"partial_sheet_extracted"}

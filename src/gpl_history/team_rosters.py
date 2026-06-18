@@ -97,6 +97,7 @@ SKIP_POKEMON_VALUES = {
         "Platz",
         "Pokemon",
         "Pokémon",
+        "Pokémon",
         "PokÃ©mon",
         "S-Tier",
         "Speed",

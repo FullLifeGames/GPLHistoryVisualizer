@@ -3,7 +3,7 @@ export const VIEW_GROUPS = [
     id: "people",
     labelKey: "navGroups.people",
     defaultView: "all-time",
-    views: ["all-time", "matchup"],
+    views: ["all-time", "team-rosters", "matchup"],
     detailViews: ["person-details"],
   },
   {
@@ -16,8 +16,8 @@ export const VIEW_GROUPS = [
   {
     id: "seasons",
     labelKey: "navGroups.seasons",
-    defaultView: "season-detail",
-    views: ["season-detail", "table-history", "match-plan", "battle-history", "team-rosters", "video-archive"],
+    defaultView: "battle-history",
+    views: ["battle-history", "season-detail", "table-history", "match-plan", "video-archive"],
   },
   {
     id: "data",

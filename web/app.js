@@ -28,6 +28,7 @@ import {
   aggregatePersonStats,
   canonicalKilllistRows,
   displayNumber,
+  divisionMatches,
   eloRatings,
   filterSourceClaims,
   matchupOverview,
@@ -79,26 +80,31 @@ const LAZY_DATASETS = {
   missingKilllistAppearances: { url: "../data/review/missing_killlist_appearances.csv", optional: true },
   lowConfidenceVideos: { url: "../data/review/low_confidence_videos.csv", optional: true },
   ambiguousMatches: { url: "../data/review/ambiguous_matches.csv", optional: true },
+  personAllTime: { url: "../data/normalized/person_all_time.csv", optional: true },
+  pokemonAllTime: { url: "../data/normalized/pokemon_all_time.csv", optional: true },
+  matchupSummary: { url: "../data/normalized/matchup_summary.csv", optional: true },
+  rosterScores: { url: "../data/normalized/roster_scores.csv", optional: true },
+  seasonStorylines: { url: "../data/normalized/season_storylines.csv", optional: true },
 };
 
 const DATASETS = { ...CORE_DATASETS, ...LAZY_DATASETS };
 
 const VIEW_DATASETS = {
-  "all-time": [],
-  matchup: ["matchVideos"],
-  killlists: ["pokemonDraftOverview"],
+  "all-time": ["personAllTime"],
+  matchup: ["matchVideos", "matchupSummary"],
+  killlists: ["pokemonDraftOverview", "pokemonAllTime"],
   "pokemon-drafts": ["pokemonDraftOverview"],
   "pokemon-detail": ["pokemonDraftOverview"],
   "table-history": [],
   "match-plan": ["matchVideos"],
   "battle-history": ["matchVideos"],
-  "team-rosters": ["pokemonDraftOverview", "teamPokemonUsage", "teamRosters"],
+  "team-rosters": ["pokemonDraftOverview", "teamPokemonUsage", "teamRosters", "rosterScores"],
   "video-archive": ["videos"],
   "person-details": ["videos"],
   "data-coverage": ["dataQuality", "reviewIndex"],
   "review-workflow": ["reviewIndex", "missingKilllists", "missingKilllistAppearances", "lowConfidenceVideos", "ambiguousMatches"],
   "source-claims": ["sourceClaims"],
-  "season-detail": ["videos", "sourceClaims"],
+  "season-detail": ["videos", "sourceClaims", "seasonStorylines"],
 };
 
 const DATASET_LABELS = {
@@ -121,6 +127,11 @@ const DATASET_LABELS = {
   missingKilllistAppearances: "Offene Einsätze",
   lowConfidenceVideos: "Video-Review",
   ambiguousMatches: "Mehrdeutige Matches",
+  personAllTime: "Aggregierte Ewige Tabelle",
+  pokemonAllTime: "Aggregierte Pokémon-Tabelle",
+  matchupSummary: "Aggregierte Matchups",
+  rosterScores: "Aggregierte Kaderscores",
+  seasonStorylines: "Saisonakten-Aggregate",
 };
 
 const state = {
@@ -137,6 +148,7 @@ const state = {
   draftPickedStatus: "all",
   draftTierFilter: "all",
   rosterCardLimit: 24,
+  autoSeasonDefault: false,
   data: {},
   loadedDatasets: new Set(),
   loadingDatasets: new Map(),
@@ -247,6 +259,7 @@ function bindControls() {
 
   seasonFilter.addEventListener("change", () => {
     state.season = seasonFilter.value;
+    state.autoSeasonDefault = false;
     resetRosterCardLimit();
     populateMatchupOptions();
     render();
@@ -387,10 +400,14 @@ function setMatchupSelectValue(select, value) {
 
 function applyRouteFromHash() {
   const route = parseRouteHash(window.location.hash);
+  const previousView = state.view;
+  const previousGroup = viewGroupForView(previousView);
+  const currentGroup = viewGroupForView(route.view);
   if (route.personKey) {
     state.personFocus = resolvePersonFocus(route.personKey);
     state.pokemonFocus = null;
     state.season = "all";
+    state.autoSeasonDefault = false;
     state.division = "all";
     state.search = "";
     seasonFilter.value = state.season;
@@ -400,6 +417,7 @@ function applyRouteFromHash() {
     state.personFocus = null;
     state.pokemonFocus = null;
     state.season = route.seasonId;
+    state.autoSeasonDefault = false;
     state.division = "all";
     state.search = "";
     seasonFilter.value = state.season;
@@ -409,6 +427,7 @@ function applyRouteFromHash() {
     state.personFocus = null;
     state.pokemonFocus = resolvePokemonFocus(route.pokemonKey);
     state.season = "all";
+    state.autoSeasonDefault = false;
     state.division = "all";
     state.search = "";
     seasonFilter.value = state.season;
@@ -417,8 +436,27 @@ function applyRouteFromHash() {
   } else {
     state.personFocus = null;
     state.pokemonFocus = null;
+    if (previousGroup !== currentGroup) {
+      state.search = "";
+      searchFilter.value = "";
+    }
   }
   setActiveView(route.view);
+  applyViewSeasonDefaults(route, previousView);
+}
+
+function applyViewSeasonDefaults(route, previousView) {
+  const previousGroup = viewGroupForView(previousView);
+  const currentGroup = viewGroupForView(route.view);
+  if (previousGroup === "seasons" && currentGroup !== "seasons" && state.autoSeasonDefault) {
+    state.season = "all";
+    state.autoSeasonDefault = false;
+  }
+  if (currentGroup === "seasons" && !route.seasonId && state.season === "all") {
+    state.season = "season_010";
+    state.autoSeasonDefault = true;
+  }
+  seasonFilter.value = state.season;
 }
 
 function setActiveView(viewName) {
@@ -802,7 +840,7 @@ function filtered(rows) {
   return rows.filter((row) => {
     const dataModeOk = applyDataMode(row);
     const seasonOk = state.season === "all" || row.season_id === state.season;
-    const divisionOk = state.division === "all" || row.division === state.division;
+    const divisionOk = divisionMatches(row, state.division);
     const searchOk = !state.search || Object.values(row).join(" ").toLowerCase().includes(state.search);
     return dataModeOk && seasonOk && divisionOk && searchOk;
   });
@@ -961,11 +999,11 @@ function pokemonLink(key, name) {
   return `<a class="link-button" href="${escapeAttr(pokemonRouteHash(key))}" data-pokemon-key="${escapeAttr(key)}" data-pokemon-name="${escapeAttr(label)}">${escapeHtml(label)}</a>`;
 }
 
-function pokemonCell(name, key = normalizedKey(name)) {
-  return `<span class="pokemon-cell">${pokemonIcon(name)}${pokemonLink(key, name)}</span>`;
+function pokemonCell(name, key = normalizedKey(name), assetName = name) {
+  return `<span class="pokemon-cell">${pokemonIcon(assetName, name)}${pokemonLink(key, name)}</span>`;
 }
 
-function pokemonIcon(name) {
+function pokemonIcon(name, label = name) {
   const icons = window.pkmn?.img?.Icons;
   const id = pokemonAssetId(name);
   try {
@@ -976,7 +1014,7 @@ function pokemonIcon(name) {
   } catch {
     // The sprite library is decorative; missing aliases should not block the data view.
   }
-  return `<span class="pokemon-icon-fallback" aria-hidden="true">${escapeHtml(String(name || "?").slice(0, 1).toUpperCase())}</span>`;
+  return `<span class="pokemon-icon-fallback" aria-hidden="true">${escapeHtml(String(label || name || "?").slice(0, 1).toUpperCase())}</span>`;
 }
 
 function pokemonSprite(name) {
@@ -1025,6 +1063,12 @@ function filteredPersonStats({ primaryOnly = false } = {}) {
 }
 
 function renderAllTime() {
+  const aggregateRows = aggregateAllTimeRows();
+  if (aggregateRows) {
+    renderTable("#all-time-table", aggregateRows, ALL_TIME_COLUMNS, ["name"]);
+    return;
+  }
+
   const statRows = filteredPersonStats({ primaryOnly: state.dataMode === "primary" });
   const champions = filtered(state.data.champions ?? []).filter((row) => ["source_evidenced", "user_provided"].includes(row.data_status));
   const eloIndex = new Map(eloRatings(availableMatchRows(), normalizedKey).map((row) => [row.key, row]));
@@ -1066,6 +1110,36 @@ function renderAllTime() {
   renderTable("#all-time-table", rows, ALL_TIME_COLUMNS, ["name"]);
 }
 
+function aggregateAllTimeRows() {
+  const rows = state.data.personAllTime ?? [];
+  if (!rows.length || state.dataMode !== "all" || state.division !== "all") {
+    return null;
+  }
+  return rows
+    .filter((row) => state.season === "all" || String(row.season_list || "").includes(seasonDisplay(state.season)))
+    .filter((row) => !state.search || Object.values(row).join(" ").toLowerCase().includes(state.search))
+    .map((row, index) => ({
+      rank: index + 1,
+      name: personLink(row.person_id, row.person_name),
+      seasons_won: row.seasons_won,
+      title_seasons: row.title_seasons,
+      seasons: row.seasons,
+      season_list: row.season_list,
+      elo: row.elo,
+      matches: row.matches,
+      wins: row.wins,
+      losses: row.losses,
+      draws: row.draws,
+      win_pct: row.win_pct,
+      rating: row.weighted_rating,
+      points: row.points,
+      kills: row.kills,
+      deaths: row.deaths,
+      differential: row.differential,
+      best_rank: row.best_rank,
+    }));
+}
+
 function availableMatchRows() {
   return filtered(state.data.matches ?? []).filter((row) => !["source_video_only", "not_available"].includes(row.data_status));
 }
@@ -1075,6 +1149,12 @@ function personComparableKey(value) {
 }
 
 function renderKilllists() {
+  const aggregateRows = aggregateKilllistRows();
+  if (aggregateRows) {
+    renderTable("#killlists-table", aggregateRows, POKEMON_KILLLIST_COLUMNS, ["pokemon"]);
+    return;
+  }
+
   const titles = pokemonTitleIndex(state.data.pokemonDraftOverview ?? [], normalizedKey);
   const rows = summarizeKilllists(canonicalKilllistRows(filtered(state.data.killlists ?? []), state.division)).map((row) => ({
     ...row,
@@ -1082,6 +1162,30 @@ function renderKilllists() {
     pokemon: pokemonCell(row.pokemon),
   }));
   renderTable("#killlists-table", rows, POKEMON_KILLLIST_COLUMNS, ["pokemon"]);
+}
+
+function aggregateKilllistRows() {
+  const rows = state.data.pokemonAllTime ?? [];
+  if (!rows.length || state.season !== "all" || state.division !== "all" || state.dataMode !== "primary") {
+    return null;
+  }
+  return rows
+    .filter((row) => state.season === "all" || String(row.season_list || "").includes(seasonDisplay(state.season)))
+    .filter((row) => !state.search || Object.values(row).join(" ").toLowerCase().includes(state.search))
+    .map((row, index) => ({
+      rank: index + 1,
+      pokemon: pokemonCell(row.pokemon, row.pokemon_normalized || normalizedKey(row.pokemon)),
+      appearances: row.appearances,
+      kills: row.kills,
+      deaths: row.deaths,
+      differential: row.differential,
+      seasons: row.seasons,
+      season_list: row.season_list,
+      titles: row.titles,
+      title_seasons: row.title_seasons,
+      trainers: row.trainers,
+      teams: row.teams,
+    }));
 }
 
 function renderPokemonDrafts() {
@@ -1095,9 +1199,10 @@ function renderPokemonDrafts() {
   const rows = pokemonDraftOverviewRows(state.data.pokemonDraftOverview ?? [], {
     pickedStatus: state.draftPickedStatus,
     excludedTiers: excludedDraftTierValues(state.draftTierFilter),
+    search: state.search,
   }).map((row) => ({
     ...row,
-    pokemon: pokemonCell(row.pokemon),
+    pokemon: pokemonCell(row.pokemon, row.pokemon_normalized || normalizedKey(row.pokemon), row.asset_id || row.pokemon),
     picked_status: t(state.language, `values.${row.picked_status}`),
     source: sourceLinks(row.source_urls),
   }));
@@ -1280,6 +1385,7 @@ function pokemonScoreFormula(row) {
     `${deathsNote} Werte: Einsätze ${appearances}, Kills ${row.kills}, Tode ${row.deaths}, Differential ${row.differential}.`,
   ].join(" ");
 }
+
 function topPokemonLinks(value) {
   return String(value ?? "")
     .split(",")
@@ -1682,7 +1788,7 @@ function filteredVideoRows(rows) {
   return rows.filter((row) => {
     const dataModeOk = applyDataMode(row);
     const seasonOk = state.season === "all" || row.detected_season_id === state.season || row.season_id === state.season;
-    const divisionOk = state.division === "all" || row.division === state.division;
+    const divisionOk = divisionMatches(row, state.division);
     const searchOk = !state.search || Object.values(row).join(" ").toLowerCase().includes(state.search);
     return dataModeOk && seasonOk && divisionOk && searchOk;
   });
@@ -1753,6 +1859,7 @@ function renderReviewWorkflow() {
     .filter((row) => state.season === "all" || row.season_id === state.season)
     .filter((row) => !state.search || Object.values(row).join(" ").toLowerCase().includes(state.search))
     .map((row) => ({
+      review_key: row.review_key,
       queue: row.queue,
       severity: severityDisplay(row.severity),
       season: row.season_id ? seasonLink(row.season_id) : "",
@@ -1762,13 +1869,14 @@ function renderReviewWorkflow() {
       confidence: row.confidence,
       confidence_tier: confidenceTierDisplay(row.confidence_tier),
       correction_file: row.correction_file,
+      correction_target: row.correction_target,
       suggested_action: row.suggested_action,
       source: sourceLinks(row.source_urls),
     }));
   renderTable(
     "#review-workflow-table",
     rows,
-    ["queue", "severity", "season", "subject", "detail", "review_reason", "confidence", "confidence_tier", "correction_file", "suggested_action", "source"],
+    ["review_key", "queue", "severity", "season", "subject", "detail", "review_reason", "confidence", "confidence_tier", "correction_file", "correction_target", "suggested_action", "source"],
     ["season", "source"],
   );
 }
@@ -1811,12 +1919,14 @@ function renderSeasonDetail() {
   }
 
   const coverage = seasonCoverageRows(state.data).find((row) => row.season_id === state.season);
-  summary.innerHTML = coverage
+  const storyline = (state.data.seasonStorylines ?? []).find((row) => row.season_id === state.season);
+  summary.innerHTML = coverage || storyline
     ? [
-        metricCard(t(state.language, "summary.coverage"), coverageStatusDisplay(coverage.coverage_status)),
-        metricCard(t(state.language, "summary.battles"), coverage.matches),
-        metricCard(t(state.language, "summary.killlists"), coverage.killlists),
-        metricCard(t(state.language, "summary.videos"), coverage.videos),
+        metricCard(t(state.language, "summary.coverage"), coverage ? coverageStatusDisplay(coverage.coverage_status) : storyline.quality_score),
+        metricCard(t(state.language, "summary.battles"), coverage?.matches ?? storyline.match_rows),
+        metricCard(t(state.language, "summary.killlists"), coverage?.killlists ?? storyline.killlist_rows),
+        metricCard(t(state.language, "summary.videos"), coverage?.videos ?? storyline.video_rows),
+        storyline?.top_pokemon ? metricCard(t(state.language, "columns.top_pokemon"), storyline.top_pokemon) : "",
       ].join("")
     : "";
 
@@ -2124,7 +2234,8 @@ function renderMatchup() {
 
   const availableMatches = availableMatchRows();
   if (!b) {
-    const overviewRows = matchupOverview(availableMatches, a, normalizedKey).map((row) => ({
+    const sourceRows = aggregateMatchupRows(a) ?? matchupOverview(availableMatches, a, normalizedKey);
+    const overviewRows = sourceRows.map((row) => ({
       ...row,
       opponent: matchupSelectButton(row.opponent_key, row.opponent, "b", a),
     }));
@@ -2174,6 +2285,26 @@ function renderMatchup() {
     </div>
     ${matches.length ? `<div class="table-wrap">${tableHtml(matchRows, matchColumns, ["player_a", "player_b", "videos", "source"])}</div>` : `<p class="empty">${escapeHtml(t(state.language, "matchup.empty"))}</p>`}
   `;
+}
+
+function aggregateMatchupRows(selectedKey) {
+  const rows = state.data.matchupSummary ?? [];
+  if (!rows.length || state.season !== "all" || state.division !== "all") {
+    return null;
+  }
+  const comparable = matchupSelectKey(selectedKey);
+  return rows
+    .filter((row) => matchupSelectKey(row.person_id || row.person_name) === comparable || matchupSelectKey(row.person_name) === comparable)
+    .filter((row) => !state.search || Object.values(row).join(" ").toLowerCase().includes(state.search))
+    .map((row) => ({
+      opponent_key: matchupSelectKey(row.opponent_id || row.opponent_name),
+      opponent: row.opponent_name,
+      matches: row.matches,
+      wins: row.wins,
+      losses: row.losses,
+      draws: row.draws,
+      win_pct: row.win_pct,
+    }));
 }
 
 function matchupSelectButton(value, label = value, slot = "b", primary = "") {

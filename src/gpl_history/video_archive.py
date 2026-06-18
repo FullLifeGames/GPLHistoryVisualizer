@@ -461,6 +461,8 @@ def build_video_archive(data_dir: Path) -> tuple[list[dict[str, Any]], list[dict
         raw_path = channel.get("raw_path")
         if not raw_path:
             continue
+        source_person_names = _normalized_source_person_names(channel.get("source_person_names"))
+        source_person_ids = _normalized_source_person_ids(channel.get("source_person_ids"), source_person_names)
         videos = read_json(Path(raw_path), [])
         for video in videos:
             video_id = video.get("videoId")
@@ -482,8 +484,8 @@ def build_video_archive(data_dir: Path) -> tuple[list[dict[str, Any]], list[dict
                 "channel_id": channel.get("channelId"),
                 "channel_title": channel.get("title"),
                 "channel_url": channel.get("canonical_url"),
-                "source_person_ids": channel.get("source_person_ids"),
-                "source_person_names": channel.get("source_person_names"),
+                "source_person_ids": source_person_ids,
+                "source_person_names": source_person_names,
                 "source_team_names": channel.get("source_team_names"),
                 "source_seasons": channel.get("source_seasons"),
                 "division": parsed["division"],
@@ -496,7 +498,7 @@ def build_video_archive(data_dir: Path) -> tuple[list[dict[str, Any]], list[dict
             match = match_video_to_matches(
                 {
                     **video_row,
-                    "channel_person_name": channel.get("source_person_names"),
+                    "channel_person_name": source_person_names,
                     "channel_team_name": channel.get("source_team_names"),
                 },
                 matches,
@@ -531,7 +533,7 @@ def build_video_archive(data_dir: Path) -> tuple[list[dict[str, Any]], list[dict
                         "confidence_tier": None,
                         "match_basis": None,
                         "confidence_explanation": None,
-                        "perspective_person": _first_nonempty(_split_values(channel.get("source_person_names"))),
+                        "perspective_person": _first_nonempty(_split_values(source_person_names)),
                         "opponent": None,
                     }
                 )
@@ -853,6 +855,27 @@ def _join_sorted(values: set[str]) -> str:
 def _join_display_names(values: set[str]) -> str:
     names = sorted({_display_name(value) for value in values if value})
     return ";".join(name for name in names if name)
+
+
+def _normalized_source_person_names(value: str | None) -> str:
+    names = [_display_name(part) for part in _split_values(value)]
+    return ";".join(dict.fromkeys(name for name in names if name))
+
+
+def _normalized_source_person_ids(ids_value: str | None, names_value: str | None) -> str:
+    ids: list[str] = []
+    for name in _split_values(names_value):
+        canonical = _canonical_name(name)
+        if not canonical:
+            continue
+        person_id = f"person_{canonical.replace(' ', '_')}"
+        if person_id not in ids:
+            ids.append(person_id)
+    if not ids:
+        for person_id in _split_values(ids_value):
+            if person_id not in ids:
+                ids.append(person_id)
+    return ";".join(ids)
 
 
 def _join_unique(values: list[str | None]) -> str:

@@ -10,6 +10,10 @@ assert.deepEqual(parseRouteHash("#/data-coverage"), { view: "data-coverage", per
 assert.deepEqual(parseRouteHash("#/review-workflow"), { view: "review-workflow", personKey: null });
 assert.deepEqual(parseRouteHash("#/source-claims"), { view: "source-claims", personKey: null });
 assert.deepEqual(parseRouteHash("#/season-detail"), { view: "season-detail", personKey: null });
+assert.deepEqual(parseRouteHash("#/people"), { view: "all-time", personKey: null });
+assert.deepEqual(parseRouteHash("#/pokemon"), { view: "killlists", personKey: null });
+assert.deepEqual(parseRouteHash("#/seasons"), { view: "battle-history", personKey: null });
+assert.deepEqual(parseRouteHash("#/data"), { view: "data-coverage", personKey: null });
 assert.deepEqual(parseRouteHash("#/season/season_010"), { view: "season-detail", personKey: null, seasonId: "season_010" });
 assert.deepEqual(parseRouteHash("#/person/person_bene"), { view: "person-details", personKey: "person_bene" });
 assert.deepEqual(parseRouteHash("#/person/person_bene?ignored=true"), { view: "person-details", personKey: "person_bene" });

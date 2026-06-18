@@ -14,6 +14,9 @@ assert.equal(pokemonAssetKey("Nidoran♂"), "nidoranm");
 assert.equal(pokemonAssetId("UHaFniR"), "noivern");
 assert.equal(pokemonAssetId("Katapuldra"), "dragapult");
 assert.equal(pokemonAssetId("Kapu-Kime"), "tapufini");
+assert.equal(pokemonAssetId("Arceus"), "arceus");
+assert.equal(pokemonAssetId("Giratina"), "giratina");
+assert.equal(pokemonAssetId("Lusardin"), "wishiwashi");
 
 assert.equal(pokemonAssetId("Ogerpon-Gestein"), "ogerponcornerstone");
 assert.equal(pokemonAssetId("Ogerpon-Wasser"), "ogerponwellspring");

@@ -246,6 +246,28 @@ def test_build_translation_rows_maps_german_form_aliases_to_showdown_asset_ids()
     assert by_german["Hoopa-Entfesselt"]["asset_id"] == "hoopaunbound"
 
 
+def test_js_module_keeps_base_species_aliases_when_forms_share_the_same_name(tmp_path):
+    rows = [
+        {"species_id": "487", "german": "Giratina", "english": "Giratina", "asset_id": "giratina"},
+        {"species_id": "487", "german": "Giratina", "english": "giratina-altered", "asset_id": "giratinaaltered"},
+        {"species_id": "493", "german": "Arceus", "english": "Arceus", "asset_id": "arceus"},
+        {"species_id": "493", "german": "Arceus", "english": "arceus-unknown", "asset_id": "arceusunknown"},
+        {"species_id": "746", "german": "Lusardin", "english": "Wishiwashi", "asset_id": "wishiwashi"},
+        {"species_id": "746", "german": "Lusardin", "english": "wishiwashi-solo", "asset_id": "wishiwashisolo"},
+        {"species_id": "487", "german": "Giratina-Urform", "english": "giratina-origin", "asset_id": "giratinaorigin"},
+    ]
+    csv_path = tmp_path / "pokemon_name_translations.csv"
+    js_path = tmp_path / "pokemon_names.js"
+
+    write_translation_outputs(rows, csv_path, js_path, source_url=SOURCE_URLS)
+    js = js_path.read_text(encoding="utf-8")
+
+    assert '"arceus": "arceus"' in js
+    assert '"giratina": "giratina"' in js
+    assert '"lusardin": "wishiwashi"' in js
+    assert '"giratinaurform": "giratinaorigin"' in js
+
+
 def test_pokemon_display_name_canonicalizes_form_aliases_for_stats_merging():
     assert pokemon_display_name("Demeteros") == "Demeteros-I"
     assert pokemon_display_name("Demeteros-Inkarnationsform") == "Demeteros-I"

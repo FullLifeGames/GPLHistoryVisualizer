@@ -59,6 +59,11 @@ CLAIM_TABLES = {
 }
 
 GENERATED_ARTIFACTS = [
+    (Path("normalized") / "person_all_time.csv", "data/normalized/person_all_time.csv"),
+    (Path("normalized") / "pokemon_all_time.csv", "data/normalized/pokemon_all_time.csv"),
+    (Path("normalized") / "matchup_summary.csv", "data/normalized/matchup_summary.csv"),
+    (Path("normalized") / "roster_scores.csv", "data/normalized/roster_scores.csv"),
+    (Path("normalized") / "season_storylines.csv", "data/normalized/season_storylines.csv"),
     (Path("normalized") / "team_rosters.csv", "data/normalized/team_rosters.csv"),
     (Path("normalized") / "pokemon_draft_overview.csv", "data/normalized/pokemon_draft_overview.csv"),
     (Path("normalized") / "data_quality.csv", "data/normalized/data_quality.csv"),
@@ -86,10 +91,12 @@ def check_generated_artifacts(data_dir: Path) -> list[str]:
     from .pokemon_drafts import build_and_write_pokemon_draft_overview
     from .review import generate_review_queue
     from .team_rosters import build_and_write_team_rosters
+    from .aggregates import build_and_write_aggregates
 
     build_and_write_team_rosters(data_dir)
     build_and_write_pokemon_draft_overview(data_dir)
     generate_data_quality(data_dir)
+    build_and_write_aggregates(data_dir)
     generate_review_queue(data_dir)
 
     changed = []
@@ -222,6 +229,8 @@ def _quality_scores(
     killlists_score = 100 if season_killlists else 0
     if "missing_appearances" in review_flags:
         killlists_score -= 35
+    if "partial_killlists" in review_flags:
+        killlists_score -= 20
     if unavailable_killlists:
         killlists_score -= 25
     videos_score = 100 if season_videos else 0
@@ -339,6 +348,8 @@ def _review_flags(
     flags = []
     if any(_missing_appearances(row) for row in killlists):
         flags.append("missing_appearances")
+    if any(str(row.get("data_status") or "").startswith("partial_") for row in killlists):
+        flags.append("partial_killlists")
     if unavailable_killlists:
         flags.append("unavailable_killlists")
     if any(row.get("video_type") == "game" and row.get("match_status") == "unmatched" for row in videos):

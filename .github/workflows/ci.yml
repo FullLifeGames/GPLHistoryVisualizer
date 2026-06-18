@@ -36,7 +36,7 @@ jobs:
           node --check web/stats.js
 
       - name: Run web unit tests
-        run: node --test tests/web_i18n.test.mjs tests/web_pokemon_names.test.mjs tests/web_router.test.mjs tests/web_stats.test.mjs
+        run: node --test tests/*.mjs
 
       - name: Validate normalized CSVs
         run: gpl-history validate --data-dir data

@@ -57,7 +57,7 @@ assert.match(appJs, /data-clear-person-focus[\s\S]*?navigateToView\("all-time"\)
 assert.match(appJs, /data-clear-pokemon-focus[\s\S]*?navigateToView\("all-time"\)/);
 assert.equal(appJs.includes("data-matchup-select"), true);
 assert.equal(appJs.includes("selectMatchupParticipant("), true);
-assert.match(appJs, /matchup:\s*\["matchVideos"\]/);
+assert.match(appJs, /matchup:\s*\["matchVideos", "matchupSummary"\]/);
 assert.match(appJs, /const matchColumns = columnsForProfile\(\["season", "division", "week", "player_a", "player_b", "score", "winner", "videos", "source"\]/);
 assert.match(appJs, /videos:\s*videoLinksForMatch\(row\.match_id\)/);
 assert.match(appJs, /tableHtml\(matchRows, matchColumns, \["player_a", "player_b", "videos", "source"\]\)/);
@@ -87,4 +87,6 @@ assert.equal(appJs.includes('matches: "KÃ¤mpfe"'), false);
 assert.equal(appJs.includes('pokemonDraftOverview: "PokÃ©mon-Drafts"'), false);
 assert.equal(appJs.includes('teamPokemonUsage: "Team-PokÃ©mon-Zuordnungen"'), false);
 assert.equal(appJs.includes('missingKilllistAppearances: "Offene EinsÃ¤tze"'), false);
+assert.equal(appJs.includes("Qualitt"), false);
+assert.equal(appJs.includes("Prioritten"), false);
 assert.match(appJs, /numberValue\(b\.rating\)[\s\S]*?numberValue\(b\.elo\)/);

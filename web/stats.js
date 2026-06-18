@@ -265,10 +265,22 @@ export function personOptionsFromAllTimeRows(statRows = [], championRows = [], n
 
 export function primaryCompetitionRows(rows, selectedDivision = "all") {
   if (selectedDivision !== "all") {
-    return rows.filter((row) => row.division === selectedDivision);
+    return rows.filter((row) => divisionMatches(row, selectedDivision));
   }
   const seasonsWithLeagueOne = new Set(rows.filter((row) => row.division === "Liga 1").map((row) => row.season_id));
   return rows.filter((row) => !(row.division === "Liga 2" && seasonsWithLeagueOne.has(row.season_id)));
+}
+
+const MAIN_LEAGUE_DIVISIONS = new Set(["Liga 1", "Regular Season", "Sun Conference", "Moon Conference", "Singles", "Doubles", "Playoffs"]);
+
+export function divisionMatches(row, selectedDivision = "all") {
+  if (selectedDivision === "all") {
+    return true;
+  }
+  if (selectedDivision === "Liga 1") {
+    return MAIN_LEAGUE_DIVISIONS.has(row.division || "");
+  }
+  return row.division === selectedDivision;
 }
 
 export function seasonCoverageRows(data) {
@@ -350,20 +362,37 @@ const REVIEW_DATASET_BY_FILE = {
 export function reviewWorkflowRows(data = {}) {
   return (data.reviewIndex ?? []).flatMap((queue) => {
     const rows = data[REVIEW_DATASET_BY_FILE[queue.review_file]] ?? [];
-    return rows.map((row) => ({
-      queue: queue.review_file,
-      severity: queue.severity || "",
-      review_reason: row.review_reason || queue.review_reason || "",
-      correction_file: queue.correction_file || "",
-      suggested_action: queue.suggested_action || "",
-      season_id: row.season_id || row.detected_season_id || "",
-      subject: row.title || row.pokemon || row.trainer || row.team_name || row.video_id || "",
-      detail: row.detected_week ? `Spieltag ${row.detected_week}` : row.division || row.stage || row.match_basis || "",
-      confidence: row.confidence || "",
-      confidence_tier: row.confidence_tier || "",
-      source_urls: row.source_urls || row.video_url || "",
-    }));
+    return rows.map((row, index) => {
+      const seasonId = row.season_id || row.detected_season_id || "";
+      const subject = row.title || row.pokemon || row.trainer || row.team_name || row.video_id || "";
+      const detail = row.detected_week ? `Spieltag ${row.detected_week}` : row.division || row.stage || row.match_basis || "";
+      return {
+        review_key: reviewWorkflowKey(queue.review_file, seasonId, index),
+        queue: queue.review_file,
+        severity: queue.severity || "",
+        review_reason: row.review_reason || queue.review_reason || "",
+        correction_file: queue.correction_file || "",
+        correction_target: reviewCorrectionTarget(queue.correction_file, seasonId, subject, detail),
+        suggested_action: queue.suggested_action || "",
+        season_id: seasonId,
+        subject,
+        detail,
+        confidence: row.confidence || "",
+        confidence_tier: row.confidence_tier || "",
+        source_urls: row.source_urls || row.video_url || "",
+      };
+    });
   });
+}
+
+function reviewWorkflowKey(reviewFile, seasonId, index) {
+  const queue = String(reviewFile || "review").replace(/\.csv$/i, "");
+  return `${queue}:${seasonId || "unassigned"}:${index + 1}`;
+}
+
+function reviewCorrectionTarget(correctionFile, seasonId, subject, detail) {
+  const context = [seasonId, subject || detail].filter(Boolean).join(" / ");
+  return [correctionFile, context].filter(Boolean).join(" -> ");
 }
 
 function dataRows(rows = [], seasonId) {
@@ -382,7 +411,10 @@ function sourceUrls(rows) {
 
 export function canonicalKilllistRows(rows, selectedDivision = "all") {
   if (selectedDivision !== "all") {
-    return rows.filter((row) => row.division === selectedDivision);
+    rows = rows.filter((row) => divisionMatches(row, selectedDivision));
+    if (selectedDivision !== "Liga 1") {
+      return rows;
+    }
   }
 
   const bySeason = new Map();
@@ -558,11 +590,27 @@ export function summarizeKilllists(rows) {
     }));
 }
 
-export function pokemonDraftOverviewRows(rows = [], { pickedStatus = "all", excludedTiers = [] } = {}) {
+export function pokemonDraftOverviewRows(rows = [], { pickedStatus = "all", excludedTiers = [], search = "" } = {}) {
   const excludedTierValues = new Set(excludedTiers.map((tier) => String(tier ?? "").toLowerCase()));
+  const searchNeedle = String(search ?? "").trim().toLowerCase();
   return rows
     .filter((row) => pickedStatus === "all" || row.picked_status === pickedStatus)
     .filter((row) => !excludedTierValues.has(String(row.tier ?? "").toLowerCase()))
+    .filter((row) => {
+      if (!searchNeedle) return true;
+      return [
+        row.pokemon,
+        row.pokemon_normalized,
+        row.english,
+        row.asset_id,
+        row.tier,
+        row.season_list,
+        row.title_seasons,
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(searchNeedle);
+    })
     .map((row) => ({
       ...row,
       rank: numberValue(row.rank),

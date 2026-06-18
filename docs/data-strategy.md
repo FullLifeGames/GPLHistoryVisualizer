@@ -9,6 +9,7 @@ The repository currently keeps both normalized CSV output and the raw source sna
 - `data/normalized`: CSVs consumed by the web app.
 - `data/normalized/source_claims.csv`: generated per-field source/provenance index for normalized claims.
 - `data/normalized/data_quality.csv`: generated per-season coverage and review flag summary.
+- `data/normalized/person_all_time.csv`, `pokemon_all_time.csv`, `matchup_summary.csv`, `roster_scores.csv`, and `season_storylines.csv`: generated frontend aggregate and audit views derived from normalized CSVs.
 - `data/normalized/pokemon_name_translations.csv`: generated German/English Pokémon name lookup from PokeAPI, used only for display and sprite resolution.
 - `data/manual`: header-only correction templates for reviewed future fixes.
 - `data/review`: generated review queues for missing killlists, low-confidence matched videos, and unmatched game videos.
@@ -30,6 +31,7 @@ gpl-history normalize --data-dir data
 gpl-history build-video-archive --data-dir data
 gpl-history pokemon-names --data-dir data --web-dir web
 gpl-history data-quality --data-dir data
+gpl-history aggregates --data-dir data
 gpl-history report --data-dir data --out docs/gpl-history.md
 gpl-history review-queue --data-dir data
 gpl-history validate --data-dir data
@@ -73,3 +75,13 @@ The public explanation of these limits and correction rules is in `docs/known-li
 - `data/normalized/data_quality.csv`: one row per season with counts for standings, matches, playoffs, champions, killlists, missing appearances, unavailable killlists, videos, unmatched game videos, and low-confidence video matches.
 
 These files do not create new historical facts. They summarize what the normalized CSVs already contain and make missing or review-heavy areas easier to audit.
+
+`gpl-history aggregates --data-dir data` writes:
+
+- `data/normalized/person_all_time.csv`: precomputed all-time player statistics with titles and source URLs.
+- `data/normalized/pokemon_all_time.csv`: precomputed all-time Pokémon killlist totals.
+- `data/normalized/matchup_summary.csv`: player-vs-player totals derived from normalized matches.
+- `data/normalized/roster_scores.csv`: deterministic roster score audit rows derived from roster and killlist CSVs.
+- `data/normalized/season_storylines.csv`: per-season summary counts and top rows for season detail pages.
+
+The web app may use these files as performance-oriented inputs, but the normalized CSVs remain the source of truth. `check-generated` regenerates them and fails if tracked files drift.

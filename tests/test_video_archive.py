@@ -172,7 +172,7 @@ def test_match_video_to_matches_prefers_same_season_week_and_people():
 def test_match_video_to_matches_rejects_explicit_week_mismatch():
     video = {
         "title": "GPL - Spieltag 21 - vs. Raizoroark",
-        "channel_person_name": "DaumenKinoLP",
+        "channel_person_name": "DaumenkinoLP",
     }
     matches = [
         {
@@ -181,7 +181,7 @@ def test_match_video_to_matches_rejects_explicit_week_mismatch():
             "week": "10. Spieltag - Sonntag der 16.11.2014",
             "stage": "regular_season",
             "division": "Regular Season",
-            "player_a": "DaumenKinoLP",
+            "player_a": "DaumenkinoLP",
             "player_b": "Raizor",
             "team_a": "",
             "team_b": "Raizoroark",
@@ -357,6 +357,55 @@ def test_build_video_archive_uses_matched_season_when_title_has_no_season(tmp_pa
     assert "matched season" in archive_rows[0]["confidence_explanation"]
     assert match_rows[0]["season_id"] == "season_001"
     assert (normalized_dir / "video_urls.txt").read_text(encoding="utf-8").strip() == "https://www.youtube.com/watch?v=abc123"
+
+
+def test_build_video_archive_canonicalizes_stale_channel_person_names(tmp_path):
+    raw_dir = tmp_path / "raw" / "video_archive"
+    normalized_dir = tmp_path / "normalized"
+    raw_dir.mkdir(parents=True)
+    normalized_dir.mkdir()
+
+    uploads_path = raw_dir / "silva_uploads.json"
+    (raw_dir / "channels.json").write_text(
+        json.dumps(
+            [
+                {
+                    "channelId": "UCsilva",
+                    "title": "Silva",
+                    "canonical_url": "https://www.youtube.com/user/FinaALFaNtAsyLP",
+                    "source_person_ids": "person_finaalfantasylp",
+                    "source_person_names": "FinaALFaNtAsyLP",
+                    "source_team_names": "Diggersby Army",
+                    "source_urls": "https://www.youtube.com/user/FinaALFaNtAsyLP",
+                    "raw_path": str(uploads_path).replace("\\", "/"),
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    uploads_path.write_text(
+        json.dumps(
+            [
+                {
+                    "videoId": "silva_info",
+                    "title": "GPL Infovideo | Silva",
+                    "publishedAt": "2014-09-01T10:00:00Z",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    _write_test_csv(normalized_dir / "matches.csv", [])
+    _write_test_csv(normalized_dir / "teams.csv", [])
+
+    archive_rows, match_rows = build_video_archive(tmp_path)
+
+    assert len(archive_rows) == 1
+    assert archive_rows[0]["source_person_ids"] == "person_silva"
+    assert archive_rows[0]["source_person_names"] == "Silva"
+    assert archive_rows[0]["perspective_person"] == "Silva"
+    assert "https://www.youtube.com/user/FinaALFaNtAsyLP" in archive_rows[0]["source_urls"]
+    assert match_rows == []
 
 
 def test_build_video_archive_keeps_explicit_liga2_video_without_wrong_match(tmp_path):

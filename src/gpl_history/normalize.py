@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import unquote, urlparse
 
+from .adapters import adapter_for_season
 from .manual import apply_manual_rows, read_manual_table
 from .pokemon_names import pokemon_display_name
 from .storage import playlist_url, read_json, safe_slug, video_url
@@ -311,6 +312,9 @@ _ALIAS_CANONICAL = {
     "daumenkinolp": "daumenkino",
     "daumenkino lp": "daumenkino",
     "daumenkino": "daumenkino",
+    "theherbertlp": "daumenkino",
+    "theherbert": "daumenkino",
+    "theherbe": "daumenkino",
     "sin of speed": "barry d sin of speed",
     "sinofspeed": "barry d sin of speed",
     "barry d sin of speed": "barry d sin of speed",
@@ -333,6 +337,7 @@ _ALIAS_CANONICAL = {
     "daunidaunstar": "dauni daunstar",
     "art n gaming": "art n gaming",
     "artngaming": "art n gaming",
+    "tjlh100": "art n gaming",
     "kaffecone": "art n gaming",
     "kaffeecone": "art n gaming",
     "kaffeconelp": "art n gaming",
@@ -366,6 +371,10 @@ _ALIAS_CANONICAL = {
     "maxi": "maxi von vogel",
     "maxi von vogel": "maxi von vogel",
     "maxivonvogel": "maxi von vogel",
+    "finaalfantasylp": "silva",
+    "finaalfa": "silva",
+    "silvaffb": "silva",
+    "silva": "silva",
 }
 
 _PREFERRED_DISPLAY = {
@@ -375,7 +384,7 @@ _PREFERRED_DISPLAY = {
     "blacklink": "BlackLink",
     "captaincrinch": "CaptainCrinch",
     "crowdcontroller": "CrowdController",
-    "daumenkino": "DaumenKinoLP",
+    "daumenkino": "DaumenkinoLP",
     "dauni daunstar": "Dauni Daunstar",
     "dirtyd64": "DirtyD64",
     "lauris": "Lauris",
@@ -387,6 +396,7 @@ _PREFERRED_DISPLAY = {
     "raizor": "Raizor",
     "regibang": "RegiBang",
     "shiro": "Shiro",
+    "silva": "Silva",
     "stratocopter tv": "Stratocopter TV",
     "tabasco tv": "Tabasco TV",
     "belmontgabriel": "BelmontGabriel",
@@ -662,6 +672,7 @@ def _find_header_index(rows: list[list[str]]) -> int | None:
 
 
 def _adapt_season(season_id: str, tables: list[dict[str, Any]], videos: list[dict[str, Any]]) -> NormalizedOutput:
+    adapter_for_season(season_id)
     out = NormalizedOutput([], [], [], [], [], [], [], [], [], [], [])
 
     out.standings.extend(_season_standings(season_id, tables))
@@ -1214,6 +1225,8 @@ def _season_person_stints(season_id: str, standings: list[dict[str, Any]], match
 
 def _standing_is_split_by_controller(season_id: str, standing: dict[str, Any]) -> bool:
     team_key = _canonical_name(standing.get("team_name"))
+    if season_id == "season_001" and team_key == "nocturne":
+        return True
     if season_id == "season_003" and team_key == "unlimited blade works 1":
         return True
     if season_id == "season_009" and team_key == "victory instinct" and standing.get("division") in {"Singles", "Doubles"}:
@@ -1247,6 +1260,38 @@ def _person_stint_from_standing(standing: dict[str, Any]) -> dict[str, Any]:
 
 
 def _special_person_stints(season_id: str, standings: list[dict[str, Any]], matches: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    if season_id == "season_001":
+        standing = _standing_for_team(standings, "Nocturne*", "Regular Season")
+        source_urls = _join_source_urls(
+            standing.get("source_urls") if standing else None,
+            _source_urls_from_matches(matches, "season_001", {"PokemonFakten", "FanmadeLetsPlay"}),
+        )
+        return [
+            _person_stint_from_matches(
+                season_id,
+                matches,
+                person_name="PokemonFakten",
+                team_name="Nocturne*",
+                division="Regular Season",
+                start_week=1,
+                end_week=11,
+                rank=standing.get("rank") if standing else None,
+                source_urls=source_urls,
+                notes="User-provided controller correction: PokemonFakten led Nocturne in the first half before FanmadeLetsPlay took over for the Rueckrunde. Team-level final table stats are not safely attributable to either individual.",
+            ),
+            _person_stint_from_matches(
+                season_id,
+                matches,
+                person_name="FanmadeLetsPlay",
+                team_name="Nocturne*",
+                division="Regular Season",
+                start_week=12,
+                end_week=22,
+                rank=standing.get("rank") if standing else None,
+                source_urls=source_urls,
+                notes="User-provided controller correction: FanmadeLetsPlay led Nocturne from the Rueckrunde onward. Team-level final table stats are not safely attributable to either individual.",
+            ),
+        ]
     if season_id == "season_003":
         standing = _standing_for_team(standings, "Unlimited Blade Works*¹", "Regular Season")
         source_urls = _join_source_urls(standing.get("source_urls") if standing else None, _source_urls_from_matches(matches, "season_003", {"LucarioLP", "Bene"}))
@@ -2064,7 +2109,7 @@ def _season_killlists(season_id: str, tables: list[dict[str, Any]]) -> list[dict
     if season_id == "season_001":
         for table in [table for table in tables if _has_killlist_header(table["rows"])]:
             rows.extend(_standard_killlist(season_id, table, "Regular Season"))
-        return _dedupe_killlist_rows(rows)
+        return _mark_partial_season_001_killlists(_dedupe_killlist_rows(rows))
     if season_id == "season_010":
         regular_rows: list[dict[str, Any]] = []
         for table in _tables_by_title(tables, "Killliste"):
@@ -2117,6 +2162,13 @@ def _old_project_killlist(season_id: str, tables: list[dict[str, Any]]) -> list[
                     "source_urls": source_url,
                 }
             )
+    return rows
+
+
+def _mark_partial_season_001_killlists(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    for row in rows:
+        if row.get("data_status") == "sheet_extracted":
+            row["data_status"] = "partial_sheet_extracted"
     return rows
 
 
@@ -2562,6 +2614,7 @@ def _season_label(playlist: dict[str, Any]) -> str | None:
 
 def _season_note(season_id: str) -> str | None:
     notes = {
+        "season_001": "Nocturne changed controller from PokemonFakten to FanmadeLetsPlay for the Rueckrunde; the public killlist source only covers rows through Spieltag 7, so Season 1 kill data is marked partial.",
         "season_003": "Two schedule sheets are present; only one final standings sheet is publicly available in the PresentLP source set.",
         "season_006": "Season sheet includes Sun/Moon conferences plus playoff rows; champion is taken from the sourced playoff final.",
         "season_007": "Available sources contain regular-season data but no playoff bracket/final winner.",

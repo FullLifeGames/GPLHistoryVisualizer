@@ -12,6 +12,7 @@ CSV-first reconstruction and visualization of German Pokémon League history fro
 - Markdown source report under `docs/gpl-history.md`.
 - Review queue CSVs under `data/review/` for missing killlists, missing appearances, and video matches that need human cleanup.
 - Data quality and source claim CSVs for per-season coverage and sourced claim inspection.
+- Precomputed aggregate CSVs for heavy frontend summaries: all-time player rows, all-time Pokémon rows, matchup summaries, roster score audit rows, and season storylines.
 - Known limitations and correction workflow under `docs/known-limitations.md`.
 
 ## Setup
@@ -56,6 +57,12 @@ Generate data quality and source claim CSVs:
 gpl-history data-quality --data-dir data
 ```
 
+Generate only the precomputed frontend aggregate CSVs:
+
+```powershell
+gpl-history aggregates --data-dir data
+```
+
 Validate normalized CSV files:
 
 ```powershell
@@ -85,7 +92,7 @@ Generate review queue CSVs:
 gpl-history review-queue --data-dir data
 ```
 
-Check generated data-quality and review artifacts for drift:
+Check generated data-quality, aggregate, and review artifacts for drift:
 
 ```powershell
 gpl-history check-generated --data-dir data
@@ -101,7 +108,7 @@ Run tests:
 
 ```powershell
 python -m pytest -q
-node --test tests/web_i18n.test.mjs tests/web_pokemon_names.test.mjs tests/web_router.test.mjs tests/web_stats.test.mjs
+node --test tests/*.mjs
 ```
 
 Serve the web app locally:

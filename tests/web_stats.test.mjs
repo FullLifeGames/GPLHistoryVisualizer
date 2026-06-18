@@ -124,6 +124,18 @@ assert.deepEqual(
 assert.deepEqual(
   pokemonDraftOverviewRows(
     [
+      { pokemon: "Arceus", english: "Arceus", asset_id: "arceus", tier: "Uber", tier_rank: "2", draft_count: "0", picked_status: "never_picked" },
+      { pokemon: "Giratina", english: "Giratina", asset_id: "giratina", tier: "Uber", tier_rank: "2", draft_count: "0", picked_status: "never_picked" },
+      { pokemon: "Lusardin", english: "Wishiwashi", asset_id: "wishiwashi", tier: "RU", tier_rank: "7", draft_count: "0", picked_status: "never_picked" },
+    ],
+    { search: "wishiwashi" },
+  ).map((row) => row.pokemon),
+  ["Lusardin"],
+);
+
+assert.deepEqual(
+  pokemonDraftOverviewRows(
+    [
       { pokemon: "Pikachu", tier: "ZU", tier_rank: "13", draft_count: "2", title_count: "1", picked_status: "picked", title_seasons: "S9" },
       { pokemon: "Bisasam", tier: "LC", tier_rank: "15", draft_count: "0", title_count: "", picked_status: "never_picked", title_seasons: "" },
     ],
@@ -345,6 +357,27 @@ assert.deepEqual(
 );
 
 assert.deepEqual(
+  primaryCompetitionRows(
+    [
+      { season_id: "season_002", division: "Regular Season", person_name: "A" },
+      { season_id: "season_002", division: "Liga 2", person_name: "B" },
+      { season_id: "season_003", division: "Regular Season", person_name: "C" },
+      { season_id: "season_004", division: "Regular Season", person_name: "D" },
+      { season_id: "season_005", division: "Liga 1", person_name: "E" },
+      { season_id: "season_008", division: "Liga 1", person_name: "F" },
+    ],
+    "Liga 1",
+  ).map((row) => `${row.season_id}:${row.division}:${row.person_name}`),
+  [
+    "season_002:Regular Season:A",
+    "season_003:Regular Season:C",
+    "season_004:Regular Season:D",
+    "season_005:Liga 1:E",
+    "season_008:Liga 1:F",
+  ],
+);
+
+assert.deepEqual(
   matchupOverview(
     [
       { player_a: "Bene", player_b: "PresentLP", winner: "Bene" },
@@ -522,10 +555,12 @@ assert.deepEqual(
   }),
   [
     {
+      review_key: "ambiguous_matches:season_010:1",
       queue: "ambiguous_matches.csv",
       severity: "high",
       review_reason: "unmatched_game_video",
       correction_file: "data/manual/matches.csv",
+      correction_target: "data/manual/matches.csv -> season_010 / GPL S10 Spieltag 2 vs Bene",
       suggested_action: "Map the video.",
       season_id: "season_010",
       subject: "GPL S10 Spieltag 2 vs Bene",
