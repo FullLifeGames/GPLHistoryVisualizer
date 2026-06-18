@@ -376,6 +376,10 @@ _ALIAS_CANONICAL = {
     "finaalfa": "silva",
     "silvaffb": "silva",
     "silva": "silva",
+    "fanmadetim": "fanmadeletsplay",
+    "fanmade tim": "fanmadeletsplay",
+    "fanmadeletsplay": "fanmadeletsplay",
+    "fanmade lets play": "fanmadeletsplay",
 }
 
 _PREFERRED_DISPLAY = {
@@ -402,6 +406,7 @@ _PREFERRED_DISPLAY = {
     "tabasco tv": "Tabasco TV",
     "belmontgabriel": "BelmontGabriel",
     "diaswordplay": "DiaSwordPlay",
+    "fanmadeletsplay": "FanmadeLetsPlay",
     "fnupa": "Cabgolord",
     "king blex": "KingBlex",
     "og dnz": "OGDNZ",

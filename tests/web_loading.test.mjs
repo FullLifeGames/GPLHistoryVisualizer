@@ -35,6 +35,7 @@ assert.equal(lazyDatasets.includes("seasonStorylines"), true);
 assert.equal(appJs.includes("const VIEW_DATASETS"), true);
 assert.match(appJs, /"all-time": \["personAllTime"\]/);
 assert.match(appJs, /killlists: \["pokemonDraftOverview", "pokemonAllTime"\]/);
+assert.match(appJs, /"pokemon-drafts": \["pokemonDraftOverview", "pokemonDraftInstances"\]/);
 assert.match(appJs, /matchup: \["matchVideos", "matchupSummary"\]/);
 assert.match(appJs, /"team-rosters": \["pokemonDraftOverview", "teamPokemonUsage", "teamRosters", "rosterScores"\]/);
 assert.match(appJs, /"season-detail": \["videos", "sourceClaims", "seasonStorylines"\]/);

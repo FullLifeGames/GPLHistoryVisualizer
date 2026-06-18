@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {
   aggregatePersonStats,
   canonicalKilllistRows,
+  detailRowsWithDraftInstances,
   displayNumber,
   eloRatings,
   filterSourceClaims,
@@ -398,6 +399,51 @@ assert.deepEqual(
 assert.deepEqual(
   pokemonDraftOverviewRows(
     [
+      { pokemon: "Pixi", pokemon_normalized: "pixi", asset_id: "clefable", english: "Clefable", tier: "UU", tier_rank: "5", draft_count: "19", picked_status: "picked", source_urls: "overview" },
+      { pokemon: "Evoli", pokemon_normalized: "evoli", asset_id: "eevee", english: "Eevee", tier: "PU", tier_rank: "11", draft_count: "0", picked_status: "never_picked", source_urls: "pokedex" },
+    ],
+    {
+      draftInstances: [
+        { season_id: "season_001", division: "Regular Season", pokemon: "Pixi", pokemon_normalized: "pixi", asset_id: "clefable", person_name: "Morbolth", person_name_normalized: "morbolth", team_name: "Mortox", team_name_normalized: "mortox", source_urls: "s1" },
+        { season_id: "season_002", division: "Regular Season", pokemon: "Pixi", pokemon_normalized: "pixi", asset_id: "clefable", person_name: "SteveParker", person_name_normalized: "steveparker", team_name: "ToxicBlast", team_name_normalized: "toxicblast", source_urls: "s2" },
+        { season_id: "season_006", division: "Moon Conference", roster_phase: "regular", pokemon: "Pixi", pokemon_normalized: "pixi", asset_id: "clefable", person_name: "ElektechN9ne", person_name_normalized: "elektechn9ne", team_name: "Elekids Club", team_name_normalized: "elekidsclub", source_urls: "s6-regular" },
+        { season_id: "season_006", division: "Playoffs", roster_phase: "playoffs", pokemon: "Pixi", pokemon_normalized: "pixi", asset_id: "clefable", person_name: "ElektechN9ne", person_name_normalized: "elektechn9ne", team_name: "Elekids Club", team_name_normalized: "elekidsclub", source_urls: "s6-playoffs" },
+      ],
+    },
+  ).map((row) => ({
+    pokemon: row.pokemon,
+    draft_count: row.draft_count,
+    season_count: row.season_count,
+    season_list: row.season_list,
+    trainer_count: row.trainer_count,
+    team_count: row.team_count,
+    picked_status: row.picked_status,
+  })),
+  [
+    { pokemon: "Pixi", draft_count: 3, season_count: 3, season_list: "S1, S2, S6", trainer_count: 3, team_count: 3, picked_status: "picked" },
+    { pokemon: "Evoli", draft_count: 0, season_count: 0, season_list: "", trainer_count: 0, team_count: 0, picked_status: "never_picked" },
+  ],
+);
+
+assert.deepEqual(
+  pokemonDraftOverviewRows(
+    [
+      { pokemon: "Pixi", pokemon_normalized: "pixi", asset_id: "clefable", english: "Clefable", tier: "UU", tier_rank: "5", draft_count: "13", picked_status: "picked" },
+    ],
+    {
+      draftInstances: [
+        { season_id: "season_008", division: "Liga 2", roster_phase: "hinrunde", pokemon: "Pixi", pokemon_normalized: "pixi", asset_id: "clefable", person_name: "Pokgalaxy", person_name_normalized: "pokgalaxy", team_name: "Issotop", team_name_normalized: "issotop" },
+        { season_id: "season_008", division: "Liga 2", roster_phase: "rueckrunde", pokemon: "Pixi", pokemon_normalized: "pixi", asset_id: "clefable", person_name: "Pokgalaxy", person_name_normalized: "pokgalaxy", team_name: "Issotop", team_name_normalized: "issotop" },
+        { season_id: "season_002", division: "Liga 2", pokemon: "Pixi", pokemon_normalized: "pixi", asset_id: "clefable", person_name: "CaptainCrinch", person_name_normalized: "captaincrinch" },
+      ],
+    },
+  ).map((row) => `${row.pokemon}:${row.draft_count}:${row.season_list}:${row.trainer_count}`),
+  ["Pixi:2:S2, S8:2"],
+);
+
+assert.deepEqual(
+  pokemonDraftOverviewRows(
+    [
       { pokemon: "Arceus", english: "Arceus", asset_id: "arceus", tier: "Uber", tier_rank: "2", draft_count: "0", picked_status: "never_picked" },
       { pokemon: "Giratina", english: "Giratina", asset_id: "giratina", tier: "Uber", tier_rank: "2", draft_count: "0", picked_status: "never_picked" },
       { pokemon: "Lusardin", english: "Wishiwashi", asset_id: "wishiwashi", tier: "RU", tier_rank: "7", draft_count: "0", picked_status: "never_picked" },
@@ -459,14 +505,204 @@ assert.deepEqual(
       teams: 3,
       source_urls: "https://example.test/s8;https://example.test/s9;https://example.test/s10",
     },
-    trainerRows: [{ trainer: "Bene", appearances: 18, kills: 20, deaths: 13, differential: 7, seasons: 3, season_list: "S8, S9, S10", teams: 3 }],
+    trainerRows: [{ trainer: "Bene", appearances: 18, kills: 20, deaths: 13, differential: 7, seasons: 3, season_list: "S8, S9, S10", teams: 3, performance_rows: 3, draft_rows: 0 }],
     seasonRows: [
-      { season_id: "season_008", division: "Liga 1", trainer: "Bene", team_name: "Victini Bottom", appearances: 9, kills: 8, deaths: 3, differential: 5, source_urls: "https://example.test/s8" },
-      { season_id: "season_009", division: "Doubles", trainer: "Bene", team_name: "Victory Instinct", appearances: 3, kills: 3, deaths: 2, differential: 1, source_urls: "https://example.test/s9" },
-      { season_id: "season_010", division: "Playoffs", trainer: "Bene", team_name: "Wackel Backel", appearances: 6, kills: 9, deaths: 8, differential: 1, source_urls: "https://example.test/s10" },
+      { season_id: "season_008", division: "Liga 1", trainer: "Bene", team_name: "Victini Bottom", appearances: 9, kills: 8, deaths: 3, differential: 5, performance_rows: 1, draft_only: false, data_status: "sheet_extracted", source_urls: "https://example.test/s8" },
+      { season_id: "season_009", division: "Doubles", trainer: "Bene", team_name: "Victory Instinct", appearances: 3, kills: 3, deaths: 2, differential: 1, performance_rows: 1, draft_only: false, data_status: "sheet_extracted", source_urls: "https://example.test/s9" },
+      { season_id: "season_010", division: "Playoffs", trainer: "Bene", team_name: "Wackel Backel", appearances: 6, kills: 9, deaths: 8, differential: 1, performance_rows: 1, draft_only: false, data_status: "sheet_extracted", source_urls: "https://example.test/s10" },
     ],
   },
 );
+
+{
+  const normalizeTestKey = (value) =>
+    String(value ?? "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  const rows = detailRowsWithDraftInstances(
+    [
+      {
+        season_id: "season_002",
+        division: "Regular Season",
+        pokemon: "Latios",
+        pokemon_normalized: "latios",
+        trainer: "SteveParker",
+        trainer_normalized: "steveparker",
+        team_name: "ToxicBlast",
+        kills: "18",
+        data_status: "sheet_extracted",
+      },
+      {
+        season_id: "season_002",
+        division: "Regular Season",
+        pokemon: "Mega Gewaldro",
+        pokemon_normalized: "mega gewaldro",
+        trainer: "Cabgolord",
+        trainer_normalized: "fnupa",
+        team_name: "",
+        kills: "2",
+        data_status: "sheet_extracted",
+      },
+      {
+        season_id: "season_002",
+        division: "Regular Season",
+        pokemon: "Rotom-Wasch",
+        pokemon_normalized: "rotom wasch",
+        trainer: "Cabgolord",
+        trainer_normalized: "fnupa",
+        team_name: "",
+        kills: "6",
+        data_status: "sheet_extracted",
+      },
+      {
+        season_id: "season_002",
+        division: "Regular Season",
+        pokemon: "Flampivian",
+        pokemon_normalized: "flampivian",
+        trainer: "Cabgolord",
+        trainer_normalized: "fnupa",
+        team_name: "",
+        kills: "8",
+        data_status: "sheet_extracted",
+      },
+    ],
+    [
+      {
+        season_id: "season_002",
+        division: "Regular Season",
+        pokemon: "Mega-Latios",
+        pokemon_normalized: "megalatios",
+        asset_id: "latiosmega",
+        person_name: "Cabgolord",
+        person_name_normalized: "fnupa",
+        team_name: "Doomforce",
+        team_name_normalized: "doomforce",
+        data_status: "old_project_team_note",
+        source_urls: "old-project;team-source",
+      },
+      {
+        season_id: "season_002",
+        division: "Regular Season",
+        pokemon: "Latios",
+        pokemon_normalized: "latios",
+        asset_id: "latios",
+        person_name: "SteveParker",
+        person_name_normalized: "steveparker",
+        team_name: "ToxicBlast",
+        team_name_normalized: "toxicblast",
+        data_status: "old_project_team_note",
+        source_urls: "old-project",
+      },
+      {
+        season_id: "season_002",
+        division: "Regular Season",
+        pokemon: "Mega-Gewaldro",
+        pokemon_normalized: "megagewaldro",
+        asset_id: "sceptilemega",
+        person_name: "Cabgolord",
+        person_name_normalized: "fnupa",
+        team_name: "Doomforce",
+        team_name_normalized: "doomforce",
+        data_status: "old_project_team_note",
+        source_urls: "old-project",
+      },
+      {
+        season_id: "season_002",
+        division: "Regular Season",
+        pokemon: "Rotom-W",
+        pokemon_normalized: "rotomw",
+        asset_id: "rotomwash",
+        person_name: "Cabgolord",
+        person_name_normalized: "fnupa",
+        team_name: "Doomforce",
+        team_name_normalized: "doomforce",
+        data_status: "old_project_team_note",
+        source_urls: "old-project",
+      },
+      {
+        season_id: "season_002",
+        division: "Regular Season",
+        pokemon: "Flampivian-Normal",
+        pokemon_normalized: "flampiviannormal",
+        asset_id: "darmanitan",
+        person_name: "Cabgolord",
+        person_name_normalized: "fnupa",
+        team_name: "Doomforce",
+        team_name_normalized: "doomforce",
+        data_status: "old_project_team_note",
+        source_urls: "old-project",
+      },
+    ],
+    normalizeTestKey,
+  );
+
+  assert.deepEqual(
+    rows.map((row) => ({ pokemon: row.pokemon, trainer: row.trainer, trainer_normalized: row.trainer_normalized, draft_only: row.draft_only || "", kills: row.kills })),
+    [
+      { pokemon: "Latios", trainer: "SteveParker", trainer_normalized: "steveparker", draft_only: "", kills: "18" },
+      { pokemon: "Mega Gewaldro", trainer: "Cabgolord", trainer_normalized: "fnupa", draft_only: "", kills: "2" },
+      { pokemon: "Rotom-Wasch", trainer: "Cabgolord", trainer_normalized: "fnupa", draft_only: "", kills: "6" },
+      { pokemon: "Flampivian", trainer: "Cabgolord", trainer_normalized: "fnupa", draft_only: "", kills: "8" },
+      { pokemon: "Mega-Latios", trainer: "Cabgolord", trainer_normalized: "fnupa", draft_only: "true", kills: "" },
+    ],
+  );
+
+  assert.deepEqual(
+    summarizeTrainerPokemon(rows, "person_fnupa", normalizeTestKey).map((row) => ({
+      trainer: row.trainer,
+      pokemon: row.pokemon,
+      seasons: row.seasons,
+      season_list: row.season_list,
+      teams: row.teams,
+      performance_rows: row.performance_rows,
+      draft_rows: row.draft_rows,
+      source_urls: row.source_urls,
+    })),
+    [
+      {
+        trainer: "Cabgolord",
+        pokemon: "Flampivian",
+        seasons: 1,
+        season_list: "S2",
+        teams: 0,
+        performance_rows: 1,
+        draft_rows: 0,
+        source_urls: "",
+      },
+      {
+        trainer: "Cabgolord",
+        pokemon: "Rotom-Wasch",
+        seasons: 1,
+        season_list: "S2",
+        teams: 0,
+        performance_rows: 1,
+        draft_rows: 0,
+        source_urls: "",
+      },
+      {
+        trainer: "Cabgolord",
+        pokemon: "Mega Gewaldro",
+        seasons: 1,
+        season_list: "S2",
+        teams: 0,
+        performance_rows: 1,
+        draft_rows: 0,
+        source_urls: "",
+      },
+      {
+        trainer: "Cabgolord",
+        pokemon: "Mega-Latios",
+        seasons: 1,
+        season_list: "S2",
+        teams: 1,
+        performance_rows: 0,
+        draft_rows: 1,
+        source_urls: "old-project;team-source",
+      },
+    ],
+  );
+}
 
 assert.deepEqual(
   canonicalKilllistRows(
@@ -891,8 +1127,8 @@ assert.deepEqual(
     new Map([["uhafnir", { titles: 2, title_seasons: "S8, S10" }]]),
   ),
   [
-    { season_id: "season_008", divisions: "Liga 1", appearances: 9, kills: 8, deaths: 3, differential: 5, trainers: 1, teams: 0 },
-    { season_id: "season_010", divisions: "Playoffs", appearances: 6, kills: 9, deaths: 8, differential: 1, trainers: 1, teams: 0 },
+    { season_id: "season_008", divisions: "Liga 1", appearances: 9, kills: 8, deaths: 3, differential: 5, trainers: 1, teams: 0, performance_rows: 1, draft_rows: 0 },
+    { season_id: "season_010", divisions: "Playoffs", appearances: 6, kills: 9, deaths: 8, differential: 1, trainers: 1, teams: 0, performance_rows: 1, draft_rows: 0 },
   ],
 );
 

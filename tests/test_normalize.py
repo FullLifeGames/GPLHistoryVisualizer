@@ -40,6 +40,9 @@ def test_aliases_merge_to_preferred_person_display_names():
     assert _person_id("Cabgolord") == "person_fnupa"
     assert _display_name("CabgoLord") == "Cabgolord"
     assert _display_name("Fnupa") == "Cabgolord"
+    assert _canonical_name("FanmadeTim") == "fanmadeletsplay"
+    assert _person_id("FanmadeTim") == "person_fanmadeletsplay"
+    assert _display_name("FanmadeTim") == "FanmadeLetsPlay"
 
 
 def test_write_csv_retries_transient_windows_invalid_argument(tmp_path, monkeypatch):

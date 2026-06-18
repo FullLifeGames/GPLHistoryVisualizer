@@ -466,6 +466,86 @@ export function personDetailKilllistRows(rows, selectedDivision = "all") {
   });
 }
 
+export function detailRowsWithDraftInstances(performanceRows = [], draftInstanceRows = [], normalizeKey = normalizedStatsKey) {
+  const represented = new Set();
+  performanceRows
+    .filter((row) => row.data_status !== "not_available")
+    .forEach((row) => {
+      draftRepresentationKeys(row, normalizeKey).forEach((key) => represented.add(key));
+    });
+
+  const detailRows = [...performanceRows];
+  draftInstanceRows
+    .filter((row) => row.data_status !== "not_available")
+    .forEach((row) => {
+      const candidate = {
+        season_id: row.season_id || "",
+        division: row.division || "",
+        stage: row.roster_phase || "draft",
+        pokemon: row.pokemon || row.pokemon_normalized || "",
+        pokemon_normalized: row.pokemon_normalized || row.pokemon || "",
+        trainer: row.person_name || row.person_name_normalized || "",
+        trainer_normalized: row.person_name_normalized || row.person_name || "",
+        team_name: row.team_name || "",
+        team_name_normalized: row.team_name_normalized || row.team_name || "",
+        appearances: "",
+        kills: "",
+        deaths: "",
+        differential: "",
+        data_status: row.data_status || "draft_instance",
+        source_urls: row.source_urls || "",
+        draft_only: "true",
+      };
+      const keys = draftRepresentationKeys(candidate, normalizeKey);
+      if (!keys.length || keys.some((key) => represented.has(key))) return;
+      keys.forEach((key) => represented.add(key));
+      detailRows.push(candidate);
+    });
+  return detailRows;
+}
+
+function draftRepresentationKeys(row, normalizeKey = normalizedStatsKey) {
+  const season = row.season_id || "";
+  const pokemonKeys = detailPokemonKeys(row, normalizeKey);
+  if (!season || !pokemonKeys.length) return [];
+  const ownerKeys = detailOwnerKeys(row, normalizeKey);
+  return pokemonKeys.flatMap((pokemonKey) => ownerKeys.map((ownerKey) => `${season}\u0000${pokemonKey}\u0000${ownerKey}`));
+}
+
+function detailPokemonKeys(row, normalizeKey = normalizedStatsKey) {
+  const keys = new Set();
+  [row.asset_id, row.pokemon_normalized, row.pokemon].forEach((value) => {
+    const normalizedKey = normalizeKey(value);
+    if (normalizedKey) keys.add(`name:${normalizedKey}`);
+    const assetKey = normalizeKey(pokemonAssetId(value));
+    if (assetKey) keys.add(`asset:${assetKey}`);
+  });
+  return [...keys];
+}
+
+function detailOwnerKeys(row, normalizeKey = normalizedStatsKey) {
+  const keys = new Set();
+  [
+    row.trainer_normalized,
+    row.trainer,
+    row.person_name_normalized,
+    row.person_name,
+    row.person_id,
+  ].forEach((value) => {
+    const key = comparablePersonKey(value, normalizeKey);
+    if (key) keys.add(`person:${key}`);
+  });
+  [row.team_name_normalized, row.team_name, row.team].forEach((value) => {
+    const key = normalizeKey(value);
+    if (key) keys.add(`team:${key}`);
+  });
+  return [...keys];
+}
+
+function hasDetailPerformance(row) {
+  return row.draft_only !== "true" && (hasNumber(row.appearances) || hasNumber(row.kills) || hasNumber(row.deaths) || hasNumber(row.differential));
+}
+
 function regularOnlyKilllistRows(canonicalRows, seasonRows) {
   const canonicalPokemon = new Set(canonicalRows.map((row) => row.pokemon_normalized || normalizedStatsKey(row.pokemon)).filter(Boolean));
   return seasonRows.filter((row) => {
@@ -590,10 +670,15 @@ export function summarizeKilllists(rows) {
     }));
 }
 
-export function pokemonDraftOverviewRows(rows = [], { pickedStatus = "all", excludedTiers = [], search = "" } = {}) {
+export function pokemonDraftOverviewRows(
+  rows = [],
+  { pickedStatus = "all", excludedTiers = [], search = "", draftInstances = null, normalizeKey = normalizedStatsKey } = {},
+) {
+  const draftStats = Array.isArray(draftInstances) ? pokemonDraftStatsIndex(draftInstances, normalizeKey) : null;
   const excludedTierValues = new Set(excludedTiers.map((tier) => String(tier ?? "").toLowerCase()));
   const searchNeedle = String(search ?? "").trim().toLowerCase();
   return rows
+    .map((row) => withVisibleDraftStats(row, draftStats, normalizeKey))
     .filter((row) => pickedStatus === "all" || row.picked_status === pickedStatus)
     .filter((row) => !excludedTierValues.has(String(row.tier ?? "").toLowerCase()))
     .filter((row) => {
@@ -623,6 +708,101 @@ export function pokemonDraftOverviewRows(rows = [], { pickedStatus = "all", excl
     }))
     .sort((a, b) => b.draft_count - a.draft_count || a.tier_rank - b.tier_rank || String(a.pokemon).localeCompare(String(b.pokemon)))
     .map((row, index) => ({ ...row, rank: index + 1 }));
+}
+
+function withVisibleDraftStats(row, draftStats, normalizeKey) {
+  if (!draftStats) {
+    return row;
+  }
+  const stats = draftStatsForOverviewRow(draftStats, row, normalizeKey);
+  const draftCount = stats.drafts.length;
+  return {
+    ...row,
+    draft_count: draftCount,
+    season_count: stats.seasons.size,
+    season_list: formatSeasonList([...stats.seasons]),
+    trainer_count: stats.trainers.size,
+    team_count: stats.teams.size,
+    picked_status: draftCount ? "picked" : "never_picked",
+    source_urls: stats.sourceUrls.size ? [...stats.sourceUrls].join(";") : row.source_urls,
+  };
+}
+
+function pokemonDraftStatsIndex(rows = [], normalizeKey = normalizedStatsKey) {
+  const index = new Map();
+  rows
+    .filter((row) => row.data_status !== "not_available")
+    .forEach((row) => {
+      const draft = {
+        season_id: row.season_id || "",
+        trainer: row.person_name || row.person_name_normalized || "",
+        trainer_key: comparablePersonKey(row.person_name_normalized || row.person_name, normalizeKey),
+        team: row.team_name || "",
+        team_key: normalizeKey(row.team_name_normalized || row.team_name),
+        source_urls: row.source_urls || "",
+      };
+      if (!draft.season_id || (!draft.trainer_key && !draft.team_key)) return;
+      overviewPokemonLookupKeys(row, normalizeKey).forEach((key) => {
+        const current = index.get(key) ?? { drafts: [] };
+        addVisibleDraft(current.drafts, draft, normalizeKey);
+        index.set(key, current);
+      });
+    });
+  return index;
+}
+
+function draftStatsForOverviewRow(index, row, normalizeKey = normalizedStatsKey) {
+  const aggregate = { drafts: [] };
+  overviewPokemonLookupKeys(row, normalizeKey).forEach((key) => {
+    (index.get(key)?.drafts ?? []).forEach((draft) => addVisibleDraft(aggregate.drafts, draft, normalizeKey));
+  });
+  const seasons = new Set();
+  const trainers = new Set();
+  const teams = new Set();
+  const sourceUrls = new Set();
+  aggregate.drafts.forEach((draft) => {
+    if (draft.season_id) seasons.add(draft.season_id);
+    if (draft.trainer) trainers.add(draft.trainer);
+    if (draft.team) teams.add(draft.team);
+    addSourceUrls(sourceUrls, draft.source_urls);
+  });
+  return { drafts: aggregate.drafts, seasons, trainers, teams, sourceUrls };
+}
+
+function overviewPokemonLookupKeys(row, normalizeKey = normalizedStatsKey) {
+  const keys = new Set();
+  [row.asset_id, row.pokemon_normalized, row.pokemon, row.english].forEach((value) => {
+    pokemonDraftLookupKeys(value, normalizeKey).forEach((key) => keys.add(key));
+  });
+  return [...keys];
+}
+
+function addVisibleDraft(drafts, candidate, normalizeKey = normalizedStatsKey) {
+  const existing = drafts.find((draft) => sameVisibleDraft(draft, candidate, normalizeKey));
+  if (!existing) {
+    drafts.push({ ...candidate });
+    return;
+  }
+  ["trainer", "trainer_key", "team", "team_key"].forEach((field) => {
+    if (!existing[field] && candidate[field]) existing[field] = candidate[field];
+  });
+  existing.source_urls = joinSourceUrls(existing.source_urls, candidate.source_urls);
+}
+
+function sameVisibleDraft(left, right, normalizeKey = normalizedStatsKey) {
+  if ((left.season_id || "") !== (right.season_id || "")) return false;
+  const sameTrainer = Boolean(left.trainer_key && right.trainer_key && left.trainer_key === right.trainer_key);
+  const leftTeam = left.team_key || normalizeKey(left.team);
+  const rightTeam = right.team_key || normalizeKey(right.team);
+  const sameTeam = Boolean(leftTeam && rightTeam && leftTeam === rightTeam);
+  if (!sameTrainer && !sameTeam) return false;
+  return !(leftTeam && rightTeam && leftTeam !== rightTeam);
+}
+
+function joinSourceUrls(...values) {
+  const urls = new Set();
+  values.forEach((value) => addSourceUrls(urls, value));
+  return [...urls].join(";");
 }
 
 export function teamRosterPokemonRows(data = {}, normalizeKey = normalizedStatsKey) {
@@ -1644,7 +1824,10 @@ export function summarizeTrainerPokemon(rows, selectedPersonKey = "", normalizeK
           divisions: new Set(),
           teams: new Set(),
           sourceUrls: new Set(),
+          performanceRows: 0,
+          draftRows: 0,
         };
+        const performanceRow = hasDetailPerformance(row);
         current.trainer = current.trainer || owner.name;
         current.pokemon = current.pokemon || row.pokemon || row.pokemon_normalized || "";
         current.appearances += numberValue(row.appearances);
@@ -1655,6 +1838,8 @@ export function summarizeTrainerPokemon(rows, selectedPersonKey = "", normalizeK
         if (row.division) current.divisions.add(row.division);
         if (row.team_name) current.teams.add(row.team_name);
         addSourceUrls(current.sourceUrls, row.source_urls);
+        if (performanceRow) current.performanceRows += 1;
+        if (row.draft_only === "true") current.draftRows += 1;
         aggregate.set(key, current);
       });
     });
@@ -1673,6 +1858,8 @@ export function summarizeTrainerPokemon(rows, selectedPersonKey = "", normalizeK
       divisions: row.divisions.size,
       teams: row.teams.size,
       source_urls: [...row.sourceUrls].join(";"),
+      performance_rows: row.performanceRows,
+      draft_rows: row.draftRows,
     }));
 }
 
@@ -1723,7 +1910,10 @@ export function pokemonTimelineRows(rows, selectedPokemonKey, normalizeKey = nor
         differential: 0,
         trainers: new Set(),
         teams: new Set(),
+        performanceRows: 0,
+        draftRows: 0,
       };
+      const performanceRow = hasDetailPerformance(row);
       current.appearances += numberValue(row.appearances);
       current.kills += numberValue(row.kills);
       current.deaths += numberValue(row.deaths);
@@ -1731,6 +1921,8 @@ export function pokemonTimelineRows(rows, selectedPokemonKey, normalizeKey = nor
       if (row.division) current.divisions.add(row.division);
       if (row.trainer) current.trainers.add(row.trainer);
       if (row.team_name) current.teams.add(row.team_name);
+      if (performanceRow) current.performanceRows += 1;
+      if (row.draft_only === "true") current.draftRows += 1;
       aggregate.set(seasonId, current);
     });
 
@@ -1745,6 +1937,8 @@ export function pokemonTimelineRows(rows, selectedPokemonKey, normalizeKey = nor
       differential: row.differential,
       trainers: row.trainers.size,
       teams: row.teams.size,
+      performance_rows: row.performanceRows,
+      draft_rows: row.draftRows,
     }));
 }
 
@@ -1803,6 +1997,7 @@ export function summarizePokemonDetail(rows, selectedPokemonKey, normalizeKey = 
       const appearances = numberValue(row.appearances);
       const deaths = numberValue(row.deaths);
       const differential = killDifferential(row.kills, row.deaths);
+      const performanceRow = hasDetailPerformance(row);
       summary.pokemon = summary.pokemon || row.pokemon || row.pokemon_normalized || selectedPokemonKey;
       summary.appearances += appearances;
       summary.kills += kills;
@@ -1824,6 +2019,8 @@ export function summarizePokemonDetail(rows, selectedPokemonKey, normalizeKey = 
           differential: 0,
           seasons: new Set(),
           teams: new Set(),
+          performanceRows: 0,
+          draftRows: 0,
         };
         current.trainer = current.trainer || owner.name;
         current.appearances += appearances;
@@ -1832,6 +2029,8 @@ export function summarizePokemonDetail(rows, selectedPokemonKey, normalizeKey = 
         current.differential += differential;
         if (row.season_id) current.seasons.add(row.season_id);
         if (row.team_name) current.teams.add(row.team_name);
+        if (performanceRow) current.performanceRows += 1;
+        if (row.draft_only === "true") current.draftRows += 1;
         trainers.set(trainerKey, current);
       });
 
@@ -1844,6 +2043,9 @@ export function summarizePokemonDetail(rows, selectedPokemonKey, normalizeKey = 
         kills,
         deaths,
         differential,
+        performance_rows: performanceRow ? 1 : 0,
+        draft_only: row.draft_only === "true",
+        data_status: row.data_status || "",
         source_urls: row.source_urls || "",
       });
     });
@@ -1871,6 +2073,8 @@ export function summarizePokemonDetail(rows, selectedPokemonKey, normalizeKey = 
         seasons: row.seasons.size,
         season_list: formatSeasonList([...row.seasons]),
         teams: row.teams.size,
+        performance_rows: row.performanceRows,
+        draft_rows: row.draftRows,
       })),
     seasonRows: seasonRows.sort((a, b) => String(a.season_id || "").localeCompare(String(b.season_id || "")) || String(a.division || "").localeCompare(String(b.division || ""))),
   };

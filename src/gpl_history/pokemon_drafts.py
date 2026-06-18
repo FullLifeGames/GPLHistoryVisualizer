@@ -111,8 +111,10 @@ def build_pokemon_draft_overview(
     tier_lookup = parse_showdown_tiers(formats_data)
     forms = _translation_forms(translations)
     aliases = _translation_aliases(translations)
-    draft_map = _draft_instances(killlists, team_usage, aliases)
-    title_draft_map = _draft_instances(killlists, team_usage, aliases, distinct_by_phase=True)
+    overview_killlists = _primary_competition_rows(killlists)
+    overview_team_usage = _primary_competition_rows(team_usage)
+    draft_map = _draft_instances(overview_killlists, overview_team_usage, aliases)
+    title_draft_map = _draft_instances(overview_killlists, overview_team_usage, aliases, distinct_by_phase=True)
     title_seasons_by_asset = _title_seasons_by_asset(title_draft_map, champions or [])
 
     rows: list[dict[str, Any]] = []
@@ -196,6 +198,10 @@ def build_pokemon_draft_instances(
     )
 
 
+def _primary_competition_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    return [row for row in rows if row.get("division") != "Liga 2"]
+
+
 def parse_showdown_tiers(formats_data: str) -> dict[str, dict[str, str]]:
     tiers: dict[str, dict[str, str]] = {}
     for match in re.finditer(r"(?m)^\s*([a-z0-9]+):\s*\{(.*?)^\s*\},", formats_data, flags=re.DOTALL):
@@ -257,7 +263,6 @@ def _draft_instances(
     *,
     distinct_by_phase: bool = False,
 ) -> dict[str, list[dict[str, str]]]:
-    seen: set[tuple[str, ...]] = set()
     drafts: dict[str, list[dict[str, str]]] = {}
 
     def add(
@@ -278,29 +283,24 @@ def _draft_instances(
         team = row.get(team_field) or ""
         if not trainer and not team:
             return
-        season_id = row.get("season_id", "")
-        division = row.get("division", "")
-        roster_phase = row.get("roster_phase", "")
-        identity = (asset, season_id, trainer_key, name_key(team))
-        if distinct_by_phase:
-            identity = (asset, season_id, division, roster_phase, trainer_key, name_key(team))
-        if identity in seen:
-            return
-        seen.add(identity)
-        drafts.setdefault(asset, []).append(
-            {
-                "season_id": season_id,
-                "division": division,
-                "roster_phase": roster_phase,
-                "pokemon": row.get("pokemon") or row.get("pokemon_normalized") or "",
-                "trainer": trainer,
-                "trainer_key": trainer_key,
-                "team": team,
-                "source_kind": source_kind,
-                "data_status": row.get("data_status", ""),
-                "source_urls": row.get("source_urls", ""),
-            }
-        )
+        candidate = {
+            "season_id": row.get("season_id", ""),
+            "division": row.get("division", ""),
+            "roster_phase": row.get("roster_phase", ""),
+            "pokemon": row.get("pokemon") or row.get("pokemon_normalized") or "",
+            "trainer": trainer,
+            "trainer_key": trainer_key,
+            "team": team,
+            "source_kind": source_kind,
+            "data_status": row.get("data_status", ""),
+            "source_urls": row.get("source_urls", ""),
+        }
+        bucket = drafts.setdefault(asset, [])
+        for existing in bucket:
+            if _same_draft_pick(existing, candidate, distinct_by_phase=distinct_by_phase):
+                _merge_draft_pick(existing, candidate)
+                return
+        bucket.append(candidate)
 
     for row in killlists:
         add(row, trainer_field="trainer", trainer_normalized_field="trainer_normalized", team_field="team_name", source_kind="killlist")
@@ -313,6 +313,48 @@ def _draft_instances(
             source_kind="team_usage",
         )
     return drafts
+
+
+def _same_draft_pick(existing: dict[str, str], candidate: dict[str, str], *, distinct_by_phase: bool) -> bool:
+    if existing.get("season_id") != candidate.get("season_id"):
+        return False
+    existing_trainer = existing.get("trainer_key", "")
+    candidate_trainer = candidate.get("trainer_key", "")
+    existing_team = name_key(existing.get("team", ""))
+    candidate_team = name_key(candidate.get("team", ""))
+    same_owner = bool(existing_trainer and candidate_trainer and existing_trainer == candidate_trainer)
+    same_owner = same_owner or bool(existing_team and candidate_team and existing_team == candidate_team)
+    if not same_owner:
+        return False
+    if distinct_by_phase and _known_values_conflict(existing.get("division", ""), candidate.get("division", "")):
+        return False
+    if _known_values_conflict(existing_team, candidate_team):
+        return False
+    if distinct_by_phase and _known_values_conflict(existing.get("roster_phase", ""), candidate.get("roster_phase", "")):
+        return False
+    return True
+
+
+def _known_values_conflict(left: str | None, right: str | None) -> bool:
+    left_key = name_key(left or "")
+    right_key = name_key(right or "")
+    return bool(left_key and right_key and left_key != right_key)
+
+
+def _merge_draft_pick(existing: dict[str, str], candidate: dict[str, str]) -> None:
+    for field in ("division", "roster_phase", "pokemon", "trainer", "trainer_key", "team", "data_status"):
+        if not existing.get(field) and candidate.get(field):
+            existing[field] = candidate[field]
+    existing["source_urls"] = _join_sources(existing.get("source_urls"), candidate.get("source_urls"))
+    existing["source_kind"] = _merge_source_kind(existing.get("source_kind", ""), candidate.get("source_kind", ""))
+
+
+def _merge_source_kind(left: str, right: str) -> str:
+    if not left:
+        return right
+    if not right or left == right:
+        return left
+    return f"{left}+{right}"
 
 
 def _title_seasons_by_asset(
@@ -510,7 +552,8 @@ def _person_key(value: str | None) -> str:
     text = str(value or "").strip()
     if text.startswith("person_"):
         text = text[len("person_") :]
-    return name_key(text)
+    canonical = _canonical_person_name(text) or text
+    return name_key(canonical)
 
 
 def _asset_for_row(row: dict[str, str], aliases: dict[str, str]) -> str:

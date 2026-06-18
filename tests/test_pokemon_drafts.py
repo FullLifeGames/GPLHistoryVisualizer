@@ -100,9 +100,172 @@ def test_build_pokemon_draft_overview_is_form_level_and_marks_never_picked():
     assert by_asset["charizardmegax"]["tier"] == "Uber"
     assert by_asset["charizardmegax"]["season_list"] == "S3"
     assert by_asset["pikachu"]["draft_count"] == "1"
-    assert by_asset["pikachu"]["source_urls"] == "pokeapi;kill-source"
+    assert by_asset["pikachu"]["source_urls"] == "pokeapi;kill-source;duplicate-kill-source"
     assert "charizard" not in by_asset
     assert int(by_asset["bulbasaur"]["tier_rank"]) > int(by_asset["charizardmegax"]["tier_rank"])
+
+
+def test_build_pokemon_draft_overview_merges_same_pick_with_partial_team_data():
+    translations = [
+        {
+            "species_id": "205",
+            "german": "Forstellka",
+            "english": "Forretress",
+            "asset_id": "forretress",
+            "source_url": "pokeapi",
+        },
+    ]
+    killlists = [
+        {
+            "season_id": "season_002",
+            "division": "Regular Season",
+            "pokemon": "Forstellka",
+            "pokemon_normalized": "forstellka",
+            "trainer": "Cabgolord",
+            "trainer_normalized": "fnupa",
+            "team_name": "",
+            "data_status": "sheet_extracted",
+            "source_urls": "kill-source",
+        },
+    ]
+    team_usage = [
+        {
+            "season_id": "season_002",
+            "division": "Regular Season",
+            "pokemon": "Forstellka",
+            "pokemon_normalized": "forstellka",
+            "person_name": "Cabgolord",
+            "person_name_normalized": "fnupa",
+            "team_name": "Doomforce",
+            "data_status": "old_project_team_note",
+            "source_urls": "team-note-source",
+        },
+    ]
+
+    rows = build_pokemon_draft_overview(translations, killlists, team_usage, FORMATS_DATA)
+
+    assert rows[0]["draft_count"] == "1"
+    assert rows[0]["trainer_count"] == "1"
+    assert rows[0]["team_count"] == "1"
+    assert rows[0]["source_urls"] == "pokeapi;kill-source;team-note-source"
+
+
+def test_build_pokemon_draft_overview_counts_split_and_playoff_rows_as_one_team_pick():
+    translations = [
+        {
+            "species_id": "212",
+            "german": "Scherox",
+            "english": "Scizor",
+            "asset_id": "scizor",
+            "source_url": "pokeapi",
+        },
+    ]
+    killlists = [
+        {
+            "season_id": "season_009",
+            "division": "Overall",
+            "pokemon": "Scherox",
+            "pokemon_normalized": "scherox",
+            "trainer": "",
+            "trainer_normalized": "",
+            "team_name": "Victory Instinct",
+            "data_status": "sheet_extracted",
+            "source_urls": "s9-overall",
+        },
+        {
+            "season_id": "season_009",
+            "division": "Singles",
+            "pokemon": "Scherox",
+            "pokemon_normalized": "scherox",
+            "trainer": "BelmontGabriel",
+            "trainer_normalized": "belmontgabriel",
+            "team_name": "Victory Instinct",
+            "data_status": "sheet_extracted",
+            "source_urls": "s9-singles",
+        },
+        {
+            "season_id": "season_009",
+            "division": "Doubles",
+            "pokemon": "Scherox",
+            "pokemon_normalized": "scherox",
+            "trainer": "Bene",
+            "trainer_normalized": "bene",
+            "team_name": "Victory Instinct",
+            "data_status": "sheet_extracted",
+            "source_urls": "s9-doubles",
+        },
+        {
+            "season_id": "season_010",
+            "division": "Regular Season",
+            "pokemon": "Scherox",
+            "pokemon_normalized": "scherox",
+            "trainer": "Dauni Daunstar",
+            "trainer_normalized": "dauni daunstar",
+            "team_name": "Pfundskerle",
+            "data_status": "sheet_extracted",
+            "source_urls": "s10-regular",
+        },
+        {
+            "season_id": "season_010",
+            "division": "Playoffs",
+            "pokemon": "Scherox",
+            "pokemon_normalized": "scherox",
+            "trainer": "Dauni Daunstar",
+            "trainer_normalized": "dauni daunstar",
+            "team_name": "",
+            "data_status": "sheet_extracted",
+            "source_urls": "s10-playoffs",
+        },
+    ]
+
+    rows = build_pokemon_draft_overview(translations, killlists, [], FORMATS_DATA)
+
+    assert rows[0]["draft_count"] == "2"
+    assert rows[0]["season_list"] == "S9, S10"
+    assert rows[0]["source_urls"] == "pokeapi;s9-overall;s9-singles;s9-doubles;s10-regular;s10-playoffs"
+
+
+def test_build_pokemon_draft_overview_counts_primary_competition_only():
+    translations = [
+        {
+            "species_id": "25",
+            "german": "Pikachu",
+            "english": "Pikachu",
+            "asset_id": "pikachu",
+            "source_url": "pokeapi",
+        },
+    ]
+    killlists = [
+        {
+            "season_id": "season_002",
+            "division": "Regular Season",
+            "pokemon": "Pikachu",
+            "pokemon_normalized": "pikachu",
+            "trainer": "Main Player",
+            "trainer_normalized": "main player",
+            "team_name": "Main Team",
+            "data_status": "sheet_extracted",
+            "source_urls": "main-source",
+        },
+        {
+            "season_id": "season_002",
+            "division": "Liga 2",
+            "pokemon": "Pikachu",
+            "pokemon_normalized": "pikachu",
+            "trainer": "League Two Player",
+            "trainer_normalized": "league two player",
+            "team_name": "League Two Team",
+            "data_status": "sheet_extracted",
+            "source_urls": "league-two-source",
+        },
+    ]
+
+    rows = build_pokemon_draft_overview(translations, killlists, [], FORMATS_DATA)
+
+    assert rows[0]["draft_count"] == "1"
+    assert rows[0]["trainer_count"] == "1"
+    assert rows[0]["team_count"] == "1"
+    assert rows[0]["source_urls"] == "pokeapi;main-source"
 
 
 def test_build_pokemon_draft_overview_uses_gen9_natdex_for_never_picked_forms():
@@ -533,5 +696,55 @@ def test_build_pokemon_draft_instances_flattens_assignments():
             "team_name_normalized": "ritter",
             "data_status": "manual_override",
             "source_urls": "manual-source",
+        }
+    ]
+
+
+def test_build_pokemon_draft_instances_merges_same_pick_with_partial_team_data():
+    translations = [{"species_id": "205", "german": "Forstellka", "english": "Forretress", "asset_id": "forretress"}]
+    instances = build_pokemon_draft_instances(
+        translations,
+        [
+            {
+                "season_id": "season_002",
+                "division": "Regular Season",
+                "pokemon": "Forstellka",
+                "pokemon_normalized": "forstellka",
+                "trainer": "Cabgolord",
+                "trainer_normalized": "fnupa",
+                "team_name": "",
+                "data_status": "sheet_extracted",
+                "source_urls": "kill-source",
+            },
+        ],
+        [
+            {
+                "season_id": "season_002",
+                "division": "Regular Season",
+                "pokemon": "Forstellka",
+                "pokemon_normalized": "forstellka",
+                "person_name": "Cabgolord",
+                "person_name_normalized": "fnupa",
+                "team_name": "Doomforce",
+                "data_status": "old_project_team_note",
+                "source_urls": "team-note-source",
+            },
+        ],
+    )
+
+    assert instances == [
+        {
+            "season_id": "season_002",
+            "division": "Regular Season",
+            "roster_phase": "",
+            "pokemon": "Forstellka",
+            "pokemon_normalized": "forstellka",
+            "asset_id": "forretress",
+            "person_name": "Cabgolord",
+            "person_name_normalized": "fnupa",
+            "team_name": "Doomforce",
+            "team_name_normalized": "doomforce",
+            "data_status": "sheet_extracted",
+            "source_urls": "kill-source;team-note-source",
         }
     ]
