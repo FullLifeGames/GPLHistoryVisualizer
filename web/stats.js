@@ -628,6 +628,7 @@ export function pokemonDraftOverviewRows(rows = [], { pickedStatus = "all", excl
 export function teamRosterPokemonRows(data = {}, normalizeKey = normalizedStatsKey) {
   const draftIndex = pokemonDraftInfoIndex(data.pokemonDraftOverview ?? [], normalizeKey);
   const rosterOwnerLookup = teamRosterOwnerLookup(data.teamUsage ?? [], normalizeKey);
+  const rosterPresence = teamRosterPresence(data.teamUsage ?? [], normalizeKey);
   const aggregate = new Map();
 
   (data.teamUsage ?? [])
@@ -655,21 +656,29 @@ export function teamRosterPokemonRows(data = {}, normalizeKey = normalizedStatsK
     .filter((row) => row.data_status !== "not_available")
     .forEach((row) => {
       const owner = rosterOwnerForKilllist(row, rosterOwnerLookup, normalizeKey);
-      addRosterPokemon(aggregate, draftIndex, normalizeKey, {
-        season_id: row.season_id || "",
-        division: row.division || "",
-        team: row.team_name || owner.team || "",
-        person: row.trainer || row.trainer_normalized || owner.person || "",
-        pokemon: row.pokemon || row.pokemon_normalized || "",
-        pokemon_normalized: row.pokemon_normalized || row.pokemon || "",
-        slot: "",
-        appearances: numberValue(row.appearances),
-        kills: numberValue(row.kills),
-        deaths: numberValue(row.deaths),
-        missing_deaths: hasRosterPerformance(row) && !hasNumber(row.deaths),
-        notes: "",
-        roster_phase: owner.roster_phase || "",
-        source_urls: sourceValues(row),
+      rosterCandidatePhasesForKilllist(row, owner).forEach((rosterPhase) => {
+        const phaseOwner = { ...owner, roster_phase: rosterPhase };
+        const variantPresence = rosterVariantPresenceForKilllist(row, phaseOwner, rosterPresence, normalizeKey);
+        const supplementsIncompleteSnapshot =
+          !owner.hasMultiplePhases && variantPresence.ownerExists && !variantPresence.pokemonExists && !requiresExactRosterPokemon(row, phaseOwner);
+        if (variantPresence.ownerExists && !variantPresence.pokemonExists && !supplementsIncompleteSnapshot) return;
+        if (!phaseOwner.team && !phaseOwner.person && rosterExistsForKilllist(row, rosterPresence, normalizeKey)) return;
+        addRosterPokemon(aggregate, draftIndex, normalizeKey, {
+          season_id: row.season_id || "",
+          division: row.division || "",
+          team: row.team_name || phaseOwner.team || "",
+          person: row.trainer || row.trainer_normalized || phaseOwner.person || "",
+          pokemon: row.pokemon || row.pokemon_normalized || "",
+          pokemon_normalized: row.pokemon_normalized || row.pokemon || "",
+          slot: "",
+          appearances: numberValue(row.appearances),
+          kills: numberValue(row.kills),
+          deaths: numberValue(row.deaths),
+          missing_deaths: hasRosterPerformance(row) && !hasNumber(row.deaths),
+          notes: supplementsIncompleteSnapshot ? "Killlisten-Ergaenzung zu unvollstaendigem Kader-Snapshot" : "",
+          roster_phase: phaseOwner.roster_phase || "",
+          source_urls: sourceValues(row),
+        });
       });
     });
 
@@ -689,6 +698,7 @@ export function teamRosterPokemonRows(data = {}, normalizeKey = normalizedStatsK
       (a, b) =>
         seasonNumber(a.season_id) - seasonNumber(b.season_id) ||
         String(a.division).localeCompare(String(b.division)) ||
+        String(a.roster_phase).localeCompare(String(b.roster_phase)) ||
         String(a.person).localeCompare(String(b.person)) ||
         numberValue(a.slot) - numberValue(b.slot) ||
         String(a.pokemon).localeCompare(String(b.pokemon)),
@@ -699,12 +709,14 @@ export function teamRosterOverviewRows(rows = [], standings = []) {
   const standingIndex = rosterStandingIndex(standings);
   const aggregate = new Map();
   rows.forEach((row) => {
-    const key = `${row.season_id}\u0000${row.division}\u0000${row.team_key || normalizedStatsKey(row.team)}\u0000${row.person_key || normalizedStatsKey(row.person)}`;
+    const key = `${row.season_id}\u0000${row.division}\u0000${row.roster_phase || ""}\u0000${row.team_key || normalizedStatsKey(row.team)}\u0000${row.person_key || normalizedStatsKey(row.person)}`;
     const current = aggregate.get(key) ?? {
       season_id: row.season_id || "",
       division: row.division || "",
       person: row.person || "",
+      person_key: row.person_key || normalizedStatsKey(row.person),
       team: row.team || "",
+      team_key: row.team_key || normalizedStatsKey(row.team),
       pokemon: [],
       appearances: 0,
       kills: 0,
@@ -719,7 +731,9 @@ export function teamRosterOverviewRows(rows = [], standings = []) {
       notes: new Set(),
     };
     current.person = current.person || row.person || "";
+    current.person_key = current.person_key || row.person_key || normalizedStatsKey(row.person);
     current.team = current.team || row.team || "";
+    current.team_key = current.team_key || row.team_key || normalizedStatsKey(row.team);
     current.roster_phase = current.roster_phase || row.roster_phase || "";
     current.pokemon.push(row);
     current.appearances += numberValue(row.appearances);
@@ -773,8 +787,16 @@ export function teamRosterOverviewRows(rows = [], standings = []) {
       return {
         season_id: row.season_id,
         division: row.division,
+        roster_phase: row.roster_phase || "",
         person: row.person,
+        person_key: row.person_key || normalizedStatsKey(row.person),
         team: row.team,
+        team_key: row.team_key || normalizedStatsKey(row.team),
+        wins: standing ? numberValue(standing.wins) : "",
+        losses: standing ? numberValue(standing.losses) : "",
+        draws: standing ? numberValue(standing.draws) : "",
+        result_score: resultScore,
+        pokemon_performance_score: pokemonPerformanceScore,
         roster_score: rosterScore,
         power_score: powerScore,
         performance_score: performanceScore,
@@ -799,6 +821,224 @@ export function teamRosterOverviewRows(rows = [], standings = []) {
         String(a.person || a.team).localeCompare(String(b.person || b.team)),
     )
     .map((row, index) => ({ rank: index + 1, ...row }));
+}
+
+export function teamRosterDisplayGroups(overviewRows = [], pokemonRows = [], selectedVariants = {}) {
+  const pokemonByVariant = new Map();
+  pokemonRows.forEach((row) => {
+    const key = rosterVariantIdentityKey(row);
+    const current = pokemonByVariant.get(key) ?? [];
+    current.push(row);
+    pokemonByVariant.set(key, current);
+  });
+
+  const groups = new Map();
+  overviewRows.forEach((row) => {
+    const groupKey = rosterGroupIdentityKey(row);
+    const variantKey = rosterVariantIdentityKey(row);
+    const current = groups.get(groupKey) ?? {
+      key: groupKey,
+      variants: [],
+    };
+    current.variants.push({
+      key: variantKey,
+      division: row.division || "",
+      roster_phase: row.roster_phase || "",
+      order: rosterVariantOrder(row),
+      row,
+    });
+    groups.set(groupKey, current);
+  });
+
+  const groupRows = [...groups.values()].map((group) => {
+    group.variants.sort(
+      (a, b) =>
+        a.order - b.order ||
+        String(a.division).localeCompare(String(b.division)) ||
+        String(a.roster_phase).localeCompare(String(b.roster_phase)),
+    );
+    const requested = selectedVariants[group.key];
+    const defaultVariant = group.variants[group.variants.length - 1];
+    const activeVariant = group.variants.find((variant) => variant.key === requested) ?? group.variants[group.variants.length - 1];
+    const combinedRow = combinedRosterGroupRow(group, pokemonByVariant);
+    const activeRow = {
+      ...combinedRow,
+      division: activeVariant.row.division,
+      roster_phase: activeVariant.row.roster_phase || "",
+      roster_group_key: group.key,
+      roster_variant_key: activeVariant.key,
+      roster_variant_options: group.variants.map((variant) => ({
+        key: variant.key,
+        division: variant.division,
+        roster_phase: variant.roster_phase,
+      })),
+      variant_count: group.variants.length,
+      variants: group.variants.map((variant) => [variant.division, variant.roster_phase].filter(Boolean).join(" / ")).join(", "),
+    };
+    return {
+      ...group,
+      activeVariantKey: activeVariant.key,
+      sortRow: combinedRow,
+      overview: activeRow,
+      pokemonRows: pokemonByVariant.get(activeVariant.key) ?? [],
+    };
+  });
+
+  groupRows.sort(
+    (a, b) =>
+      numberValue(b.sortRow.roster_score) - numberValue(a.sortRow.roster_score) ||
+      numberValue(b.sortRow.kills) - numberValue(a.sortRow.kills) ||
+      String(a.sortRow.person || a.sortRow.team).localeCompare(String(b.sortRow.person || b.sortRow.team)),
+  );
+  groupRows.forEach((group, index) => {
+    group.overview = { ...group.overview, rank: index + 1 };
+  });
+
+  return {
+    groups: groupRows,
+    overviewRows: groupRows.map((group) => group.overview),
+    pokemonRows: groupRows.flatMap((group) => group.pokemonRows),
+  };
+}
+
+function combinedRosterGroupRow(group, pokemonByVariant) {
+  const rows = group.variants.map((variant) => variant.row);
+  const base = rows[rows.length - 1] ?? {};
+  if (rows.length <= 1) return base;
+
+  const combinedPokemon = uniqueRosterPokemonForGroup(group, pokemonByVariant);
+  const sortedPokemon = [...combinedPokemon].sort(
+    (a, b) => numberValue(b.pokemon_score) - numberValue(a.pokemon_score) || String(a.pokemon).localeCompare(String(b.pokemon)),
+  );
+  const topSix = sortedPokemon.slice(0, 6);
+  const topEleven = sortedPokemon.slice(0, 11);
+  const pokemonCount = sortedPokemon.length;
+  const powerScore = rosterComponentScore(topSix, topEleven, "power_score");
+  const pokemonPerformanceScore = rosterComponentScore(topSix, topEleven, "performance_score");
+  const historyScore = rosterComponentScore(topSix, topEleven, "history_score");
+  const confidenceScore = rosterComponentScore(topSix, topEleven, "confidence_score");
+  const balanceScore = rosterBalanceScore(sortedPokemon);
+  const metricRows = representativeTeamMetricRows(rows);
+  const recordRows = representativeRecordRows(rows);
+  const wins = sumRosterField(recordRows, "wins");
+  const losses = sumRosterField(recordRows, "losses");
+  const draws = sumRosterField(recordRows, "draws");
+  const appearances = sumRosterField(metricRows, "appearances");
+  const kills = sumRosterField(metricRows, "kills");
+  const deaths = sumRosterField(metricRows, "deaths");
+  const differential = sumRosterField(metricRows, "differential");
+  const resultScore = wins || losses || draws ? rosterResultScore({ wins, losses, draws, kills, deaths, differential }) : "";
+  const performanceScore =
+    resultScore === "" ? pokemonPerformanceScore : roundOne(pokemonPerformanceScore * 0.55 + resultScore * 0.45);
+  const rosterScore = roundOne(
+    powerScore * 0.3 + performanceScore * 0.4 + balanceScore * 0.15 + historyScore * 0.1 + confidenceScore * 0.05,
+  );
+  const sourceUrls = new Set();
+  const notes = new Set();
+  rows.forEach((row) => {
+    addSourceUrls(sourceUrls, row.source_urls);
+    addRosterNotes(notes, row.roster_flags);
+  });
+  notes.add(`Kombinierter Teamscore aus zusammengefuehrtem Kader (${rows.length} Varianten)`);
+  const missingTierCount = combinedPokemon.filter((row) => !numberValue(row.tier_rank)).length;
+  const missingDeathsCount = combinedPokemon.filter((row) => row.missing_deaths).length;
+
+  return {
+    ...base,
+    wins,
+    losses,
+    draws,
+    result_score: resultScore,
+    pokemon_performance_score: pokemonPerformanceScore,
+    roster_score: rosterScore,
+    power_score: powerScore,
+    performance_score: performanceScore,
+    balance_score: balanceScore,
+    history_score: historyScore,
+    confidence_score: confidenceScore,
+    pokemon_count: pokemonCount,
+    avg_tier_rank: averageRosterField(combinedPokemon, "tier_rank"),
+    appearances,
+    kills,
+    deaths,
+    differential,
+    top_pokemon: sortedPokemon
+      .slice(0, 6)
+      .map((row) => row.pokemon)
+      .join(", "),
+    roster_flags: rosterFlags(pokemonCount, missingTierCount, [...notes], missingDeathsCount),
+    source_urls: [...sourceUrls].join(";"),
+  };
+}
+
+function representativeTeamMetricRows(rows) {
+  const withMetrics = rows.filter((row) => rosterMetricMagnitude(row) > 0);
+  if (!withMetrics.length) return [];
+  return [
+    withMetrics
+      .slice()
+      .sort((a, b) => rosterVariantOrder(b) - rosterVariantOrder(a) || rosterMetricMagnitude(b) - rosterMetricMagnitude(a))[0],
+  ];
+}
+
+function representativeRecordRows(rows) {
+  const buckets = new Map();
+  rows.forEach((row) => {
+    const key = rosterMetricBucket(row);
+    const current = buckets.get(key);
+    if (
+      !current ||
+      rosterVariantOrder(row) > rosterVariantOrder(current) ||
+      (rosterVariantOrder(row) === rosterVariantOrder(current) && rosterMetricMagnitude(row) > rosterMetricMagnitude(current))
+    ) {
+      buckets.set(key, row);
+    }
+  });
+  return [...buckets.values()];
+}
+
+function rosterMetricBucket(row) {
+  const division = normalizedStatsKey(row.division);
+  if (division === "regular season") return "regular";
+  if (division.includes("playoff")) return "playoffs";
+  return division || "season";
+}
+
+function rosterMetricMagnitude(row) {
+  return (
+    numberValue(row.appearances) +
+    numberValue(row.kills) +
+    numberValue(row.deaths) +
+    Math.abs(numberValue(row.differential))
+  );
+}
+
+function uniqueRosterPokemonForGroup(group, pokemonByVariant) {
+  const byPokemon = new Map();
+  group.variants.forEach((variant) => {
+    (pokemonByVariant.get(variant.key) ?? []).forEach((row) => {
+      const key = row.pokemon_key || normalizedStatsKey(row.pokemon);
+      const current = byPokemon.get(key);
+      if (
+        !current ||
+        variant.order > current.order ||
+        (variant.order === current.order && numberValue(row.pokemon_score) > numberValue(current.row.pokemon_score))
+      ) {
+        byPokemon.set(key, { order: variant.order, row });
+      }
+    });
+  });
+  return [...byPokemon.values()].map((entry) => entry.row);
+}
+
+function averageRosterField(rows, field) {
+  const values = rows.filter((row) => hasNumber(row[field])).map((row) => numberValue(row[field]));
+  if (!values.length) return "";
+  return roundOne(values.reduce((sum, value) => sum + value, 0) / values.length);
+}
+
+function sumRosterField(rows, field) {
+  return roundOne(rows.reduce((sum, row) => sum + numberValue(row[field]), 0));
 }
 
 function rosterStandingIndex(rows = []) {
@@ -908,7 +1148,8 @@ function addRosterPokemon(aggregate, draftIndex, normalizeKey, row) {
   const personKey = comparablePersonKey(row.person, normalizeKey);
   const ownerKey = teamKey || personKey;
   const division = row.division || "";
-  const key = `${row.season_id}\u0000${division}\u0000${ownerKey}\u0000${pokemonKey}`;
+  const rosterPhase = row.roster_phase || "";
+  const key = `${row.season_id}\u0000${division}\u0000${rosterPhase}\u0000${ownerKey}\u0000${pokemonKey}`;
   const draft = draftInfoForRosterPokemon(draftIndex, normalizeKey, row, pokemonKey);
   const current = aggregate.get(key) ?? {
     season_id: row.season_id,
@@ -929,7 +1170,7 @@ function addRosterPokemon(aggregate, draftIndex, normalizeKey, row) {
     deaths: 0,
     missing_deaths: false,
     notes: new Set(),
-    roster_phase: row.roster_phase || "",
+    roster_phase: rosterPhase,
     sourceUrls: new Set(),
   };
   current.team = current.team || row.team || "";
@@ -942,7 +1183,7 @@ function addRosterPokemon(aggregate, draftIndex, normalizeKey, row) {
   current.tier_rank = current.tier_rank || draft.tier_rank || "";
   current.draft_count = current.draft_count || draft.draft_count || 0;
   current.title_count = current.title_count || draft.title_count || 0;
-  current.roster_phase = current.roster_phase || row.roster_phase || "";
+  current.roster_phase = current.roster_phase || rosterPhase;
   current.appearances += numberValue(row.appearances);
   current.kills += numberValue(row.kills);
   current.deaths += numberValue(row.deaths);
@@ -977,19 +1218,154 @@ function teamRosterOwnerLookup(rows = [], normalizeKey = normalizedStatsKey) {
         team: row.team_name || row.team_name_normalized || "",
         person: row.person_name || row.person_name_normalized || "",
         roster_phase: row.roster_phase || "",
+        phases: new Set(),
+        looseSnapshot: false,
+        strictRoster: false,
       };
       current.team = current.team || row.team_name || row.team_name_normalized || "";
       current.person = current.person || row.person_name || row.person_name_normalized || "";
       current.roster_phase = current.roster_phase || row.roster_phase || "";
+      if (row.roster_phase) current.phases.add(row.roster_phase);
+      current.looseSnapshot = current.looseSnapshot || isLooseRosterSnapshot(row);
+      current.strictRoster = current.strictRoster || isStrictRosterSource(row);
       lookup.set(key, current);
     });
+  lookup.forEach((value) => {
+    value.hasMultiplePhases = value.phases.size > 1;
+  });
   return lookup;
+}
+
+function requiresExactRosterPokemon(row, owner = {}) {
+  if (owner.strictRoster && !owner.looseSnapshot) return true;
+  const divisionKey = normalizedStatsKey(row.division);
+  const phaseKey = normalizedStatsKey(owner.roster_phase || row.roster_phase);
+  return divisionKey.includes("playoff") || phaseKey.includes("playoff") || phaseKey === "regular";
+}
+
+function isLooseRosterSnapshot(row) {
+  const sourceKey = rosterSourceKey(row);
+  return sourceKey.includes("manual team graphics") || sourceKey.includes("teamgrafik") || sourceKey.includes("snapshot");
+}
+
+function isStrictRosterSource(row) {
+  if (isLooseRosterSnapshot(row)) return false;
+  const sourceKey = rosterSourceKey(row);
+  return sourceKey.includes("kader") || sourceKey.includes("draftpicks");
+}
+
+function rosterSourceKey(row) {
+  return normalizedStatsKey([row.source_table, row.source_file, row.source_urls, row.notes].filter(Boolean).join(" "));
+}
+
+function teamRosterPresence(rows = [], normalizeKey = normalizedStatsKey) {
+  const teams = new Set();
+  const persons = new Set();
+  const variantOwners = new Set();
+  const variantPokemon = new Set();
+  rows
+    .filter((row) => row.data_status !== "not_available")
+    .forEach((row) => {
+      const season = row.season_id || "";
+      if (!season) return;
+      const division = row.division || "";
+      const rosterPhase = row.roster_phase || "";
+      const teamKey = normalizeKey(row.team_name || row.team_name_normalized || row.team);
+      const personKey = comparablePersonKey(row.person_name_normalized || row.person_name || row.person, normalizeKey);
+      const pokemonKey = normalizeKey(row.pokemon_normalized || row.pokemon);
+      if (teamKey) teams.add(`${season}\u0000${teamKey}`);
+      if (personKey) persons.add(`${season}\u0000${personKey}`);
+      const ownerKeys = [];
+      if (teamKey) ownerKeys.push(`${season}\u0000${division}\u0000${rosterPhase}\u0000team:${teamKey}`);
+      if (personKey) ownerKeys.push(`${season}\u0000${division}\u0000${rosterPhase}\u0000person:${personKey}`);
+      ownerKeys.forEach((key) => {
+        variantOwners.add(key);
+        if (pokemonKey) {
+          variantPokemon.add(`${key}\u0000${pokemonKey}`);
+        }
+      });
+    });
+  return { teams, persons, variantOwners, variantPokemon };
+}
+
+function rosterExistsForKilllist(row, presence, normalizeKey) {
+  const season = row.season_id || "";
+  if (!season) return false;
+  const teamKey = normalizeKey(row.team_name || row.team);
+  const personKey = comparablePersonKey(row.trainer_normalized || row.trainer, normalizeKey);
+  return Boolean((teamKey && presence.teams.has(`${season}\u0000${teamKey}`)) || (personKey && presence.persons.has(`${season}\u0000${personKey}`)));
 }
 
 function rosterOwnerForKilllist(row, lookup, normalizeKey) {
   const personKey = comparablePersonKey(row.trainer_normalized || row.trainer, normalizeKey);
   if (!row.season_id || !row.division || !personKey) return {};
   return lookup.get(`${row.season_id}\u0000${row.division}\u0000${personKey}`) || {};
+}
+
+function rosterCandidatePhasesForKilllist(row, owner = {}) {
+  if (row.roster_phase) return [row.roster_phase];
+  if (owner.hasMultiplePhases && owner.phases?.size) return [...owner.phases];
+  return [owner.roster_phase || ""];
+}
+
+function rosterVariantPresenceForKilllist(row, owner, presence, normalizeKey) {
+  const season = row.season_id || "";
+  const division = row.division || "";
+  const rosterPhase = owner.roster_phase || row.roster_phase || "";
+  const pokemonKey = normalizeKey(row.pokemon_normalized || row.pokemon);
+  if (!season || !division || !pokemonKey) return { ownerExists: false, pokemonExists: false };
+  const teamKeys = uniqueValues([normalizeKey(row.team_name || row.team), normalizeKey(owner.team)]);
+  const personKeys = uniqueValues([
+    comparablePersonKey(row.trainer_normalized || row.trainer, normalizeKey),
+    comparablePersonKey(owner.person, normalizeKey),
+  ]);
+  const ownerKeys = [
+    ...teamKeys.map((teamKey) => `${season}\u0000${division}\u0000${rosterPhase}\u0000team:${teamKey}`),
+    ...personKeys.map((personKey) => `${season}\u0000${division}\u0000${rosterPhase}\u0000person:${personKey}`),
+  ];
+  return {
+    ownerExists: ownerKeys.some((key) => presence.variantOwners.has(key)),
+    pokemonExists: ownerKeys.some((key) => presence.variantPokemon.has(`${key}\u0000${pokemonKey}`)),
+  };
+}
+
+function uniqueValues(values) {
+  return [...new Set(values.filter(Boolean))];
+}
+
+function rosterGroupIdentityKey(row) {
+  const season = row.season_id || "";
+  const personKey = normalizedStatsKey(row.person_key || row.person);
+  const teamKey = normalizedStatsKey(row.team_key || row.team);
+  return JSON.stringify([season, rosterVariantFamily(row), teamKey, personKey]);
+}
+
+function rosterVariantIdentityKey(row) {
+  const season = row.season_id || "";
+  const personKey = normalizedStatsKey(row.person_key || row.person);
+  const teamKey = normalizedStatsKey(row.team_key || row.team);
+  return JSON.stringify([season, row.division || "", row.roster_phase || "", teamKey, personKey]);
+}
+
+function rosterVariantFamily(row) {
+  const division = normalizedStatsKey(row.division);
+  if (row.season_id === "season_006" && (division === "sun conference" || division === "moon conference" || division.includes("playoff"))) {
+    return "main";
+  }
+  if (division === "regular season" || division.includes("playoff")) return "main";
+  return division || "unknown";
+}
+
+function rosterVariantOrder(row) {
+  const division = normalizedStatsKey(row.division);
+  const phase = normalizedStatsKey(row.roster_phase);
+  if (division.includes("playoff") || phase.includes("playoff")) return 50;
+  if (phase === "rueckrunde") return 40;
+  if (phase === "season with rueckrunde") return 35;
+  if (phase === "season") return 30;
+  if (phase === "regular") return 20;
+  if (phase === "hinrunde") return 10;
+  return 0;
 }
 
 function addRosterNotes(target, value) {

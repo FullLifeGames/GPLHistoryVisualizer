@@ -372,6 +372,7 @@ _ALIAS_CANONICAL = {
     "maxi von vogel": "maxi von vogel",
     "maxivonvogel": "maxi von vogel",
     "finaalfantasylp": "silva",
+    "finaalfantasulp": "silva",
     "finaalfa": "silva",
     "silvaffb": "silva",
     "silva": "silva",
@@ -1277,7 +1278,7 @@ def _special_person_stints(season_id: str, standings: list[dict[str, Any]], matc
                 end_week=11,
                 rank=standing.get("rank") if standing else None,
                 source_urls=source_urls,
-                notes="User-provided controller correction: PokemonFakten led Nocturne in the first half before FanmadeLetsPlay took over for the Rueckrunde. Team-level final table stats are not safely attributable to either individual.",
+                notes="User-provided controller correction: PokemonFakten led Nocturne in the first half before FanmadeLetsPlay took over for the Rückrunde. Team-level final table stats are not safely attributable to either individual.",
             ),
             _person_stint_from_matches(
                 season_id,
@@ -1289,7 +1290,7 @@ def _special_person_stints(season_id: str, standings: list[dict[str, Any]], matc
                 end_week=22,
                 rank=standing.get("rank") if standing else None,
                 source_urls=source_urls,
-                notes="User-provided controller correction: FanmadeLetsPlay led Nocturne from the Rueckrunde onward. Team-level final table stats are not safely attributable to either individual.",
+                notes="User-provided controller correction: FanmadeLetsPlay led Nocturne from the Rückrunde onward. Team-level final table stats are not safely attributable to either individual.",
             ),
         ]
     if season_id == "season_003":
@@ -2118,7 +2119,7 @@ def _season_killlists(season_id: str, tables: list[dict[str, Any]]) -> list[dict
         for table in _tables_by_title(tables, "Playoffs Killliste"):
             playoff_rows.extend(_s10_killlist(season_id, table, "Playoffs", playoff=True))
         if playoff_rows:
-            return _dedupe_killlist_rows([*playoff_rows, *_regular_only_killlist_rows(playoff_rows, regular_rows)])
+            return _dedupe_killlist_rows([*playoff_rows, *regular_rows])
         return _dedupe_killlist_rows(regular_rows)
     for title, division in title_specs.get(season_id, []):
         for table in _tables_by_title(tables, title or ""):
@@ -2222,11 +2223,6 @@ def _dedupe_killlist_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         seen.add(key)
         unique.append(row)
     return unique
-
-
-def _regular_only_killlist_rows(canonical_rows: list[dict[str, Any]], regular_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    canonical_pokemon = {row.get("pokemon_normalized") for row in canonical_rows if row.get("pokemon_normalized")}
-    return [row for row in regular_rows if row.get("pokemon_normalized") and row.get("pokemon_normalized") not in canonical_pokemon]
 
 
 def _standard_killlist(season_id: str, table: dict[str, Any], division: str) -> list[dict[str, Any]]:
@@ -2614,7 +2610,7 @@ def _season_label(playlist: dict[str, Any]) -> str | None:
 
 def _season_note(season_id: str) -> str | None:
     notes = {
-        "season_001": "Nocturne changed controller from PokemonFakten to FanmadeLetsPlay for the Rueckrunde; the public killlist source only covers rows through Spieltag 7, so Season 1 kill data is marked partial.",
+        "season_001": "Nocturne changed controller from PokemonFakten to FanmadeLetsPlay for the Rückrunde; the public killlist source only covers rows through Spieltag 7, so Season 1 kill data is marked partial.",
         "season_003": "Two schedule sheets are present; only one final standings sheet is publicly available in the PresentLP source set.",
         "season_006": "Season sheet includes Sun/Moon conferences plus playoff rows; champion is taken from the sourced playoff final.",
         "season_007": "Available sources contain regular-season data but no playoff bracket/final winner.",

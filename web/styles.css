@@ -598,6 +598,43 @@ input:focus,
   line-height: 1;
 }
 
+.roster-variant-tabs,
+.roster-variant-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.roster-variant-tabs {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.roster-variant-button {
+  min-height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 850;
+  padding: 4px 9px;
+}
+
+.roster-variant-button:hover,
+.roster-variant-button:focus-visible {
+  border-color: var(--accent-warm);
+  color: var(--accent-strong);
+}
+
+.roster-variant-button.is-active {
+  border-color: var(--accent-warm);
+  background: rgb(255 122 26 / 16%);
+  color: var(--accent-strong);
+}
+
 .roster-rank {
   display: inline-grid;
   place-items: center;

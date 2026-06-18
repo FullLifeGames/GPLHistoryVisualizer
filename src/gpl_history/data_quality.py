@@ -54,6 +54,7 @@ CLAIM_TABLES = {
     "champions": ("champion", ["champion_name", "champion_team"]),
     "matches": ("match", ["player_a", "player_b", "winner"]),
     "standings": ("standing", ["rank", "player_name", "team_name", "wins", "losses"]),
+    "pokemon_draft_instances": ("pokemon_draft", ["pokemon", "person_name", "team_name"]),
     "pokemon_killlists": ("pokemon_killlist", ["pokemon", "trainer", "team_name", "kills"]),
     "video_archive": ("video", ["title", "video_type", "match_status", "best_match_id"]),
 }
@@ -66,6 +67,7 @@ GENERATED_ARTIFACTS = [
     (Path("normalized") / "season_storylines.csv", "data/normalized/season_storylines.csv"),
     (Path("normalized") / "team_rosters.csv", "data/normalized/team_rosters.csv"),
     (Path("normalized") / "pokemon_draft_overview.csv", "data/normalized/pokemon_draft_overview.csv"),
+    (Path("normalized") / "pokemon_draft_instances.csv", "data/normalized/pokemon_draft_instances.csv"),
     (Path("normalized") / "data_quality.csv", "data/normalized/data_quality.csv"),
     (Path("normalized") / "source_claims.csv", "data/normalized/source_claims.csv"),
     (Path("review") / "review_index.csv", "data/review/review_index.csv"),

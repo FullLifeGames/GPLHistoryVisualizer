@@ -50,6 +50,7 @@ import {
   summarizePokemonDetail,
   summarizeKilllists,
   summarizeTrainerPokemon,
+  teamRosterDisplayGroups,
   teamRosterOverviewRows,
   teamRosterPokemonRows,
   winPercentage,
@@ -148,6 +149,7 @@ const state = {
   draftPickedStatus: "all",
   draftTierFilter: "all",
   rosterCardLimit: 24,
+  rosterVariantSelection: {},
   autoSeasonDefault: false,
   data: {},
   loadedDatasets: new Set(),
@@ -329,6 +331,12 @@ function bindControls() {
     if (event.target.closest("[data-show-more-rosters]")) {
       event.preventDefault();
       state.rosterCardLimit += defaultRosterCardLimit();
+      renderTeamRosters();
+    }
+    const rosterVariantButton = event.target.closest("[data-roster-variant-key]");
+    if (rosterVariantButton) {
+      event.preventDefault();
+      state.rosterVariantSelection[rosterVariantButton.dataset.rosterGroupKey] = rosterVariantButton.dataset.rosterVariantKey;
       renderTeamRosters();
     }
   });
@@ -1226,8 +1234,23 @@ function draftOverviewFilename() {
   return `${picked}${tier}.csv`;
 }
 
+function mergedRosterUsageRows(manualRows = [], rosterRows = []) {
+  const rosterKeys = new Set(rosterRows.map((row) => rosterUsageKey(row)));
+  return [...manualRows.filter((row) => !rosterKeys.has(rosterUsageKey(row))), ...rosterRows];
+}
+
+function rosterUsageKey(row) {
+  return [
+    row.season_id || "",
+    row.division || "",
+    normalizedKey(row.team_name || row.team_name_normalized || row.team || ""),
+    normalizedKey(row.person_name || row.person_name_normalized || row.person || ""),
+    normalizedKey(row.pokemon_normalized || row.pokemon || ""),
+  ].join("\u0000");
+}
+
 function renderTeamRosters() {
-  const rosterUsageRows = [...(state.data.teamPokemonUsage ?? []), ...(state.data.teamRosters ?? [])];
+  const rosterUsageRows = mergedRosterUsageRows(state.data.teamPokemonUsage ?? [], state.data.teamRosters ?? []);
   const pokemonRows = teamRosterPokemonRows(
     {
       teamUsage: filtered(rosterUsageRows),
@@ -1237,17 +1260,18 @@ function renderTeamRosters() {
     normalizedKey,
   );
   const overviewRows = teamRosterOverviewRows(pokemonRows, filtered(state.data.standings ?? []));
-  renderRosterCards(overviewRows, pokemonRows);
+  const groupedRosters = teamRosterDisplayGroups(overviewRows, pokemonRows, state.rosterVariantSelection);
+  renderRosterCards(groupedRosters.groups);
   renderTable(
     "#team-roster-overview-table",
-    overviewRows.map(rosterOverviewTableRow),
+    groupedRosters.overviewRows.map(rosterOverviewTableRow),
     TEAM_ROSTER_COLUMNS,
-    ["season", "person", "roster_score", "top_pokemon", "source"],
+    ["season", "variants", "person", "roster_score", "top_pokemon", "source"],
     { filename: "team-roster-ranking.csv" },
   );
   renderTable(
     "#team-roster-pokemon-table",
-    pokemonRows.map((row, index) => rosterPokemonTableRow(row, index + 1)),
+    groupedRosters.pokemonRows.map((row, index) => rosterPokemonTableRow(row, index + 1)),
     TEAM_ROSTER_POKEMON_COLUMNS,
     ["season", "person", "pokemon", "pokemon_score", "source"],
     { filename: "team-roster-pokemon.csv" },
@@ -1258,7 +1282,9 @@ function rosterOverviewTableRow(row) {
   return {
     ...row,
     season: seasonLink(row.season_id),
-    division: divisionDisplay(row.division),
+    division: rosterOverviewDivisionDisplay(row),
+    roster_phase: row.variant_count > 1 ? rosterPhaseDisplay(row.roster_phase) : "",
+    variants: rosterVariantControls(row),
     person: row.person ? personLink(personIdForName(row.person), row.person) : "",
     roster_score: scoreFormulaCell(row.roster_score, rosterScoreFormula(row)),
     top_pokemon: topPokemonLinks(row.top_pokemon),
@@ -1272,6 +1298,7 @@ function rosterPokemonTableRow(row, rank) {
     rank,
     season: seasonLink(row.season_id),
     division: divisionDisplay(row.division),
+    roster_phase: rosterPhaseDisplay(row.roster_phase),
     person: row.person ? personLink(personIdForName(row.person), row.person) : "",
     pokemon: pokemonCell(row.pokemon, row.pokemon_key || normalizedKey(row.pokemon)),
     pokemon_score: scoreFormulaCell(row.pokemon_score, pokemonScoreFormula(row)),
@@ -1279,27 +1306,20 @@ function rosterPokemonTableRow(row, rank) {
   };
 }
 
-function renderRosterCards(overviewRows, pokemonRows) {
+function renderRosterCards(groups) {
   const target = document.querySelector("#team-roster-cards");
   if (!target) return;
-  if (!overviewRows.length) {
+  if (!groups.length) {
     target.innerHTML = `<p class="empty">${escapeHtml(t(state.language, "empty.table"))}</p>`;
     return;
   }
-  const pokemonByRoster = new Map();
-  pokemonRows.forEach((row) => {
-    const key = rosterIdentityKey(row);
-    const current = pokemonByRoster.get(key) ?? [];
-    current.push(row);
-    pokemonByRoster.set(key, current);
-  });
   const limit = state.rosterCardLimit || defaultRosterCardLimit();
-  const cards = overviewRows
+  const cards = groups
     .slice(0, limit)
-    .map((row) => rosterCard(row, pokemonByRoster.get(rosterIdentityKey(row)) ?? []))
+    .map((group) => rosterCard(group.overview, group.pokemonRows))
     .join("");
   const showMore =
-    overviewRows.length > limit
+    groups.length > limit
       ? `<button class="show-more-button" type="button" data-show-more-rosters>${escapeHtml(t(state.language, "rosters.showMore"))}</button>`
       : "";
   target.innerHTML = `${cards}${showMore}`;
@@ -1310,16 +1330,18 @@ function rosterCard(row, pokemonRows) {
     (a, b) => numberValue(b.pokemon_score) - numberValue(a.pokemon_score) || String(a.pokemon).localeCompare(String(b.pokemon)),
   );
   const flags = row.roster_flags ? `<p class="roster-flags">${escapeHtml(row.roster_flags)}</p>` : "";
+  const variantControls = rosterVariantControls(row, "roster-variant-tabs");
   return `
     <article class="roster-card">
       <div class="roster-card-head">
         <span class="roster-rank">#${escapeHtml(row.rank)}</span>
         <div>
           <h3>${row.person ? personLink(personIdForName(row.person), row.person) : escapeHtml(row.team || "")}</h3>
-          <p>${escapeHtml([seasonDisplay(row.season_id), divisionDisplay(row.division), row.team].filter(Boolean).join(" · "))}</p>
+          <p>${escapeHtml(rosterHeaderMeta(row).join(" · "))}</p>
         </div>
         <strong title="${escapeAttr(rosterScoreFormula(row))}">${escapeHtml(String(row.roster_score))}</strong>
       </div>
+      ${variantControls}
       <div class="roster-metrics">
         ${rosterMetric("columns.pokemon_count", row.pokemon_count)}
         ${rosterMetric("columns.avg_tier_rank", row.avg_tier_rank || "n/a")}
@@ -1342,8 +1364,79 @@ function rosterPokemonChip(row) {
   return `<span class="roster-pokemon-chip">${pokemonCell(row.pokemon, row.pokemon_key || normalizedKey(row.pokemon))}<small title="${escapeAttr(pokemonScoreFormula(row))}">${escapeHtml(String(row.pokemon_score))}</small></span>`;
 }
 
-function rosterIdentityKey(row) {
-  return [row.season_id, row.division, normalizedKey(row.team), normalizedKey(row.person)].join("\u0000");
+function rosterVariantControls(row, className = "roster-variant-inline") {
+  const options = row.roster_variant_options ?? [];
+  if (options.length <= 1) {
+    return "";
+  }
+  return `
+    <div class="${escapeAttr(className)}" aria-label="${escapeAttr(t(state.language, "columns.variants"))}">
+      ${options
+        .map((option) => {
+          const active = option.key === row.roster_variant_key;
+          return `<button class="roster-variant-button${active ? " is-active" : ""}" type="button" data-roster-group-key="${escapeAttr(row.roster_group_key)}" data-roster-variant-key="${escapeAttr(option.key)}">${escapeHtml(rosterVariantLabel(option))}</button>`;
+        })
+        .join("")}
+    </div>
+  `;
+}
+
+function rosterVariantLabel(row) {
+  const divisionKey = normalizedKey(row.division);
+  const phaseKey = normalizedKey(row.roster_phase);
+  const phase = rosterPhaseDisplay(row.roster_phase);
+  if (phaseKey === "regular" && divisionKey === "regular season") {
+    return state.language === "en" ? "Group stage" : "Gruppenphase";
+  }
+  if (phase && phaseKey !== divisionKey) {
+    return phase;
+  }
+  return divisionDisplay(row.division) || phase;
+}
+
+function rosterOverviewDivisionDisplay(row) {
+  if (Number(row.variant_count || 1) <= 1 && normalizedKey(row.division) === "regular season") {
+    return "";
+  }
+  return divisionDisplay(row.division);
+}
+
+function rosterHeaderMeta(row) {
+  const values = [seasonDisplay(row.season_id)];
+  const singleVariant = Number(row.variant_count || 1) <= 1;
+  const detail = singleVariant ? rosterSingleVariantLabel(row) : "";
+  if (detail) values.push(detail);
+  if (row.team) values.push(row.team);
+  return values;
+}
+
+function rosterSingleVariantLabel(row) {
+  const divisionKey = normalizedKey(row.division);
+  if (!divisionKey || divisionKey === "regular season") return "";
+  return divisionDisplay(row.division);
+}
+
+function rosterPhaseDisplay(value) {
+  const key = normalizedKey(value).replaceAll(" ", "_");
+  const labels = {
+    de: {
+      hinrunde: "Hinrunde",
+      rueckrunde: "Rückrunde",
+      regular: "Regulär",
+      playoffs: "Playoffs",
+      season: "Saison",
+      season_with_rueckrunde: "Saison inkl. Rückrunde",
+    },
+    en: {
+      hinrunde: "First half",
+      rueckrunde: "Second half",
+      regular: "Regular",
+      playoffs: "Playoffs",
+      season: "Season",
+      season_with_rueckrunde: "Season incl. second half",
+    },
+  };
+  return labels[state.language]?.[key] || labels.de[key] || String(value || "");
 }
 
 function defaultRosterCardLimit() {
@@ -1361,6 +1454,9 @@ function scoreFormulaCell(value, formula) {
 function rosterScoreFormula(row) {
   return [
     "Balanced Kaderscore = 30% Power + 40% Performance + 15% Balance + 10% Historie + 5% Confidence.",
+    Number(row.variant_count || 1) > 1
+      ? "Bei mehreren Kader-Varianten wird der Score aus dem zusammengefuehrten Team neu berechnet; die Buttons wechseln nur die sichtbare Variante."
+      : "",
     `Teilwerte: Power ${row.power_score}, Performance ${row.performance_score}, Balance ${row.balance_score}, Historie ${row.history_score}, Confidence ${row.confidence_score}.`,
     `Angezeigt: Score ${row.roster_score}, Pokémon ${row.pokemon_count}, Ø Tier-Rang ${row.avg_tier_rank || "n/a"}.`,
     "Balance nutzt Kadergröße bis 11, Tier-Streuung und Top-Mon-Konzentration. Fehlende Todesdaten werden geschätzt und senken Confidence.",
@@ -1383,7 +1479,7 @@ function pokemonScoreFormula(row) {
     `Teilwerte: Power ${row.power_score}, Performance ${row.performance_score}, Historie ${row.history_score}, Confidence ${row.confidence_score}.`,
     performanceNote,
     `${deathsNote} Werte: Einsätze ${appearances}, Kills ${row.kills}, Tode ${row.deaths}, Differential ${row.differential}.`,
-  ].join(" ");
+  ].filter(Boolean).join(" ");
 }
 
 function topPokemonLinks(value) {

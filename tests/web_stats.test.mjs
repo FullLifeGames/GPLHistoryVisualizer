@@ -24,6 +24,7 @@ import {
   summarizePokemonDetail,
   summarizeTrainerPokemon,
   summarizeKilllists,
+  teamRosterDisplayGroups,
   teamRosterOverviewRows,
   teamRosterPokemonRows,
   weightedRating,
@@ -44,6 +45,279 @@ assert.equal(winPercentage(0, 0, 0), "");
 
 assert.equal(weightedRatingValue(0, 0, 0), null);
 assert.equal(weightedRating(0, 0, 0), "");
+
+{
+  const normalizeTestKey = (value) =>
+    String(value ?? "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  const rosterPokemon = teamRosterPokemonRows(
+    {
+      teamUsage: [
+        {
+          season_id: "season_008",
+          division: "Liga 1",
+          roster_phase: "hinrunde",
+          team_name: "Victini Bottom",
+          person_name: "Bene",
+          pokemon: "UHaFnir",
+          pokemon_normalized: "uhafnir",
+          slot: "1",
+          data_status: "sheet_extracted",
+        },
+        {
+          season_id: "season_008",
+          division: "Liga 1",
+          roster_phase: "rueckrunde",
+          team_name: "Victini Bottom",
+          person_name: "Bene",
+          pokemon: "UHaFnir",
+          pokemon_normalized: "uhafnir",
+          slot: "1",
+          data_status: "sheet_extracted",
+        },
+      ],
+      killlists: [
+        {
+          season_id: "season_008",
+          division: "Liga 1",
+          team_name: "Victini Bottom",
+          trainer: "Bene",
+          pokemon: "UHaFnir",
+          pokemon_normalized: "uhafnir",
+          appearances: "9",
+          kills: "8",
+          deaths: "3",
+          data_status: "sheet_extracted",
+        },
+        {
+          season_id: "season_008",
+          division: "Overall",
+          team_name: "Victini Bottom",
+          trainer: "Bene",
+          pokemon: "Pikachu",
+          pokemon_normalized: "pikachu",
+          appearances: "1",
+          kills: "6",
+          deaths: "0",
+          data_status: "sheet_extracted",
+        },
+      ],
+      pokemonDraftOverview: [{ pokemon: "UHaFnir", pokemon_normalized: "uhafnir", tier: "B", tier_rank: "7", draft_count: "2", title_count: "1" }],
+    },
+    normalizeTestKey,
+  );
+
+  assert.deepEqual(
+    rosterPokemon.map((row) => ({ phase: row.roster_phase, appearances: row.appearances, kills: row.kills, deaths: row.deaths })),
+    [
+      { phase: "hinrunde", appearances: 9, kills: 8, deaths: 3 },
+      { phase: "rueckrunde", appearances: 9, kills: 8, deaths: 3 },
+    ],
+  );
+  assert.equal(rosterPokemon.some((row) => row.pokemon === "Pikachu"), false);
+  assert.deepEqual(
+    teamRosterOverviewRows(rosterPokemon).map((row) => row.roster_phase).sort(),
+    ["hinrunde", "rueckrunde"],
+  );
+}
+
+{
+  const normalizeTestKey = (value) =>
+    String(value ?? "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  const rosterPokemon = teamRosterPokemonRows(
+    {
+      teamUsage: [
+        {
+          season_id: "season_008",
+          division: "Liga 1",
+          roster_phase: "hinrunde",
+          team_name: "Victini Bottom",
+          person_name: "Bene",
+          pokemon: "UHaFnir",
+          pokemon_normalized: "uhafnir",
+          data_status: "sheet_extracted",
+        },
+        {
+          season_id: "season_008",
+          division: "Liga 1",
+          roster_phase: "rueckrunde",
+          team_name: "Victini Bottom",
+          person_name: "Bene",
+          pokemon: "Zeraora",
+          pokemon_normalized: "zeraora",
+          data_status: "sheet_extracted",
+        },
+      ],
+      killlists: [
+        {
+          season_id: "season_008",
+          division: "Liga 1",
+          team_name: "Victini Bottom",
+          trainer: "Bene",
+          pokemon: "Zeraora",
+          pokemon_normalized: "zeraora",
+          appearances: "7",
+          kills: "13",
+          deaths: "2",
+          data_status: "sheet_extracted",
+        },
+      ],
+    },
+    normalizeTestKey,
+  );
+
+  assert.deepEqual(
+    rosterPokemon.map((row) => ({ pokemon: row.pokemon, phase: row.roster_phase, appearances: row.appearances, kills: row.kills })),
+    [
+      { pokemon: "UHaFnir", phase: "hinrunde", appearances: 0, kills: 0 },
+      { pokemon: "Zeraora", phase: "rueckrunde", appearances: 7, kills: 13 },
+    ],
+  );
+}
+
+{
+  const normalizeTestKey = (value) =>
+    String(value ?? "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  const rosterPokemon = teamRosterPokemonRows(
+    {
+      teamUsage: [
+        {
+          season_id: "season_004",
+          division: "Regular Season",
+          roster_phase: "hinrunde",
+          team_name: "Ritter der Tapukokosnuss",
+          person_name: "Bene",
+          pokemon: "Jirachi",
+          pokemon_normalized: "jirachi",
+          source_table: "Manual team graphics",
+          notes: "Manuelle Teamgrafik-Zuordnung als Hinrunden-Snapshot",
+          data_status: "manual_override",
+        },
+      ],
+      killlists: [
+        {
+          season_id: "season_004",
+          division: "Regular Season",
+          team_name: "Ritter der Tapukokosnuss",
+          trainer: "Bene",
+          pokemon: "Karippas",
+          pokemon_normalized: "karippas",
+          appearances: "4",
+          kills: "3",
+          deaths: "",
+          data_status: "manual_override",
+        },
+        {
+          season_id: "season_004",
+          division: "Regular Season",
+          team_name: "Ritter der Tapukokosnuss",
+          trainer: "Bene",
+          pokemon: "Hariyama",
+          pokemon_normalized: "hariyama",
+          appearances: "6",
+          kills: "7",
+          deaths: "",
+          data_status: "manual_override",
+        },
+      ],
+    },
+    normalizeTestKey,
+  );
+
+  assert.deepEqual(
+    rosterPokemon.map((row) => row.pokemon).sort(),
+    ["Hariyama", "Jirachi", "Karippas"],
+  );
+  assert.deepEqual(
+    rosterPokemon.filter((row) => row.pokemon !== "Jirachi").map((row) => row.roster_phase),
+    ["hinrunde", "hinrunde"],
+  );
+  assert.match(rosterPokemon.find((row) => row.pokemon === "Karippas").notes, /Killlisten-Ergaenzung/);
+}
+
+{
+  const normalizeTestKey = (value) =>
+    String(value ?? "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  const rosterPokemon = teamRosterPokemonRows(
+    {
+      teamUsage: [
+        {
+          season_id: "season_010",
+          division: "Regular Season",
+          roster_phase: "regular",
+          team_name: "Wackel Backel",
+          person_name: "Bene",
+          pokemon: "UHaFnir",
+          pokemon_normalized: "uhafnir",
+          source_table: "Kader",
+          data_status: "sheet_extracted",
+        },
+      ],
+      killlists: [
+        {
+          season_id: "season_010",
+          division: "Regular Season",
+          team_name: "Wackel Backel",
+          trainer: "Bene",
+          pokemon: "Granforgita",
+          pokemon_normalized: "granforgita",
+          appearances: "7",
+          kills: "7",
+          deaths: "6",
+          data_status: "sheet_extracted",
+        },
+      ],
+    },
+    normalizeTestKey,
+  );
+
+  assert.deepEqual(rosterPokemon.map((row) => row.pokemon), ["UHaFnir"]);
+}
+
+{
+  const normalizeTestKey = (value) => {
+    const key = String(value ?? "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+    return key === "presentlp" ? "present" : key;
+  };
+  const rosterPokemon = teamRosterPokemonRows(
+    {
+      teamUsage: [
+        {
+          season_id: "season_003",
+          division: "Regular Season",
+          team_name: "Prekani",
+          person_name: "PresentLP",
+          pokemon: "Boreos-T",
+          pokemon_normalized: "boreost",
+          slot: "1",
+          data_status: "manual_override",
+        },
+      ],
+      pokemonDraftOverview: [{ pokemon: "Boreos-T", pokemon_normalized: "boreost", tier: "OU", tier_rank: "3", draft_count: "1", title_count: "1" }],
+    },
+    normalizeTestKey,
+  );
+  const overview = teamRosterOverviewRows(rosterPokemon);
+  const grouped = teamRosterDisplayGroups(overview, rosterPokemon);
+
+  assert.equal(grouped.groups.length, 1);
+  assert.equal(grouped.groups[0].pokemonRows.length, 1);
+  assert.equal(grouped.groups[0].pokemonRows[0].pokemon, "Boreos-T");
+}
 
 assert.equal(weightedRatingValue(4, 4, 0), 50);
 assert.equal(weightedRating(4, 4, 0), "50.0");
@@ -1113,6 +1387,19 @@ assert.deepEqual(
           data_status: "sheet_extracted",
           source_urls: "playoff-killlist",
         },
+        {
+          season_id: "season_010",
+          division: "Playoffs",
+          team_name: "",
+          trainer: "Bene",
+          pokemon: "Granforgita",
+          pokemon_normalized: "granforgita",
+          appearances: "7",
+          kills: "7",
+          deaths: "6",
+          data_status: "sheet_extracted",
+          source_urls: "playoff-killlist",
+        },
       ],
       pokemonDraftOverview: [{ pokemon: "UHaFnir", pokemon_normalized: "uhafnir", tier: "B", tier_rank: "7", draft_count: "2", title_count: "1" }],
     },
@@ -1125,6 +1412,238 @@ assert.deepEqual(
   assert.equal(rosterPokemon[0].kills, 9);
   assert.match(rosterPokemon[0].source_urls, /playoff-kader/);
   assert.match(rosterPokemon[0].source_urls, /playoff-killlist/);
+}
+
+{
+  const overview = [
+    {
+      rank: 1,
+      season_id: "season_010",
+      division: "Regular Season",
+      roster_phase: "regular",
+      person: "Bene",
+      team: "Wackel Backel",
+      roster_score: 73,
+      kills: 50,
+    },
+    {
+      rank: 2,
+      season_id: "season_010",
+      division: "Playoffs",
+      roster_phase: "playoffs",
+      person: "Bene",
+      team: "Wackel Backel",
+      roster_score: 83,
+      kills: 24,
+    },
+    {
+      rank: 3,
+      season_id: "season_010",
+      division: "Regular Season",
+      roster_phase: "regular",
+      person: "PresentLP",
+      team: "Prekani",
+      roster_score: 60,
+      kills: 40,
+    },
+  ];
+  const pokemonRows = [
+    {
+      season_id: "season_010",
+      division: "Regular Season",
+      roster_phase: "regular",
+      person: "Bene",
+      team: "Wackel Backel",
+      pokemon: "Granforgita",
+      pokemon_score: 60,
+      power_score: 60,
+      performance_score: 60,
+      history_score: 60,
+      confidence_score: 100,
+      tier_rank: 5,
+    },
+    {
+      season_id: "season_010",
+      division: "Playoffs",
+      roster_phase: "playoffs",
+      person: "Bene",
+      team: "Wackel Backel",
+      pokemon: "Caesurio",
+      pokemon_score: 80,
+      power_score: 80,
+      performance_score: 80,
+      history_score: 80,
+      confidence_score: 100,
+      tier_rank: 3,
+    },
+    {
+      season_id: "season_010",
+      division: "Regular Season",
+      roster_phase: "regular",
+      person: "PresentLP",
+      team: "Prekani",
+      pokemon: "Arkani",
+      pokemon_score: 40,
+      power_score: 40,
+      performance_score: 40,
+      history_score: 40,
+      confidence_score: 80,
+      tier_rank: 8,
+    },
+  ];
+  const grouped = teamRosterDisplayGroups(overview, pokemonRows);
+  const beneGroup = grouped.groups.find((group) => group.overview.person === "Bene");
+
+  assert.equal(grouped.overviewRows.length, 2);
+  assert.equal(beneGroup.overview.division, "Playoffs");
+  assert.equal(beneGroup.overview.roster_phase, "playoffs");
+  assert.equal(beneGroup.overview.roster_score, 66.3);
+  assert.equal(beneGroup.overview.kills, 24);
+  assert.equal(beneGroup.overview.variant_count, 2);
+  assert.deepEqual(beneGroup.pokemonRows.map((row) => row.pokemon), ["Caesurio"]);
+
+  const regularKey = beneGroup.overview.roster_variant_options.find((option) => option.division === "Regular Season").key;
+  const selected = teamRosterDisplayGroups(overview, pokemonRows, { [beneGroup.overview.roster_group_key]: regularKey });
+  const selectedBeneGroup = selected.groups.find((group) => group.overview.person === "Bene");
+  assert.equal(selectedBeneGroup.overview.rank, beneGroup.overview.rank);
+  assert.equal(selectedBeneGroup.overview.division, "Regular Season");
+  assert.equal(selectedBeneGroup.overview.roster_score, 66.3);
+  assert.deepEqual(selectedBeneGroup.pokemonRows.map((row) => row.pokemon), ["Granforgita"]);
+}
+
+{
+  const overview = [
+    {
+      season_id: "season_006",
+      division: "Moon Conference",
+      roster_phase: "regular",
+      person: "Bene",
+      team: "Kleinsteins;Gate",
+      roster_score: 70,
+      kills: 60,
+      pokemon_count: 11,
+    },
+    {
+      season_id: "season_006",
+      division: "Playoffs",
+      roster_phase: "playoffs",
+      person: "Bene",
+      team: "Kleinsteins;Gate",
+      roster_score: 80,
+      kills: 24,
+      pokemon_count: 11,
+    },
+  ];
+  const pokemonRows = [
+    {
+      season_id: "season_006",
+      division: "Moon Conference",
+      roster_phase: "regular",
+      person: "Bene",
+      team: "Kleinsteins;Gate",
+      pokemon: "Heatran",
+      pokemon_score: 70,
+      power_score: 70,
+      performance_score: 70,
+      history_score: 70,
+      confidence_score: 100,
+      tier_rank: 4,
+    },
+    {
+      season_id: "season_006",
+      division: "Playoffs",
+      roster_phase: "playoffs",
+      person: "Bene",
+      team: "Kleinsteins;Gate",
+      pokemon: "Zapdos",
+      pokemon_score: 80,
+      power_score: 80,
+      performance_score: 80,
+      history_score: 80,
+      confidence_score: 100,
+      tier_rank: 3,
+    },
+  ];
+  const grouped = teamRosterDisplayGroups(overview, pokemonRows);
+  const group = grouped.groups[0];
+
+  assert.equal(grouped.groups.length, 1);
+  assert.equal(group.overview.division, "Playoffs");
+  assert.equal(group.overview.variant_count, 2);
+  assert.deepEqual(group.pokemonRows.map((row) => row.pokemon), ["Zapdos"]);
+
+  const conferenceKey = group.overview.roster_variant_options.find((option) => option.division === "Moon Conference").key;
+  const selected = teamRosterDisplayGroups(overview, pokemonRows, { [group.overview.roster_group_key]: conferenceKey });
+  assert.equal(selected.groups[0].overview.division, "Moon Conference");
+  assert.deepEqual(selected.groups[0].pokemonRows.map((row) => row.pokemon), ["Heatran"]);
+}
+
+{
+  const overview = [
+    {
+      season_id: "season_008",
+      division: "Liga 1",
+      roster_phase: "hinrunde",
+      person: "Bene",
+      team: "Victini Bottom",
+      roster_score: 70,
+      kills: 80,
+      deaths: 41,
+      differential: 39,
+      pokemon_count: 11,
+    },
+    {
+      season_id: "season_008",
+      division: "Liga 1",
+      roster_phase: "rueckrunde",
+      person: "Bene",
+      team: "Victini Bottom",
+      roster_score: 80,
+      kills: 80,
+      deaths: 41,
+      differential: 39,
+      pokemon_count: 11,
+    },
+  ];
+  const pokemonRows = [
+    {
+      season_id: "season_008",
+      division: "Liga 1",
+      roster_phase: "hinrunde",
+      person: "Bene",
+      team: "Victini Bottom",
+      pokemon: "Pixi",
+      pokemon_score: 60,
+      power_score: 60,
+      performance_score: 60,
+      history_score: 60,
+      confidence_score: 100,
+      tier_rank: 5,
+    },
+    {
+      season_id: "season_008",
+      division: "Liga 1",
+      roster_phase: "rueckrunde",
+      person: "Bene",
+      team: "Victini Bottom",
+      pokemon: "Zeraora",
+      pokemon_score: 80,
+      power_score: 80,
+      performance_score: 80,
+      history_score: 80,
+      confidence_score: 100,
+      tier_rank: 3,
+    },
+  ];
+  const grouped = teamRosterDisplayGroups(overview, pokemonRows);
+
+  assert.equal(grouped.overviewRows[0].roster_score, 66.3);
+  assert.equal(grouped.overviewRows[0].kills, 80);
+  assert.equal(grouped.overviewRows[0].deaths, 41);
+  assert.equal(grouped.overviewRows[0].differential, 39);
+  assert.equal(grouped.overviewRows[0].pokemon_count, 2);
+  assert.equal(grouped.overviewRows[0].roster_phase, "rueckrunde");
+  assert.deepEqual(grouped.groups[0].pokemonRows.map((row) => row.pokemon), ["Zeraora"]);
 }
 
 {

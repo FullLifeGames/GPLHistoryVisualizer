@@ -7,10 +7,18 @@ from typing import Any
 
 import requests
 
+from .normalize import _canonical_name as _canonical_person_name
+from .normalize import _display_name as _display_person_name
 from .pokemon_names import name_key
 from .storage import ensure_dir
 
 SHOWDOWN_FORMATS_DATA_URL = "https://raw.githubusercontent.com/smogon/pokemon-showdown/master/data/formats-data.ts"
+OLD_PROJECT_KILL_SHEET_ID = "1JZpA-5XDldN2bjfvhvBPHYK-1AENETLnF1UxNEpWlNA"
+OLD_PROJECT_EWIGE_TABELLE_GID = "352888197"
+OLD_PROJECT_EWIGE_TABELLE_URL = (
+    f"https://docs.google.com/spreadsheets/d/{OLD_PROJECT_KILL_SHEET_ID}/edit#gid={OLD_PROJECT_EWIGE_TABELLE_GID}"
+)
+OLD_PROJECT_TEAM_NOTE_RE = re.compile(r"^\s*(?P<person>.+?)\s+S(?P<season>[1-5])\b", flags=re.IGNORECASE)
 
 POKEMON_DRAFT_OVERVIEW_FIELDS = [
     "rank",
@@ -29,6 +37,21 @@ POKEMON_DRAFT_OVERVIEW_FIELDS = [
     "trainer_count",
     "team_count",
     "picked_status",
+    "source_urls",
+]
+
+POKEMON_DRAFT_INSTANCE_FIELDS = [
+    "season_id",
+    "division",
+    "roster_phase",
+    "pokemon",
+    "pokemon_normalized",
+    "asset_id",
+    "person_name",
+    "person_name_normalized",
+    "team_name",
+    "team_name_normalized",
+    "data_status",
     "source_urls",
 ]
 
@@ -55,13 +78,16 @@ TIER_ORDER = {
 
 def build_and_write_pokemon_draft_overview(data_dir: Path, refresh: bool = False) -> list[dict[str, Any]]:
     formats_text = _read_or_fetch_formats_data(data_dir, refresh)
+    translations = _read_csv(data_dir / "normalized" / "pokemon_name_translations.csv")
+    killlists = _read_csv(data_dir / "normalized" / "pokemon_killlists.csv")
     team_usage = [
         *_read_csv(data_dir / "manual" / "team_pokemon_usage.csv"),
         *_read_csv(data_dir / "normalized" / "team_rosters.csv"),
+        *_old_project_team_note_usage_rows(data_dir),
     ]
     rows = build_pokemon_draft_overview(
-        _read_csv(data_dir / "normalized" / "pokemon_name_translations.csv"),
-        _read_csv(data_dir / "normalized" / "pokemon_killlists.csv"),
+        translations,
+        killlists,
         team_usage,
         formats_text,
         _read_csv(data_dir / "normalized" / "champions.csv"),
@@ -69,6 +95,9 @@ def build_and_write_pokemon_draft_overview(data_dir: Path, refresh: bool = False
     out_path = data_dir / "normalized" / "pokemon_draft_overview.csv"
     ensure_dir(out_path.parent)
     _write_csv(out_path, POKEMON_DRAFT_OVERVIEW_FIELDS, rows)
+
+    instance_rows = build_pokemon_draft_instances(translations, killlists, team_usage)
+    _write_csv(data_dir / "normalized" / "pokemon_draft_instances.csv", POKEMON_DRAFT_INSTANCE_FIELDS, instance_rows)
     return rows
 
 
@@ -83,7 +112,8 @@ def build_pokemon_draft_overview(
     forms = _translation_forms(translations)
     aliases = _translation_aliases(translations)
     draft_map = _draft_instances(killlists, team_usage, aliases)
-    title_seasons_by_asset = _title_seasons_by_asset(draft_map, champions or [])
+    title_draft_map = _draft_instances(killlists, team_usage, aliases, distinct_by_phase=True)
+    title_seasons_by_asset = _title_seasons_by_asset(title_draft_map, champions or [])
 
     rows: list[dict[str, Any]] = []
     for asset, form in forms.items():
@@ -124,6 +154,46 @@ def build_pokemon_draft_overview(
         for field in ("tier_rank", "draft_count", "season_count", "title_count", "trainer_count", "team_count"):
             row[field] = str(row[field])
     return rows
+
+
+def build_pokemon_draft_instances(
+    translations: list[dict[str, str]],
+    killlists: list[dict[str, str]],
+    team_usage: list[dict[str, str]],
+) -> list[dict[str, Any]]:
+    forms = _translation_forms(translations)
+    aliases = _translation_aliases(translations)
+    draft_map = _draft_instances(killlists, team_usage, aliases, distinct_by_phase=True)
+    rows: list[dict[str, Any]] = []
+    for asset, drafts in draft_map.items():
+        form = forms.get(asset, {})
+        pokemon = form.get("german") or drafts[0].get("pokemon") or asset
+        for draft in drafts:
+            rows.append(
+                {
+                    "season_id": draft.get("season_id", ""),
+                    "division": draft.get("division", ""),
+                    "roster_phase": draft.get("roster_phase", ""),
+                    "pokemon": pokemon,
+                    "pokemon_normalized": name_key(pokemon),
+                    "asset_id": asset,
+                    "person_name": draft.get("trainer", ""),
+                    "person_name_normalized": draft.get("trainer_key", ""),
+                    "team_name": draft.get("team", ""),
+                    "team_name_normalized": name_key(draft.get("team", "")),
+                    "data_status": draft.get("data_status", ""),
+                    "source_urls": draft.get("source_urls", ""),
+                }
+            )
+    return sorted(
+        rows,
+        key=lambda row: (
+            _season_sort(str(row.get("season_id", ""))),
+            str(row.get("person_name", "")),
+            str(row.get("team_name", "")),
+            str(row.get("pokemon", "")),
+        ),
+    )
 
 
 def parse_showdown_tiers(formats_data: str) -> dict[str, dict[str, str]]:
@@ -184,11 +254,20 @@ def _draft_instances(
     killlists: list[dict[str, str]],
     team_usage: list[dict[str, str]],
     aliases: dict[str, str],
+    *,
+    distinct_by_phase: bool = False,
 ) -> dict[str, list[dict[str, str]]]:
-    seen: set[tuple[str, str, str, str]] = set()
+    seen: set[tuple[str, ...]] = set()
     drafts: dict[str, list[dict[str, str]]] = {}
 
-    def add(row: dict[str, str], *, trainer_field: str, trainer_normalized_field: str, team_field: str) -> None:
+    def add(
+        row: dict[str, str],
+        *,
+        trainer_field: str,
+        trainer_normalized_field: str,
+        team_field: str,
+        source_kind: str,
+    ) -> None:
         if row.get("data_status") == "not_available":
             return
         asset = _asset_for_row(row, aliases)
@@ -200,24 +279,39 @@ def _draft_instances(
         if not trainer and not team:
             return
         season_id = row.get("season_id", "")
+        division = row.get("division", "")
+        roster_phase = row.get("roster_phase", "")
         identity = (asset, season_id, trainer_key, name_key(team))
+        if distinct_by_phase:
+            identity = (asset, season_id, division, roster_phase, trainer_key, name_key(team))
         if identity in seen:
             return
         seen.add(identity)
         drafts.setdefault(asset, []).append(
             {
                 "season_id": season_id,
+                "division": division,
+                "roster_phase": roster_phase,
+                "pokemon": row.get("pokemon") or row.get("pokemon_normalized") or "",
                 "trainer": trainer,
                 "trainer_key": trainer_key,
                 "team": team,
+                "source_kind": source_kind,
+                "data_status": row.get("data_status", ""),
                 "source_urls": row.get("source_urls", ""),
             }
         )
 
     for row in killlists:
-        add(row, trainer_field="trainer", trainer_normalized_field="trainer_normalized", team_field="team_name")
+        add(row, trainer_field="trainer", trainer_normalized_field="trainer_normalized", team_field="team_name", source_kind="killlist")
     for row in team_usage:
-        add(row, trainer_field="person_name", trainer_normalized_field="person_name_normalized", team_field="team_name")
+        add(
+            row,
+            trainer_field="person_name",
+            trainer_normalized_field="person_name_normalized",
+            team_field="team_name",
+            source_kind="team_usage",
+        )
     return drafts
 
 
@@ -227,16 +321,25 @@ def _title_seasons_by_asset(
 ) -> dict[str, list[str]]:
     champion_team_keys: set[tuple[str, str]] = set()
     champion_person_keys_with_team: set[tuple[str, str]] = set()
+    playoff_champion_team_keys: set[tuple[str, str]] = set()
+    playoff_champion_person_keys_with_team: set[tuple[str, str]] = set()
     for row in champions:
         if row.get("data_status") == "not_available":
             continue
         season_id = row.get("season_id", "")
         team_key = name_key(row.get("champion_team", ""))
+        is_playoff_champion = _is_playoff_champion(row)
         if season_id and team_key:
             champion_team_keys.add((season_id, team_key))
+            if is_playoff_champion:
+                playoff_champion_team_keys.add((season_id, team_key))
             person_key = _person_key(row.get("champion_person_id") or row.get("champion_name"))
             if person_key:
                 champion_person_keys_with_team.add((season_id, person_key))
+                if is_playoff_champion:
+                    playoff_champion_person_keys_with_team.add((season_id, person_key))
+
+    playoff_roster_team_keys, playoff_roster_person_keys = _playoff_roster_keys(draft_map)
 
     title_seasons: dict[str, set[str]] = {}
     for asset, drafts in draft_map.items():
@@ -246,10 +349,161 @@ def _title_seasons_by_asset(
             trainer_key = draft.get("trainer_key") or _person_key(draft.get("trainer"))
             team_matches = (season_id, team_key) in champion_team_keys
             person_matches_missing_team = not team_key and (season_id, trainer_key) in champion_person_keys_with_team
+            playoff_team_match = (season_id, team_key) in playoff_champion_team_keys
+            playoff_person_match = not team_key and (season_id, trainer_key) in playoff_champion_person_keys_with_team
+            if playoff_team_match or playoff_person_match:
+                has_playoff_roster = (season_id, team_key) in playoff_roster_team_keys or (
+                    season_id,
+                    trainer_key,
+                ) in playoff_roster_person_keys
+                if has_playoff_roster:
+                    if draft.get("source_kind") != "team_usage" or not _is_playoff_draft(draft):
+                        continue
+                elif not _is_playoff_draft(draft):
+                    continue
             if team_matches or person_matches_missing_team:
                 title_seasons.setdefault(asset, set()).add(season_id)
 
     return {asset: sorted(seasons, key=_season_sort) for asset, seasons in title_seasons.items()}
+
+
+def _playoff_roster_keys(draft_map: dict[str, list[dict[str, str]]]) -> tuple[set[tuple[str, str]], set[tuple[str, str]]]:
+    team_keys: set[tuple[str, str]] = set()
+    person_keys: set[tuple[str, str]] = set()
+    for drafts in draft_map.values():
+        for draft in drafts:
+            if draft.get("source_kind") != "team_usage" or not _is_playoff_draft(draft):
+                continue
+            season_id = draft.get("season_id", "")
+            team_key = name_key(draft.get("team", ""))
+            trainer_key = draft.get("trainer_key") or _person_key(draft.get("trainer"))
+            if season_id and team_key:
+                team_keys.add((season_id, team_key))
+            if season_id and trainer_key:
+                person_keys.add((season_id, trainer_key))
+    return team_keys, person_keys
+
+
+def _is_playoff_champion(row: dict[str, str]) -> bool:
+    text = " ".join(str(row.get(field) or "") for field in ("evidence_type", "notes")).lower()
+    return "playoff" in text or "final_kader" in text or "final kader" in text
+
+
+def _is_playoff_draft(row: dict[str, str]) -> bool:
+    return name_key(row.get("division")) == "playoffs" or name_key(row.get("roster_phase")) == "playoffs"
+
+
+def _old_project_team_note_usage_rows(data_dir: Path) -> list[dict[str, str]]:
+    teams = _read_csv(data_dir / "normalized" / "teams.csv")
+    teams_by_person = _teams_by_season_and_person(teams)
+    rows: list[dict[str, str]] = []
+    seen: set[tuple[str, str, str]] = set()
+
+    for path in _old_project_ewige_tabelle_paths(data_dir):
+        for record in _read_csv(path):
+            pokemon = (record.get("Pokemon") or record.get("pokemon") or "").strip()
+            if not pokemon:
+                continue
+            for column, value in record.items():
+                if not str(column or "").lower().startswith("team note"):
+                    continue
+                match = OLD_PROJECT_TEAM_NOTE_RE.match(str(value or "").strip())
+                if not match:
+                    continue
+
+                season_id = f"season_{int(match.group('season')):03d}"
+                person_raw = match.group("person").strip()
+                person_key = _old_project_person_key(person_raw)
+                identity = (season_id, name_key(pokemon), person_key)
+                if identity in seen:
+                    continue
+                seen.add(identity)
+
+                team = _select_team_for_person(teams_by_person, season_id, person_raw)
+                person_display = team.get("person_name") or _display_person_name(person_raw) or person_raw
+                person_normalized = team.get("person_name_normalized") or _canonical_person_name(person_raw) or name_key(person_display)
+                rows.append(
+                    {
+                        "season_id": season_id,
+                        "division": team.get("division", ""),
+                        "team_name": team.get("team_name", ""),
+                        "team_name_normalized": team.get("team_name_normalized", ""),
+                        "person_name": person_display,
+                        "person_name_normalized": person_normalized,
+                        "pokemon": pokemon,
+                        "pokemon_normalized": name_key(pokemon),
+                        "data_status": "old_project_team_note",
+                        "source_files": str(path),
+                        "source_urls": _join_sources(OLD_PROJECT_EWIGE_TABELLE_URL, team.get("source_urls")),
+                        "notes": "Pick-Zuordnung aus Team-Note-Zelle der alten Ewigen GPL-Tabelle; keine Kill-Aussage.",
+                    }
+                )
+
+    return rows
+
+
+def _old_project_ewige_tabelle_paths(data_dir: Path) -> list[Path]:
+    raw_dir = data_dir / "raw"
+    return sorted(raw_dir.glob(f"season_*/sheets/*ewige_tabelle_gpl_{OLD_PROJECT_EWIGE_TABELLE_GID}.csv"))
+
+
+def _teams_by_season_and_person(teams: list[dict[str, str]]) -> dict[tuple[str, str], list[dict[str, str]]]:
+    index: dict[tuple[str, str], list[dict[str, str]]] = {}
+    for row in teams:
+        season_id = row.get("season_id", "")
+        if not season_id:
+            continue
+        for key in _old_project_person_keys(row.get("person_name"), row.get("person_name_normalized"), row.get("person_id")):
+            bucket = index.setdefault((season_id, key), [])
+            if row not in bucket:
+                bucket.append(row)
+    return index
+
+
+def _select_team_for_person(
+    teams_by_person: dict[tuple[str, str], list[dict[str, str]]],
+    season_id: str,
+    person_name: str,
+) -> dict[str, str]:
+    matches: list[dict[str, str]] = []
+    for key in _old_project_person_keys(person_name):
+        for row in teams_by_person.get((season_id, key), []):
+            if row not in matches:
+                matches.append(row)
+    if not matches:
+        return {}
+    return sorted(matches, key=_team_preference_key)[0]
+
+
+def _team_preference_key(row: dict[str, str]) -> tuple[int, str]:
+    division = name_key(row.get("division", ""))
+    priority = {
+        "regular season": 0,
+        "hauptliga": 0,
+        "liga 1": 1,
+        "singles": 1,
+        "moon conference": 2,
+        "sun conference": 2,
+        "liga 2": 9,
+    }
+    return (priority.get(division, 5), row.get("team_name", ""))
+
+
+def _old_project_person_keys(*values: str | None) -> set[str]:
+    keys: set[str] = set()
+    for value in values:
+        key = _old_project_person_key(value)
+        if key:
+            keys.add(key)
+    return keys
+
+
+def _old_project_person_key(value: str | None) -> str:
+    text = str(value or "").strip()
+    if text.startswith("person_"):
+        text = text[len("person_") :].replace("_", " ")
+    canonical = _canonical_person_name(text) or text
+    return name_key(canonical)
 
 
 def _person_key(value: str | None) -> str:

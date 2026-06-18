@@ -19,7 +19,7 @@ This document records how each season is converted from raw PresentLP playlist a
 - S6 remains split into Sun Conference and Moon Conference for regular-season rows; playoff killlist/match rows keep `Playoffs`.
 - S8 has explicit `Liga 1` and `Liga 2` standings, schedules, team rows, and killlists. The S8 champion comes only from Liga 1 rank 1.
 - S9 has an overall tag-team table plus individual Singles and Doubles tables. Singles/Doubles are marked primary for all-time individual stats; the overall tag-team row is retained for champion evidence.
-- S10 regular-season and playoff rows are split by stage where the source layout exposes playoffs. The playoff final is reconstructed from `Ergebnisse` plus `Playoffs Kader`, and `Playoffs Killliste` is treated as the canonical Season 10 killlist.
+- S10 regular-season and playoff rows are split by stage where the source layout exposes playoffs. The playoff final is reconstructed from `Ergebnisse` plus `Playoffs Kader`; `Playoffs Killliste` is treated as the canonical Season 10 kill summary while the regular `Killliste` is retained for roster-context metrics.
 
 ## Season Decisions
 
@@ -34,7 +34,7 @@ This document records how each season is converted from raw PresentLP playlist a
 | 7 | `Tabelle` regular-season standings plus a source-evidenced playoff champion row because the available table evidence has Nestfloh first under the season rule. | `Spielplan [Mit Spoilern]`, row scores, plus a source-evidenced playoff champion marker. | `Killliste`. | Source-evidenced rank 1 under the supplied season rule: Nestfloh / Flutschige Zäpfchen. |
 | 8 | `Tabelle L1` and `Tabelle L2`. | `Spielplan L1` and `Spielplan L2`, row scores. | `Killliste L1` and `Killliste L2`. | Liga 1 rank 1: Bene / Victini Bottom. |
 | 9 | `Tabelle` is the overall tag-team table; `Tabelle Singles` and `Tabelle Doubles` are primary individual standings. | `Spielplan (Singles & Doubles)`, split scores like `A, 0, :, 2, B`. | Overall, Singles, and Doubles kill tabs. Person detail rows use Singles/Doubles; Victory Instinct Doubles is Bene, while Victory Instinct Singles is split from week columns into BelmontGabriel (1-7) and El Scizor (8-14). | Overall tag-team rank 1: El Scizor & Bene / Victory Instinct. |
-| 10 | Sorted final block inside `Tabelle`, beginning at the `Creator Teams` header; Minetube/PresentLP order follows direct-comparison correction. | `Ergebnisse`, including regular season and playoff rows, plus the final reconstructed from semifinal winners and `Playoffs Kader` Fin statuses. | `Playoffs Killliste` only; fixed columns expose kills, deaths, and differential. | Source-evidenced playoff final: Bene / Wackel Backel. |
+| 10 | Sorted final block inside `Tabelle`, beginning at the `Creator Teams` header; Minetube/PresentLP order follows direct-comparison correction. | `Ergebnisse`, including regular season and playoff rows, plus the final reconstructed from semifinal winners and `Playoffs Kader` Fin statuses. | `Playoffs Killliste` for canonical final summaries; regular `Killliste` retained separately for group-stage roster metrics. | Source-evidenced playoff final: Bene / Wackel Backel. |
 
 ## Follow-Up Data Gaps
 

@@ -189,7 +189,7 @@ def test_s10_killlist_uses_playoff_table_with_deaths():
     assert ramoth["differential"] == "1"
 
 
-def test_s10_killlist_keeps_regular_season_only_pokemon():
+def test_s10_killlist_keeps_regular_season_rows_for_roster_context():
     output = normalize_all(Path("data"))
     rows = [
         row
@@ -211,6 +211,18 @@ def test_s10_killlist_keeps_regular_season_only_pokemon():
     assert eisenhand["team_name"] == "Cyber End Jugulis"
     assert eisenhand["appearances"] == "12"
     assert eisenhand["kills"] == "13"
+
+    bene_ogerpon = [
+        row
+        for row in rows
+        if row["pokemon"] == "Ogerpon-Gestein" and row["trainer"] == "Bene"
+    ]
+    assert {row["division"] for row in bene_ogerpon} == {"Regular Season", "Playoffs"}
+    regular_ogerpon = next(row for row in bene_ogerpon if row["division"] == "Regular Season")
+    assert regular_ogerpon["team_name"] == "Wackel Backel"
+    assert regular_ogerpon["appearances"] == "10"
+    assert regular_ogerpon["kills"] == "13"
+    assert regular_ogerpon["deaths"] is None
 
 
 def test_killlists_capture_appearances_where_sources_expose_usage_columns():
