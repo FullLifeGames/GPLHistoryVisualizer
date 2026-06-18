@@ -70,9 +70,12 @@ assert.match(appJs, /seasonFilter\.addEventListener\("change"[\s\S]*?populateMat
 assert.match(appJs, /divisionFilter\.addEventListener\("change"[\s\S]*?populateMatchupOptions\(\)/);
 assert.match(appJs, /searchFilter\.addEventListener\("input"[\s\S]*?populateMatchupOptions\(\)/);
 assert.equal(dataModeSelect.includes('value="primary"'), true);
+assert.equal(dataModeSelect.includes('value="all"'), true);
 assert.equal(dataModeSelect.includes('value="league2"'), true);
 assert.equal(dataModeSelect.includes('value="league1"'), false);
-assert.equal(dataModeSelect.includes('value="all"'), false);
+assert.match(appJs, /normalizeDataMode\(value\)[\s\S]*?value === "league2" \|\| value === "all"/);
+assert.match(appJs, /state\.dataMode === "all"[\s\S]*?return true/);
+assert.match(appJs, /function aggregateAllTimeRows\(\)[\s\S]*?state\.season !== "all"[\s\S]*?return null/);
 assert.equal(columnProfileSelect.includes('value="compact"'), true);
 assert.equal(columnProfileSelect.includes('value="performance"'), true);
 assert.equal(columnProfileSelect.includes('value="history"'), true);

@@ -33,6 +33,7 @@ import {
   eloRatings,
   filterSourceClaims,
   matchupOverview,
+  mergeSeasonLists,
   missingDataRows,
   numberValue,
   personStorySummary,
@@ -47,6 +48,7 @@ import {
   qualityRowsFromData,
   reviewWorkflowRows,
   seasonCoverageRows,
+  seasonCountFromList,
   sourceClaimsForSeason,
   summarizePokemonDetail,
   summarizeKilllists,
@@ -54,6 +56,7 @@ import {
   teamRosterDisplayGroups,
   teamRosterOverviewRows,
   teamRosterPokemonRows,
+  titleInfoWithinSeasonList,
   winPercentage,
   weightedRating,
 } from "./stats.js";
@@ -591,7 +594,7 @@ function savePreference(key, value) {
 }
 
 function normalizeDataMode(value) {
-  return value === "league2" ? "league2" : "primary";
+  return value === "league2" || value === "all" ? value : "primary";
 }
 
 async function loadCoreDatasets() {
@@ -886,6 +889,9 @@ function draftDetailStatus(row) {
 
 function applyDataMode(row) {
   const division = row.division || "";
+  if (state.dataMode === "all") {
+    return true;
+  }
   if (!division) {
     return state.dataMode !== "league2";
   }
@@ -909,6 +915,20 @@ function seasonListDisplay(seasonIds) {
   return [...new Set((seasonIds ?? []).filter(Boolean))]
     .sort((a, b) => seasonOrder(a) - seasonOrder(b) || String(a).localeCompare(String(b)))
     .map(seasonDisplay)
+    .join(", ");
+}
+
+function shortSeasonList(value) {
+  const seasons = String(value ?? "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => {
+      const match = item.match(/(\d+)/);
+      return match ? `S${Number(match[1])}` : item;
+    });
+  return [...new Set(seasons)]
+    .sort((a, b) => seasonOrder(a) - seasonOrder(b) || String(a).localeCompare(String(b)))
     .join(", ");
 }
 
@@ -1167,19 +1187,18 @@ function renderAllTime() {
 
 function aggregateAllTimeRows() {
   const rows = state.data.personAllTime ?? [];
-  if (!rows.length || state.dataMode !== "all" || state.division !== "all") {
+  if (!rows.length || state.dataMode !== "all" || state.season !== "all" || state.division !== "all") {
     return null;
   }
   return rows
-    .filter((row) => state.season === "all" || String(row.season_list || "").includes(seasonDisplay(state.season)))
     .filter((row) => !state.search || Object.values(row).join(" ").toLowerCase().includes(state.search))
     .map((row, index) => ({
       rank: index + 1,
       name: personLink(row.person_id, row.person_name),
       seasons_won: row.seasons_won,
-      title_seasons: row.title_seasons,
+      title_seasons: shortSeasonList(row.title_seasons),
       seasons: row.seasons,
-      season_list: row.season_list,
+      season_list: shortSeasonList(row.season_list),
       elo: row.elo,
       matches: row.matches,
       wins: row.wins,
@@ -1211,17 +1230,48 @@ function renderKilllists() {
   }
 
   const titles = pokemonTitleIndex(state.data.pokemonDraftOverview ?? [], normalizedKey);
+  const draftHistory = pokemonDraftHistoryIndex();
   const rows = summarizeKilllists(canonicalKilllistRows(filtered(state.data.killlists ?? []), state.division)).map((row) => ({
     ...row,
-    ...titleInfoForPokemon(titles, row.pokemon),
+    ...pokemonHistoryFields(row, titles, draftHistory),
     pokemon: pokemonCell(row.pokemon),
   }));
   renderTable("#killlists-table", rows, POKEMON_KILLLIST_COLUMNS, ["pokemon"]);
 }
 
+function pokemonDraftHistoryIndex() {
+  const rows = pokemonDraftOverviewRows(state.data.pokemonDraftOverview ?? [], {
+    draftInstances: draftInstanceScopeForOverview(),
+    normalizeKey: normalizedKey,
+  });
+  const index = new Map();
+  rows
+    .filter((row) => row.picked_status !== "never_picked")
+    .forEach((row) => {
+      [row.pokemon_normalized, row.pokemon, row.asset_id, row.english].forEach((value) => {
+        const key = normalizedKey(value);
+        if (key && !index.has(key)) {
+          index.set(key, row);
+        }
+      });
+    });
+  return index;
+}
+
+function pokemonHistoryFields(row, titleIndex, draftHistory) {
+  const key = normalizedKey(row.pokemon_normalized || row.pokemon);
+  const draft = draftHistory.get(key) || draftHistory.get(key.replace(/\s+/g, ""));
+  const seasonList = mergeSeasonLists(row.season_list, draft?.season_list);
+  return {
+    seasons: seasonCountFromList(seasonList),
+    season_list: seasonList,
+    ...titleInfoWithinSeasonList(titleInfoForPokemon(titleIndex, row.pokemon), seasonList),
+  };
+}
+
 function aggregateKilllistRows() {
   const rows = state.data.pokemonAllTime ?? [];
-  if (!rows.length || state.season !== "all" || state.division !== "all" || state.dataMode !== "primary") {
+  if (!rows.length || state.season !== "all" || state.division !== "all" || state.dataMode !== "all") {
     return null;
   }
   return rows
@@ -1235,9 +1285,9 @@ function aggregateKilllistRows() {
       deaths: row.deaths,
       differential: row.differential,
       seasons: row.seasons,
-      season_list: row.season_list,
+      season_list: shortSeasonList(row.season_list),
       titles: row.titles,
-      title_seasons: row.title_seasons,
+      title_seasons: shortSeasonList(row.title_seasons),
       trainers: row.trainers,
       teams: row.teams,
     }));
@@ -1259,6 +1309,8 @@ function renderPokemonDrafts() {
     normalizeKey: normalizedKey,
   }).map((row) => ({
     ...row,
+    season_list: shortSeasonList(row.season_list),
+    title_seasons: shortSeasonList(row.title_seasons),
     pokemon: pokemonCell(row.pokemon, row.pokemon_normalized || normalizedKey(row.pokemon), row.asset_id || row.pokemon),
     picked_status: t(state.language, `values.${row.picked_status}`),
     source: sourceLinks(row.source_urls),
@@ -1275,7 +1327,7 @@ function renderPokemonDrafts() {
 function draftInstanceScopeForOverview() {
   const rows = state.data.pokemonDraftInstances;
   if (!Array.isArray(rows)) return null;
-  const needsScopedDraftCounts = state.dataMode === "league2" || state.season !== "all" || state.division !== "all";
+  const needsScopedDraftCounts = state.dataMode !== "primary" || state.season !== "all" || state.division !== "all";
   return needsScopedDraftCounts ? scoped(rows) : null;
 }
 
@@ -2190,7 +2242,7 @@ function compareVideoRows(a, b) {
 }
 
 function seasonOrder(seasonId) {
-  const match = String(seasonId ?? "").match(/season_0*(\d+)/);
+  const match = String(seasonId ?? "").match(/(\d+)/);
   return match ? Number(match[1]) : 999;
 }
 

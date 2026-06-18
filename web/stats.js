@@ -149,6 +149,38 @@ export function formatSeasonList(seasonIds = []) {
     .join(", ");
 }
 
+export function titleInfoWithinSeasonList(info = {}, seasonList = "") {
+  const visibleSeasons = seasonNumbersFromText(seasonList);
+  const titleSeasons = [...seasonNumbersFromText(info.title_seasons)]
+    .filter((season) => visibleSeasons.has(season))
+    .sort((a, b) => a - b);
+  return {
+    titles: titleSeasons.length,
+    title_count: titleSeasons.length,
+    title_seasons: formatSeasonList(titleSeasons.map((season) => `season_${season}`)),
+  };
+}
+
+export function mergeSeasonLists(...values) {
+  const seasons = new Set();
+  values.forEach((value) => {
+    seasonNumbersFromText(value).forEach((season) => seasons.add(season));
+  });
+  return formatSeasonList([...seasons].map((season) => `season_${season}`));
+}
+
+export function seasonCountFromList(value) {
+  return seasonNumbersFromText(value).size;
+}
+
+function seasonNumbersFromText(value) {
+  return new Set(
+    [...String(value ?? "").matchAll(/(\d+)/g)]
+      .map((match) => Number(match[1]))
+      .filter((number) => Number.isFinite(number)),
+  );
+}
+
 export function aggregatePersonStats(statRows, championRows = []) {
   const aggregate = new Map();
 
@@ -565,7 +597,7 @@ function normalizedStatsKey(value) {
 }
 
 function seasonNumber(seasonId) {
-  const match = String(seasonId ?? "").match(/season_0*(\d+)/);
+  const match = String(seasonId ?? "").match(/(\d+)/);
   return match ? Number(match[1]) : 999;
 }
 
@@ -716,11 +748,18 @@ function withVisibleDraftStats(row, draftStats, normalizeKey) {
   }
   const stats = draftStatsForOverviewRow(draftStats, row, normalizeKey);
   const draftCount = stats.drafts.length;
+  const seasonList = formatSeasonList([...stats.seasons]);
+  const titleInfo = titleInfoWithinSeasonList(
+    { titles: row.title_count, title_seasons: row.title_seasons },
+    seasonList,
+  );
   return {
     ...row,
     draft_count: draftCount,
     season_count: stats.seasons.size,
-    season_list: formatSeasonList([...stats.seasons]),
+    season_list: seasonList,
+    title_count: titleInfo.title_count,
+    title_seasons: titleInfo.title_seasons,
     trainer_count: stats.trainers.size,
     team_count: stats.teams.size,
     picked_status: draftCount ? "picked" : "never_picked",

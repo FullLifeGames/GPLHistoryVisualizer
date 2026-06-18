@@ -173,6 +173,7 @@ export const TRANSLATIONS = {
     },
     dataModes: {
       primary: "Gesamtübersicht",
+      all: "Gesamtübersicht + Liga 2",
       leagueTwo: "Liga 2",
     },
     coverage: {
@@ -563,6 +564,7 @@ export const TRANSLATIONS = {
     },
     dataModes: {
       primary: "Overall",
+      all: "Overall + League 2",
       leagueTwo: "League 2",
     },
     pokemonDetails: {

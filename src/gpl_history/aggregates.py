@@ -118,7 +118,7 @@ def build_aggregate_rows(normalized_dir: Path) -> dict[str, list[dict[str, Any]]
 
     return {
         "person_all_time": person_all_time_rows(people, stints, champions, matches),
-        "pokemon_all_time": pokemon_all_time_rows(killlists, champions),
+        "pokemon_all_time": pokemon_all_time_rows(killlists, champions, drafts),
         "matchup_summary": matchup_summary_rows(matches),
         "roster_scores": roster_score_rows(rosters, drafts),
         "season_storylines": season_storyline_rows(champions, data_quality, killlists, videos),
@@ -245,7 +245,11 @@ class PokemonAccumulator:
     source_urls: set[str] = field(default_factory=set)
 
 
-def pokemon_all_time_rows(killlists: list[dict[str, str]], champions: list[dict[str, str]]) -> list[dict[str, Any]]:
+def pokemon_all_time_rows(
+    killlists: list[dict[str, str]],
+    champions: list[dict[str, str]],
+    draft_rows: list[dict[str, str]] | None = None,
+) -> list[dict[str, Any]]:
     champion_teams_by_season = defaultdict(set)
     champion_sources_by_season = defaultdict(set)
     for row in champions:
@@ -256,7 +260,7 @@ def pokemon_all_time_rows(killlists: list[dict[str, str]], champions: list[dict[
         _add_urls(champion_sources_by_season[season_id], row.get("source_urls"))
 
     accumulators: dict[str, PokemonAccumulator] = {}
-    for row in killlists:
+    for row in _canonical_pokemon_killlist_rows(killlists):
         if row.get("data_status") == "not_available":
             continue
         pokemon = row.get("pokemon") or ""
@@ -276,6 +280,19 @@ def pokemon_all_time_rows(killlists: list[dict[str, str]], champions: list[dict[
         if row.get("team_name") and row.get("team_name") in champion_teams_by_season[row.get("season_id") or ""]:
             _add_nonempty(current.title_seasons, row.get("season_id"))
             current.source_urls.update(champion_sources_by_season[row.get("season_id") or ""])
+
+    for row in draft_rows or []:
+        if row.get("picked_status") == "never_picked":
+            continue
+        pokemon = row.get("pokemon") or ""
+        pokemon_key = row.get("pokemon_normalized") or _name_key(pokemon)
+        if not pokemon_key or pokemon_key not in accumulators:
+            continue
+        current = accumulators[pokemon_key]
+        current.pokemon = current.pokemon or pokemon
+        current.seasons.update(_season_ids_from_list(row.get("season_list")))
+        current.title_seasons.update(_season_ids_from_list(row.get("title_seasons")))
+        _add_urls(current.source_urls, row.get("source_urls"))
 
     rows = []
     for item in accumulators.values():
@@ -297,6 +314,41 @@ def pokemon_all_time_rows(killlists: list[dict[str, str]], champions: list[dict[
             }
         )
     return sorted(rows, key=lambda item: (-_number(item.get("kills")), -_number(item.get("differential")), str(item.get("pokemon"))))
+
+
+def _canonical_pokemon_killlist_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    by_season: dict[str, list[dict[str, str]]] = defaultdict(list)
+    for row in rows:
+        by_season[row.get("season_id") or ""].append(row)
+
+    canonical: list[dict[str, str]] = []
+    for season_id, season_rows in by_season.items():
+        if season_id == "season_009":
+            overall_rows = [row for row in season_rows if row.get("division") == "Overall"]
+            if overall_rows:
+                canonical.extend(overall_rows)
+                continue
+        playoff_rows = [row for row in season_rows if row.get("division") == "Playoffs"]
+        if season_id == "season_010" and playoff_rows:
+            canonical.extend(playoff_rows)
+            canonical.extend(_regular_only_killlist_rows(playoff_rows, season_rows))
+            continue
+        canonical.extend(season_rows)
+    return canonical
+
+
+def _regular_only_killlist_rows(canonical_rows: list[dict[str, str]], season_rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    canonical_pokemon = {
+        row.get("pokemon_normalized") or _name_key(row.get("pokemon") or "")
+        for row in canonical_rows
+        if row.get("pokemon_normalized") or row.get("pokemon")
+    }
+    return [
+        row
+        for row in season_rows
+        if row.get("division") == "Regular Season"
+        and (row.get("pokemon_normalized") or _name_key(row.get("pokemon") or "")) not in canonical_pokemon
+    ]
 
 
 def matchup_summary_rows(matches: list[dict[str, str]]) -> list[dict[str, Any]]:
@@ -566,11 +618,15 @@ def _week_sort(value: str | None) -> tuple[int, str]:
 
 def _season_label(value: str | None) -> str:
     match = re.search(r"([0-9]+)", str(value or ""))
-    return f"Season {int(match.group(1))}" if match else str(value or "")
+    return f"S{int(match.group(1))}" if match else str(value or "")
 
 
 def _format_season_list(season_ids: list[str]) -> str:
     return ", ".join(_season_label(season_id) for season_id in season_ids)
+
+
+def _season_ids_from_list(value: str | None) -> set[str]:
+    return {f"season_{int(match.group(1)):03d}" for match in re.finditer(r"([0-9]+)", str(value or ""))}
 
 
 def _add_nonempty(values: set[str], value: str | None) -> None:

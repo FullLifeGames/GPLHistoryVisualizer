@@ -7,6 +7,7 @@ import {
   eloRatings,
   filterSourceClaims,
   formatSeasonList,
+  mergeSeasonLists,
   matchupOverview,
   missingDataRows,
   personStorySummary,
@@ -21,6 +22,7 @@ import {
   qualityRowsFromData,
   reviewWorkflowRows,
   seasonCoverageRows,
+  seasonCountFromList,
   sourceClaimsForSeason,
   summarizePokemonDetail,
   summarizeTrainerPokemon,
@@ -28,6 +30,7 @@ import {
   teamRosterDisplayGroups,
   teamRosterOverviewRows,
   teamRosterPokemonRows,
+  titleInfoWithinSeasonList,
   weightedRating,
   weightedRatingValue,
   killDifferential,
@@ -439,6 +442,60 @@ assert.deepEqual(
     },
   ).map((row) => `${row.pokemon}:${row.draft_count}:${row.season_list}:${row.trainer_count}`),
   ["Pixi:2:S2, S8:2"],
+);
+
+assert.deepEqual(
+  titleInfoWithinSeasonList({ titles: 1, title_seasons: "S1" }, "S2, S3, S10"),
+  { titles: 0, title_count: 0, title_seasons: "" },
+);
+
+assert.deepEqual(
+  titleInfoWithinSeasonList({ titles: 2, title_seasons: "Season 1, S10" }, "S1, S2, S10"),
+  { titles: 2, title_count: 2, title_seasons: "S1, S10" },
+);
+
+assert.equal(mergeSeasonLists("S2, S10", "Season 1, S2"), "S1, S2, S10");
+assert.equal(seasonCountFromList("S1, S2, S10"), 3);
+
+assert.deepEqual(
+  pokemonDraftOverviewRows(
+    [
+      {
+        pokemon: "Stalobor",
+        pokemon_normalized: "stalobor",
+        asset_id: "excadrill",
+        english: "Excadrill",
+        tier: "UU",
+        tier_rank: "5",
+        draft_count: "10",
+        picked_status: "picked",
+        title_count: "1",
+        title_seasons: "S1",
+      },
+    ],
+    {
+      draftInstances: [
+        {
+          season_id: "season_008",
+          division: "Liga 2",
+          pokemon: "Stalobor",
+          pokemon_normalized: "stalobor",
+          asset_id: "excadrill",
+          person_name: "KingBlex",
+          person_name_normalized: "kingblex",
+          team_name: "End Level Hydreigon",
+          team_name_normalized: "endlevelhydreigon",
+        },
+      ],
+    },
+  ).map((row) => ({
+    pokemon: row.pokemon,
+    draft_count: row.draft_count,
+    season_list: row.season_list,
+    title_count: row.title_count,
+    title_seasons: row.title_seasons,
+  })),
+  [{ pokemon: "Stalobor", draft_count: 1, season_list: "S8", title_count: 0, title_seasons: "" }],
 );
 
 assert.deepEqual(

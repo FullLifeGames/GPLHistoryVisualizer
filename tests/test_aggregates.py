@@ -1,7 +1,7 @@
 import csv
 from pathlib import Path
 
-from gpl_history.aggregates import build_and_write_aggregates
+from gpl_history.aggregates import build_and_write_aggregates, pokemon_all_time_rows
 
 
 def test_build_and_write_aggregates_writes_person_pokemon_matchup_roster_and_story_rows(tmp_path):
@@ -177,9 +177,9 @@ def test_build_and_write_aggregates_writes_person_pokemon_matchup_roster_and_sto
         "person_id": "person_bene",
         "person_name": "Bene",
         "seasons": "1",
-        "season_list": "Season 10",
+        "season_list": "S10",
         "seasons_won": "1",
-        "title_seasons": "Season 10",
+        "title_seasons": "S10",
         "matches": "2",
         "wins": "2",
         "losses": "0",
@@ -198,6 +198,137 @@ def test_build_and_write_aggregates_writes_person_pokemon_matchup_roster_and_sto
     assert _read_csv(normalized / "matchup_summary.csv")[0]["matches"] == "2"
     assert _read_csv(normalized / "roster_scores.csv")[0]["pokemon_count"] == "2"
     assert _read_csv(normalized / "season_storylines.csv")[0]["top_pokemon"] == "UHaFnir"
+
+
+def test_pokemon_all_time_rows_uses_canonical_split_and_playoff_killlists():
+    rows = pokemon_all_time_rows(
+        [
+            {
+                "season_id": "season_009",
+                "division": "Overall",
+                "pokemon": "Demeteros-T",
+                "pokemon_normalized": "demeteros t",
+                "trainer": "",
+                "team_name": "Scherzkekse",
+                "appearances": "23",
+                "kills": "19",
+                "deaths": "",
+                "source_urls": "s9-overall",
+            },
+            {
+                "season_id": "season_009",
+                "division": "Singles",
+                "pokemon": "Demeteros-T",
+                "pokemon_normalized": "demeteros t",
+                "trainer": "Dauni Daunstar",
+                "team_name": "Scherzkekse",
+                "appearances": "13",
+                "kills": "12",
+                "deaths": "",
+                "source_urls": "s9-singles",
+            },
+            {
+                "season_id": "season_009",
+                "division": "Doubles",
+                "pokemon": "Demeteros-T",
+                "pokemon_normalized": "demeteros t",
+                "trainer": "Hydronic",
+                "team_name": "Scherzkekse",
+                "appearances": "10",
+                "kills": "7",
+                "deaths": "",
+                "source_urls": "s9-doubles",
+            },
+            {
+                "season_id": "season_010",
+                "division": "Playoffs",
+                "pokemon": "Demeteros-T",
+                "pokemon_normalized": "demeteros t",
+                "trainer": "PresentLP",
+                "team_name": "",
+                "appearances": "12",
+                "kills": "14",
+                "deaths": "11",
+                "source_urls": "s10-playoffs",
+            },
+            {
+                "season_id": "season_010",
+                "division": "Regular Season",
+                "pokemon": "Demeteros-T",
+                "pokemon_normalized": "demeteros t",
+                "trainer": "PresentLP",
+                "team_name": "Prekani",
+                "appearances": "10",
+                "kills": "11",
+                "deaths": "",
+                "source_urls": "s10-regular",
+            },
+            {
+                "season_id": "season_010",
+                "division": "Regular Season",
+                "pokemon": "Glurak",
+                "pokemon_normalized": "glurak",
+                "trainer": "PresentLP",
+                "team_name": "Prekani",
+                "appearances": "10",
+                "kills": "5",
+                "deaths": "",
+                "source_urls": "s10-regular-only",
+            },
+        ],
+        [],
+    )
+
+    by_pokemon = {row["pokemon_normalized"]: row for row in rows}
+    assert by_pokemon["demeteros t"]["kills"] == "33"
+    assert by_pokemon["demeteros t"]["appearances"] == "35"
+    assert by_pokemon["demeteros t"]["source_urls"] == "s10-playoffs;s9-overall"
+    assert by_pokemon["glurak"]["kills"] == "5"
+
+
+def test_pokemon_all_time_rows_merges_draft_history_for_display_seasons():
+    rows = pokemon_all_time_rows(
+        [
+            {
+                "season_id": "season_002",
+                "division": "Regular Season",
+                "pokemon": "Stalobor",
+                "pokemon_normalized": "stalobor",
+                "trainer": "Scherany",
+                "team_name": "",
+                "kills": "5",
+                "source_urls": "s2-kills",
+            },
+        ],
+        [],
+        [
+            {
+                "pokemon": "Stalobor",
+                "pokemon_normalized": "stalobor",
+                "picked_status": "picked",
+                "season_list": "S1, S2",
+                "title_seasons": "S1",
+                "source_urls": "draft-history",
+            },
+            {
+                "pokemon": "Arkani",
+                "pokemon_normalized": "arkani",
+                "picked_status": "picked",
+                "season_list": "S1",
+                "title_seasons": "S1",
+                "source_urls": "draft-only",
+            },
+        ],
+    )
+
+    by_pokemon = {row["pokemon_normalized"]: row for row in rows}
+    assert by_pokemon["stalobor"]["kills"] == "5"
+    assert by_pokemon["stalobor"]["seasons"] == 2
+    assert by_pokemon["stalobor"]["season_list"] == "S1, S2"
+    assert by_pokemon["stalobor"]["titles"] == 1
+    assert by_pokemon["stalobor"]["title_seasons"] == "S1"
+    assert by_pokemon["stalobor"]["source_urls"] == "draft-history;s2-kills"
+    assert "arkani" not in by_pokemon
 
 
 def test_build_and_write_aggregates_uses_normalized_person_aliases(tmp_path):
