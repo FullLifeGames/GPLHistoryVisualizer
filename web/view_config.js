@@ -4,7 +4,7 @@ export const VIEW_GROUPS = [
     labelKey: "navGroups.people",
     defaultView: "all-time",
     views: ["all-time", "team-rosters", "matchup"],
-    detailViews: ["person-details"],
+    detailViews: ["person-details", "roster-detail"],
   },
   {
     id: "pokemon",

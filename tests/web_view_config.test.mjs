@@ -14,6 +14,7 @@ assert.equal(defaultViewForGroup("unknown"), "all-time");
 
 assert.equal(viewGroupForView("all-time"), "people");
 assert.equal(viewGroupForView("person-details"), "people");
+assert.equal(viewGroupForView("roster-detail"), "people");
 assert.equal(viewGroupForView("matchup"), "people");
 assert.equal(viewGroupForView("killlists"), "pokemon");
 assert.equal(viewGroupForView("pokemon-drafts"), "pokemon");

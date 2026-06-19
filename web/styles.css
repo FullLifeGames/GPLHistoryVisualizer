@@ -402,6 +402,10 @@ input:focus,
   margin-bottom: 16px;
 }
 
+.person-summary-grid {
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+}
+
 .summary-card,
 .metric {
   border: 1px solid var(--line);
@@ -460,6 +464,10 @@ input:focus,
 .summary-card strong {
   font-size: 22px;
   line-height: 1;
+}
+
+.person-summary-grid .summary-card strong {
+  overflow-wrap: anywhere;
 }
 
 .view {
@@ -712,18 +720,442 @@ input:focus,
   font-weight: 900;
 }
 
+.roster-detail-link {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: calc(100% - 20px);
+  min-height: 40px;
+  margin: 10px 10px 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgb(17 191 243 / 12%), transparent 58%),
+    var(--surface-soft);
+  color: var(--accent-strong);
+  font-size: 12px;
+  font-weight: 900;
+  padding: 0 12px;
+  text-decoration: none;
+}
+
+.roster-detail-link::after {
+  content: ">";
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: rgb(17 191 243 / 14%);
+  color: var(--accent-strong);
+}
+
+.roster-detail-link:hover,
+.roster-detail-link:focus-visible {
+  border-color: var(--accent-warm);
+  color: var(--accent-warm);
+  outline: none;
+}
+
+.roster-detail-link:hover::after,
+.roster-detail-link:focus-visible::after {
+  background: rgb(255 122 26 / 16%);
+  color: var(--accent-warm);
+}
+
+.roster-detail-focus {
+  margin-bottom: 12px;
+}
+
+.roster-detail-hero {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(115deg, rgb(17 191 243 / 18%), transparent 48%),
+    linear-gradient(255deg, rgb(255 122 26 / 12%), transparent 44%),
+    var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.roster-detail-hero > div:first-child {
+  min-width: 0;
+}
+
+.roster-detail-kicker {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.roster-detail-hero h3 {
+  margin: 4px 0;
+  font-size: clamp(26px, 4vw, 38px);
+  line-height: 1;
+}
+
+.roster-detail-hero p {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 750;
+}
+
+.roster-detail-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.roster-detail-actions .roster-variant-tabs {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.roster-detail-visual {
+  margin-bottom: 12px;
+}
+
+.roster-detail-summary-grid {
+  margin: 12px 0 14px;
+}
+
+.roster-detail-flags {
+  margin: 12px 16px 16px;
+  border: 1px solid rgb(255 122 26 / 28%);
+  border-radius: var(--radius);
+  background: rgb(255 122 26 / 10%);
+  color: var(--warn);
+  overflow: hidden;
+}
+
+.roster-detail-flags > summary {
+  cursor: pointer;
+  list-style-position: inside;
+  padding: 9px 12px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.roster-detail-flags > p {
+  margin: 0;
+  padding: 0 12px 12px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.roster-teamsheet {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.roster-teamsheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px;
+  border-bottom: 1px solid var(--line);
+  background:
+    linear-gradient(115deg, rgb(17 191 243 / 16%), transparent 48%),
+    linear-gradient(255deg, rgb(255 122 26 / 11%), transparent 44%),
+    var(--surface);
+}
+
+.roster-teamsheet-head span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.roster-teamsheet-head h3 {
+  margin: 3px 0 4px;
+  color: var(--accent-strong);
+  font-size: clamp(24px, 4vw, 36px);
+  line-height: 1;
+}
+
+.roster-teamsheet-head p {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.roster-teamsheet-score {
+  display: grid;
+  place-items: center;
+  min-width: 128px;
+  min-height: 96px;
+  padding: 10px;
+  border: 1px solid rgb(17 191 243 / 34%);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(135deg, rgb(17 191 243 / 18%), transparent 58%),
+    var(--surface-soft);
+  text-align: center;
+}
+
+.roster-teamsheet-score small {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.roster-teamsheet-score strong {
+  color: var(--accent-strong);
+  font-size: 40px;
+  line-height: 1;
+}
+
+.roster-teamsheet-grid {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  min-height: clamp(620px, 58vw, 760px);
+  padding: clamp(18px, 3vw, 34px);
+  background:
+    radial-gradient(circle at 50% 50%, rgb(255 255 255 / 22%), transparent 44%),
+    linear-gradient(90deg, rgb(7 17 31 / 12%), transparent 42%, rgb(255 122 26 / 9%)),
+    linear-gradient(180deg, rgb(255 255 255 / 4%), rgb(7 17 31 / 14%)),
+    var(--roster-bg-image);
+  background-position: center;
+  background-size: cover;
+}
+
+.roster-teamsheet-row {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+}
+
+.roster-teamsheet-row-1 .roster-teamsheet-tile {
+  flex-basis: 164px;
+}
+
+.roster-teamsheet-row-2 .roster-teamsheet-tile {
+  flex-basis: 154px;
+}
+
+.roster-teamsheet-row-3 .roster-teamsheet-tile {
+  flex-basis: 148px;
+}
+
+.roster-teamsheet-tile {
+  position: relative;
+  flex: 0 1 148px;
+  display: grid;
+  grid-template-rows: 112px auto;
+  justify-items: center;
+  align-items: start;
+  gap: 3px;
+  min-height: 156px;
+  padding: 6px 7px 8px;
+  border: 1px solid rgb(255 255 255 / 72%);
+  border-radius: 10px;
+  background: radial-gradient(circle at 50% 37%, rgb(255 255 255 / 20%), transparent 56%);
+  box-shadow:
+    0 14px 24px rgb(6 35 65 / 16%),
+    inset 0 0 0 1px rgb(17 191 243 / 20%),
+    inset 0 0 24px rgb(255 255 255 / 18%);
+  backdrop-filter: saturate(1.08);
+  text-shadow:
+    0 2px 0 rgb(255 255 255 / 80%),
+    0 6px 12px rgb(6 35 65 / 28%);
+}
+
+.roster-teamsheet-rank {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  min-height: 22px;
+  border: 1px solid rgb(17 191 243 / 36%);
+  border-radius: 999px;
+  background: rgb(226 247 255 / 64%);
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 900;
+  box-shadow: 0 6px 12px rgb(6 35 65 / 13%);
+}
+
+.roster-teamsheet-tile .pokemon-sprite-frame,
+.roster-teamsheet-tile .pokemon-sprite {
+  width: 112px;
+  height: 112px;
+}
+
+.roster-teamsheet-tile h4 {
+  margin: 0;
+  max-width: 100%;
+  padding: 2px 8px 3px;
+  border: 1px solid rgb(255 255 255 / 36%);
+  border-radius: 999px;
+  background: rgb(242 247 252 / 42%);
+  box-shadow: 0 8px 18px rgb(6 35 65 / 10%);
+  font-size: 15px;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.roster-teamsheet-tile h4 .link-button {
+  color: var(--accent-strong);
+  text-align: center;
+  text-shadow:
+    0 1px 0 rgb(255 255 255 / 95%),
+    0 4px 9px rgb(6 35 65 / 22%);
+  white-space: normal;
+}
+
+[data-theme="dark"] .roster-teamsheet-grid {
+  background:
+    radial-gradient(circle at 50% 50%, rgb(255 255 255 / 6%), transparent 44%),
+    linear-gradient(90deg, rgb(7 16 27 / 26%), rgb(7 16 27 / 10%) 48%, rgb(40 28 20 / 20%)),
+    linear-gradient(180deg, rgb(7 17 31 / 8%), rgb(7 17 31 / 30%)),
+    var(--roster-bg-image);
+  background-position: center;
+  background-size: cover;
+}
+
+[data-theme="dark"] .roster-teamsheet-tile {
+  border-color: rgb(255 255 255 / 24%);
+  background: radial-gradient(circle at 50% 37%, rgb(255 255 255 / 10%), transparent 56%);
+  box-shadow:
+    0 14px 24px rgb(0 0 0 / 28%),
+    inset 0 0 0 1px rgb(17 191 243 / 16%),
+    inset 0 0 24px rgb(255 255 255 / 8%);
+  text-shadow: 0 2px 8px rgb(0 0 0 / 78%);
+}
+
+[data-theme="dark"] .roster-teamsheet-rank {
+  background: rgb(17 191 243 / 18%);
+}
+
+[data-theme="dark"] .roster-teamsheet-tile h4 {
+  border-color: rgb(255 255 255 / 14%);
+  background: rgb(13 23 37 / 42%);
+}
+
+[data-theme="dark"] .roster-teamsheet-tile h4 .link-button {
+  text-shadow: 0 3px 10px rgb(0 0 0 / 80%);
+}
+
 .score-formula,
 .roster-card-head > strong,
-.roster-pokemon-chip small {
+.roster-pokemon-chip small,
+.roster-teamsheet-score,
+.roster-teamsheet-tile {
   cursor: help;
+}
+
+.score-explainer {
+  margin: 10px 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(36, 130, 255, 0.08), rgba(255, 255, 255, 0.7));
+  overflow: hidden;
+}
+
+[data-theme="dark"] .score-explainer {
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.14), rgba(15, 23, 42, 0.8));
+}
+
+.score-explainer > summary {
+  cursor: pointer;
+  padding: 11px 14px;
+  color: var(--accent);
+  font-weight: 900;
+}
+
+.score-explainer-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 0 14px 14px;
+}
+
+.score-explainer-grid > div {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.score-explainer-grid > div:first-child {
+  grid-column: 1 / -1;
+}
+
+.score-explainer-grid strong {
+  display: block;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.score-explainer-grid p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .roster-flags {
   margin: 0;
-  padding: 8px 10px 10px;
   border-top: 1px solid var(--line);
-  color: var(--warn);
+  color: var(--muted);
   font-size: 12px;
+}
+
+.roster-flags > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 34px;
+  padding: 7px 10px;
+  cursor: pointer;
+  font-weight: 850;
+  list-style: none;
+}
+
+.roster-flags > summary::-webkit-details-marker {
+  display: none;
+}
+
+.roster-flags > summary::after {
+  content: "+";
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--accent-strong);
+}
+
+.roster-flags[open] > summary::after {
+  content: "-";
+}
+
+.roster-flags > p {
+  margin: 0;
+  padding: 0 10px 10px;
+  color: var(--warn);
   font-weight: 800;
 }
 
@@ -887,7 +1319,7 @@ input:focus,
   position: absolute;
   inset: 0;
   z-index: 1;
-  background: var(--surface-soft);
+  background: transparent;
 }
 
 .pokemon-sprite-animated {
@@ -1444,9 +1876,20 @@ tbody tr:hover {
   color: var(--accent-strong);
 }
 
+@media (max-width: 1200px) {
+  .person-summary-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 900px) {
   .summary-grid {
     grid-template-columns: repeat(2, minmax(140px, 1fr));
+  }
+
+  .roster-detail-hero {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
 
@@ -1484,12 +1927,53 @@ tbody tr:hover {
   .graphics-toolbar,
   .matchup-form,
   .summary-grid,
+  .score-explainer-grid,
   .result-grid {
     grid-template-columns: 1fr;
   }
 
   .roster-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .roster-teamsheet-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .roster-teamsheet-score {
+    min-height: 76px;
+  }
+
+  .roster-teamsheet-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    min-height: 0;
+    padding: 10px;
+    background-position: center top;
+  }
+
+  .roster-teamsheet-row {
+    display: contents;
+  }
+
+  .roster-teamsheet-tile {
+    flex: none;
+    grid-template-rows: 90px auto;
+    min-height: 134px;
+    padding: 6px;
+  }
+
+  .roster-teamsheet-tile .pokemon-sprite-frame,
+  .roster-teamsheet-tile .pokemon-sprite {
+    width: 90px;
+    height: 90px;
+  }
+
+  .roster-teamsheet-tile h4 {
+    padding-inline: 6px;
+    font-size: 13px;
   }
 
   .graphics-group-head {

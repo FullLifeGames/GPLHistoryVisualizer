@@ -174,6 +174,23 @@
           <h2 data-i18n="sections.teamRostersTitle">Kaderübersichten</h2>
           <p data-i18n="sections.teamRostersDescription">Kader aus Teamgrafik-Zuordnungen, Killlisten, Draft-Tiers und GPL-Historie mit transparentem Kaderscore.</p>
         </div>
+        <details class="score-explainer">
+          <summary data-i18n="rosters.scoreFormulaTitle">Kaderscore-Formel</summary>
+          <div class="score-explainer-grid">
+            <div>
+              <strong data-i18n="rosters.rosterFormula">Score = 30% Power + 40% Performance + 15% Balance + 10% Historie + 5% Confidence</strong>
+              <p data-i18n="rosters.rosterFormulaNote">Power kommt aus NatDex-Tiers; History aus Drafts und Titeln; Confidence sinkt bei fehlenden Tier-, Einsatz- oder Todesdaten.</p>
+            </div>
+            <div>
+              <strong data-i18n="rosters.performanceFormula">Performance = Pokémon-Leistung plus Tabellenleistung</strong>
+              <p data-i18n="rosters.performanceFormulaNote">Bei belegten Kadern zählt das Saisonergebnis mit 45%. Bei Snapshot- oder rekonstruierten Kadern zählt es nur mit 18%, damit eine volle Saison nicht zu stark auf einen unsicheren Kader gelegt wird.</p>
+            </div>
+            <div>
+              <strong data-i18n="rosters.balanceFormula">Balance = Kadergröße, Tiefe und Konzentration</strong>
+              <p data-i18n="rosters.balanceFormulaNote">Lower-Tiers geben keinen Bonus. Gute Tiefe bedeutet, dass Top 11 und Bank nah an den Top 6 bleiben und der Kader nicht nur von einem Pokémon getragen wird.</p>
+            </div>
+          </div>
+        </details>
         <div id="team-roster-cards" class="roster-grid"></div>
         <details class="detail-table-section" open>
           <summary data-i18n="rosters.rankingTitle">Kader-Ranking</summary>
@@ -182,6 +199,20 @@
         <details class="detail-table-section">
           <summary data-i18n="rosters.pokemonRowsTitle">Pokémon im Kader</summary>
           <div id="team-roster-pokemon-table" class="table-wrap"></div>
+        </details>
+      </section>
+
+      <section id="view-roster-detail" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.rosterDetailTitle">Kaderdetail</h2>
+          <p data-i18n="sections.rosterDetailDescription">Teamsheet mit Kadergrafik, Varianten und darunterliegenden Leistungswerten.</p>
+        </div>
+        <div id="roster-detail-focus" class="roster-detail-focus"></div>
+        <div id="roster-detail-visual" class="roster-detail-visual"></div>
+        <div id="roster-detail-summary" class="summary-grid roster-detail-summary-grid"></div>
+        <details class="detail-table-section" open>
+          <summary data-i18n="rosters.detailPokemonTitle">Pokémon-Leistungen</summary>
+          <div id="roster-detail-pokemon-table" class="table-wrap"></div>
         </details>
       </section>
 
@@ -207,7 +238,7 @@
           <p data-i18n="sections.personDetailsDescription">Personen, Teams, Tabellenstände und Titel über alle Saisons.</p>
         </div>
         <div id="person-focus" class="person-focus" hidden></div>
-        <div id="person-story-summary" class="summary-grid"></div>
+        <div id="person-story-summary" class="summary-grid person-summary-grid"></div>
         <details class="detail-table-section" id="person-timeline-section" open>
           <summary data-i18n="personDetails.timelineTitle">Saisonverlauf</summary>
           <div id="person-timeline-table" class="table-wrap"></div>

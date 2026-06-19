@@ -15,6 +15,9 @@ export function parseRouteHash(hash) {
   if (parts[0] === "pokemon" && parts[1]) {
     return { view: "pokemon-detail", personKey: null, pokemonKey: parts[1] };
   }
+  if (parts[0] === "roster" && parts[1]) {
+    return { view: "roster-detail", personKey: null, rosterKey: parts[1] };
+  }
   if (GROUP_IDS.has(parts[0])) {
     return { view: defaultViewForGroup(parts[0]), personKey: null };
   }
@@ -36,4 +39,8 @@ export function seasonRouteHash(seasonId) {
 
 export function pokemonRouteHash(pokemonKey) {
   return `#/pokemon/${encodeURIComponent(pokemonKey)}`;
+}
+
+export function rosterRouteHash(rosterKey) {
+  return `#/roster/${encodeURIComponent(rosterKey)}`;
 }
