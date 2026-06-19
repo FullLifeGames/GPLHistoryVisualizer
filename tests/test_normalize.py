@@ -154,6 +154,27 @@ def test_schedule_matches_from_rows_extracts_explicit_scored_cells_with_week_con
     ]
 
 
+def test_schedule_matches_from_rows_prefers_same_row_week_context_over_s10_overview_grid():
+    rows = [
+        ["", "", "", "", "", "Spieltag 13", "", "Spieltag 13Dauni vs OGDeniz96"],
+        ["", "Spieltag 10", "7", "Spieltag 10Bene vs Raizor", "", "", "Bene", "4", ":", "0", "Raizor"],
+        ["", "Spieltag 13", "7", "Spieltag 13Snomnie vs Raizor", "", "", "Snomnie", "0", ":", "2", "Raizor"],
+    ]
+
+    matches = _schedule_matches_from_rows(
+        "season_010",
+        rows,
+        "https://example.test/s10-results",
+        division="Regular Season",
+        infer_winner=True,
+    )
+
+    assert [(row["week"], row["player_a"], row["player_b"], row["winner"]) for row in matches] == [
+        ("Spieltag 10", "Bene", "Raizor", "Bene"),
+        ("Spieltag 13", "Snomnie", "Raizor", "Raizor"),
+    ]
+
+
 def test_normalized_killlists_do_not_duplicate_identical_rows():
     output = normalize_all(Path("data"))
     rows = [row for row in output.pokemon_killlists if row["data_status"] != "not_available"]
@@ -400,6 +421,19 @@ def test_s9_killlists_preserve_team_from_wide_summary_rows():
     }
 
 
+def test_killlists_fill_missing_team_from_person_season_division_context():
+    output = normalize_all(Path("data"))
+    rows = [
+        row
+        for row in output.pokemon_killlists
+        if row["pokemon_normalized"] == "uhafnir" and row["trainer_normalized"] == "bene"
+    ]
+    by_context = {(row["season_id"], row["division"]): row for row in rows}
+
+    assert by_context[("season_008", "Liga 1")]["team_name"] == "Victini Bottom"
+    assert by_context[("season_010", "Playoffs")]["team_name"] == "Wackel Backel"
+
+
 def test_s10_playoff_matches_are_in_playoff_division():
     output = normalize_all(Path("data"))
     rows = [
@@ -410,6 +444,54 @@ def test_s10_playoff_matches_are_in_playoff_division():
 
     assert rows
     assert {row["division"] for row in rows} == {"Playoffs"}
+
+
+def test_s10_regular_matches_keep_results_sheet_spieltag_context():
+    output = normalize_all(Path("data"))
+    rows = [
+        row
+        for row in output.matches
+        if row["season_id"] == "season_010" and row["division"] == "Regular Season"
+    ]
+    by_pair = {(_canonical_name(row["player_a"]), _canonical_name(row["player_b"])): row for row in rows}
+
+    assert not [row["week"] for row in rows if " vs " in str(row.get("week") or "")]
+    assert by_pair[("bene", "raizor")]["week"] == "Spieltag 10"
+    assert by_pair[("snomnie", "raizor")]["week"] == "Spieltag 13"
+    assert ("raizor", "minetube") not in by_pair
+
+    playoff_rows = [
+        row
+        for row in output.matches
+        if row["season_id"] == "season_010" and row["division"] == "Playoffs"
+    ]
+    playoff_by_pair = {(_canonical_name(row["player_a"]), _canonical_name(row["player_b"])): row for row in playoff_rows}
+    assert playoff_by_pair[("raizor", "minetube")]["week"] == "Halbfinale"
+    assert playoff_by_pair[("present", "minetube")]["week"] == "Spiel um Platz 3"
+    assert playoff_by_pair[("present", "minetube")]["winner"] is None
+
+
+def test_s1_week_21_fnupagladi_prekani_manual_match_is_available_for_video_mapping():
+    output = normalize_all(Path("data"))
+    row = next(
+        (
+            row
+            for row in output.matches
+            if row["match_id"] == "season_001_manual_0021_fnupa_present"
+        ),
+        None,
+    )
+
+    assert row is not None
+    assert row["season_id"] == "season_001"
+    assert row["week"] == "21. Spieltag - Sonntag der 08.02.2015 [12:00 -17:00]"
+    assert row["player_a"] == "Cabgolord"
+    assert row["team_a"] == "Fnupagladi"
+    assert row["player_b"] == "PresentLP"
+    assert row["team_b"] == "Prekani"
+    assert row["score_a"] in {None, ""}
+    assert row["score_b"] in {None, ""}
+    assert row["data_status"] == "manual_source_evidenced"
 
 
 def test_pokemon_typo_aliases_are_corrected_in_normalized_killlists():
@@ -477,6 +559,39 @@ def test_s6_playoff_matches_are_filterable_as_playoffs():
 
     assert rows
     assert {row["division"] for row in rows} == {"Playoffs"}
+    round_counts = Counter(row["week"] for row in rows)
+    assert round_counts == {
+        "Playoffs - Vorrunde - Sonntag der 07.07.2019": 4,
+        "Playoffs - Viertelfinale - Sonntag der 14.07.2019": 4,
+        "Playoffs - Halbfinale - Sonntag der 21.07.2019": 2,
+        "Playoffs - Spiel um Platz 3 - Samstag der 27.07.2019": 1,
+        "Playoffs - Finale - Sonntag der 28.07.2019": 1,
+    }
+
+
+def test_schedule_parser_does_not_apply_right_side_playoff_header_to_left_blocks():
+    rows = [
+        ["", "1. Spieltag - Sonntag der 14.04.2019", "", "", "", "7. Spieltag - Sonntag der 26.05.2019"],
+        ["", "Lauris", "5:0", "Scoutley", "", "Barry D. Sin of Speed", "4:0", "Asalakoren"],
+        ["", "Hydronic", "0:3", "Minetube", "", "PokeBazi", "3:0", "Hydronic", "", "Playoffs - Viertelfinale - Sonntag der 14.07.2019"],
+        ["", "", "", "", "", "", "", "", "", "TabascoTV", "0:2", "Dauni"],
+        ["", "2. Spieltag - Sonntag der 21.04.2019", "", "", "", "8. Spieltag - Sonntag der 02.06.2019", "", "", "", "BelmontGabriel", "0:3", "Art'n'Gaming"],
+    ]
+
+    matches = _schedule_matches_from_rows(
+        "season_006",
+        rows,
+        "source",
+        division="Sun Conference",
+        infer_winner=True,
+    )
+
+    by_pair = {(_canonical_name(row["player_a"]), _canonical_name(row["player_b"])): row for row in matches}
+    assert by_pair[("lauris", "scoutley")]["week"] == "1. Spieltag - Sonntag der 14.04.2019"
+    assert by_pair[("hydronic", "minetube")]["week"] == "1. Spieltag - Sonntag der 14.04.2019"
+    assert by_pair[("pokebazi", "hydronic")]["week"] == "7. Spieltag - Sonntag der 26.05.2019"
+    assert by_pair[("tabasco tv", "dauni daunstar")]["week"] == "Playoffs - Viertelfinale - Sonntag der 14.07.2019"
+    assert by_pair[("belmontgabriel", "art n gaming")]["week"] == "Playoffs - Viertelfinale - Sonntag der 14.07.2019"
 
 
 def test_playoff_and_tag_team_champions_are_represented_per_person():

@@ -70,8 +70,8 @@ MATCH_VIDEO_FIELDS = [
 
 _GPL_RE = re.compile(r"(?:\bgpl\b|german\s+pok[eé]mon\s+league)", re.IGNORECASE)
 _SEASON_RE = re.compile(r"(?:season|saison|staffel|\bs)\s*0?([0-9]{1,2})\b", re.IGNORECASE)
-_WEEK_RE = re.compile(r"(?:spieltag|sp\.?|st\.?|week|woche)\s*0?([0-9]{1,2})\b", re.IGNORECASE)
-_WEEK_PREFIX_RE = re.compile(r"\b0?([0-9]{1,2})\.\s*(?:spieltag|st\.?|week|woche)\b", re.IGNORECASE)
+_WEEK_RE = re.compile(r"(?:spieltag|matchday|sp\.?|st\.?|week|woche)\s*#?\s*0?([0-9]{1,2})\b", re.IGNORECASE)
+_WEEK_PREFIX_RE = re.compile(r"\b0?([0-9]{1,2})\.\s*(?:spieltag|matchday|st\.?|week|woche)\b", re.IGNORECASE)
 _VERSUS_RE = re.compile(r"(?:\bvs\.?\b|\bversus\b|\bgegen\b)", re.IGNORECASE)
 _TEAMBUILDING_TOKENS = {
     "teambuilding",
@@ -129,18 +129,21 @@ _OTHER_VIDEO_TOKENS = {
     "recap",
     "rueckblick",
 }
-_ROUND_LABELS = {
-    "finale": "finale",
-    "final": "finale",
-    "halbfinale": "halbfinale",
-    "semifinal": "halbfinale",
-    "semi final": "halbfinale",
-    "viertelfinale": "viertelfinale",
-    "quarterfinal": "viertelfinale",
-    "quarter final": "viertelfinale",
-    "platz 3": "platz_3",
-    "third place": "platz_3",
-}
+_ROUND_LABELS = (
+    ("spiel um platz 3", "platz_3"),
+    ("platz 3", "platz_3"),
+    ("third place", "platz_3"),
+    ("halbfinale", "halbfinale"),
+    ("semifinals", "halbfinale"),
+    ("semifinal", "halbfinale"),
+    ("semi final", "halbfinale"),
+    ("viertelfinale", "viertelfinale"),
+    ("quarterfinals", "viertelfinale"),
+    ("quarterfinal", "viertelfinale"),
+    ("quarter final", "viertelfinale"),
+    ("finale", "finale"),
+    ("final", "finale"),
+)
 
 
 def channel_candidate_from_url(url: str | None) -> dict[str, str] | None:
@@ -175,12 +178,9 @@ def parse_gpl_video_title(title: str | None) -> dict[str, Any]:
     text = str(title or "")
     folded = _fold_text(text)
     stage = "playoffs" if any(token in folded for token in ["playoff", "finale", "halbfinale", "viertelfinale"]) else "regular_season"
-    round_label = None
-    for token, label in _ROUND_LABELS.items():
-        if token in folded:
-            round_label = label
-            stage = "playoffs"
-            break
+    round_label = _round_label_from_text(text)
+    if round_label:
+        stage = "playoffs"
 
     season_match = _SEASON_RE.search(text)
     week_match = _WEEK_RE.search(text) or _WEEK_PREFIX_RE.search(text)
@@ -216,11 +216,13 @@ def classify_video_type(title: str | None) -> str:
     text = str(title or "")
     folded = _fold_text(text)
     has_week = bool(_WEEK_RE.search(text) or _WEEK_PREFIX_RE.search(text))
-    has_round = any(token in folded for token in _ROUND_LABELS)
+    has_round = _round_label_from_text(text) is not None
     has_versus = bool(_VERSUS_RE.search(text))
     has_teambuilding = any(token in folded for token in _TEAMBUILDING_TOKENS)
     if has_teambuilding and not _is_teambuilding_joke_match_title(folded, has_week=has_week, has_round=has_round, has_versus=has_versus):
         return "teambuilding"
+    if re.search(r"\br\s*(?:u|ue)?ckblick\b", folded):
+        return "recap"
     for category, tokens in _CATEGORY_TOKENS.items():
         if any(token in folded for token in tokens):
             return category
@@ -235,6 +237,17 @@ def _is_teambuilding_joke_match_title(folded_title: str, *, has_week: bool, has_
     if not has_versus or not (has_week or has_round):
         return False
     return bool(re.search(r"\b(?:team\s*building|team\s*build|teambuilding)\s+fail\b", folded_title))
+
+
+def _round_label_from_text(value: str | None) -> str | None:
+    folded = _fold_text(value)
+    for token, label in _ROUND_LABELS:
+        pattern = r"\b" + r"\s+".join(re.escape(part) for part in token.split()) + r"\b"
+        if token == "final":
+            pattern += r"(?!\s+(?:matchday|schedule)\b)"
+        if re.search(pattern, folded):
+            return label
+    return None
 
 
 def discover_channel_candidates(data_dir: Path, include_description_channels: bool = False) -> list[dict[str, Any]]:
@@ -468,7 +481,8 @@ def scan_video_archive(
 
 def build_video_archive(data_dir: Path) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     raw_dir = data_dir / "raw" / "video_archive"
-    channel_rows = read_json(raw_dir / "channels.json", [])
+    channel_rows = _merge_channel_rows(read_json(raw_dir / "channels.json", []))
+    excluded_video_ids = _manual_excluded_video_ids(data_dir)
     teams = _read_csv(data_dir / "normalized" / "teams.csv")
     matches = [
         row
@@ -489,6 +503,8 @@ def build_video_archive(data_dir: Path) -> tuple[list[dict[str, Any]], list[dict
         videos = read_json(Path(raw_path), [])
         for video in videos:
             video_id = video.get("videoId")
+            if video_id and video_id in excluded_video_ids:
+                continue
             title = video.get("title")
             parsed = parse_gpl_video_title(title)
             if not parsed["is_gpl"]:
@@ -562,6 +578,14 @@ def build_video_archive(data_dir: Path) -> tuple[list[dict[str, Any]], list[dict
                 )
             archive_rows.append(video_row)
 
+    existing_video_ids = {row.get("video_id") for row in archive_rows if row.get("video_id")}
+    for video_row in _manual_archive_rows(data_dir):
+        if video_row.get("video_id") in existing_video_ids:
+            continue
+        archive_rows.append(video_row)
+        if video_row.get("video_id"):
+            existing_video_ids.add(video_row.get("video_id"))
+
     archive_rows.sort(
         key=lambda row: (
             _season_order(row.get("detected_season_id")),
@@ -572,6 +596,7 @@ def build_video_archive(data_dir: Path) -> tuple[list[dict[str, Any]], list[dict
     )
     archive_rows = enrich_video_rows_with_stats(archive_rows, load_video_stats(data_dir))
     archive_by_video_id = {row.get("video_id"): row for row in archive_rows if row.get("video_id")}
+    match_video_rows.extend(_manual_reference_match_rows(data_dir, archive_by_video_id, matches))
     for row in match_video_rows:
         stats = archive_by_video_id.get(row.get("video_id"), {})
         for field in VIDEO_STATS_FIELDS:
@@ -584,17 +609,174 @@ def build_video_archive(data_dir: Path) -> tuple[list[dict[str, Any]], list[dict
     return archive_rows, match_video_rows
 
 
+def _manual_excluded_video_ids(data_dir: Path) -> set[str]:
+    return {
+        str(row.get("video_id") or "").strip()
+        for row in _read_csv(data_dir / "manual" / "video_exclusions.csv")
+        if str(row.get("video_id") or "").strip()
+    }
+
+
+def _merge_channel_rows(channel_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    grouped: dict[tuple[str, str], dict[str, Any]] = {}
+    order: list[tuple[str, str]] = []
+
+    for row in channel_rows:
+        channel_id = str(row.get("channelId") or "").strip()
+        key = ("channel_id", channel_id) if channel_id else (
+            str(row.get("kind") or ""),
+            str(row.get("value") or row.get("canonical_url") or ""),
+        )
+        if key not in grouped:
+            grouped[key] = dict(row)
+            grouped[key]["_source_person_ids"] = set()
+            grouped[key]["_source_person_names"] = set()
+            grouped[key]["_source_team_names"] = set()
+            grouped[key]["_source_seasons"] = set()
+            grouped[key]["_source_divisions"] = set()
+            grouped[key]["_source_urls"] = set()
+            order.append(key)
+
+        current = grouped[key]
+        for field, target in (
+            ("source_person_ids", "_source_person_ids"),
+            ("source_person_names", "_source_person_names"),
+            ("source_team_names", "_source_team_names"),
+            ("source_seasons", "_source_seasons"),
+            ("source_divisions", "_source_divisions"),
+        ):
+            for value in _split_values(row.get(field)):
+                current[target].add(value)
+
+        for value in _split_values(row.get("source_urls")):
+            current["_source_urls"].add(value)
+        if row.get("canonical_url"):
+            current["_source_urls"].add(row["canonical_url"])
+
+        for field in ("raw_path", "channelId", "title", "canonical_url"):
+            if not current.get(field) and row.get(field):
+                current[field] = row[field]
+
+    merged_rows: list[dict[str, Any]] = []
+    for key in order:
+        row = grouped[key]
+        merged = {field: value for field, value in row.items() if not field.startswith("_")}
+        merged["source_person_ids"] = _join_sorted(row["_source_person_ids"])
+        merged["source_person_names"] = _join_display_names(row["_source_person_names"])
+        merged["source_team_names"] = _join_sorted(row["_source_team_names"])
+        merged["source_seasons"] = _join_sorted(row["_source_seasons"])
+        merged["source_divisions"] = _join_sorted(row["_source_divisions"])
+        merged["source_urls"] = _join_sorted(row["_source_urls"])
+        merged_rows.append(merged)
+    return merged_rows
+
+
+def _manual_archive_rows(data_dir: Path) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for row in _read_csv(data_dir / "manual" / "video_archive.csv"):
+        video_id = row.get("video_id")
+        title = row.get("title")
+        parsed = parse_gpl_video_title(title)
+        video_type = row.get("video_type") or parsed["video_type"]
+        source_person_names = _normalized_source_person_names(row.get("source_person_names"))
+        rows.append(
+            {
+                "video_id": video_id,
+                "video_url": row.get("video_url") or video_url(video_id),
+                "title": title,
+                "video_type": video_type,
+                "published_at": row.get("published_at"),
+                "channel_id": row.get("channel_id"),
+                "channel_title": row.get("channel_title"),
+                "channel_url": row.get("channel_url"),
+                "source_person_ids": row.get("source_person_ids") or _normalized_source_person_ids(row.get("source_person_ids"), source_person_names),
+                "source_person_names": source_person_names,
+                "source_team_names": row.get("source_team_names"),
+                "source_seasons": row.get("source_seasons") or row.get("detected_season_id") or parsed["season_id"],
+                "division": row.get("division") or parsed["division"],
+                "detected_season_id": row.get("detected_season_id") or parsed["season_id"],
+                "detected_week": row.get("detected_week") or (str(parsed["week_number"]) if parsed["week_number"] is not None else None),
+                "detected_stage": row.get("detected_stage") or parsed["stage"],
+                "detected_round": row.get("detected_round") or parsed["round"],
+                "match_status": row.get("match_status") or ("unmatched" if video_type == "game" else video_type),
+                "best_match_id": row.get("best_match_id"),
+                "confidence": row.get("confidence"),
+                "confidence_tier": _confidence_tier(row.get("confidence")),
+                "match_basis": row.get("match_basis"),
+                "confidence_explanation": row.get("confidence_explanation"),
+                "perspective_person": row.get("perspective_person") or _first_nonempty(_split_values(source_person_names)),
+                "opponent": row.get("opponent"),
+                "source_urls": _join_unique([row.get("source_urls"), row.get("video_url"), video_url(video_id), row.get("channel_url")]),
+            }
+        )
+    return rows
+
+
+def _manual_reference_match_rows(
+    data_dir: Path,
+    archive_by_video_id: dict[str | None, dict[str, Any]],
+    matches: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for reference in _read_csv(data_dir / "manual" / "video_references.csv"):
+        video = archive_by_video_id.get(reference.get("video_id"))
+        if not video:
+            continue
+        for match in matches:
+            if not _reference_applies_to_match(reference, match):
+                continue
+            reference_video = {
+                **video,
+                "video_type": reference.get("video_type") or video.get("video_type"),
+                "perspective_person": reference.get("perspective_person") or video.get("perspective_person"),
+                "opponent": reference.get("opponent") or video.get("opponent"),
+            }
+            reference_match = {
+                **match,
+                "confidence": reference.get("confidence") or "100",
+                "match_basis": reference.get("match_basis") or "manual_reference",
+                "confidence_explanation": reference.get("confidence_explanation") or "manual video reference",
+            }
+            rows.append(_match_video_row(reference_match, reference_video))
+    return rows
+
+
+def _reference_applies_to_match(reference: dict[str, str], match: dict[str, Any]) -> bool:
+    match_id = reference.get("match_id")
+    if match_id:
+        return match.get("match_id") == match_id
+    for field in ("season_id", "division", "stage"):
+        if reference.get(field) and reference.get(field) != match.get(field):
+            return False
+    if reference.get("week") and not _same_week(reference.get("week"), match.get("week")):
+        return False
+    if reference.get("round") and _round_label_from_text(match.get("week")) != reference.get("round"):
+        return False
+    return True
+
+
+def _same_week(left: str | None, right: str | None) -> bool:
+    left_week = _week_number(left)
+    right_week = _week_number(right)
+    if left_week is not None or right_week is not None:
+        return left_week == right_week
+    return _fold_text(left) == _fold_text(right)
+
+
 def match_video_to_matches(video: dict[str, Any], matches: list[dict[str, Any]]) -> dict[str, Any] | None:
     parsed = parse_gpl_video_title(video.get("title"))
     if parsed["video_type"] != "game":
         return None
     title_key = _name_key(video.get("title"))
+    source_seasons = {season for season in _split_values(video.get("source_seasons")) if re.fullmatch(r"season_\d{3}", season)}
     channel_people = [_display_name(value) for value in _split_values(video.get("channel_person_name") or video.get("source_person_names"))]
     channel_teams = _split_values(video.get("channel_team_name") or video.get("source_team_names"))
 
     candidates: list[dict[str, Any]] = []
     for match in matches:
         if parsed["season_id"] and match.get("season_id") != parsed["season_id"]:
+            continue
+        if not parsed["season_id"] and source_seasons and match.get("season_id") not in source_seasons:
             continue
         if parsed["division"] and match.get("division") != parsed["division"]:
             continue
@@ -606,12 +788,25 @@ def match_video_to_matches(video: dict[str, Any], matches: list[dict[str, Any]])
             score += 35
             reasons.append("season")
             explanations.append(f"matched season {parsed['season_id']}")
+        elif source_seasons and match.get("season_id") in source_seasons:
+            score += 35
+            reasons.append("source_season")
+            explanations.append(f"matched source season {match.get('season_id')}")
         if parsed["stage"] == "playoffs" and match.get("stage") == "playoffs":
             score += 15
             reasons.append("stage")
             explanations.append("playoff title matched playoff match")
         elif parsed["stage"] == "playoffs" and match.get("stage") != "playoffs":
             continue
+
+        parsed_round = parsed["round"]
+        if parsed_round:
+            match_round = _round_label_from_text(match.get("week"))
+            if match_round != parsed_round:
+                continue
+            score += 25
+            reasons.append("round")
+            explanations.append(f"matched playoff round {parsed_round}")
 
         parsed_week = parsed["week_number"]
         match_week = _week_number(match.get("week"))
@@ -651,7 +846,7 @@ def match_video_to_matches(video: dict[str, Any], matches: list[dict[str, Any]])
             reasons.append("title_both_sides")
             explanations.append("title identifies both match sides")
 
-        has_match_context = bool(parsed["season_id"] or parsed_week is not None or parsed["round"])
+        has_match_context = bool(parsed["season_id"] or source_seasons or parsed_week is not None or parsed["round"])
         has_participant_evidence = bool(channel_side or title_sides)
         has_title_or_round_context = bool(title_sides or parsed_week is not None or parsed["round"])
         if score < 60 or not has_match_context or not has_title_or_round_context or not has_participant_evidence:

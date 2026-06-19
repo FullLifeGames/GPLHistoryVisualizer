@@ -481,6 +481,12 @@ def normalize_all(data_dir: Path) -> NormalizedOutput:
     team_pokemon_usage = read_manual_table(data_dir, "team_pokemon_usage", TEAM_POKEMON_USAGE_FIELDS)
     output.pokemon_killlists = _apply_team_pokemon_usage_to_killlists(output.pokemon_killlists, team_pokemon_usage)
     output.pokemon_killlists = _replace_generated_killlists_with_manual_overrides(output.pokemon_killlists)
+    output.pokemon_killlists = _fill_killlist_team_names_from_person_context(
+        output.pokemon_killlists,
+        output.teams,
+        output.person_stints,
+        output.standings,
+    )
     output.people = _people_from_output(output)
     output.aliases_review = _alias_review(output)
     apply_manual_rows(data_dir, output, {"people": NORMALIZED_FIELDS["people"], "aliases_review": NORMALIZED_FIELDS["aliases_review"]})
@@ -585,6 +591,58 @@ def _killlist_assignment_key(row: dict[str, Any]) -> tuple[str, str, str, str] |
         _null(row.get("stage")) or "",
         pokemon_key,
     )
+
+
+def _fill_killlist_team_names_from_person_context(
+    killlists: list[dict[str, Any]],
+    teams: list[dict[str, Any]],
+    person_stints: list[dict[str, Any]],
+    standings: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    team_contexts: dict[tuple[str, str, str], dict[str, set[str]]] = {}
+
+    def add_context(season_id: str | None, division: str | None, person: str | None, team: str | None, source_urls: str | None) -> None:
+        season_key = _null(season_id)
+        division_key = _null(division)
+        person_key = _canonical_name(person)
+        team_name = _null(team)
+        if not season_key or not division_key or not person_key or not team_name:
+            return
+        context = team_contexts.setdefault((season_key, division_key, person_key), {"teams": set(), "source_urls": set()})
+        context["teams"].add(team_name)
+        for source_url in _split_source_urls(source_urls):
+            context["source_urls"].add(source_url)
+
+    for row in teams:
+        add_context(row.get("season_id"), row.get("division"), row.get("person_name"), row.get("team_name"), row.get("source_urls"))
+    for row in person_stints:
+        add_context(row.get("season_id"), row.get("division"), row.get("person_name"), row.get("team_name"), row.get("source_urls"))
+    for row in standings:
+        add_context(row.get("season_id"), row.get("division"), row.get("player_name"), row.get("team_name"), row.get("source_urls"))
+
+    enriched_rows: list[dict[str, Any]] = []
+    for row in killlists:
+        if _null(row.get("team_name")) or row.get("data_status") == "not_available":
+            enriched_rows.append(row)
+            continue
+        key = (
+            _null(row.get("season_id")) or "",
+            _null(row.get("division")) or "",
+            _canonical_name(row.get("trainer") or row.get("trainer_normalized")),
+        )
+        context = team_contexts.get(key)
+        if not context or len(context["teams"]) != 1:
+            enriched_rows.append(row)
+            continue
+        enriched = dict(row)
+        enriched["team_name"] = next(iter(context["teams"]))
+        enriched["source_urls"] = _join_source_urls(row.get("source_urls"), *sorted(context["source_urls"]))
+        enriched_rows.append(enriched)
+    return enriched_rows
+
+
+def _split_source_urls(value: str | None) -> list[str]:
+    return [part.strip() for part in str(value or "").split(";") if part.strip()]
 
 
 def _load_sheet_tables(sheets_index: list[dict[str, Any]], season_path: Path | None = None) -> list[dict[str, Any]]:
@@ -1026,6 +1084,33 @@ def _s10_championship_final_from_tables(tables: list[dict[str, Any]]) -> dict[st
     }
 
 
+def _s10_third_place_match_from_tables(tables: list[dict[str, Any]]) -> dict[str, str | None] | None:
+    semifinal_rows = _s10_round_matches(tables, "halbfinale")
+    loser_keys: set[str | None] = set()
+    for row in semifinal_rows:
+        winner = _canonical_name(_score_winner(row["player_a"], row["player_b"], row["score_a"], row["score_b"]))
+        player_a_key = _canonical_name(row["player_a"])
+        player_b_key = _canonical_name(row["player_b"])
+        if winner == player_a_key:
+            loser_keys.add(player_b_key)
+        elif winner == player_b_key:
+            loser_keys.add(player_a_key)
+    loser_keys.discard(None)
+    if len(loser_keys) != 2:
+        return None
+
+    for pair in _s10_final_pairs(tables):
+        pair_keys = {_canonical_name(pair["player_a"]), _canonical_name(pair["player_b"])}
+        if pair_keys == loser_keys:
+            return {
+                "player_a": pair["player_a"],
+                "player_b": pair["player_b"],
+                "winner": None,
+                "source_urls": _source_urls_for_titles(tables, ["Ergebnisse"]),
+            }
+    return None
+
+
 def _s10_round_matches(tables: list[dict[str, Any]], round_key: str) -> list[dict[str, str | None]]:
     rows: list[dict[str, str | None]] = []
     for table in _tables_by_title(tables, "Ergebnisse"):
@@ -1068,7 +1153,7 @@ def _s10_final_pairs(tables: list[dict[str, Any]]) -> list[dict[str, str | None]
                 if str(cell or "").strip() != ":":
                     continue
                 round_label = _nearest_week(round_by_column, column)
-                if "finale" not in _fold_text(str(round_label or "").lower()):
+                if not _s10_round_label_matches(round_label, "finale"):
                     continue
                 player_a = _nearest_nonempty(raw, column - 1, -1)
                 player_b = _nearest_nonempty(raw, column + 1, 1)
@@ -1087,6 +1172,13 @@ def _s10_final_pairs(tables: list[dict[str, Any]]) -> list[dict[str, str | None]
                     }
                 )
     return pairs
+
+
+def _s10_round_label_matches(round_label: str | None, round_key: str) -> bool:
+    folded = _fold_text(str(round_label or "").lower())
+    if round_key == "finale":
+        return "finale" in folded and "halbfinale" not in folded and "viertelfinale" not in folded
+    return round_key in folded
 
 
 def _s10_playoff_final_statuses(tables: list[dict[str, Any]]) -> dict[str, str]:
@@ -1774,20 +1866,35 @@ def _manual_playoff_matches(season_id: str, tables: list[dict[str, Any]], start_
         ]
     if season_id == "season_010":
         final = _s10_championship_final_from_tables(tables)
-        if not final:
-            return []
-        return [
-            _manual_match_row(
-                season_id,
-                start_counter,
-                week="Finale",
-                player_a=final["player_a"],
-                player_b=final["player_b"],
-                winner=final["winner"],
-                source_url=final["source_urls"],
-                status="sheet_extracted",
+        third_place = _s10_third_place_match_from_tables(tables)
+        rows: list[dict[str, Any]] = []
+        if third_place:
+            rows.append(
+                _manual_match_row(
+                    season_id,
+                    start_counter,
+                    week="Spiel um Platz 3",
+                    player_a=third_place["player_a"],
+                    player_b=third_place["player_b"],
+                    winner=third_place["winner"],
+                    source_url=third_place["source_urls"],
+                    status="sheet_extracted",
+                )
             )
-        ]
+        if final:
+            rows.append(
+                _manual_match_row(
+                    season_id,
+                    start_counter + len(rows),
+                    week="Finale",
+                    player_a=final["player_a"],
+                    player_b=final["player_b"],
+                    winner=final["winner"],
+                    source_url=final["source_urls"],
+                    status="sheet_extracted",
+                )
+            )
+        return rows
     return []
 
 
@@ -1835,14 +1942,22 @@ def _schedule_matches_from_rows(
     counter = start_counter
 
     for row in source_rows:
+        row_week_by_column: dict[int, str] = {}
         for column, cell in enumerate(row):
             if _looks_like_week(cell):
-                week_by_column[column] = cell.strip()
+                row_week_by_column[column] = cell.strip()
+        week_by_column.update(row_week_by_column)
+        row_week_max_distance = 12 if len(row_week_by_column) <= 1 else 3
 
         for column, cell in enumerate(row):
             parsed = _parse_scored_match_cell(cell)
             if parsed:
-                week = week_by_column.get(column) or _nearest_week(week_by_column, column)
+                week = (
+                    row_week_by_column.get(column)
+                    or _nearest_week(row_week_by_column, column, max_distance=row_week_max_distance, allow_right=False)
+                    or week_by_column.get(column)
+                    or _nearest_week(week_by_column, column)
+                )
                 row_data = _match_row(
                     season_id,
                     counter,
@@ -1862,7 +1977,7 @@ def _schedule_matches_from_rows(
             split = _parse_split_score_row(row, column)
             if not split:
                 continue
-            week = _nearest_week(week_by_column, column)
+            week = _nearest_week(row_week_by_column, column, max_distance=row_week_max_distance, allow_right=False) or _nearest_week(week_by_column, column)
             row_data = _match_row(
                 season_id,
                 counter,
@@ -2880,11 +2995,17 @@ def _looks_like_week(value: str | None) -> bool:
     if not value:
         return False
     folded = _fold_text(value.lower())
+    if "spieltag" in folded and re.search(r"\b(vs|versus|gegen)\b", folded):
+        return False
     return "spieltag" in folded or "playoffs" in folded or "vorrunde" in folded or "viertelfinale" in folded or "halbfinale" in folded or "finale" in folded
 
 
 def _week_number(value: str | None) -> int | None:
-    match = re.search(r"(\d+)\.\s*spieltag", _fold_text(str(value or "").lower()))
+    folded = _fold_text(str(value or "").lower())
+    match = re.search(r"\b(?:spieltag|sp\.?|st\.?|woche)\s*0?(\d{1,2})\b", folded)
+    if match:
+        return int(match.group(1))
+    match = re.search(r"\b0?(\d{1,2})\.\s*(?:spieltag|sp\.?|st\.?|woche)\b", folded)
     return int(match.group(1)) if match else None
 
 
@@ -3013,13 +3134,24 @@ def _nearest_nonempty(row: list[str], start: int, step: int) -> str | None:
     return None
 
 
-def _nearest_week(week_by_column: dict[int, str], column: int) -> str | None:
+def _nearest_week(
+    week_by_column: dict[int, str],
+    column: int,
+    max_distance: int | None = None,
+    allow_right: bool = True,
+) -> str | None:
     if not week_by_column:
         return None
     left = [item for item in week_by_column.items() if item[0] <= column]
     if left:
-        return max(left, key=lambda item: item[0])[1]
-    return min(week_by_column.items(), key=lambda item: abs(item[0] - column))[1]
+        nearest = max(left, key=lambda item: item[0])
+    elif not allow_right:
+        return None
+    else:
+        nearest = min(week_by_column.items(), key=lambda item: abs(item[0] - column))
+    if max_distance is not None and abs(nearest[0] - column) > max_distance:
+        return None
+    return nearest[1]
 
 
 def _is_noise_name(value: str | None) -> bool:

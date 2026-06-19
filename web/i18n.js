@@ -141,7 +141,7 @@ export const TRANSLATIONS = {
     matchup: {
       firstName: "Erste Auswahl",
       secondName: "Zweite Auswahl",
-      placeholder: "Trainer oder Team auswhlen",
+      placeholder: "Trainer oder Team auswählen",
       check: "Prüfen",
       enterNames: "Wähle zwei Trainer oder Teams aus.",
       matches: "Matches",

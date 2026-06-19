@@ -25,6 +25,7 @@ import {
   TEAM_ROSTER_POKEMON_COLUMNS,
 } from "./table_columns.js";
 import { tableHeaderFilterConfig } from "./table_filters.js";
+import { textSorter, weekSortValue } from "./table_sort.js";
 import {
   aggregatePersonStats,
   canonicalKilllistRows,
@@ -2487,14 +2488,19 @@ function compareMatches(a, b) {
   );
 }
 
-function weekOrder(row) {
-  const text = String(row.week ?? "").toLowerCase();
-  const match = text.match(/(\d+)\.\s*spieltag/);
-  if (match) return Number(match[1]);
+function weekOrder(rowOrWeek) {
+  const value =
+    rowOrWeek && typeof rowOrWeek === "object"
+      ? rowOrWeek.week ?? rowOrWeek.detected_week ?? rowOrWeek.week_label
+      : rowOrWeek;
+  const orderedWeek = weekSortValue(value);
+  if (orderedWeek !== 999) return orderedWeek;
+
+  const text = String(value ?? "").toLowerCase();
   if (text.includes("viertel")) return 100;
   if (text.includes("halb")) return 110;
   if (text.includes("final")) return 120;
-  return row.stage === "playoffs" ? 150 : 999;
+  return rowOrWeek && typeof rowOrWeek === "object" && rowOrWeek.stage === "playoffs" ? 150 : 999;
 }
 
 function renderBracketOverview() {
@@ -2570,7 +2576,7 @@ function renderGroupPhase(rows) {
 
 function renderGroupDivision(division, rows) {
   const weeks = groupRows(rows, (row) => row.week || t(state.language, "values.unknown"));
-  const weekEntries = [...weeks.entries()].sort((a, b) => weekOrder(a[1][0]) - weekOrder(b[1][0]) || a[0].localeCompare(b[0]));
+  const weekEntries = [...weeks.entries()].sort((a, b) => weekOrder(a[0]) - weekOrder(b[0]) || a[0].localeCompare(b[0]));
   return `
     <article class="group-panel">
       <h4>${escapeHtml(division)}</h4>
@@ -3600,8 +3606,7 @@ function seasonOrder(seasonId) {
 }
 
 function weekNumber(value) {
-  const parsed = Number.parseInt(String(value ?? ""), 10);
-  return Number.isFinite(parsed) ? parsed : 999;
+  return weekSortValue(value);
 }
 
 function videoTypePriority(value) {
@@ -4071,7 +4076,7 @@ function sorterFor(column) {
   if (column === "win_pct") {
     return (left, right) => percentSortValue(left) - percentSortValue(right);
   }
-  return NUMERIC_COLUMNS.has(column) ? "number" : "string";
+  return NUMERIC_COLUMNS.has(column) ? "number" : textSorter(column, state.language);
 }
 
 function initialSort(columns) {

@@ -164,6 +164,11 @@ def test_parse_gpl_video_title_extracts_season_week_and_playoff_round():
     assert playoff["stage"] == "playoffs"
     assert playoff["round"] == "finale"
 
+    semifinal = parse_gpl_video_title("Dieser Kampf entscheidet ALLES! - GPL [S10] - Halbfinale")
+    assert semifinal["season_id"] == "season_010"
+    assert semifinal["stage"] == "playoffs"
+    assert semifinal["round"] == "halbfinale"
+
     league_two = parse_gpl_video_title("GPL [S5] [Liga 2] - Spieltag 01 - vs. Elekid's Club")
     assert league_two["season_id"] == "season_005"
     assert league_two["week_number"] == 1
@@ -171,6 +176,34 @@ def test_parse_gpl_video_title_extracts_season_week_and_playoff_round():
 
     storyline = parse_gpl_video_title("GPL [S4] - Spieltag 22 - vs. Enteikutierung: Relegation oder Liga 1?")
     assert storyline["division"] is None
+
+
+def test_parse_gpl_video_title_treats_matchday_as_week_marker():
+    parsed = parse_gpl_video_title("Surprise fireworks on the final matchday! GPL Matchday 13 vs. @Bene")
+
+    assert parsed["is_gpl"] is True
+    assert parsed["season_id"] is None
+    assert parsed["week_number"] == 13
+    assert parsed["stage"] == "regular_season"
+    assert parsed["video_type"] == "game"
+
+
+def test_parse_gpl_video_title_detects_hash_prefixed_spieltag_numbers():
+    parsed = parse_gpl_video_title("[GPL S9] Kusha macht den Flobert! | Spieltag #05: vs. @Hydronic")
+
+    assert parsed["is_gpl"] is True
+    assert parsed["season_id"] == "season_009"
+    assert parsed["week_number"] == 5
+    assert parsed["video_type"] == "game"
+
+
+def test_parse_gpl_video_title_detects_plural_english_playoff_rounds():
+    parsed = parse_gpl_video_title("There's no turning back now! GPL Playoff Quarterfinals vs. @RaizorDATA")
+
+    assert parsed["is_gpl"] is True
+    assert parsed["stage"] == "playoffs"
+    assert parsed["round"] == "viertelfinale"
+    assert parsed["video_type"] == "game"
 
 
 def test_classify_video_type_distinguishes_games_teambuildings_and_other_gpl_videos():
@@ -182,6 +215,9 @@ def test_classify_video_type_distinguishes_games_teambuildings_and_other_gpl_vid
     assert classify_video_type("GPL Season 4 - Ankündigung") == "announcement"
     assert classify_video_type("Legendäre GPL Kämpfe | Reaction | GPL S1 Raizor vs Fnupa") == "reaction"
     assert classify_video_type("GPL S6 Recap und Rückblick") == "recap"
+
+
+    assert classify_video_type('"Curelei ist trash!" - GPL [S9] Rückblick - Spieltag 1') == "recap"
 
 
 def test_classify_video_type_keeps_match_titles_with_teambuilding_jokes_as_games():
@@ -234,6 +270,199 @@ def test_match_video_to_matches_prefers_same_season_week_and_people():
     assert "channel" in result["match_basis"]
     assert "title names Bene as opponent" in result["confidence_explanation"]
     assert "channel identifies Minetube" in result["confidence_explanation"]
+
+
+def test_match_video_to_matches_uses_matchday_titles_for_s10_flobert_uploads():
+    video = {
+        "title": "Surprise fireworks on the final matchday! GPL Matchday 13 vs. @Bene",
+        "source_person_names": "Nestfloh",
+    }
+    matches = [
+        {
+            "season_id": "season_010",
+            "match_id": "season_010_wrong_week",
+            "week": "Spieltag 12",
+            "stage": "regular_season",
+            "division": "Regular Season",
+            "player_a": "Bene",
+            "player_b": "Sirazoa",
+            "team_a": "Wackel Backel",
+            "team_b": "Sliggoo Gap",
+        },
+        {
+            "season_id": "season_010",
+            "match_id": "season_010_nestfloh_bene",
+            "week": "Spieltag 13",
+            "stage": "regular_season",
+            "division": "Regular Season",
+            "player_a": "Nestfloh",
+            "player_b": "Bene",
+            "team_a": "Böller Brüder",
+            "team_b": "Wackel Backel",
+        },
+    ]
+
+    result = match_video_to_matches(video, matches)
+
+    assert result is not None
+    assert result["match_id"] == "season_010_nestfloh_bene"
+    assert result["perspective_person"] == "Nestfloh"
+    assert result["opponent"] == "Bene"
+    assert "week" in result["match_basis"]
+
+
+def test_match_video_to_matches_uses_source_season_when_title_has_no_season():
+    video = {
+        "title": "Can I maintain my number 1 position?! GPL Matchday 10 vs. @Pokgalaxy",
+        "source_person_names": "Nestfloh",
+        "source_seasons": "season_010",
+    }
+    matches = [
+        {
+            "season_id": "season_009",
+            "match_id": "season_009_wrong",
+            "week": "10. Spieltag",
+            "stage": "regular_season",
+            "division": "Doubles",
+            "player_a": "Nestfloh",
+            "player_b": "Pokgalaxy",
+            "team_a": "Voltwizards",
+            "team_b": "Galaxy Gang",
+        },
+        {
+            "season_id": "season_010",
+            "match_id": "season_010_right",
+            "week": "Spieltag 10",
+            "stage": "regular_season",
+            "division": "Regular Season",
+            "player_a": "Pokgalaxy",
+            "player_b": "Nestfloh",
+            "team_a": "Tails of Mystery",
+            "team_b": "Böller Brüder",
+        },
+    ]
+
+    result = match_video_to_matches(video, matches)
+
+    assert result is not None
+    assert result["match_id"] == "season_010_right"
+    assert "source_season" in result["match_basis"]
+
+
+def test_match_video_to_matches_source_season_and_week_are_enough_for_known_channel():
+    video = {
+        "title": "I anticipated this tactic, but... GPL Matchday 4 vs. @PresPres",
+        "source_person_names": "Nestfloh",
+        "source_seasons": "season_010",
+    }
+    matches = [
+        {
+            "season_id": "season_010",
+            "match_id": "season_010_nestfloh_present",
+            "week": "Spieltag 4",
+            "stage": "regular_season",
+            "division": "Regular Season",
+            "player_a": "Nestfloh",
+            "player_b": "PresentLP",
+            "team_a": "Böller Brüder",
+            "team_b": "Prekani",
+        },
+    ]
+
+    result = match_video_to_matches(video, matches)
+
+    assert result is not None
+    assert result["match_id"] == "season_010_nestfloh_present"
+    assert result["perspective_person"] == "Nestfloh"
+    assert result["opponent"] == "PresentLP"
+
+
+def test_match_video_to_matches_uses_plural_playoff_round_with_source_season():
+    video = {
+        "title": "There's no turning back now! GPL Playoff Quarterfinals vs. @RaizorDATA",
+        "source_person_names": "Nestfloh",
+        "source_seasons": "season_010",
+    }
+    matches = [
+        {
+            "season_id": "season_010",
+            "match_id": "season_010_qf_nestfloh",
+            "week": "Viertelfinale",
+            "stage": "playoffs",
+            "division": "Playoffs",
+            "player_a": "Raizor",
+            "player_b": "Nestfloh",
+            "team_a": "Unbound Soul",
+            "team_b": "Böller Brüder",
+        },
+    ]
+
+    result = match_video_to_matches(video, matches)
+
+    assert result is not None
+    assert result["match_id"] == "season_010_qf_nestfloh"
+    assert result["perspective_person"] == "Nestfloh"
+    assert result["opponent"] == "Raizor"
+    assert "round" in result["match_basis"]
+
+
+def test_match_video_to_matches_requires_specific_playoff_round_when_title_has_one():
+    matches = [
+        {
+            "season_id": "season_010",
+            "match_id": "season_010_qf_present",
+            "week": "Viertelfinale",
+            "stage": "playoffs",
+            "division": "Playoffs",
+            "player_a": "RobinVGC",
+            "player_b": "PresentLP",
+            "score_a": "0",
+            "score_b": "4",
+        },
+        {
+            "season_id": "season_010",
+            "match_id": "season_010_sf_present",
+            "week": "Halbfinale",
+            "stage": "playoffs",
+            "division": "Playoffs",
+            "player_a": "PresentLP",
+            "player_b": "Bene",
+            "score_a": "0",
+            "score_b": "2",
+        },
+        {
+            "season_id": "season_010",
+            "match_id": "season_010_place_3",
+            "week": "Spiel um Platz 3",
+            "stage": "playoffs",
+            "division": "Playoffs",
+            "player_a": "PresentLP",
+            "player_b": "Minetube",
+        },
+    ]
+
+    semifinal = match_video_to_matches(
+        {
+            "title": "Dieser Kampf entscheidet ALLES! - GPL [S10] - Halbfinale",
+            "channel_person_name": "PresentLP",
+        },
+        matches,
+    )
+    third_place = match_video_to_matches(
+        {
+            "title": "Mein krassester GPL Kampf JEMALS! - GPL [S10] - Spiel um Platz 3",
+            "channel_person_name": "PresentLP",
+        },
+        matches,
+    )
+
+    assert semifinal is not None
+    assert semifinal["match_id"] == "season_010_sf_present"
+    assert semifinal["opponent"] == "Bene"
+    assert "round" in semifinal["match_basis"]
+    assert third_place is not None
+    assert third_place["match_id"] == "season_010_place_3"
+    assert third_place["opponent"] == "Minetube"
 
 
 def test_match_video_to_matches_rejects_season_week_only_match_without_participant_evidence():
@@ -488,6 +717,128 @@ def test_build_video_archive_uses_matched_season_when_title_has_no_season(tmp_pa
     assert (normalized_dir / "video_urls.txt").read_text(encoding="utf-8").strip() == "https://www.youtube.com/watch?v=abc123"
 
 
+def test_build_video_archive_applies_manual_reference_videos_to_matches(tmp_path):
+    raw_dir = tmp_path / "raw" / "video_archive"
+    normalized_dir = tmp_path / "normalized"
+    manual_dir = tmp_path / "manual"
+    raw_dir.mkdir(parents=True)
+    normalized_dir.mkdir()
+    manual_dir.mkdir()
+
+    uploads_path = raw_dir / "present_uploads.json"
+    (raw_dir / "channels.json").write_text(
+        json.dumps(
+            [
+                {
+                    "channelId": "UCpresent",
+                    "title": "Present",
+                    "canonical_url": "https://www.youtube.com/@PresPres",
+                    "source_person_names": "PresentLP",
+                    "source_team_names": "Prekani",
+                    "source_urls": "https://www.youtube.com/@PresPres",
+                    "raw_path": str(uploads_path).replace("\\", "/"),
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    uploads_path.write_text(
+        json.dumps(
+            [
+                {
+                    "videoId": "0UElsZUhmV8",
+                    "title": "Das BESTE Pokémon Turnier geht los! (GPL S10 LIVE EVENT)",
+                    "publishedAt": "2025-10-04T10:00:00Z",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    _write_test_csv(
+        manual_dir / "video_archive.csv",
+        [
+            {
+                "video_id": "25cLVY-vNDg",
+                "title": "GPL S10 Finale Stream",
+                "video_type": "livestream",
+                "detected_season_id": "season_010",
+                "detected_stage": "playoffs",
+                "detected_round": "finale",
+                "source_urls": "https://www.youtube.com/watch?v=25cLVY-vNDg",
+            }
+        ],
+    )
+    _write_test_csv(
+        manual_dir / "video_references.csv",
+        [
+            {
+                "video_id": "0UElsZUhmV8",
+                "season_id": "season_010",
+                "division": "Regular Season",
+                "stage": "regular_season",
+                "week": "Spieltag 1",
+                "video_type": "reference",
+                "confidence": "100",
+                "match_basis": "manual_reference",
+            },
+            {
+                "video_id": "25cLVY-vNDg",
+                "season_id": "season_010",
+                "division": "Playoffs",
+                "stage": "playoffs",
+                "week": "Finale",
+                "video_type": "livestream",
+                "confidence": "100",
+                "match_basis": "manual_final_stream",
+            },
+        ],
+    )
+    _write_test_csv(
+        normalized_dir / "matches.csv",
+        [
+            {
+                "season_id": "season_010",
+                "match_id": "season_010_schedule_0001",
+                "division": "Regular Season",
+                "stage": "regular_season",
+                "week": "Spieltag 1",
+                "player_a": "Bene",
+                "player_b": "Dauni",
+                "data_status": "sheet_extracted",
+            },
+            {
+                "season_id": "season_010",
+                "match_id": "season_010_schedule_0002",
+                "division": "Regular Season",
+                "stage": "regular_season",
+                "week": "Spieltag 1",
+                "player_a": "Raizor",
+                "player_b": "PresentLP",
+                "data_status": "sheet_extracted",
+            },
+            {
+                "season_id": "season_010",
+                "match_id": "season_010_schedule_final",
+                "division": "Playoffs",
+                "stage": "playoffs",
+                "week": "Finale",
+                "player_a": "Bene",
+                "player_b": "Raizor",
+                "data_status": "sheet_extracted",
+            },
+        ],
+    )
+    _write_test_csv(normalized_dir / "teams.csv", [])
+
+    archive_rows, match_rows = build_video_archive(tmp_path)
+    match_reference_keys = {(row["video_id"], row["match_id"]): row for row in match_rows}
+
+    assert "25cLVY-vNDg" in {row["video_id"] for row in archive_rows}
+    assert match_reference_keys[("0UElsZUhmV8", "season_010_schedule_0001")]["video_type"] == "reference"
+    assert match_reference_keys[("0UElsZUhmV8", "season_010_schedule_0002")]["video_type"] == "reference"
+    assert match_reference_keys[("25cLVY-vNDg", "season_010_schedule_final")]["video_type"] == "livestream"
+
+
 def test_build_video_archive_canonicalizes_stale_channel_person_names(tmp_path):
     raw_dir = tmp_path / "raw" / "video_archive"
     normalized_dir = tmp_path / "normalized"
@@ -599,6 +950,164 @@ def test_build_video_archive_keeps_explicit_liga2_video_without_wrong_match(tmp_
     assert archive_rows[0]["detected_week"] == "1"
     assert archive_rows[0]["match_status"] == "unmatched"
     assert archive_rows[0]["best_match_id"] is None
+    assert match_rows == []
+
+
+def test_build_video_archive_merges_duplicate_channel_context_before_matching(tmp_path):
+    raw_dir = tmp_path / "raw" / "video_archive"
+    normalized_dir = tmp_path / "normalized"
+    raw_dir.mkdir(parents=True)
+    normalized_dir.mkdir()
+
+    uploads_path = raw_dir / "blocki_uploads.json"
+    (raw_dir / "channels.json").write_text(
+        json.dumps(
+            [
+                {
+                    "channelId": "UCblocki",
+                    "title": "Blocki",
+                    "canonical_url": "https://www.youtube.com/c/Blocki",
+                    "source_person_names": "Blocki",
+                    "source_team_names": "Kastanienbomber",
+                    "source_seasons": "season_008",
+                    "source_urls": "https://www.youtube.com/c/Blocki",
+                    "raw_path": str(uploads_path).replace("\\", "/"),
+                },
+                {
+                    "channelId": "UCblocki",
+                    "title": "Blocki",
+                    "canonical_url": "https://www.youtube.com/user/Blocki",
+                    "source_person_names": "Blocki",
+                    "source_team_names": "Voltwizards",
+                    "source_seasons": "season_010",
+                    "source_urls": "https://www.youtube.com/user/Blocki",
+                    "raw_path": str(uploads_path).replace("\\", "/"),
+                },
+            ]
+        ),
+        encoding="utf-8",
+    )
+    uploads_path.write_text(
+        json.dumps(
+            [
+                {
+                    "videoId": "blocki_s10_bene",
+                    "title": "Alles laeuft nach Plan! | GPL Spieltag 09 vs. @Bene",
+                    "publishedAt": "2025-11-30T15:00:45Z",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    _write_test_csv(
+        normalized_dir / "matches.csv",
+        [
+            {
+                "season_id": "season_008",
+                "match_id": "season_008_present_bene",
+                "division": "Liga 1",
+                "stage": "regular_season",
+                "week": "9. Spieltag",
+                "player_a": "PresentLP",
+                "player_b": "Bene",
+                "team_a": "Prekani",
+                "team_b": "Victini Bottom",
+                "data_status": "sheet_extracted",
+            },
+            {
+                "season_id": "season_010",
+                "match_id": "season_010_blocki_bene",
+                "division": "Regular Season",
+                "stage": "regular_season",
+                "week": "Spieltag 9",
+                "player_a": "Blocki",
+                "player_b": "Bene",
+                "team_a": "Kastanienbomber",
+                "team_b": "Wackel Backel",
+                "data_status": "sheet_extracted",
+            },
+        ],
+    )
+    _write_test_csv(normalized_dir / "teams.csv", [])
+
+    archive_rows, match_rows = build_video_archive(tmp_path)
+
+    assert archive_rows[0]["detected_season_id"] == "season_010"
+    assert archive_rows[0]["best_match_id"] == "season_010_blocki_bene"
+    assert archive_rows[0]["source_seasons"] == "season_008;season_010"
+    assert match_rows[0]["season_id"] == "season_010"
+
+
+def test_build_video_archive_skips_manual_false_positive_videos(tmp_path):
+    raw_dir = tmp_path / "raw" / "video_archive"
+    normalized_dir = tmp_path / "normalized"
+    manual_dir = tmp_path / "manual"
+    raw_dir.mkdir(parents=True)
+    normalized_dir.mkdir()
+    manual_dir.mkdir()
+
+    uploads_path = raw_dir / "raizor_uploads.json"
+    (raw_dir / "channels.json").write_text(
+        json.dumps(
+            [
+                {
+                    "channelId": "UCraizor",
+                    "title": "Raizor",
+                    "canonical_url": "https://www.youtube.com/user/RaizorZockt",
+                    "source_person_names": "Raizor",
+                    "source_team_names": "Raizoroark",
+                    "source_seasons": "season_001",
+                    "source_urls": "https://www.youtube.com/user/RaizorZockt",
+                    "raw_path": str(uploads_path).replace("\\", "/"),
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    uploads_path.write_text(
+        json.dumps(
+            [
+                {
+                    "videoId": "lpk0yS8pg88",
+                    "title": "GPL - Spieltag 2 - vs. Prekani : Arkani die schnelle Sau",
+                    "publishedAt": "2014-09-21T15:03:34Z",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    _write_test_csv(
+        manual_dir / "video_exclusions.csv",
+        [
+            {
+                "video_id": "lpk0yS8pg88",
+                "reason": "false positive GPL video",
+                "source_urls": "https://www.youtube.com/watch?v=lpk0yS8pg88",
+            }
+        ],
+    )
+    _write_test_csv(
+        normalized_dir / "matches.csv",
+        [
+            {
+                "season_id": "season_001",
+                "match_id": "season_001_schedule_0045",
+                "division": "Regular Season",
+                "stage": "regular_season",
+                "week": "2. Spieltag",
+                "player_a": "PresentLP",
+                "player_b": "Raizor",
+                "team_a": "Prekani",
+                "team_b": "Raizoroark",
+                "data_status": "sheet_extracted",
+            }
+        ],
+    )
+    _write_test_csv(normalized_dir / "teams.csv", [])
+
+    archive_rows, match_rows = build_video_archive(tmp_path)
+
+    assert archive_rows == []
     assert match_rows == []
 
 
