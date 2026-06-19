@@ -1162,7 +1162,7 @@ function youtubeThumbnailPreviews(value, limit = 2) {
           (item, index) => `
             <a class="highlight-video-preview" href="${escapeAttr(item.url)}" target="_blank" rel="noreferrer" aria-label="${escapeAttr(`${t(state.language, "values.video")} ${index + 1}`)}">
               <img src="https://i.ytimg.com/vi/${escapeAttr(item.videoId)}/mqdefault.jpg" alt="" loading="lazy" />
-              <span aria-hidden="true">▶</span>
+              <span class="highlight-play" aria-hidden="true"></span>
             </a>
           `,
         )
@@ -1181,6 +1181,40 @@ function highlightPreviewUrls(row) {
     return row.video_urls;
   }
   return [...new Set(videos)].join(";");
+}
+
+function highlightVideoItems(value, limit = Number.POSITIVE_INFINITY) {
+  return String(value ?? "")
+    .split(";")
+    .map((url) => ({ url: url.trim(), videoId: youtubeVideoIdFromUrl(url) }))
+    .filter((item) => item.url.startsWith("http") && item.videoId)
+    .slice(0, limit);
+}
+
+function highlightMediaPreview(value) {
+  const videos = highlightVideoItems(value);
+  if (!videos.length) {
+    return `<div class="highlight-media is-empty">${escapeHtml(t(state.language, "highlightMatches.card.noVideo"))}</div>`;
+  }
+  const primary = videos[0];
+  const secondary = videos[1];
+  const extraCount = Math.max(0, videos.length - 1);
+  return `
+    <div class="highlight-media" aria-label="${escapeAttr(t(state.language, "highlightMatches.videoPreviewLabel"))}">
+      <a class="highlight-media-main" href="${escapeAttr(primary.url)}" target="_blank" rel="noreferrer" aria-label="${escapeAttr(t(state.language, "highlightMatches.card.watch"))}">
+        <img src="https://i.ytimg.com/vi/${escapeAttr(primary.videoId)}/mqdefault.jpg" alt="" loading="lazy" />
+        <span class="highlight-play" aria-hidden="true"></span>
+      </a>
+      ${
+        secondary
+          ? `<a class="highlight-media-secondary" href="${escapeAttr(secondary.url)}" target="_blank" rel="noreferrer" aria-label="${escapeAttr(`${t(state.language, "values.video")} 2`)}">
+              <img src="https://i.ytimg.com/vi/${escapeAttr(secondary.videoId)}/mqdefault.jpg" alt="" loading="lazy" />
+              ${extraCount > 1 ? `<span>+${extraCount}</span>` : ""}
+            </a>`
+          : ""
+      }
+    </div>
+  `;
 }
 
 function sourceCell(value) {
@@ -2638,7 +2672,7 @@ function renderMatchHighlights() {
   } else {
     const limit = state.matchHighlightCardLimit || defaultMatchHighlightCardLimit();
     cards.innerHTML = [
-      rows.slice(0, limit).map(matchHighlightCard).join(""),
+      rows.slice(0, limit).map((row, index) => matchHighlightCard(row, index + 1)).join(""),
       rows.length > limit
         ? `<button class="show-more-button" type="button" data-show-more-match-highlights>${escapeHtml(t(state.language, "highlightMatches.showMore"))}</button>`
         : "",
@@ -2710,7 +2744,101 @@ function matchHighlightTableRow(row, rank) {
   };
 }
 
-function matchHighlightCard(row) {
+const HIGHLIGHT_REASON_PRIORITY = [
+  "Community-Magnet",
+  "Match-Ausrei",
+  "über Match",
+  "Engagement-Ausrei",
+  "knapper Kampf",
+  "Playoff",
+  "beide Perspektiven",
+  "mehrere Perspektiven",
+  "Top 5% Reichweite",
+  "Top 5% match",
+  "Top 10% match",
+  "starke Einzelperspektive",
+  "Match-Z-Score",
+];
+
+function highlightPrimaryReasons(reasons, limit = 3) {
+  return [...reasons]
+    .sort((left, right) => highlightReasonPriority(left) - highlightReasonPriority(right))
+    .slice(0, limit);
+}
+
+function highlightReasonPriority(reason) {
+  const index = HIGHLIGHT_REASON_PRIORITY.findIndex((token) => reason.includes(token));
+  return index === -1 ? HIGHLIGHT_REASON_PRIORITY.length : index;
+}
+
+function highlightSourceCountLabel(count) {
+  const singular = t(state.language, "values.source");
+  const plural = t(state.language, "highlightMatches.card.sources");
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
+function highlightSourceActions(value) {
+  const videos = highlightVideoItems(value);
+  if (!videos.length) return "";
+  const sourceList =
+    videos.length > 1
+      ? `<details class="highlight-source-menu">
+          <summary>${escapeHtml(highlightSourceCountLabel(videos.length))}</summary>
+          <div>${videos
+            .map(
+              (item, index) =>
+                `<a href="${escapeAttr(item.url)}" target="_blank" rel="noreferrer">${escapeHtml(`${t(state.language, "values.source")} ${index + 1}`)}</a>`,
+            )
+            .join("")}</div>
+        </details>`
+      : "";
+  return `
+    <div class="highlight-source-actions">
+      <a class="highlight-watch-link" href="${escapeAttr(videos[0].url)}" target="_blank" rel="noreferrer">${escapeHtml(t(state.language, "highlightMatches.card.watch"))}</a>
+      ${sourceList}
+    </div>
+  `;
+}
+
+function matchHighlightCard(row, rank) {
+  const reasons = String(row.highlight_reasons || "")
+    .split(";")
+    .map((item) => item.trim())
+    .filter(Boolean);
+  const previewUrls = highlightPreviewUrls(row);
+  const videoCount = highlightVideoItems(previewUrls).length || numberValue(row.video_count);
+  const meta = [
+    divisionDisplay(row.division, row.stage),
+    row.video_count ? `${row.video_count} ${t(state.language, "summary.videos")}` : "",
+  ].filter(Boolean);
+  return `
+    <article class="highlight-card">
+      <div class="highlight-card-head">
+        <span class="highlight-rank">#${escapeHtml(String(rank))}</span>
+        <span class="highlight-card-meta">${escapeHtml(seasonDisplay(row.season_id))}${row.week ? ` \u00b7 ${escapeHtml(row.week)}` : ""}${meta.length ? ` \u00b7 ${escapeHtml(meta.join(" \u00b7 "))}` : ""}</span>
+        <strong><small>${escapeHtml(t(state.language, "columns.highlight_score"))}</small>${escapeHtml(displayNumber(row.highlight_score))}</strong>
+      </div>
+      <h3 class="highlight-match-title">${row.player_a ? personLink(normalizedKey(row.player_a), row.player_a) : ""}<span class="highlight-vs">vs</span>${row.player_b ? personLink(normalizedKey(row.player_b), row.player_b) : ""}</h3>
+      ${highlightMediaPreview(previewUrls)}
+      <div class="highlight-card-stats">
+        <span>${escapeHtml(t(state.language, "highlightMatches.card.views"))}<strong>${escapeHtml(displayNumber(row.view_peak))}</strong></span>
+        <span>${escapeHtml(t(state.language, "highlightMatches.card.trend"))}<strong>${escapeHtml(row.view_trend_multiplier_match ? `${displayNumber(row.view_trend_multiplier_match)}x` : "")}</strong></span>
+        <span>${escapeHtml(t(state.language, "highlightMatches.card.engagement"))}<strong>${escapeHtml(row.engagement_multiplier_peak ? `${displayNumber(row.engagement_multiplier_peak)}x` : "")}</strong></span>
+        <span>${escapeHtml(t(state.language, "highlightMatches.card.sources"))}<strong>${escapeHtml(videoCount ? String(videoCount) : "")}</strong></span>
+      </div>
+      ${
+        reasons.length
+          ? `<details class="highlight-card-details"><summary>${escapeHtml(t(state.language, "highlightMatches.card.details"))}</summary><div>${reasons
+              .map((reason) => `<span>${escapeHtml(reason)}</span>`)
+              .join("")}</div></details>`
+          : ""
+      }
+      ${highlightSourceActions(previewUrls)}
+    </article>
+  `;
+}
+
+function legacyMatchHighlightCard(row) {
   const reasons = String(row.highlight_reasons || "")
     .split(";")
     .map((item) => item.trim())

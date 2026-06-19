@@ -20,9 +20,12 @@ assert.equal(t("de", "highlightMatches.scoreFormulaTitle"), "Highlight-Score-For
 assert.match(t("de", "highlightMatches.openingFormulaNote"), /Spieltag 1/);
 assert.match(t("de", "highlightMatches.contextFormulaNote"), /15%/);
 assert.equal(t("de", "highlightMatches.videoPreviewLabel"), "Video-Vorschau");
-assert.equal(t("de", "highlightMatches.card.perspective"), "Sicht");
+assert.equal(t("de", "highlightMatches.card.sources"), "Quellen");
+assert.equal(t("de", "highlightMatches.card.watch"), "Ansehen");
+assert.equal(t("de", "highlightMatches.card.details"), "Details");
 assert.equal(t("en", "highlightMatches.scoreFormulaTitle"), "Highlight score formula");
-assert.equal(t("en", "highlightMatches.card.perspective"), "View");
+assert.equal(t("en", "highlightMatches.card.sources"), "Sources");
+assert.equal(t("en", "highlightMatches.card.watch"), "Watch");
 assert.equal(t("de", "nav.teamRosters"), "Kaderübersichten");
 assert.equal(t("de", "rosters.scoreFormulaTitle"), "Kaderscore-Formel");
 assert.equal(t("de", "rosters.openDetail"), "Kader ansehen");

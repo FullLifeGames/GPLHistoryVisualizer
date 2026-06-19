@@ -247,6 +247,10 @@ export const TRANSLATIONS = {
         trend: "Trend",
         engagement: "Eng.",
         perspective: "Sicht",
+        sources: "Quellen",
+        watch: "Ansehen",
+        details: "Details",
+        noVideo: "Kein Video zugeordnet",
       },
       summary: {
         matches: "Highlights",
@@ -756,6 +760,10 @@ export const TRANSLATIONS = {
         trend: "Trend",
         engagement: "Eng.",
         perspective: "View",
+        sources: "Sources",
+        watch: "Watch",
+        details: "Details",
+        noVideo: "No video matched",
       },
       summary: {
         matches: "Highlights",
