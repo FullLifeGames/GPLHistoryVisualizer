@@ -33,7 +33,11 @@ def test_aliases_merge_to_preferred_person_display_names():
     assert _display_name("FinaALFaNtAsyLP") == "Silva"
     assert _display_name("TeamMauni") == "Maxi von Vogel"
     assert _display_name("Maxi [Team Mauni]") == "Maxi von Vogel"
-    assert _display_name("DauniDaunstar") == "Dauni Daunstar"
+    assert _display_name("DauniDaunstar") == "Dauni"
+    assert _canonical_name("Dragoon ofDoom") == "dauni daunstar"
+    assert _display_name("DragoonofDoom") == "Dauni"
+    assert _canonical_name("Dauni & Hydronic") == "dauni daunstar hydronic"
+    assert _display_name("Dauni Daunstar & Hydronic") == "Dauni & Hydronic"
     assert _display_name("Raizor Zockt") == "Raizor"
     assert _display_name("ProfessorN") == "Professor N"
     assert _canonical_name("CabgoLord") == "fnupa"
@@ -652,6 +656,25 @@ def test_mid_season_team_controller_changes_are_kept_as_person_stints():
     assert s3_week_1["player_a"] == "LucarioLP"
     assert s3_week_1["team_a"] == "Unlimited Blade Works*¹"
     assert s3_week_11["player_a"] == "Bene"
+
+    s5_week_6 = next(row for row in output.matches if row["match_id"] == "season_005_schedule_0121")
+    assert s5_week_6["player_a"] == "glebber"
+    assert s5_week_6["player_b"] == "Parsifani"
+    assert s5_week_6["winner"] == "Parsifani"
+    assert s5_week_6["data_status"] == "sheet_extracted"
+    assert "H78en417S7g" not in s5_week_6["source_urls"]
+
+    s5_aggron = [
+        row
+        for row in stints
+        if row["season_id"] == "season_005" and row["team_id"] == "season_005_aggron_successors"
+    ]
+    assert {row["person_name"] for row in s5_aggron} == {"Tabasco TV", "Parsifani"}
+    assert {row["person_name"]: (row["start_week"], row["end_week"]) for row in s5_aggron} == {
+        "Tabasco TV": ("1", "5"),
+        "Parsifani": ("6", "22"),
+    }
+    assert {row["person_name"]: row["matches"] for row in s5_aggron} == {"Tabasco TV": "5", "Parsifani": "17"}
 
     s9_victory = [
         row

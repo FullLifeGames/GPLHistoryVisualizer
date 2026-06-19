@@ -30,7 +30,7 @@ TEAM_ROSTER_FIELDS = [
 ]
 
 PERSON_ALIASES = {
-    "Dauni Daunstar": ["Dauni"],
+    "Dauni": ["Dauni Daunstar", "Dragoon ofDoom", "DragoonofDoom"],
     "FanmadeLetsPlay": ["FanmadeTim"],
     "KingBlex": ["King Blex"],
     "OGDNZ": ["OG DNZ", "OGDeniz96"],

@@ -8,6 +8,7 @@ from typing import Any, Callable
 
 from .aggregates import build_and_write_aggregates
 from .data_quality import check_generated_artifacts, generate_data_quality
+from .match_highlights import build_and_write_match_highlights
 from .normalize import normalize_all
 from .playlists import group_gpl_playlists
 from .pokemon_drafts import build_and_write_pokemon_draft_overview
@@ -23,6 +24,7 @@ from .team_rosters import build_and_write_team_rosters
 from .urls import extract_urls, resolve_google_sheets_id
 from .validate import format_issues, validate_normalized_data
 from .video_archive import build_video_archive, scan_video_archive
+from .video_stats import fetch_and_write_video_stats
 from .youtube import YouTubeApiError, YouTubeClient
 
 
@@ -67,6 +69,10 @@ def main(argv: list[str] | None = None) -> int:
     build_videos = subparsers.add_parser("build-video-archive", help="Rebuild GPL video archive CSVs from raw scanned channel uploads.")
     build_videos.add_argument("--data-dir", default="data")
 
+    fetch_video_stats = subparsers.add_parser("fetch-video-stats", help="Fetch YouTube statistics for archived GPL videos and rebuild highlight CSVs.")
+    fetch_video_stats.add_argument("--data-dir", default="data")
+    fetch_video_stats.add_argument("--force", action="store_true", help="Refresh all cached video statistics, not only missing IDs.")
+
     validate = subparsers.add_parser("validate", help="Validate normalized CSV schema, keys, and source coverage.")
     validate.add_argument("--data-dir", default="data")
     validate.add_argument("--strict", action="store_true", help="Exit non-zero on warnings as well as errors.")
@@ -104,11 +110,13 @@ def main(argv: list[str] | None = None) -> int:
         build_and_write_team_rosters(Path(args.data_dir))
         build_and_write_roster_matchdays(Path(args.data_dir))
         build_and_write_pokemon_draft_overview(Path(args.data_dir))
+        build_and_write_match_highlights(Path(args.data_dir))
         generate_data_quality(Path(args.data_dir))
         build_and_write_aggregates(Path(args.data_dir))
         generate_review_queue(Path(args.data_dir))
         return 0
     if args.command == "data-quality":
+        build_and_write_match_highlights(Path(args.data_dir))
         counts = generate_data_quality(Path(args.data_dir))
         aggregate_counts = build_and_write_aggregates(Path(args.data_dir))
         for name, count in counts.items():
@@ -125,12 +133,12 @@ def main(argv: list[str] | None = None) -> int:
         generate_report(Path(args.data_dir), Path(args.out))
         return 0
     if args.command == "scan-videos":
-        api_key = os.environ.get("YOUTUBE_API_KEY")
-        if not api_key:
+        api_keys = _youtube_api_keys_from_env()
+        if not api_keys:
             raise SystemExit("YOUTUBE_API_KEY is required for video scanning.")
         scan_video_archive(
             Path(args.data_dir),
-            YouTubeClient(api_key=api_key),
+            _youtube_client_from_keys(api_keys),
             max_channels=args.max_channels,
             max_pages_per_channel=args.max_pages_per_channel,
             include_description_channels=args.include_description_channels,
@@ -138,9 +146,28 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "build-video-archive":
         build_video_archive(Path(args.data_dir))
+        build_and_write_match_highlights(Path(args.data_dir))
         generate_data_quality(Path(args.data_dir))
         build_and_write_aggregates(Path(args.data_dir))
         generate_review_queue(Path(args.data_dir))
+        return 0
+    if args.command == "fetch-video-stats":
+        api_keys = _youtube_api_keys_from_env()
+        if not api_keys:
+            raise SystemExit("YOUTUBE_API_KEY is required for video statistics.")
+        stats_result = fetch_and_write_video_stats(Path(args.data_dir), _youtube_client_from_keys(api_keys), force=args.force)
+        build_video_archive(Path(args.data_dir))
+        highlights = build_and_write_match_highlights(Path(args.data_dir))
+        generate_data_quality(Path(args.data_dir))
+        build_and_write_aggregates(Path(args.data_dir))
+        generate_review_queue(Path(args.data_dir))
+        print(f"video_stats: {len(stats_result.rows)}")
+        print(f"video_stats_requested: {stats_result.requested}")
+        print(f"video_stats_fetched: {stats_result.fetched}")
+        print(f"video_stats_unprocessed: {stats_result.unprocessed}")
+        if stats_result.error:
+            print(f"video_stats_warning: {stats_result.error}")
+        print(f"match_highlights: {len(highlights)}")
         return 0
     if args.command == "validate":
         issues = validate_normalized_data(Path(args.data_dir))
@@ -190,14 +217,14 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def collect_command(args: argparse.Namespace) -> int:
-    api_key = os.environ.get("YOUTUBE_API_KEY")
-    if not api_key:
+    api_keys = _youtube_api_keys_from_env()
+    if not api_keys:
         raise SystemExit("YOUTUBE_API_KEY is required for collection.")
     sheets_api_key = os.environ.get("SHEETS_API_KEY")
 
     data_dir = Path(args.data_dir)
     raw_dir = ensure_dir(data_dir / "raw")
-    client = YouTubeClient(api_key=api_key)
+    client = _youtube_client_from_keys(api_keys)
 
     try:
         channel = client.resolve_channel(query=args.channel_query, channel_id=args.channel_id)
@@ -283,6 +310,7 @@ def collect_command(args: argparse.Namespace) -> int:
     build_and_write_team_rosters(data_dir)
     build_and_write_roster_matchdays(data_dir)
     build_and_write_pokemon_draft_overview(data_dir)
+    build_and_write_match_highlights(data_dir)
     generate_data_quality(data_dir)
     build_and_write_aggregates(data_dir)
     generate_review_queue(data_dir)
@@ -314,6 +342,29 @@ def _fetch_sheet_tables(sheet_url: str, sheets_dir: Path, sheets_api_key: str | 
                 }
             ]
     return fetch_public_sheet_tables(sheet_url, sheets_dir)
+
+
+def _youtube_api_keys_from_env() -> list[str]:
+    keys: list[str] = []
+    primary = os.environ.get("YOUTUBE_API_KEY")
+    if primary:
+        keys.append(primary)
+    numbered = []
+    for name, value in os.environ.items():
+        if not value or not name.startswith("YOUTUBE_API_KEY_"):
+            continue
+        suffix = name.removeprefix("YOUTUBE_API_KEY_")
+        if not suffix.isdigit():
+            continue
+        numbered.append((int(suffix), value))
+    for _, value in sorted(numbered):
+        if value not in keys:
+            keys.append(value)
+    return keys
+
+
+def _youtube_client_from_keys(api_keys: list[str]) -> YouTubeClient:
+    return YouTubeClient(api_key=api_keys[0], api_keys=tuple(api_keys[1:]))
 
 
 def _description_urls(videos: list[dict]) -> list[dict]:

@@ -88,6 +88,68 @@ def test_discover_channel_candidates_maps_participant_description_links(tmp_path
     }
 
 
+def test_discover_channel_candidates_maps_s10_teilnehmerfeld_handles(tmp_path):
+    raw_dir = tmp_path / "raw" / "season_010"
+    normalized_dir = tmp_path / "normalized"
+    raw_dir.mkdir(parents=True)
+    normalized_dir.mkdir()
+
+    _write_test_csv(
+        normalized_dir / "teams.csv",
+        [
+            {
+                "season_id": "season_010",
+                "division": "Regular Season",
+                "person_id": "person_present",
+                "person_name": "PresentLP",
+                "team_name": "Prekani",
+                "channel_url": "",
+                "data_status": "sheet_extracted",
+            },
+            {
+                "season_id": "season_010",
+                "division": "Regular Season",
+                "person_id": "person_raizor",
+                "person_name": "Raizor",
+                "team_name": "Unbound Soul",
+                "channel_url": "",
+                "data_status": "sheet_extracted",
+            },
+        ],
+    )
+    (raw_dir / "videos.json").write_text(
+        json.dumps(
+            [
+                {
+                    "videoId": "s10_live",
+                    "title": "GPL Season 10 - Spieltag 1 - Live Event",
+                    "description": "\n".join(
+                        [
+                            "►Teilnehmerfeld:",
+                            "Present:",
+                            "https://www.youtube.com/@PresPres",
+                            "Raizor:",
+                            "https://www.youtube.com/@RaizorDATA",
+                            "OST Credits:",
+                            "https://www.youtube.com/@Mewmore",
+                        ]
+                    ),
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    candidates = discover_channel_candidates(tmp_path, include_description_channels=True)
+
+    by_url = {candidate["canonical_url"]: candidate for candidate in candidates}
+    assert by_url["https://www.youtube.com/@PresPres"]["source_person_names"] == "PresentLP"
+    assert by_url["https://www.youtube.com/@PresPres"]["source_team_names"] == "Prekani"
+    assert by_url["https://www.youtube.com/@RaizorDATA"]["source_person_names"] == "Raizor"
+    assert by_url["https://www.youtube.com/@RaizorDATA"]["source_team_names"] == "Unbound Soul"
+    assert "https://www.youtube.com/@Mewmore" not in by_url
+
+
 def test_parse_gpl_video_title_extracts_season_week_and_playoff_round():
     parsed = parse_gpl_video_title("GPL Season 10 - Spieltag 7 vs Bene")
     assert parsed["is_gpl"] is True
@@ -115,6 +177,7 @@ def test_classify_video_type_distinguishes_games_teambuildings_and_other_gpl_vid
     assert classify_video_type("GPL [S8] Spieltag 3 vs Bene") == "game"
     assert classify_video_type("GPL Season 10 Teambuilding - Wackel Backel") == "teambuilding"
     assert classify_video_type("German Pokémon League S7 Team Building mit Draftanalyse") == "teambuilding"
+    assert classify_video_type("GPL [S4] - Spieltag 22 - vs. Enteikutierung: Teambuilding!") == "teambuilding"
     assert classify_video_type("GPL Season 2 - Update") == "update"
     assert classify_video_type("GPL Season 4 - Ankündigung") == "announcement"
     assert classify_video_type("Legendäre GPL Kämpfe | Reaction | GPL S1 Raizor vs Fnupa") == "reaction"
@@ -123,6 +186,10 @@ def test_classify_video_type_distinguishes_games_teambuildings_and_other_gpl_vid
 
 def test_classify_video_type_keeps_match_titles_with_teambuilding_jokes_as_games():
     assert classify_video_type("GPL [S2] - Spieltag 18 - VS. Little Litleos: Teambuilding Fail vom Feinsten") == "game"
+
+
+def test_classify_video_type_detects_reactions_even_with_week_and_versus():
+    assert classify_video_type("Nestfloh schaut GPL | Pokgalaxy vs. BlackLink | GPL-Reaction Spieltag 10") == "reaction"
 
 
 def test_match_video_to_matches_prefers_same_season_week_and_people():
@@ -167,6 +234,68 @@ def test_match_video_to_matches_prefers_same_season_week_and_people():
     assert "channel" in result["match_basis"]
     assert "title names Bene as opponent" in result["confidence_explanation"]
     assert "channel identifies Minetube" in result["confidence_explanation"]
+
+
+def test_match_video_to_matches_rejects_season_week_only_match_without_participant_evidence():
+    video = {
+        "title": "GPL [S5] - Spieltag 8 - vs. Weavile Got Killed",
+        "channel_person_name": "BelmontGabriel",
+        "channel_team_name": "Symphonic Swellow",
+    }
+    matches = [
+        {
+            "season_id": "season_005",
+            "match_id": "season_005_schedule_0026",
+            "week": "8. Spieltag - Sonntag der 29.04.2018",
+            "stage": "regular_season",
+            "division": "Liga 1",
+            "player_a": "Minetube",
+            "player_b": "Parsifani",
+            "team_a": "Triyolotree",
+            "team_b": "Aggron Successors",
+        }
+    ]
+
+    assert match_video_to_matches(video, matches) is None
+
+
+def test_match_video_to_matches_prefers_channel_person_over_shared_tag_team_name():
+    video = {
+        "title": "STILLE Wasser sind TIEF?! - GPL [S9] - Spieltag 12 - vs. Toon World",
+        "channel_person_name": "Raizor",
+        "channel_team_name": "Soulblaze",
+    }
+    matches = [
+        {
+            "season_id": "season_009",
+            "match_id": "season_009_schedule_0089",
+            "week": "12. Spieltag - Sonntag der 10.07.2022",
+            "stage": "regular_season",
+            "division": "Tag Team",
+            "player_a": "PresentLP",
+            "player_b": "KingBlex",
+            "team_a": "Soulblaze",
+            "team_b": "Toon World",
+        },
+        {
+            "season_id": "season_009",
+            "match_id": "season_009_schedule_0090",
+            "week": "12. Spieltag - Mittwoch der 13.07.2022",
+            "stage": "regular_season",
+            "division": "Tag Team",
+            "player_a": "Raizor",
+            "player_b": "OGDNZ",
+            "team_a": "Soulblaze",
+            "team_b": "Toon World",
+        },
+    ]
+
+    result = match_video_to_matches(video, matches)
+
+    assert result is not None
+    assert result["match_id"] == "season_009_schedule_0090"
+    assert result["perspective_person"] == "Raizor"
+    assert result["opponent"] == "OGDNZ"
 
 
 def test_match_video_to_matches_rejects_explicit_week_mismatch():

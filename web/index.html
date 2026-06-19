@@ -55,6 +55,7 @@
         <button class="tab" data-view-group="people" data-view="team-rosters" data-i18n="nav.teamRosters">Kaderübersichten</button>
         <button class="tab" data-view-group="people" data-view="matchup" data-i18n="nav.matchup">Matchup-Check</button>
         <button class="tab" data-view-group="seasons" data-view="battle-history" data-i18n="nav.battleHistory">Spielbaum</button>
+        <button class="tab" data-view-group="seasons" data-view="match-highlights" data-i18n="nav.matchHighlights">Highlightkämpfe</button>
         <button class="tab" data-view-group="seasons" data-view="season-detail" data-i18n="nav.seasonDetail">Saisonakte</button>
         <button class="tab" data-view-group="seasons" data-view="table-history" data-i18n="nav.tableHistory">Tabellenverlauf</button>
         <button class="tab" data-view-group="seasons" data-view="match-plan" data-i18n="nav.matchPlan">Spielplan</button>
@@ -99,6 +100,7 @@
         <label>
           <span data-i18n="filters.search">Suche</span>
           <input id="search-filter" type="search" placeholder="Team, Trainer, Pokémon, Video" data-i18n-placeholder="filters.searchPlaceholder" />
+          <small class="toolbar-hint" data-i18n="filters.searchHint">Leerzeichen = UND, Komma = ODER, z.B. Bene S4, RegiBang S4</small>
         </label>
       </section>
 
@@ -172,6 +174,33 @@
           <p data-i18n="sections.battleHistoryDescription">Grafische Sicht auf Playoffs, Gruppenphasen und belegte Matchwege der gewählten Saison.</p>
         </div>
         <div id="bracket-overview" class="bracket-board"></div>
+      </section>
+
+      <section id="view-match-highlights" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.matchHighlightsTitle">Highlightkämpfe</h2>
+          <p data-i18n="sections.matchHighlightsDescription">Kämpfe mit ungewöhnlich hoher Aufmerksamkeit, mehreren Perspektiven oder sportlichem Kontext.</p>
+        </div>
+        <details class="score-explainer">
+          <summary data-i18n="highlightMatches.scoreFormulaTitle">Highlight-Score-Formel</summary>
+          <div class="score-explainer-grid">
+            <div>
+              <strong data-i18n="highlightMatches.scoreFormula">Score = Aufmerksamkeit + Engagement + Kontext</strong>
+              <p data-i18n="highlightMatches.scoreFormulaNote">Die Basis ist trendbereinigte Reichweite pro Match: Views werden gegen Person/Saison-Baseline, Spieltag-Faktor, Gegner-Reichweite und mehrere Perspektiven gerechnet.</p>
+            </div>
+            <div>
+              <strong data-i18n="highlightMatches.openingFormula">Spieltag-1-Korrektur = strenger Auftaktfaktor</strong>
+              <p data-i18n="highlightMatches.openingFormulaNote">Spieltag 1 nutzt eine hohe Mindest-Erwartung aus den Auftaktvideos, damit normaler Season-Start nicht automatisch als Ausreißer zählt.</p>
+            </div>
+            <div>
+              <strong data-i18n="highlightMatches.contextFormula">Zusatzpunkte = Engagement, knappe Kämpfe, Playoffs und Perspektiven</strong>
+              <p data-i18n="highlightMatches.contextFormulaNote">Likes und Kommentare zählen über die Engagementrate; knappe Ergebnisse, Playoffs, hohe Rohreichweite und mehrere verfügbare Sichten geben Kontext-Boni. Kämpfe mit nur einer Quelle werden um 15% gedämpft.</p>
+            </div>
+          </div>
+        </details>
+        <div id="match-highlight-summary" class="summary-grid"></div>
+        <div id="match-highlight-cards" class="highlight-card-grid"></div>
+        <div id="match-highlight-table" class="table-wrap"></div>
       </section>
 
       <section id="view-team-rosters" class="view">

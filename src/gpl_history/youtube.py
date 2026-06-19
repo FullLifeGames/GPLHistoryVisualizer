@@ -13,24 +13,43 @@ class YouTubeApiError(RuntimeError):
 @dataclass(frozen=True)
 class YouTubeClient:
     api_key: str
+    api_keys: tuple[str, ...] = ()
     timeout: int = 30
 
     base_url = "https://www.googleapis.com/youtube/v3"
 
     def _get(self, endpoint: str, **params: Any) -> dict[str, Any]:
-        query = {key: value for key, value in params.items() if value not in (None, "")}
-        query["key"] = self.api_key
-        response = requests.get(f"{self.base_url}/{endpoint}", params=query, timeout=self.timeout)
-        try:
-            payload = response.json()
-        except ValueError as exc:
-            raise YouTubeApiError(f"YouTube API returned non-JSON response for {endpoint}") from exc
+        api_keys = self._api_keys()
+        if not api_keys:
+            raise YouTubeApiError("No YouTube API key configured.")
 
-        if response.status_code >= 400:
+        last_error: YouTubeApiError | None = None
+        for index, api_key in enumerate(api_keys):
+            query = {key: value for key, value in params.items() if value not in (None, "")}
+            query["key"] = api_key
+            response = requests.get(f"{self.base_url}/{endpoint}", params=query, timeout=self.timeout)
+            try:
+                payload = response.json()
+            except ValueError as exc:
+                raise YouTubeApiError(f"YouTube API returned non-JSON response for {endpoint}") from exc
+
+            if response.status_code < 400:
+                return payload
+
             error = payload.get("error", {})
             message = error.get("message") or response.text[:300]
-            raise YouTubeApiError(f"YouTube API error {response.status_code}: {message}")
-        return payload
+            last_error = YouTubeApiError(f"YouTube API error {response.status_code}: {message}")
+            if index < len(api_keys) - 1 and _is_quota_error(response.status_code, message):
+                continue
+            raise last_error
+
+        if last_error:
+            raise last_error
+        raise YouTubeApiError(f"YouTube API request failed for {endpoint}")
+
+    def _api_keys(self) -> tuple[str, ...]:
+        keys = [self.api_key, *self.api_keys]
+        return tuple(dict.fromkeys(key for key in keys if key))
 
     def resolve_channel(self, query: str = "PresentLP", channel_id: str | None = None) -> dict[str, Any]:
         if channel_id:
@@ -162,6 +181,21 @@ class YouTubeClient:
                 snippets[item["id"]] = item.get("snippet", {})
         return snippets
 
+    def video_details(self, video_ids: list[str]) -> dict[str, dict[str, Any]]:
+        details: dict[str, dict[str, Any]] = {}
+        for start in range(0, len(video_ids), 50):
+            chunk = [video_id for video_id in video_ids[start : start + 50] if video_id]
+            if not chunk:
+                continue
+            payload = self._get("videos", part="statistics,contentDetails", id=",".join(chunk), maxResults=50)
+            for item in payload.get("items", []):
+                details[item["id"]] = {
+                    "video_id": item.get("id"),
+                    "statistics": item.get("statistics", {}),
+                    "contentDetails": item.get("contentDetails", {}),
+                }
+        return details
+
 
 def _channel_item(item: dict[str, Any], source: str) -> dict[str, Any]:
     snippet = item.get("snippet", {})
@@ -186,3 +220,8 @@ def _channel_rank(title: str, query: str) -> tuple[int, str]:
     if query_lower in title_lower:
         return (1, title_lower)
     return (2, title_lower)
+
+
+def _is_quota_error(status_code: int, message: str | None) -> bool:
+    text = str(message or "").lower()
+    return status_code in {403, 429} and ("quota" in text or "exceeded" in text)

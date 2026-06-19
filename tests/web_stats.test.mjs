@@ -7,6 +7,7 @@ import {
   eloRatings,
   filterSourceClaims,
   formatSeasonList,
+  isAnalysisSourceVideo,
   mergeSeasonLists,
   matchupOverview,
   missingDataRows,
@@ -32,6 +33,7 @@ import {
   teamRosterOverviewRows,
   teamRosterPokemonRows,
   titleInfoWithinSeasonList,
+  textMatchesSearch,
   weightedRating,
   weightedRatingValue,
   killDifferential,
@@ -50,6 +52,15 @@ assert.equal(winPercentage(0, 0, 0), "");
 
 assert.equal(weightedRatingValue(0, 0, 0), null);
 assert.equal(weightedRating(0, 0, 0), "");
+
+assert.equal(textMatchesSearch("Bene Saison 4 Ritter der Tapukokosnuss", "bene s4"), true);
+assert.equal(textMatchesSearch("Bene season_004 Ritter der Tapukokosnuss", "bene s4"), true);
+assert.equal(textMatchesSearch("Bene S4 Ritter der Tapukokosnuss", "bene s4"), true);
+assert.equal(textMatchesSearch("RegiBang S4 Flexing Masskito", "bene s4, regibang s4"), true);
+assert.equal(textMatchesSearch("RegiBang S5 Flexing Masskito", "bene s4, regibang s4"), false);
+
+assert.equal(isAnalysisSourceVideo({ video_title: "Analyse: @RegiBang vs @Bene | Flinch-Spektakel | GPL [S4]" }), true);
+assert.equal(isAnalysisSourceVideo({ video_title: "GPL [S4] - Spieltag 08 - vs. Flexing Masskito: Kampf um Platz 1!" }), false);
 
 {
   const normalizeTestKey = (value) =>

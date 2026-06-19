@@ -57,6 +57,34 @@ export function displayNumber(value) {
   return Number.isFinite(parsed) ? parsed : "";
 }
 
+export function searchGroups(search = "") {
+  return String(search ?? "")
+    .split(",")
+    .map((group) => normalizedStatsKey(group).split(/\s+/).filter(Boolean))
+    .filter((group) => group.length);
+}
+
+export function textMatchesSearch(text, search = "") {
+  const groups = searchGroups(search);
+  if (!groups.length) return true;
+  const haystack = normalizedStatsKey(text);
+  return groups.some((group) => group.every((term) => haystack.includes(term)));
+}
+
+export function rowMatchesSearch(row, search = "") {
+  return textMatchesSearch(Object.values(row ?? {}).join(" "), search);
+}
+
+export function isAnalysisSourceVideo(row = {}) {
+  const videoType = normalizedStatsKey(row.video_type);
+  const text = normalizedStatsKey([row.video_title, row.title, row.match_basis, row.confidence_explanation].join(" "));
+  return (
+    videoType === "analysis" ||
+    videoType === "analyse" ||
+    ["analyse", "analysis", "setvorschlage", "setvorschlag", "potential", "potenzial", "nachbesprechung"].some((token) => text.includes(token))
+  );
+}
+
 export function killDifferential(kills, deaths) {
   return numberValue(kills) - numberValue(deaths);
 }
@@ -419,11 +447,10 @@ export function sourceClaimsForSeason(rows = [], seasonId = "all") {
 }
 
 export function filterSourceClaims(rows = [], { season = "all", claimType = "all", search = "" } = {}) {
-  const needle = String(search ?? "").trim().toLowerCase();
   return rows.filter((row) => {
     const seasonOk = season === "all" || row.season_id === season;
     const typeOk = claimType === "all" || row.claim_type === claimType;
-    const searchOk = !needle || Object.values(row).join(" ").toLowerCase().includes(needle);
+    const searchOk = rowMatchesSearch(row, search);
     return seasonOk && typeOk && searchOk;
   });
 }
@@ -659,10 +686,12 @@ function regularOnlyKilllistRows(canonicalRows, seasonRows) {
 }
 
 function normalizedStatsKey(value) {
-  return String(value ?? "")
+  const folded = String(value ?? "")
     .toLowerCase()
     .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
+    .replace(/\p{Diacritic}/gu, "");
+  return folded
+    .replace(/\b(?:season|saison|staffel)[_\s-]*0*([0-9]{1,2})\b/g, (match, season) => `${match} s${Number(season)}`)
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
 }
@@ -779,25 +808,23 @@ export function pokemonDraftOverviewRows(
 ) {
   const draftStats = Array.isArray(draftInstances) ? pokemonDraftStatsIndex(draftInstances, normalizeKey) : null;
   const excludedTierValues = new Set(excludedTiers.map((tier) => String(tier ?? "").toLowerCase()));
-  const searchNeedle = String(search ?? "").trim().toLowerCase();
   return rows
     .map((row) => withVisibleDraftStats(row, draftStats, normalizeKey))
     .filter((row) => pickedStatus === "all" || row.picked_status === pickedStatus)
     .filter((row) => !excludedTierValues.has(String(row.tier ?? "").toLowerCase()))
     .filter((row) => {
-      if (!searchNeedle) return true;
-      return [
-        row.pokemon,
-        row.pokemon_normalized,
-        row.english,
-        row.asset_id,
-        row.tier,
-        row.season_list,
-        row.title_seasons,
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(searchNeedle);
+      return textMatchesSearch(
+        [
+          row.pokemon,
+          row.pokemon_normalized,
+          row.english,
+          row.asset_id,
+          row.tier,
+          row.season_list,
+          row.title_seasons,
+        ].join(" "),
+        search,
+      );
     })
     .map((row) => ({
       ...row,

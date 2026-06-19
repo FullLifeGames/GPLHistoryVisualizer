@@ -11,6 +11,7 @@ from urllib.parse import urlparse
 from .normalize import _canonical_name, _display_name
 from .storage import ensure_dir, read_json, safe_slug, video_url, write_json
 from .urls import extract_urls, normalize_url
+from .video_stats import VIDEO_STATS_FIELDS, enrich_video_rows_with_stats, load_video_stats
 from .youtube import YouTubeApiError, YouTubeClient
 
 VIDEO_ARCHIVE_FIELDS = [
@@ -39,6 +40,7 @@ VIDEO_ARCHIVE_FIELDS = [
     "confidence_explanation",
     "perspective_person",
     "opponent",
+    *VIDEO_STATS_FIELDS,
     "source_urls",
 ]
 
@@ -62,6 +64,7 @@ MATCH_VIDEO_FIELDS = [
     "confidence_explanation",
     "channel_title",
     "channel_url",
+    *VIDEO_STATS_FIELDS,
     "source_urls",
 ]
 
@@ -215,16 +218,23 @@ def classify_video_type(title: str | None) -> str:
     has_week = bool(_WEEK_RE.search(text) or _WEEK_PREFIX_RE.search(text))
     has_round = any(token in folded for token in _ROUND_LABELS)
     has_versus = bool(_VERSUS_RE.search(text))
-    if (has_week or has_round) and has_versus:
-        return "game"
-    if any(token in folded for token in _TEAMBUILDING_TOKENS):
+    has_teambuilding = any(token in folded for token in _TEAMBUILDING_TOKENS)
+    if has_teambuilding and not _is_teambuilding_joke_match_title(folded, has_week=has_week, has_round=has_round, has_versus=has_versus):
         return "teambuilding"
     for category, tokens in _CATEGORY_TOKENS.items():
         if any(token in folded for token in tokens):
             return category
+    if (has_week or has_round) and has_versus:
+        return "game"
     if has_week or has_round or has_versus:
         return "game"
     return "other"
+
+
+def _is_teambuilding_joke_match_title(folded_title: str, *, has_week: bool, has_round: bool, has_versus: bool) -> bool:
+    if not has_versus or not (has_week or has_round):
+        return False
+    return bool(re.search(r"\b(?:team\s*building|team\s*build|teambuilding)\s+fail\b", folded_title))
 
 
 def discover_channel_candidates(data_dir: Path, include_description_channels: bool = False) -> list[dict[str, Any]]:
@@ -327,7 +337,7 @@ def _participant_channel_mentions_from_description(description: str | None) -> l
         if not line:
             continue
         folded = _fold_text(line)
-        if "alle teilnehmer" in folded:
+        if _is_participant_block_start(folded):
             in_participant_block = True
             current_label = None
             continue
@@ -398,6 +408,19 @@ def _clean_description_participant_label(value: str | None) -> str | None:
 def _is_description_section_label(value: str | None) -> bool:
     folded = _fold_text(value).strip(" :")
     return folded in {"liga 1", "liga 2", "sun conference", "moon conference", "teilnehmer", "alle teilnehmer"}
+
+
+def _is_participant_block_start(folded_line: str) -> bool:
+    return any(
+        token in folded_line
+        for token in {
+            "alle teilnehmer",
+            "teilnehmerfeld",
+            "teilnehmer feld",
+            "teilnehmer liste",
+            "teilnehmerliste",
+        }
+    )
 
 
 def _looks_like_description_separator(value: str | None) -> bool:
@@ -547,6 +570,12 @@ def build_video_archive(data_dir: Path) -> tuple[list[dict[str, Any]], list[dict
             row.get("title") or "",
         )
     )
+    archive_rows = enrich_video_rows_with_stats(archive_rows, load_video_stats(data_dir))
+    archive_by_video_id = {row.get("video_id"): row for row in archive_rows if row.get("video_id")}
+    for row in match_video_rows:
+        stats = archive_by_video_id.get(row.get("video_id"), {})
+        for field in VIDEO_STATS_FIELDS:
+            row[field] = stats.get(field, "")
     match_video_rows = _dedupe_match_video_rows(match_video_rows)
     out_dir = ensure_dir(data_dir / "normalized")
     _write_csv(out_dir / "video_archive.csv", VIDEO_ARCHIVE_FIELDS, archive_rows)
@@ -594,7 +623,7 @@ def match_video_to_matches(video: dict[str, Any], matches: list[dict[str, Any]])
             explanations.append(f"matched week {parsed_week}")
 
         participants = _match_participants(match)
-        channel_side = _find_participant(channel_people + channel_teams, participants)
+        channel_side = _find_channel_participant(channel_people, channel_teams, participants)
         title_sides = [
             side
             for side in participants
@@ -623,8 +652,9 @@ def match_video_to_matches(video: dict[str, Any], matches: list[dict[str, Any]])
             explanations.append("title identifies both match sides")
 
         has_match_context = bool(parsed["season_id"] or parsed_week is not None or parsed["round"])
+        has_participant_evidence = bool(channel_side or title_sides)
         has_title_or_round_context = bool(title_sides or parsed_week is not None or parsed["round"])
-        if score < 60 or not has_match_context or not has_title_or_round_context:
+        if score < 60 or not has_match_context or not has_title_or_round_context or not has_participant_evidence:
             continue
 
         if not parsed["season_id"] and match.get("season_id"):
@@ -751,6 +781,19 @@ def _find_participant(names: list[str], participants: list[dict[str, str]]) -> d
         if keys.intersection(participant_keys):
             return participant
     return None
+
+
+def _find_channel_participant(
+    channel_people: list[str],
+    channel_teams: list[str],
+    participants: list[dict[str, str]],
+) -> dict[str, str] | None:
+    person_side = _find_participant(channel_people, participants)
+    if person_side:
+        return person_side
+    if channel_people:
+        return None
+    return _find_participant(channel_teams, participants)
 
 
 def _participant_in_title(participant: dict[str, str], title_key: str) -> bool:

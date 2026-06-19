@@ -13,6 +13,7 @@ import { defaultViewForGroup, viewGroupForView } from "./view_config.js";
 import {
   ALL_TIME_COLUMNS,
   columnsForProfile,
+  MATCH_HIGHLIGHT_COLUMNS,
   MATCHUP_COLUMNS,
   normalizeColumnProfile,
   PERSON_SEASON_COLUMNS,
@@ -32,6 +33,7 @@ import {
   divisionMatches,
   eloRatings,
   filterSourceClaims,
+  isAnalysisSourceVideo,
   matchupOverview,
   mergeSeasonLists,
   missingDataRows,
@@ -47,6 +49,7 @@ import {
   primaryCompetitionRows,
   qualityRowsFromData,
   reviewWorkflowRows,
+  rowMatchesSearch as statsRowMatchesSearch,
   rosterKilllistRows,
   seasonCoverageRows,
   seasonCountFromList,
@@ -57,6 +60,7 @@ import {
   teamRosterDisplayGroups,
   teamRosterOverviewRows,
   teamRosterPokemonRows,
+  textMatchesSearch as statsTextMatchesSearch,
   titleInfoWithinSeasonList,
   winPercentage,
   weightedRating,
@@ -76,6 +80,7 @@ const CORE_DATASETS = {
 const LAZY_DATASETS = {
   videos: { url: "../data/normalized/video_archive.csv", optional: true },
   matchVideos: { url: "../data/normalized/match_videos.csv", optional: true },
+  matchHighlights: { url: "../data/normalized/match_highlights.csv", optional: true },
   pokemonDraftOverview: { url: "../data/normalized/pokemon_draft_overview.csv", optional: true },
   pokemonDraftInstances: { url: "../data/normalized/pokemon_draft_instances.csv", optional: true },
   teamPokemonUsage: { url: "../data/manual/team_pokemon_usage.csv", optional: true },
@@ -106,6 +111,7 @@ const VIEW_DATASETS = {
   "table-history": [],
   "match-plan": ["matchVideos"],
   "battle-history": ["matchVideos"],
+  "match-highlights": ["matchHighlights", "matchVideos"],
   "team-rosters": ["pokemonDraftOverview", "teamPokemonUsage", "teamRosters", "rosterScores"],
   "roster-detail": ["pokemonDraftOverview", "teamPokemonUsage", "teamRosters", "rosterScores", "rosterMatchdays"],
   "video-archive": ["videos"],
@@ -132,6 +138,10 @@ const ROSTER_BACKGROUND_BY_SEASON = {
 };
 
 const ROSTER_BACKGROUND_POOL = Object.values(ROSTER_BACKGROUND_BY_SEASON);
+const ALL_SEASON_DEFAULT_VIEWS = new Set(["match-highlights"]);
+const DATA_MODE_DEFAULT_BY_VIEW = {
+  "match-highlights": "all",
+};
 
 const DATASET_LABELS = {
   seasons: "Saisons",
@@ -144,6 +154,7 @@ const DATASET_LABELS = {
   killlists: "Killlisten",
   videos: "Video-Archiv",
   matchVideos: "Video-Match-Zuordnungen",
+  matchHighlights: "Highlightkämpfe",
   pokemonDraftOverview: "Pokémon-Drafts",
   teamPokemonUsage: "Team-Pokémon-Zuordnungen",
   pokemonDraftInstances: "Pokémon-Draft-Instanzen",
@@ -177,8 +188,10 @@ const state = {
   draftPickedStatus: "all",
   draftTierFilter: "all",
   rosterCardLimit: 24,
+  matchHighlightCardLimit: 8,
   rosterVariantSelection: {},
   autoSeasonDefault: false,
+  autoDataModeDefault: null,
   data: {},
   loadedDatasets: new Set(),
   loadingDatasets: new Map(),
@@ -231,11 +244,13 @@ function bindControls() {
   dataModeFilter.value = state.dataMode;
   columnProfileFilter.value = state.columnProfile;
   dataModeFilter.addEventListener("change", () => {
+    state.autoDataModeDefault = null;
     state.dataMode = dataModeFilter.value || "primary";
     state.dataMode = normalizeDataMode(state.dataMode);
     savePreference("gpl-data-mode", state.dataMode);
     state.division = "all";
     resetRosterCardLimit();
+    resetMatchHighlightCardLimit();
     divisionFilter.value = state.division;
     populateDivisionFilter();
     populateMatchupOptions();
@@ -291,6 +306,7 @@ function bindControls() {
     state.season = seasonFilter.value;
     state.autoSeasonDefault = false;
     resetRosterCardLimit();
+    resetMatchHighlightCardLimit();
     populateMatchupOptions();
     render();
   });
@@ -298,6 +314,7 @@ function bindControls() {
   divisionFilter.addEventListener("change", () => {
     state.division = divisionFilter.value;
     resetRosterCardLimit();
+    resetMatchHighlightCardLimit();
     populateMatchupOptions();
     render();
   });
@@ -305,6 +322,7 @@ function bindControls() {
   searchFilter.addEventListener("input", () => {
     state.search = searchFilter.value.trim().toLowerCase();
     resetRosterCardLimit();
+    resetMatchHighlightCardLimit();
     populateMatchupOptions();
     render();
   });
@@ -360,6 +378,11 @@ function bindControls() {
       event.preventDefault();
       state.rosterCardLimit += defaultRosterCardLimit();
       renderTeamRosters();
+    }
+    if (event.target.closest("[data-show-more-match-highlights]")) {
+      event.preventDefault();
+      state.matchHighlightCardLimit += defaultMatchHighlightCardLimit();
+      renderMatchHighlights();
     }
     const rosterVariantButton = event.target.closest("[data-roster-variant-key]");
     if (rosterVariantButton) {
@@ -494,21 +517,41 @@ function applyRouteFromHash() {
     }
   }
   setActiveView(route.view);
-  applyViewSeasonDefaults(route, previousView);
+  applyViewDefaults(route, previousView);
 }
 
-function applyViewSeasonDefaults(route, previousView) {
+function applyViewDefaults(route, previousView) {
   const previousGroup = viewGroupForView(previousView);
   const currentGroup = viewGroupForView(route.view);
+  applyViewDataModeDefaults(route.view, previousView);
   if (previousGroup === "seasons" && currentGroup !== "seasons" && state.autoSeasonDefault) {
     state.season = "all";
     state.autoSeasonDefault = false;
   }
-  if (currentGroup === "seasons" && !route.seasonId && state.season === "all") {
+  if (currentGroup === "seasons" && !route.seasonId && ALL_SEASON_DEFAULT_VIEWS.has(route.view)) {
+    if (state.autoSeasonDefault) {
+      state.season = "all";
+    }
+    state.autoSeasonDefault = false;
+  } else if (currentGroup === "seasons" && !route.seasonId && state.season === "all") {
     state.season = "season_010";
     state.autoSeasonDefault = true;
   }
   seasonFilter.value = state.season;
+}
+
+function applyViewDataModeDefaults(viewName, previousView) {
+  const defaultMode = DATA_MODE_DEFAULT_BY_VIEW[viewName];
+  if (!defaultMode && state.autoDataModeDefault) {
+    state.dataMode = state.autoDataModeDefault;
+    state.autoDataModeDefault = null;
+  } else if (defaultMode && state.dataMode !== defaultMode) {
+    if (!DATA_MODE_DEFAULT_BY_VIEW[previousView] && !state.autoDataModeDefault) {
+      state.autoDataModeDefault = state.dataMode;
+    }
+    state.dataMode = defaultMode;
+  }
+  dataModeFilter.value = state.dataMode;
 }
 
 function setActiveView(viewName) {
@@ -880,6 +923,7 @@ function render() {
   renderTableHistory();
   renderMatchPlan();
   renderBracketOverview();
+  renderMatchHighlights();
   renderTeamRosters();
   renderRosterDetail();
   renderVideoArchive();
@@ -901,9 +945,17 @@ function filtered(rows) {
     const dataModeOk = applyDataMode(row);
     const seasonOk = state.season === "all" || row.season_id === state.season;
     const divisionOk = divisionMatches(row, state.division);
-    const searchOk = !state.search || Object.values(row).join(" ").toLowerCase().includes(state.search);
+    const searchOk = rowMatchesSearch(row);
     return dataModeOk && seasonOk && divisionOk && searchOk;
   });
+}
+
+function textMatchesSearch(text, search = state.search) {
+  return statsTextMatchesSearch(text, search);
+}
+
+function rowMatchesSearch(row, search = state.search) {
+  return statsRowMatchesSearch(row, search);
 }
 
 function scoped(rows) {
@@ -1083,6 +1135,52 @@ function sourceLinks(value) {
   return urls
     .map((url, index) => `<a href="${escapeAttr(url)}" target="_blank" rel="noreferrer">${escapeHtml(`${t(state.language, "values.source")} ${index + 1}`)}</a>`)
     .join(" ");
+}
+
+function youtubeVideoIdFromUrl(value) {
+  const url = String(value ?? "").trim();
+  if (!url) return "";
+  const watchMatch = url.match(/[?&]v=([^&#]+)/);
+  if (watchMatch) return watchMatch[1];
+  const shortMatch = url.match(/youtu\.be\/([^?&#/]+)/);
+  if (shortMatch) return shortMatch[1];
+  const embedMatch = url.match(/youtube\.com\/(?:embed|shorts)\/([^?&#/]+)/);
+  return embedMatch ? embedMatch[1] : "";
+}
+
+function youtubeThumbnailPreviews(value, limit = 2) {
+  const videos = String(value ?? "")
+    .split(";")
+    .map((url) => ({ url: url.trim(), videoId: youtubeVideoIdFromUrl(url) }))
+    .filter((item) => item.url.startsWith("http") && item.videoId)
+    .slice(0, limit);
+  if (!videos.length) return "";
+  return `
+    <div class="highlight-video-previews" aria-label="${escapeAttr(t(state.language, "highlightMatches.videoPreviewLabel"))}">
+      ${videos
+        .map(
+          (item, index) => `
+            <a class="highlight-video-preview" href="${escapeAttr(item.url)}" target="_blank" rel="noreferrer" aria-label="${escapeAttr(`${t(state.language, "values.video")} ${index + 1}`)}">
+              <img src="https://i.ytimg.com/vi/${escapeAttr(item.videoId)}/mqdefault.jpg" alt="" loading="lazy" />
+              <span aria-hidden="true">▶</span>
+            </a>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+function highlightPreviewUrls(row) {
+  const videos = (state.data.matchVideos ?? [])
+    .filter((video) => video.match_id === row.match_id)
+    .filter((video) => !isAnalysisSourceVideo(video))
+    .map((video) => video.video_url || sourceFirstUrl(video.source_urls))
+    .filter(Boolean);
+  if (!videos.length) {
+    return row.video_urls;
+  }
+  return [...new Set(videos)].join(";");
 }
 
 function sourceCell(value) {
@@ -1297,7 +1395,7 @@ function aggregateAllTimeRows() {
     return null;
   }
   return rows
-    .filter((row) => !state.search || Object.values(row).join(" ").toLowerCase().includes(state.search))
+    .filter((row) => rowMatchesSearch(row))
     .map((row, index) => ({
       rank: index + 1,
       name: personLink(row.person_id, row.person_name),
@@ -1382,7 +1480,7 @@ function aggregateKilllistRows() {
   }
   return rows
     .filter((row) => state.season === "all" || String(row.season_list || "").includes(seasonDisplay(state.season)))
-    .filter((row) => !state.search || Object.values(row).join(" ").toLowerCase().includes(state.search))
+    .filter((row) => rowMatchesSearch(row))
     .map((row, index) => ({
       rank: index + 1,
       pokemon: pokemonCell(row.pokemon, row.pokemon_normalized || normalizedKey(row.pokemon)),
@@ -1505,7 +1603,7 @@ function rosterScopeMatches(row, { ignoreFilters = false, includeAllDataModes = 
   }
   const seasonOk = state.season === "all" || row.season_id === state.season;
   const divisionOk = divisionMatches(row, state.division);
-  const searchOk = !state.search || Object.values(row).join(" ").toLowerCase().includes(state.search);
+  const searchOk = rowMatchesSearch(row);
   return dataModeOk && seasonOk && divisionOk && searchOk;
 }
 
@@ -2090,6 +2188,14 @@ function resetRosterCardLimit() {
   state.rosterCardLimit = defaultRosterCardLimit();
 }
 
+function defaultMatchHighlightCardLimit() {
+  return 8;
+}
+
+function resetMatchHighlightCardLimit() {
+  state.matchHighlightCardLimit = defaultMatchHighlightCardLimit();
+}
+
 function scoreFormulaCell(value, formula) {
   return `<span class="score-formula" title="${escapeAttr(formula)}">${escapeHtml(String(value))}</span>`;
 }
@@ -2513,6 +2619,135 @@ function playoffRoundOrder(round) {
   return order.get(round) ?? 90;
 }
 
+function renderMatchHighlights() {
+  const summary = document.querySelector("#match-highlight-summary");
+  const cards = document.querySelector("#match-highlight-cards");
+  if (!summary || !cards) return;
+
+  const rows = filtered(state.data.matchHighlights ?? []).sort(compareMatchHighlights);
+
+  summary.innerHTML = [
+    metricCard(t(state.language, "highlightMatches.summary.matches"), rows.length),
+    metricCard(t(state.language, "highlightMatches.summary.viewOutliers"), rows.filter((row) => numberValue(row.view_trend_multiplier_match) >= 2).length),
+    metricCard(t(state.language, "highlightMatches.summary.closeMatches"), rows.filter((row) => row.close_match === "1").length),
+    metricCard(t(state.language, "highlightMatches.summary.playoffs"), rows.filter((row) => row.playoff_match === "1").length),
+  ].join("");
+
+  if (!rows.length) {
+    cards.innerHTML = `<p class="empty">${escapeHtml(t(state.language, "highlightMatches.empty"))}</p>`;
+  } else {
+    const limit = state.matchHighlightCardLimit || defaultMatchHighlightCardLimit();
+    cards.innerHTML = [
+      rows.slice(0, limit).map(matchHighlightCard).join(""),
+      rows.length > limit
+        ? `<button class="show-more-button" type="button" data-show-more-match-highlights>${escapeHtml(t(state.language, "highlightMatches.showMore"))}</button>`
+        : "",
+    ].join("");
+  }
+
+  renderTable(
+    "#match-highlight-table",
+    rows.map((row, index) => matchHighlightTableRow(row, index + 1)),
+    MATCH_HIGHLIGHT_COLUMNS,
+    ["season", "player_a", "player_b", "videos", "source"],
+    { filename: "gpl-match-highlights.csv" },
+  );
+}
+
+function compareMatchHighlights(a, b) {
+  return (
+    numberValue(b.highlight_score) - numberValue(a.highlight_score) ||
+    numberValue(b.view_peak) - numberValue(a.view_peak) ||
+    seasonOrder(a.season_id) - seasonOrder(b.season_id) ||
+    weekOrder(a) - weekOrder(b) ||
+    String(a.match_id || "").localeCompare(String(b.match_id || ""))
+  );
+}
+
+function matchHighlightTableRow(row, rank) {
+  return {
+    _season_order: seasonOrder(row.season_id),
+    _week_order: weekOrder(row),
+    rank,
+    season: seasonLink(row.season_id),
+    division: divisionDisplay(row.division, row.stage),
+    stage: stageDisplay(row.stage),
+    week: row.week,
+    player_a: row.player_a ? personLink(normalizedKey(row.player_a), row.player_a) : "",
+    player_b: row.player_b ? personLink(normalizedKey(row.player_b), row.player_b) : "",
+    score: row.score,
+    winner: row.winner,
+    highlight_score: displayNumber(row.highlight_score),
+    highlight_reasons: row.highlight_reasons,
+    view_peak: displayNumber(row.view_peak),
+    view_total: displayNumber(row.view_total),
+    view_median: displayNumber(row.view_median),
+    view_multiplier_peak: row.view_multiplier_peak ? `${displayNumber(row.view_multiplier_peak)}x` : "",
+    views_percentile_peak: ratioPercentDisplay(row.views_percentile_peak),
+    views_z_score_peak: displayNumber(row.views_z_score_peak),
+    view_expected_peak: displayNumber(row.view_expected_peak),
+    view_trend_multiplier_peak: row.view_trend_multiplier_peak ? `${displayNumber(row.view_trend_multiplier_peak)}x` : "",
+    views_trend_percentile_peak: ratioPercentDisplay(row.views_trend_percentile_peak),
+    views_trend_z_score_peak: displayNumber(row.views_trend_z_score_peak),
+    view_expected_total: displayNumber(row.view_expected_total),
+    view_trend_multiplier_match: row.view_trend_multiplier_match ? `${displayNumber(row.view_trend_multiplier_match)}x` : "",
+    views_trend_percentile_match: ratioPercentDisplay(row.views_trend_percentile_match),
+    views_trend_z_score_match: displayNumber(row.views_trend_z_score_match),
+    views_total_percentile_match: ratioPercentDisplay(row.views_total_percentile_match),
+    like_peak: displayNumber(row.like_peak),
+    comment_peak: displayNumber(row.comment_peak),
+    engagement_rate_peak: displayNumber(row.engagement_rate_peak),
+    engagement_multiplier_peak: row.engagement_multiplier_peak ? `${displayNumber(row.engagement_multiplier_peak)}x` : "",
+    engagement_percentile_peak: ratioPercentDisplay(row.engagement_percentile_peak),
+    engagement_z_score_peak: displayNumber(row.engagement_z_score_peak),
+    peak_perspective: row.peak_perspective,
+    both_sides_spiked: row.both_sides_spiked === "1" ? t(state.language, "values.yes") : "",
+    close_match: row.close_match === "1" ? t(state.language, "values.yes") : "",
+    playoff_match: row.playoff_match === "1" ? t(state.language, "values.yes") : "",
+    video_count: row.video_count,
+    videos: sourceLinks(row.video_urls),
+    source: sourceLinks(row.source_urls),
+  };
+}
+
+function matchHighlightCard(row) {
+  const reasons = String(row.highlight_reasons || "")
+    .split(";")
+    .map((item) => item.trim())
+    .filter(Boolean);
+  const meta = [
+    row.week,
+    divisionDisplay(row.division, row.stage),
+    row.video_count ? `${row.video_count} ${t(state.language, "summary.videos")}` : "",
+  ].filter(Boolean);
+  return `
+    <article class="highlight-card">
+      <div class="highlight-card-head">
+        <span>${escapeHtml(seasonDisplay(row.season_id))}${meta.length ? ` · ${escapeHtml(meta.join(" · "))}` : ""}</span>
+        <strong>${escapeHtml(displayNumber(row.highlight_score))}</strong>
+      </div>
+      <h3 class="highlight-match-title">${row.player_a ? personLink(normalizedKey(row.player_a), row.player_a) : ""}<span class="highlight-vs">vs</span>${row.player_b ? personLink(normalizedKey(row.player_b), row.player_b) : ""}</h3>
+      ${youtubeThumbnailPreviews(highlightPreviewUrls(row))}
+      <div class="highlight-card-stats">
+        <span>${escapeHtml(t(state.language, "highlightMatches.card.views"))}<strong>${escapeHtml(displayNumber(row.view_peak))}</strong></span>
+        <span>${escapeHtml(t(state.language, "highlightMatches.card.trend"))}<strong>${escapeHtml(row.view_trend_multiplier_match ? `${displayNumber(row.view_trend_multiplier_match)}x` : "")}</strong></span>
+        <span>${escapeHtml(t(state.language, "highlightMatches.card.engagement"))}<strong>${escapeHtml(row.engagement_multiplier_peak ? `${displayNumber(row.engagement_multiplier_peak)}x` : "")}</strong></span>
+        <span>${escapeHtml(t(state.language, "highlightMatches.card.perspective"))}<strong>${escapeHtml(row.peak_perspective || "")}</strong></span>
+      </div>
+      ${reasons.length ? `<div class="highlight-badges">${reasons.map((reason) => `<span>${escapeHtml(reason)}</span>`).join("")}</div>` : ""}
+      <div class="highlight-card-links">${sourceLinks(row.video_urls)}</div>
+    </article>
+  `;
+}
+
+function ratioPercentDisplay(value) {
+  const numeric = numberValue(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    return "";
+  }
+  return `${displayNumber(numeric * 100)}%`;
+}
+
 function groupRows(rows, keyFn) {
   return rows.reduce((groups, row) => {
     const key = keyFn(row) || t(state.language, "values.unknown");
@@ -2544,12 +2779,28 @@ function renderVideoArchive() {
       match_basis: row.match_basis,
       confidence_explanation: row.confidence_explanation,
       match_id: row.best_match_id,
+      view_count: displayNumber(row.view_count),
+      like_count: displayNumber(row.like_count),
+      comment_count: displayNumber(row.comment_count),
+      duration_seconds: displayNumber(row.duration_seconds),
+      views_baseline_median: displayNumber(row.views_baseline_median),
+      views_multiplier: row.views_multiplier ? `${displayNumber(row.views_multiplier)}x` : "",
+      views_percentile: ratioPercentDisplay(row.views_percentile),
+      views_z_score: displayNumber(row.views_z_score),
+      video_highlight_reasons: row.video_highlight_reasons,
+      views_week_factor: row.views_week_factor ? `${displayNumber(row.views_week_factor)}x` : "",
+      views_expected: displayNumber(row.views_expected),
+      views_trend_multiplier: row.views_trend_multiplier ? `${displayNumber(row.views_trend_multiplier)}x` : "",
+      views_trend_percentile: ratioPercentDisplay(row.views_trend_percentile),
+      views_trend_z_score: displayNumber(row.views_trend_z_score),
+      views_trend_highlight_reasons: row.views_trend_highlight_reasons,
+      stats_fetched_at: row.stats_fetched_at,
       published_at: row.published_at,
     }));
   renderTable(
     "#video-archive-table",
     rows,
-    ["season", "division", "video_type", "stage", "detected_week", "perspective_person", "opponent", "title", "channel", "match_status", "confidence", "confidence_tier", "match_basis", "confidence_explanation", "match_id", "published_at"],
+    ["season", "division", "video_type", "stage", "detected_week", "perspective_person", "opponent", "title", "channel", "match_status", "confidence", "confidence_tier", "match_basis", "confidence_explanation", "match_id", "view_count", "views_trend_multiplier", "views_expected", "views_week_factor", "views_trend_percentile", "views_trend_z_score", "views_trend_highlight_reasons", "views_multiplier", "views_percentile", "views_z_score", "video_highlight_reasons", "like_count", "comment_count", "duration_seconds", "stats_fetched_at", "published_at"],
     ["title"],
     {
       filename: "gpl-video-archive.csv",
@@ -2563,7 +2814,7 @@ function filteredVideoRows(rows) {
     const dataModeOk = applyDataMode(row);
     const seasonOk = state.season === "all" || row.detected_season_id === state.season || row.season_id === state.season;
     const divisionOk = divisionMatches(row, state.division);
-    const searchOk = !state.search || Object.values(row).join(" ").toLowerCase().includes(state.search);
+    const searchOk = rowMatchesSearch(row);
     return dataModeOk && seasonOk && divisionOk && searchOk;
   });
 }
@@ -2571,7 +2822,7 @@ function filteredVideoRows(rows) {
 function renderDataCoverage() {
   const rows = qualityRowsFromData(state.data)
     .filter((row) => state.season === "all" || row.season_id === state.season)
-    .filter((row) => !state.search || Object.values(row).join(" ").toLowerCase().includes(state.search))
+    .filter((row) => rowMatchesSearch(row))
     .map((row) => ({
       season: seasonLink(row.season_id),
       status: coverageStatusDisplay(row.coverage_status),
@@ -2615,7 +2866,7 @@ function renderDataCoverage() {
   renderTable("#missing-data-table", missingRows, ["season", "status", "missing_data", "unavailable_killlists", "source"], ["season", "source"]);
 
   const reviewRows = (state.data.reviewIndex ?? [])
-    .filter((row) => !state.search || Object.values(row).join(" ").toLowerCase().includes(state.search))
+    .filter((row) => rowMatchesSearch(row))
     .map((row) => ({
       review_file: row.review_file,
       row_count: row.row_count,
@@ -2651,7 +2902,7 @@ function renderDataGaps() {
 
   const seasonRows = qualityRowsFromData(state.data)
     .filter((row) => state.season === "all" || row.season_id === state.season)
-    .filter((row) => !state.search || Object.values(row).join(" ").toLowerCase().includes(state.search))
+    .filter((row) => rowMatchesSearch(row))
     .map((row) => ({
       season: seasonLink(row.season_id),
       status: coverageStatusDisplay(row.coverage_status),
@@ -2674,7 +2925,7 @@ function renderDataGaps() {
   );
 
   const queueRows = (state.data.reviewIndex ?? [])
-    .filter((row) => !state.search || Object.values(row).join(" ").toLowerCase().includes(state.search))
+    .filter((row) => rowMatchesSearch(row))
     .map((row) => ({
       review_file: row.review_file,
       row_count: row.row_count,
@@ -2871,7 +3122,7 @@ function scopedReviewRows(rows = []) {
     const dataModeOk = applyDataMode(row);
     const seasonOk = state.season === "all" || seasonId === state.season;
     const divisionOk = divisionMatches(row, state.division);
-    const searchOk = !state.search || Object.values(row).join(" ").toLowerCase().includes(state.search);
+    const searchOk = rowMatchesSearch(row);
     return dataModeOk && seasonOk && divisionOk && searchOk;
   });
 }
@@ -2899,7 +3150,7 @@ function videoReviewRows(kind) {
       const dataModeOk = applyDataMode(row);
       const seasonOk = state.season === "all" || seasonId === state.season;
       const divisionOk = divisionMatches(row, state.division);
-      const searchOk = !state.search || Object.values(row).join(" ").toLowerCase().includes(state.search);
+      const searchOk = rowMatchesSearch(row);
       return dataModeOk && seasonOk && divisionOk && searchOk;
     })
     .sort(compareVideoRows);
@@ -2984,7 +3235,7 @@ function matchVideoCoverageRows() {
       const divisionOk = divisionMatches(row, state.division);
       const videos = videosByMatch.get(row.match_id) ?? [];
       const searchText = [Object.values(row).join(" "), ...videos.map((video) => Object.values(video).join(" "))].join(" ").toLowerCase();
-      const searchOk = !state.search || searchText.includes(state.search);
+      const searchOk = textMatchesSearch(searchText);
       return dataModeOk && seasonOk && divisionOk && searchOk;
     })
     .sort(compareMatches)
@@ -3031,7 +3282,7 @@ function joinSourceValues(...values) {
 function renderReviewWorkflow() {
   const rows = reviewWorkflowRows(state.data)
     .filter((row) => state.season === "all" || row.season_id === state.season)
-    .filter((row) => !state.search || Object.values(row).join(" ").toLowerCase().includes(state.search))
+    .filter((row) => rowMatchesSearch(row))
     .map((row) => ({
       review_key: row.review_key,
       queue: row.queue,
@@ -3561,7 +3812,7 @@ function aggregateMatchupRows(selectedKey) {
   const comparable = matchupSelectKey(selectedKey);
   return rows
     .filter((row) => matchupSelectKey(row.person_id || row.person_name) === comparable || matchupSelectKey(row.person_name) === comparable)
-    .filter((row) => !state.search || Object.values(row).join(" ").toLowerCase().includes(state.search))
+    .filter((row) => rowMatchesSearch(row))
     .map((row) => ({
       opponent_key: matchupSelectKey(row.opponent_id || row.opponent_name),
       opponent: row.opponent_name,
@@ -3781,6 +4032,42 @@ const NUMERIC_COLUMNS = new Set([
   "matched_videos",
   "matches_without_videos",
   "video_count",
+  "view_count",
+  "like_count",
+  "comment_count",
+  "duration_seconds",
+  "views_baseline_median",
+  "views_multiplier",
+  "views_percentile",
+  "views_z_score",
+  "views_week_factor",
+  "views_opponent_factor",
+  "views_expected",
+  "views_trend_multiplier",
+  "views_trend_percentile",
+  "views_trend_z_score",
+  "highlight_score",
+  "view_peak",
+  "view_total",
+  "view_median",
+  "view_multiplier_peak",
+  "views_percentile_peak",
+  "views_z_score_peak",
+  "view_expected_peak",
+  "view_trend_multiplier_peak",
+  "views_trend_percentile_peak",
+  "views_trend_z_score_peak",
+  "view_expected_total",
+  "view_trend_multiplier_match",
+  "views_trend_percentile_match",
+  "views_trend_z_score_match",
+  "views_total_percentile_match",
+  "like_peak",
+  "comment_peak",
+  "engagement_rate_peak",
+  "engagement_multiplier_peak",
+  "engagement_percentile_peak",
+  "engagement_z_score_peak",
   "both_perspectives",
   "single_perspective",
   "wins",
@@ -3812,7 +4099,7 @@ const NUMERIC_COLUMNS = new Set([
 ]);
 
 function minWidthFor(column) {
-  if (["name", "person", "team", "pokemon", "trainer", "player_a", "player_b", "winner", "video", "videos", "source", "title", "channel", "perspective_person", "opponent", "video_type", "missing_data", "notes", "match_basis", "confidence_explanation", "record", "top_pokemon", "roster_flags"].includes(column)) {
+  if (["name", "person", "team", "pokemon", "trainer", "player_a", "player_b", "winner", "video", "videos", "source", "title", "channel", "perspective_person", "opponent", "video_type", "missing_data", "notes", "match_basis", "confidence_explanation", "record", "top_pokemon", "roster_flags", "highlight_reasons", "video_highlight_reasons", "views_trend_highlight_reasons", "peak_perspective"].includes(column)) {
     return 170;
   }
   if (column === "status") {
@@ -3905,6 +4192,8 @@ function normalizedKey(value) {
     "full lifegames": "bene",
     dauni: "dauni daunstar",
     daunidaunstar: "dauni daunstar",
+    dragoonofdoom: "dauni daunstar",
+    "dragoon ofdoom": "dauni daunstar",
     artngaming: "art n gaming",
     "art n gaming": "art n gaming",
     kaffecone: "art n gaming",

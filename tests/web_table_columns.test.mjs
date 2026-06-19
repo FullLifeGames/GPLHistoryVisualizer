@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {
   ALL_TIME_COLUMNS,
   COLUMN_PROFILE_KEYS,
+  MATCH_HIGHLIGHT_COLUMNS,
   MATCHUP_COLUMNS,
   PERSON_SEASON_COLUMNS,
   POKEMON_DRAFT_COLUMNS,
@@ -39,6 +40,19 @@ assert.deepEqual(recordWindow(TABLE_HISTORY_COLUMNS), ["matches", "win_pct", "wi
 assert.deepEqual(recordWindow(SEASON_STANDINGS_COLUMNS), ["matches", "win_pct", "wins", "losses", "draws"]);
 assert.deepEqual(recordWindow(PERSON_SEASON_COLUMNS), ["matches", "win_pct", "wins", "losses", "draws"]);
 assert.deepEqual(MATCHUP_COLUMNS, ["opponent", "matches", "win_pct", "wins", "losses", "draws"]);
+assert.deepEqual(MATCH_HIGHLIGHT_COLUMNS.slice(0, 11), [
+  "rank",
+  "season",
+  "division",
+  "stage",
+  "week",
+  "player_a",
+  "player_b",
+  "score",
+  "winner",
+  "highlight_score",
+  "highlight_reasons",
+]);
 
 assert.deepEqual(COLUMN_PROFILE_KEYS, ["compact", "performance", "history", "sources", "full"]);
 assert.deepEqual(columnsForProfile(ALL_TIME_COLUMNS, "compact"), ["rank", "name", "seasons_won", "rating", "seasons", "matches", "win_pct", "points", "elo"]);
@@ -85,6 +99,28 @@ assert.deepEqual(TEAM_ROSTER_POKEMON_COLUMNS.slice(-7), [
 assert.deepEqual(columnsForProfile(TEAM_ROSTER_COLUMNS, "compact"), ["rank", "season", "division", "roster_phase", "variants", "person", "team", "roster_score", "pokemon_count", "roster_flags"]);
 assert.equal(columnsForProfile(["season", "videos", "source"], "compact").includes("videos"), true);
 assert.equal(columnsForProfile(["season", "videos", "source"], "sources").includes("videos"), true);
+assert.deepEqual(columnsForProfile(MATCH_HIGHLIGHT_COLUMNS, "compact"), [
+  "rank",
+  "season",
+  "division",
+  "stage",
+  "week",
+  "player_a",
+  "player_b",
+  "score",
+  "winner",
+  "highlight_score",
+  "highlight_reasons",
+  "view_peak",
+  "view_multiplier_peak",
+  "view_trend_multiplier_match",
+  "view_trend_multiplier_peak",
+  "peak_perspective",
+  "close_match",
+  "playoff_match",
+  "video_count",
+  "videos",
+]);
 assert.deepEqual(columnsForProfile(ALL_TIME_COLUMNS, "performance"), [
   "rank",
   "name",
@@ -128,6 +164,7 @@ assert.deepEqual(columnsForProfile(videoColumns, "compact"), [
   "season",
   "division",
   "video_type",
+  "stage",
   "detected_week",
   "perspective_person",
   "opponent",

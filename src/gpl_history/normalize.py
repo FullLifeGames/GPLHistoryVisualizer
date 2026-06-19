@@ -279,7 +279,7 @@ _S9_KILLLIST_TRAINERS = {
         "akatsuki amphibianz": "Barry D. Sin of Speed",
         "fen and gator": "Maxi von Vogel",
         "royal bluff": "BlackLink",
-        "scherzkekse": "Dauni Daunstar",
+        "scherzkekse": "Dauni",
         "soulblaze": "PresentLP",
         "toon world": "King Blex",
         "voltwizards": "Blocki",
@@ -335,6 +335,10 @@ _ALIAS_CANONICAL = {
     "dauni": "dauni daunstar",
     "dauni daunstar": "dauni daunstar",
     "daunidaunstar": "dauni daunstar",
+    "dragoon ofdoom": "dauni daunstar",
+    "dragoonofdoom": "dauni daunstar",
+    "dauni hydronic": "dauni daunstar hydronic",
+    "dauni daunstar hydronic": "dauni daunstar hydronic",
     "art n gaming": "art n gaming",
     "artngaming": "art n gaming",
     "tjlh100": "art n gaming",
@@ -390,7 +394,8 @@ _PREFERRED_DISPLAY = {
     "captaincrinch": "CaptainCrinch",
     "crowdcontroller": "CrowdController",
     "daumenkino": "DaumenkinoLP",
-    "dauni daunstar": "Dauni Daunstar",
+    "dauni daunstar": "Dauni",
+    "dauni daunstar hydronic": "Dauni & Hydronic",
     "dirtyd64": "DirtyD64",
     "lauris": "Lauris",
     "maxi von vogel": "Maxi von Vogel",
@@ -966,7 +971,7 @@ def _s10_playoff_standings(season_id: str, regular_rows: list[dict[str, Any]], s
         (None, "Minetube", "0", "1"),
         (None, "Nestfloh", "0", "1"),
         (None, "RobinVGC", "0", "1"),
-        (None, "Dauni Daunstar", "0", "1"),
+        (None, "Dauni", "0", "1"),
     ]
     return [
         _manual_playoff_standing(
@@ -1235,6 +1240,8 @@ def _standing_is_split_by_controller(season_id: str, standing: dict[str, Any]) -
         return True
     if season_id == "season_003" and team_key == "unlimited blade works 1":
         return True
+    if season_id == "season_005" and team_key == "aggron successors":
+        return True
     if season_id == "season_009" and team_key == "victory instinct" and standing.get("division") in {"Singles", "Doubles"}:
         return True
     return False
@@ -1325,6 +1332,38 @@ def _special_person_stints(season_id: str, standings: list[dict[str, Any]], matc
                 rank=standing.get("rank") if standing else None,
                 source_urls=source_urls,
                 notes="User-provided controller correction plus table footnote: Bene led the team from Spieltag 11 onward.",
+            ),
+        ]
+    if season_id == "season_005":
+        standing = _standing_for_team(standings, "Aggron Successors*", "Liga 1")
+        source_urls = _join_source_urls(
+            standing.get("source_urls") if standing else None,
+            _source_urls_from_matches(matches, "season_005", {"Tabasco TV", "Parsifani"}),
+        )
+        return [
+            _person_stint_from_matches(
+                season_id,
+                matches,
+                person_name="Tabasco TV",
+                team_name="Aggron Successors*",
+                division="Liga 1",
+                start_week=1,
+                end_week=5,
+                rank=standing.get("rank") if standing else None,
+                source_urls=source_urls,
+                notes="Controller correction: Tabasco TV led Aggron Successors through Spieltag 5 before Parsifani took over.",
+            ),
+            _person_stint_from_matches(
+                season_id,
+                matches,
+                person_name="Parsifani",
+                team_name="Aggron Successors*",
+                division="Liga 1",
+                start_week=6,
+                end_week=22,
+                rank=standing.get("rank") if standing else None,
+                source_urls=source_urls,
+                notes="Controller correction: Parsifani led Aggron Successors from Spieltag 6 onward.",
             ),
         ]
     if season_id == "season_009":
@@ -1648,7 +1687,7 @@ def _season_matches(season_id: str, tables: list[dict[str, Any]], videos: list[d
 
 
 def _apply_controller_overrides(season_id: str, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    if season_id not in {"season_003", "season_009"}:
+    if season_id not in {"season_003", "season_005", "season_009"}:
         return rows
     for row in rows:
         if row.get("data_status") == "not_available":
@@ -1658,6 +1697,8 @@ def _apply_controller_overrides(season_id: str, rows: list[dict[str, Any]]) -> l
             continue
         if season_id == "season_003":
             _apply_s3_controller_override(row, week)
+        elif season_id == "season_005":
+            _apply_s5_controller_override(row, week)
         elif season_id == "season_009":
             _apply_s9_controller_override(row, week)
     return rows
@@ -1678,6 +1719,24 @@ def _apply_s3_controller_override(row: dict[str, Any], week: int) -> None:
             row["winner"] = replacement
         if status:
             row["data_status"] = status
+
+
+def _apply_s5_controller_override(row: dict[str, Any], week: int) -> None:
+    if week > 5:
+        return
+    for side in ("a", "b"):
+        player_key = f"player_{side}"
+        team_key = f"team_{side}"
+        player_key_value = _canonical_name(row.get(player_key))
+        team_key_value = _canonical_name(row.get(team_key))
+        if player_key_value != "parsifani" and team_key_value not in {"aggron successors", "aggron berlin"}:
+            continue
+        old_winner_key = _canonical_name(row.get("winner"))
+        row[player_key] = "Tabasco TV"
+        row[team_key] = row.get(team_key) or "Aggron Successors*"
+        if old_winner_key == "parsifani":
+            row["winner"] = "Tabasco TV"
+        row["data_status"] = "sheet_extracted_with_user_correction"
 
 
 def _apply_s9_controller_override(row: dict[str, Any], week: int) -> None:
