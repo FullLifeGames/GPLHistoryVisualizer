@@ -197,6 +197,7 @@ def test_check_generated_artifacts_reports_drift(tmp_path):
         "data/normalized/roster_scores.csv",
         "data/normalized/season_storylines.csv",
         "data/normalized/team_rosters.csv",
+        "data/normalized/roster_matchdays.csv",
         "data/normalized/pokemon_draft_overview.csv",
         "data/normalized/pokemon_draft_instances.csv",
         "data/normalized/data_quality.csv",

@@ -28,11 +28,11 @@ season and Pokémon get the reviewed person/team assignment while keeping the or
 
 After `gpl-history normalize --data-dir data`, open `web/manual-killlist-entry.html` for the remaining unassigned
 killlist Pokémon. The page starts with the open-only filter enabled and exports rows for `data/manual/pokemon_killlists.csv`.
-## Known Unassigned S5 Killlist Rows
 
-The S5 manual import from `pokemon_killlists_s3_s5_manual(1).csv` assigns 40 of 42 previously open regular-season
-Liga 1 killlist rows. These two rows intentionally remain unassigned because no reliable team/player assignment is
-available yet:
+## Resolved S5 Killlist Rows
 
-- `Impergator`, 4 kills, `season_005`, `Liga 1`, `regular_season`
-- `Togedemaru`, 3 kills, `season_005`, `Liga 1`, `regular_season`
+The final open S5 regular-season Liga 1 killlist rows were assigned from manual review:
+
+- `Wolwerock-Dämmerungsform`, 19 kills: `Professor N` / `Howling Commandos`
+- `Impergator`, 4 kills: `Tabasco TV` / `Aggron Successors*` before the later Parsifani replacement
+- `Togedemaru`, 3 kills: `Tabasco TV` / `Aggron Successors*` before the later Parsifani replacement

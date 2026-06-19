@@ -60,6 +60,11 @@
         <button class="tab" data-view-group="seasons" data-view="match-plan" data-i18n="nav.matchPlan">Spielplan</button>
         <button class="tab" data-view-group="seasons" data-view="video-archive" data-i18n="nav.videoArchive">Video-Archiv</button>
         <button class="tab" data-view-group="data" data-view="data-coverage" data-i18n="nav.dataCoverage">Datenlage</button>
+        <button class="tab" data-view-group="data" data-view="data-gaps" data-i18n="nav.dataGaps">Lückenübersicht</button>
+        <button class="tab" data-view-group="data" data-view="roster-gaps" data-i18n="nav.rosterGaps">Kaderlücken</button>
+        <button class="tab" data-view-group="data" data-view="appearance-gaps" data-i18n="nav.appearanceGaps">Einsatzlücken</button>
+        <button class="tab" data-view-group="data" data-view="video-review" data-i18n="nav.videoReview">Video-Review</button>
+        <button class="tab" data-view-group="data" data-view="match-video-coverage" data-i18n="nav.matchVideoCoverage">Kampfvideo-Abdeckung</button>
         <button class="tab" data-view-group="data" data-view="review-workflow" data-i18n="nav.reviewWorkflow">Review</button>
         <button class="tab" data-view-group="data" data-view="source-claims" data-i18n="nav.sourceClaims">Quellenclaims</button>
       </nav>
@@ -210,6 +215,10 @@
         <div id="roster-detail-focus" class="roster-detail-focus"></div>
         <div id="roster-detail-visual" class="roster-detail-visual"></div>
         <div id="roster-detail-summary" class="summary-grid roster-detail-summary-grid"></div>
+        <details class="detail-table-section" id="roster-detail-matchday-section" open hidden>
+          <summary data-i18n="rosters.matchdayMatrixTitle">Spieltag-Matrix</summary>
+          <div id="roster-detail-matchday-matrix" class="roster-matchday-matrix"></div>
+        </details>
         <details class="detail-table-section" open>
           <summary data-i18n="rosters.detailPokemonTitle">Pokémon-Leistungen</summary>
           <div id="roster-detail-pokemon-table" class="table-wrap"></div>
@@ -263,6 +272,70 @@
           <summary data-i18n="personDetails.missingTitle">Offene Killlisten</summary>
           <div id="person-missing-table" class="table-wrap"></div>
         </details>
+      </section>
+
+      <section id="view-data-gaps" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.dataGapsTitle">Lückenübersicht</h2>
+          <p data-i18n="sections.dataGapsDescription">Kompakte Arbeitsübersicht über offene Datenstellen aus Review-CSV, Kadern, Einsätzen und Videos.</p>
+        </div>
+        <div id="data-gap-summary" class="summary-grid"></div>
+        <details class="detail-table-section" open>
+          <summary data-i18n="dataGaps.seasonTitle">Saisonweise Lücken</summary>
+          <div id="data-gap-season-table" class="table-wrap"></div>
+        </details>
+        <details class="detail-table-section" open>
+          <summary data-i18n="dataGaps.queueTitle">Review-Queues</summary>
+          <div id="data-gap-queue-table" class="table-wrap"></div>
+        </details>
+      </section>
+
+      <section id="view-roster-gaps" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.rosterGapsTitle">Kaderlücken</h2>
+          <p data-i18n="sections.rosterGapsDescription">Unvollständige, rekonstruierte oder unsichere Kader mit direktem Link zur Kaderdetailansicht.</p>
+        </div>
+        <div id="roster-gap-summary" class="summary-grid"></div>
+        <div id="roster-gap-table" class="table-wrap"></div>
+      </section>
+
+      <section id="view-appearance-gaps" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.appearanceGapsTitle">Einsatzlücken</h2>
+          <p data-i18n="sections.appearanceGapsDescription">Killlisten-Zeilen, bei denen Kills belegt sind, aber Einsätze oder Killlistenquellen fehlen.</p>
+        </div>
+        <details class="detail-table-section" open>
+          <summary data-i18n="appearanceGaps.missingAppearancesTitle">Fehlende Einsätze</summary>
+          <div id="appearance-gap-table" class="table-wrap"></div>
+        </details>
+        <details class="detail-table-section" open>
+          <summary data-i18n="appearanceGaps.missingKilllistsTitle">Offene Killlistenquellen</summary>
+          <div id="missing-killlist-table" class="table-wrap"></div>
+        </details>
+      </section>
+
+      <section id="view-video-review" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.videoReviewTitle">Video-Review</h2>
+          <p data-i18n="sections.videoReviewDescription">Nicht zugeordnete, niedrig sichere oder mehrdeutige GPL-Videos aus den Teilnehmerkanälen.</p>
+        </div>
+        <details class="detail-table-section" open>
+          <summary data-i18n="videoReview.unmatchedTitle">Nicht zugeordnete Kampf-Videos</summary>
+          <div id="unmatched-video-table" class="table-wrap"></div>
+        </details>
+        <details class="detail-table-section" open>
+          <summary data-i18n="videoReview.lowConfidenceTitle">Niedrige Konfidenz</summary>
+          <div id="low-confidence-video-table" class="table-wrap"></div>
+        </details>
+      </section>
+
+      <section id="view-match-video-coverage" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.matchVideoCoverageTitle">Kampfvideo-Abdeckung</h2>
+          <p data-i18n="sections.matchVideoCoverageDescription">Matchplan gegen Video-Matches: zeigt, welche Kämpfe beide Sichten, eine Sicht oder noch kein Video haben.</p>
+        </div>
+        <div id="match-video-summary" class="summary-grid"></div>
+        <div id="match-video-coverage-table" class="table-wrap"></div>
       </section>
 
       <section id="view-data-coverage" class="view">

@@ -226,6 +226,26 @@ def build_team_rosters(data_dir: Path) -> list[dict[str, Any]]:
                         notes=config["notes"],
                     )
                 )
+            elif config["layout"] == "s10_playoff_tierlist":
+                playoff_kader_rows, playoff_kader_source_file, playoff_kader_source_urls = _s10_playoff_kader_source(
+                    data_dir, index
+                )
+                rows.extend(
+                    _extract_s10_playoff_tierlist_roster_rows(
+                        csv_rows,
+                        teams,
+                        season_id=season_id,
+                        division=config["division"],
+                        roster_phase=config["roster_phase"],
+                        source_table=entry.get("title", ""),
+                        source_file=source_file,
+                        source_urls=source_urls,
+                        notes=config["notes"],
+                        playoff_kader_rows=playoff_kader_rows,
+                        playoff_kader_source_file=playoff_kader_source_file,
+                        playoff_kader_source_urls=playoff_kader_source_urls,
+                    )
+                )
 
     rows.extend(_season_006_killlist_roster_rows(data_dir, teams))
     rows.extend(_manual_team_graphic_snapshot_rows(data_dir, teams))
@@ -255,12 +275,13 @@ def _sheet_config(season_id: str, title: str, has_rueckrunde: bool) -> dict[str,
             "notes": "Hauptrundenkader aus Kader-Sheet",
         }
     if season_id == "season_010" and key == "playoffskader":
+        return None
+    if season_id == "season_010" and key == "playoffstierliste":
         return {
-            "layout": "pair",
+            "layout": "s10_playoff_tierlist",
             "division": "Playoffs",
             "roster_phase": "playoffs",
-            "required_headers": "P1;P2;Fin",
-            "notes": "Playoffkader nach Playoffdraft",
+            "notes": "Vollstaendiger S10-Playoffkader aus der Pickliste der Playoffs-Tierliste",
         }
     if season_id == "season_009" and key == "kadersingles":
         if has_rueckrunde:
@@ -395,6 +416,171 @@ def _row_has_values_under_headers(
         if matching_columns:
             return any(column < len(rows[row_index]) and str(rows[row_index][column]).strip() for column in matching_columns)
     return False
+
+
+def _extract_s10_playoff_tierlist_roster_rows(
+    csv_rows: list[list[str]],
+    teams: list[dict[str, Any]],
+    *,
+    season_id: str,
+    division: str,
+    roster_phase: str,
+    source_table: str,
+    source_file: str,
+    source_urls: str,
+    notes: str,
+    playoff_kader_rows: list[list[str]] | None = None,
+    playoff_kader_source_file: str = "",
+    playoff_kader_source_urls: str = "",
+) -> list[dict[str, Any]]:
+    if playoff_kader_rows is None:
+        return []
+
+    union_rows = _extract_pair_kader_rows(
+        playoff_kader_rows,
+        teams,
+        season_id=season_id,
+        division=division,
+        roster_phase=roster_phase,
+        source_table="Playoffs Kader",
+        source_file=playoff_kader_source_file,
+        source_urls=playoff_kader_source_urls,
+        notes="S10-Playoff-Kader-Union",
+    )
+    used_rows = _extract_pair_kader_rows(
+        playoff_kader_rows,
+        teams,
+        season_id=season_id,
+        division=division,
+        roster_phase=roster_phase,
+        source_table="Playoffs Kader",
+        source_file=playoff_kader_source_file,
+        source_urls=playoff_kader_source_urls,
+        notes="S10-Playoff-Einsaetze",
+        required_headers="P1;P2;Fin",
+    )
+    groups = _s10_playoff_kader_groups(union_rows, used_rows)
+    if not groups:
+        return []
+    segments = _s10_playoff_tierlist_segments(csv_rows, expected_segments=len(groups))
+    if not segments:
+        return []
+
+    rows: list[dict[str, Any]] = []
+    assigned_groups: set[tuple[str, str]] = set()
+    combined_source_file = _join_source_urls(source_file, playoff_kader_source_file)
+    combined_source_urls = _join_source_urls(source_urls, playoff_kader_source_urls)
+    combined_notes = _join_source_urls(notes, "Teamzuordnung ueber Playoffs-Kader-Union gematcht")
+
+    for segment in segments:
+        match = _best_s10_playoff_segment_match(segment, groups, assigned_groups)
+        if match is None:
+            continue
+        assigned_groups.add(match["key"])
+        for slot, pokemon in enumerate(segment, start=1):
+            rows.append(
+                _roster_row(
+                    season_id=season_id,
+                    division=division,
+                    roster_phase=roster_phase,
+                    team=match["team"],
+                    pokemon=pokemon,
+                    slot=str(slot),
+                    source_table=source_table,
+                    source_file=combined_source_file,
+                    source_urls=combined_source_urls,
+                    notes=combined_notes,
+                )
+            )
+    return rows
+
+
+def _s10_playoff_tierlist_segments(
+    csv_rows: list[list[str]],
+    segment_size: int = 11,
+    expected_segments: int | None = None,
+) -> list[list[str]]:
+    width = max((len(row) for row in csv_rows), default=0)
+    candidate_columns: list[tuple[int, list[str]]] = []
+    for column in range(width):
+        values = [_pokemon_cell(row[column]) for row in csv_rows if column < len(row)]
+        pokemon = [value for value in values if value is not None]
+        if expected_segments is not None and len(pokemon) != segment_size * expected_segments:
+            continue
+        if len(pokemon) >= segment_size * 2 and len(pokemon) % segment_size == 0:
+            candidate_columns.append((column, pokemon))
+    if not candidate_columns:
+        return []
+
+    # The S10 sheet stores the playoff picks as 7 compact 11-mon blocks in the
+    # rightmost populated candidate column; tier columns have non-multiple counts.
+    _, roster_values = max(candidate_columns, key=lambda item: (len(item[1]), item[0]))
+    return [roster_values[index : index + segment_size] for index in range(0, len(roster_values), segment_size)]
+
+
+def _s10_playoff_kader_groups(
+    union_rows: list[dict[str, Any]],
+    used_rows: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    grouped: dict[tuple[str, str], dict[str, Any]] = {}
+    for row in union_rows:
+        key = (row.get("person_name_normalized", ""), row.get("team_name_normalized", ""))
+        if not key[0] or not key[1]:
+            continue
+        group = grouped.setdefault(
+            key,
+            {
+                "key": key,
+                "team": row,
+                "union": set(),
+                "used": set(),
+            },
+        )
+        group["union"].add(_canonical_name(row.get("pokemon")))
+
+    for row in used_rows:
+        key = (row.get("person_name_normalized", ""), row.get("team_name_normalized", ""))
+        if key in grouped:
+            grouped[key]["used"].add(_canonical_name(row.get("pokemon")))
+
+    return [group for group in grouped.values() if group["union"]]
+
+
+def _best_s10_playoff_segment_match(
+    segment: list[str],
+    groups: list[dict[str, Any]],
+    assigned_groups: set[tuple[str, str]],
+) -> dict[str, Any] | None:
+    segment_keys = {_canonical_name(pokemon) for pokemon in segment}
+    scored: list[tuple[tuple[int, int, int, int], dict[str, Any]]] = []
+    for group in groups:
+        if group["key"] in assigned_groups:
+            continue
+        union = group["union"]
+        used = group["used"]
+        subset_score = 1 if segment_keys.issubset(union) else 0
+        union_overlap = len(segment_keys & union)
+        used_overlap = len(segment_keys & used)
+        score = (subset_score, used_overlap, union_overlap, -abs(len(union) - len(segment_keys)))
+        scored.append((score, group))
+    if not scored:
+        return None
+
+    score, group = max(scored, key=lambda item: item[0])
+    if score[0] == 0 and score[2] < max(6, len(segment_keys) // 2):
+        return None
+    return group
+
+
+def _s10_playoff_kader_source(data_dir: Path, index: list[dict[str, Any]]) -> tuple[list[list[str]] | None, str, str]:
+    for entry in index:
+        if _title_key(entry.get("title")) != "playoffskader":
+            continue
+        raw_path = _resolve_raw_path(data_dir, entry.get("raw_path", ""))
+        if not raw_path.exists():
+            continue
+        return _read_raw_csv(raw_path), entry.get("raw_path") or str(raw_path), _entry_source_url(entry)
+    return None, "", ""
 
 
 def _extract_block_kader_rows(

@@ -64,25 +64,25 @@ export const TEAM_ROSTER_COLUMNS = [
 
 export const TEAM_ROSTER_POKEMON_COLUMNS = [
   "rank",
+  "pokemon",
+  "pokemon_score",
+  "performance_score",
+  "history_score",
+  "confidence_score",
+  "appearances",
+  "kills",
+  "deaths",
+  "differential",
+  "title_count",
+  "draft_count",
+  "tier",
+  "tier_rank",
   "season",
   "division",
   "roster_phase",
   "person",
   "team",
   "slot",
-  "pokemon",
-  "pokemon_score",
-  "performance_score",
-  "history_score",
-  "confidence_score",
-  "tier",
-  "tier_rank",
-  "draft_count",
-  "title_count",
-  "appearances",
-  "kills",
-  "deaths",
-  "differential",
   "source",
 ];
 
@@ -152,6 +152,12 @@ const COMPACT_COLUMNS = new Set([
   "roster_score",
   "pokemon_score",
   "pokemon_count",
+  "roster_gaps",
+  "missing_slots",
+  "matches_without_videos",
+  "video_count",
+  "video_coverage",
+  "missing_perspectives",
   "roster_flags",
 ]);
 
@@ -192,6 +198,17 @@ const PERFORMANCE_COLUMNS = new Set([
   "killlists",
   "videos",
   "matched_videos",
+  "roster_gaps",
+  "incomplete_rosters",
+  "missing_slots",
+  "estimated_deaths",
+  "snapshot_rosters",
+  "matches_without_videos",
+  "video_count",
+  "both_perspectives",
+  "single_perspective",
+  "video_coverage",
+  "missing_perspectives",
 ]);
 
 const HISTORY_COLUMNS = new Set([
@@ -255,6 +272,9 @@ const SOURCE_COLUMNS = new Set([
   "confidence_explanation",
   "match_id",
   "videos",
+  "video_count",
+  "video_coverage",
+  "missing_perspectives",
   "source",
   "roster_flags",
   "notes",
@@ -273,6 +293,8 @@ const SOURCE_COLUMNS = new Set([
   "unavailable_killlists",
   "unmatched_game_videos",
   "low_confidence_videos",
+  "roster_gaps",
+  "matches_without_videos",
 ]);
 
 const PROFILE_COLUMNS = {

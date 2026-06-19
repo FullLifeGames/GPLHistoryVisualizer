@@ -14,6 +14,7 @@ from .pokemon_drafts import build_and_write_pokemon_draft_overview
 from .pokemon_names import fetch_and_write_pokemon_names
 from .report import generate_report
 from .review import generate_review_queue
+from .roster_matchdays import build_and_write_roster_matchdays
 from .sheets import fetch_public_sheet_tables, resolve_redirect
 from .sheets_api import SheetsApiClient, SheetsApiError
 from .storage import ensure_dir, read_json, safe_slug, write_json
@@ -87,6 +88,9 @@ def main(argv: list[str] | None = None) -> int:
     team_rosters = subparsers.add_parser("team-rosters", help="Build normalized roster rows from GPL Kader sheets.")
     team_rosters.add_argument("--data-dir", default="data")
 
+    roster_matchdays = subparsers.add_parser("roster-matchdays", help="Build per-matchday roster usage rows from GPL Kader sheets.")
+    roster_matchdays.add_argument("--data-dir", default="data")
+
     team_graphics = subparsers.add_parser("team-graphic-slots", help="Build review slots from local S3-S5 team graphics.")
     team_graphics.add_argument("--data-dir", default="data")
     team_graphics.add_argument("--graphics-dir", default="output/team-graphics")
@@ -98,6 +102,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "normalize":
         normalize_all(Path(args.data_dir))
         build_and_write_team_rosters(Path(args.data_dir))
+        build_and_write_roster_matchdays(Path(args.data_dir))
         build_and_write_pokemon_draft_overview(Path(args.data_dir))
         generate_data_quality(Path(args.data_dir))
         build_and_write_aggregates(Path(args.data_dir))
@@ -164,12 +169,17 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "pokemon-draft-overview":
         build_and_write_team_rosters(Path(args.data_dir))
+        build_and_write_roster_matchdays(Path(args.data_dir))
         rows = build_and_write_pokemon_draft_overview(Path(args.data_dir), refresh=args.refresh)
         print(f"pokemon_draft_overview: {len(rows)}")
         return 0
     if args.command == "team-rosters":
         rows = build_and_write_team_rosters(Path(args.data_dir))
         print(f"team_rosters: {len(rows)}")
+        return 0
+    if args.command == "roster-matchdays":
+        rows = build_and_write_roster_matchdays(Path(args.data_dir))
+        print(f"roster_matchdays: {len(rows)}")
         return 0
     if args.command == "team-graphic-slots":
         rows = build_and_write_team_graphic_slots(Path(args.data_dir), Path(args.graphics_dir))
@@ -271,6 +281,7 @@ def collect_command(args: argparse.Namespace) -> int:
 
     normalize_all(data_dir)
     build_and_write_team_rosters(data_dir)
+    build_and_write_roster_matchdays(data_dir)
     build_and_write_pokemon_draft_overview(data_dir)
     generate_data_quality(data_dir)
     build_and_write_aggregates(data_dir)

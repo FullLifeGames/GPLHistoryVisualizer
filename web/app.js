@@ -80,6 +80,7 @@ const LAZY_DATASETS = {
   pokemonDraftInstances: { url: "../data/normalized/pokemon_draft_instances.csv", optional: true },
   teamPokemonUsage: { url: "../data/manual/team_pokemon_usage.csv", optional: true },
   teamRosters: { url: "../data/normalized/team_rosters.csv", optional: true },
+  rosterMatchdays: { url: "../data/normalized/roster_matchdays.csv", optional: true },
   dataQuality: { url: "../data/normalized/data_quality.csv", optional: true },
   sourceClaims: { url: "../data/normalized/source_claims.csv", optional: true },
   reviewIndex: { url: "../data/review/review_index.csv", optional: true },
@@ -106,10 +107,15 @@ const VIEW_DATASETS = {
   "match-plan": ["matchVideos"],
   "battle-history": ["matchVideos"],
   "team-rosters": ["pokemonDraftOverview", "teamPokemonUsage", "teamRosters", "rosterScores"],
-  "roster-detail": ["pokemonDraftOverview", "teamPokemonUsage", "teamRosters", "rosterScores"],
+  "roster-detail": ["pokemonDraftOverview", "teamPokemonUsage", "teamRosters", "rosterScores", "rosterMatchdays"],
   "video-archive": ["videos"],
   "person-details": ["personAllTime", "videos", "pokemonDraftOverview", "pokemonDraftInstances", "teamPokemonUsage", "teamRosters", "rosterScores"],
   "data-coverage": ["dataQuality", "reviewIndex"],
+  "data-gaps": ["dataQuality", "reviewIndex", "missingKilllists", "missingKilllistAppearances", "lowConfidenceVideos", "ambiguousMatches", "teamPokemonUsage", "teamRosters", "pokemonDraftOverview", "rosterScores", "matchVideos", "videos"],
+  "roster-gaps": ["teamPokemonUsage", "teamRosters", "pokemonDraftOverview", "rosterScores"],
+  "appearance-gaps": ["missingKilllists", "missingKilllistAppearances"],
+  "video-review": ["videos", "lowConfidenceVideos", "ambiguousMatches"],
+  "match-video-coverage": ["matchVideos", "videos"],
   "review-workflow": ["reviewIndex", "missingKilllists", "missingKilllistAppearances", "lowConfidenceVideos", "ambiguousMatches"],
   "source-claims": ["sourceClaims"],
   "season-detail": ["videos", "sourceClaims", "seasonStorylines"],
@@ -141,6 +147,7 @@ const DATASET_LABELS = {
   pokemonDraftOverview: "Pokémon-Drafts",
   teamPokemonUsage: "Team-Pokémon-Zuordnungen",
   pokemonDraftInstances: "Pokémon-Draft-Instanzen",
+  rosterMatchdays: "Kader-Spieltagdaten",
   dataQuality: "Datenlage",
   sourceClaims: "Quellenclaims",
   reviewIndex: "Review-Index",
@@ -879,6 +886,11 @@ function render() {
   renderPersonDetails();
   renderPokemonDetail();
   renderDataCoverage();
+  renderDataGaps();
+  renderRosterGaps();
+  renderAppearanceGaps();
+  renderVideoReview();
+  renderMatchVideoCoverage();
   renderReviewWorkflow();
   renderSourceClaims();
   renderSeasonDetail();
@@ -1592,6 +1604,8 @@ function renderRosterDetail() {
   const focusTarget = document.querySelector("#roster-detail-focus");
   const summaryTarget = document.querySelector("#roster-detail-summary");
   const visualTarget = document.querySelector("#roster-detail-visual");
+  const matchdaySection = document.querySelector("#roster-detail-matchday-section");
+  const matchdayTarget = document.querySelector("#roster-detail-matchday-matrix");
   const tableSelector = "#roster-detail-pokemon-table";
   if (!focusTarget || !summaryTarget || !visualTarget) return;
   destroyTable(tableSelector);
@@ -1600,6 +1614,8 @@ function renderRosterDetail() {
     focusTarget.innerHTML = "";
     summaryTarget.innerHTML = "";
     visualTarget.innerHTML = `<p class="empty">${escapeHtml(t(state.language, "empty.table"))}</p>`;
+    if (matchdaySection) matchdaySection.hidden = true;
+    if (matchdayTarget) matchdayTarget.innerHTML = "";
     document.querySelector(tableSelector).innerHTML = "";
     return;
   }
@@ -1609,12 +1625,15 @@ function renderRosterDetail() {
     focusTarget.innerHTML = "";
     summaryTarget.innerHTML = "";
     visualTarget.innerHTML = `<p class="empty">${escapeHtml(t(state.language, "rosters.detailNotFound"))}</p>`;
+    if (matchdaySection) matchdaySection.hidden = true;
+    if (matchdayTarget) matchdayTarget.innerHTML = "";
     document.querySelector(tableSelector).innerHTML = "";
     return;
   }
 
   const { overview, pokemonRows } = detail;
   const sortedPokemon = rosterPokemonDisplayRows(pokemonRows);
+  const matchdayRows = rosterMatchdayRowsForDetail(overview, sortedPokemon);
   focusTarget.innerHTML = rosterDetailHero(overview);
   visualTarget.innerHTML = rosterTeamSheet(overview, sortedPokemon);
   summaryTarget.innerHTML = [
@@ -1628,6 +1647,10 @@ function renderRosterDetail() {
     metricCard(t(state.language, "columns.deaths"), displayNumber(overview.deaths)),
     metricCard(t(state.language, "columns.differential"), displayNumber(overview.differential)),
   ].join("");
+  if (matchdaySection && matchdayTarget) {
+    matchdaySection.hidden = !matchdayRows.length;
+    matchdayTarget.innerHTML = matchdayRows.length ? rosterMatchdayMatrix(overview, sortedPokemon, matchdayRows) : "";
+  }
   renderTable(
     tableSelector,
     sortedPokemon.map((row, index) => rosterPokemonTableRow(row, index + 1)),
@@ -1635,6 +1658,204 @@ function renderRosterDetail() {
     ["season", "person", "team", "pokemon", "pokemon_score", "source"],
     { filename: `roster-${seasonSlug(overview.season_id)}-${normalizedKey(overview.team || overview.person || "detail")}.csv` },
   );
+}
+
+function rosterMatchdayRowsForDetail(overview, pokemonRows) {
+  const pokemonKeys = new Set(pokemonRows.map((row) => normalizedKey(row.pokemon_key || row.pokemon_normalized || row.pokemon)).filter(Boolean));
+  const slotKeys = new Map(
+    pokemonRows
+      .map((row) => [String(row.slot || "").trim(), normalizedKey(row.pokemon_key || row.pokemon_normalized || row.pokemon)])
+      .filter(([slot, key]) => slot && key),
+  );
+  const overviewTeamKey = normalizedKey(overview.team || overview.team_name);
+  const overviewPersonKey = normalizedKey(overview.person || overview.person_name);
+  return (state.data.rosterMatchdays ?? [])
+    .filter((row) => row.season_id === overview.season_id)
+    .filter((row) => normalizedKey(row.division) === normalizedKey(overview.division))
+    .filter((row) => normalizedKey(row.roster_phase) === normalizedKey(overview.roster_phase))
+    .filter((row) => {
+      const rowTeamKey = normalizedKey(row.team_name || row.team);
+      const rowPersonKey = normalizedKey(row.person_name || row.person);
+      const teamMatches = overviewTeamKey ? rowTeamKey === overviewTeamKey : true;
+      const personMatches = overviewPersonKey ? rowPersonKey === overviewPersonKey || teamMatches : true;
+      return teamMatches && personMatches;
+    })
+    .map((row) => {
+      const pokemonKey = normalizedKey(row.pokemon_normalized || row.pokemon);
+      const slotKey = String(row.slot || "").trim();
+      const displayKey = pokemonKeys.has(pokemonKey) ? pokemonKey : slotKeys.get(slotKey) || pokemonKey;
+      return { ...row, _display_pokemon_key: displayKey };
+    })
+    .filter((row) => row._display_pokemon_key)
+    .sort(
+      (a, b) =>
+        _intCompare(a.slot, b.slot) ||
+        numberValue(a.week_sort) - numberValue(b.week_sort) ||
+        String(a.pokemon).localeCompare(String(b.pokemon)),
+    );
+}
+
+function rosterMatchdayMatrix(overview, pokemonRows, rows) {
+  const weeks = uniqueSortedMatchdayWeeks(rows);
+  const displayRows = rosterMatchdayDisplayPokemonRows(pokemonRows, rows);
+  const usage = rosterMatchdayUsageMap(rows);
+  const appearances = rows.length;
+  const kills = rows.reduce((sum, row) => sum + numberValue(row.kills), 0);
+  const sources = uniqueSourceUrls(rows);
+  return `
+    <div class="roster-matchday-toolbar">
+      <span><strong>${escapeHtml(String(appearances))}</strong> ${escapeHtml(t(state.language, "columns.appearances"))}</span>
+      <span><strong>${escapeHtml(displayNumber(kills))}</strong> ${escapeHtml(t(state.language, "columns.kills"))}</span>
+      <span><strong>${escapeHtml(String(weeks.length))}</strong> ${escapeHtml(t(state.language, "rosters.matchdayWeeks"))}</span>
+      ${sources ? `<span class="roster-matchday-source">${sourceLinks(sources)}</span>` : ""}
+    </div>
+    <div class="roster-matchday-scroll" aria-label="${escapeAttr(t(state.language, "rosters.matchdayMatrixTitle"))}">
+      <table class="roster-matchday-table">
+        <thead>
+          <tr>
+            <th class="roster-matchday-pokemon">${escapeHtml(t(state.language, "columns.pokemon"))}</th>
+            ${weeks.map((week) => `<th>${escapeHtml(week.label)}</th>`).join("")}
+            <th>${escapeHtml(t(state.language, "columns.appearances"))}</th>
+            <th>${escapeHtml(t(state.language, "columns.kills"))}</th>
+          </tr>
+          <tr>
+            <th class="roster-matchday-pokemon">${escapeHtml(t(state.language, "columns.record"))}</th>
+            ${weeks.map((week) => rosterMatchdayResultHeader(rows, week.week)).join("")}
+            <th></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${displayRows
+            .map((pokemon) => {
+              const key = pokemon._display_pokemon_key || normalizedKey(pokemon.pokemon_key || pokemon.pokemon_normalized || pokemon.pokemon);
+              const cells = weeks.map((week) => rosterMatchdayKillCell(usage.get(`${key}\u0000${week.week}`))).join("");
+              const pokemonRows = rows.filter((row) => row._display_pokemon_key === key);
+              const pokemonKills = pokemonRows.reduce((sum, row) => sum + numberValue(row.kills), 0);
+              return `
+                <tr>
+                  <th class="roster-matchday-pokemon" scope="row">${pokemonCell(pokemon.pokemon, key)}</th>
+                  ${cells}
+                  <td class="roster-matchday-total">${escapeHtml(String(pokemonRows.length))}</td>
+                  <td class="roster-matchday-total">${escapeHtml(displayNumber(pokemonKills))}</td>
+                </tr>
+              `;
+            })
+            .join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function rosterMatchdayDisplayPokemonRows(pokemonRows, matchdayRows) {
+  const rows = pokemonRows.map((row) => ({
+    ...row,
+    _display_pokemon_key: normalizedKey(row.pokemon_key || row.pokemon_normalized || row.pokemon),
+  }));
+  const known = new Set(rows.map((row) => row._display_pokemon_key));
+  for (const row of matchdayRows) {
+    if (known.has(row._display_pokemon_key)) continue;
+    known.add(row._display_pokemon_key);
+    rows.push({
+      pokemon: row.pokemon,
+      pokemon_key: row._display_pokemon_key,
+      pokemon_normalized: row._display_pokemon_key,
+      slot: row.slot,
+      pokemon_score: "",
+      _display_pokemon_key: row._display_pokemon_key,
+    });
+  }
+  return rows.sort(compareRosterPokemonBySlot);
+}
+
+function uniqueSortedMatchdayWeeks(rows) {
+  const map = new Map();
+  for (const row of rows) {
+    const week = row.week || row.week_label;
+    if (!week || map.has(week)) continue;
+    map.set(week, {
+      week,
+      label: row.week_label || week,
+      sort: numberValue(row.week_sort) || 999,
+    });
+  }
+  return [...map.values()].sort((a, b) => a.sort - b.sort || String(a.label).localeCompare(String(b.label)));
+}
+
+function rosterMatchdayUsageMap(rows) {
+  const map = new Map();
+  for (const row of rows) {
+    const key = `${row._display_pokemon_key}\u0000${row.week}`;
+    const previous = map.get(key);
+    if (!previous) {
+      map.set(key, { ...row });
+      continue;
+    }
+    previous.kills = displayNumber(numberValue(previous.kills) + numberValue(row.kills));
+    previous.source_urls = uniqueSourceUrls([previous, row]);
+  }
+  return map;
+}
+
+function rosterMatchdayResultHeader(rows, week) {
+  const row = rows.find((item) => item.week === week && item.result);
+  if (!row) return `<th class="roster-week-result"></th>`;
+  const label = rosterResultLabel(row.result);
+  const title = rosterResultTitle(row.result);
+  return `<th class="roster-week-result is-${escapeAttr(row.result)}" title="${escapeAttr(title)}">${escapeHtml(label)}</th>`;
+}
+
+function rosterMatchdayKillCell(row) {
+  if (!row) return `<td class="roster-matchday-cell"></td>`;
+  const value = String(row.kills ?? "").trim();
+  const isZero = value === "0";
+  const title = row.source_urls ? sourceTitle(row.source_urls) : "";
+  return `<td class="roster-matchday-cell is-used${isZero ? " is-zero" : ""}" title="${escapeAttr(title)}">${escapeHtml(value || "0")}</td>`;
+}
+
+function rosterResultLabel(result) {
+  const labels = {
+    de: { win: "S", loss: "N", draw: "U", not_played: "-" },
+    en: { win: "W", loss: "L", draw: "D", not_played: "-" },
+  };
+  return labels[state.language]?.[result] || labels.de[result] || "";
+}
+
+function rosterResultTitle(result) {
+  const key = {
+    win: "rosters.resultWin",
+    loss: "rosters.resultLoss",
+    draw: "rosters.resultDraw",
+    not_played: "rosters.resultNotPlayed",
+  }[result];
+  return key ? t(state.language, key) : "";
+}
+
+function uniqueSourceUrls(rows) {
+  const urls = new Set();
+  for (const row of rows) {
+    String(row.source_urls || "")
+      .split(";")
+      .map((item) => item.trim())
+      .filter((item) => item.startsWith("http"))
+      .forEach((url) => urls.add(url));
+  }
+  return [...urls].join(";");
+}
+
+function sourceTitle(value) {
+  return String(value || "")
+    .split(";")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .join("\n");
+}
+
+function _intCompare(a, b) {
+  const left = String(a ?? "").trim() ? numberValue(a) : Number.POSITIVE_INFINITY;
+  const right = String(b ?? "").trim() ? numberValue(b) : Number.POSITIVE_INFINITY;
+  return left - right;
 }
 
 function rosterDetailForKey(key) {
@@ -2407,6 +2628,406 @@ function renderDataCoverage() {
   renderTable("#review-index-table", reviewRows, ["review_file", "row_count", "severity", "review_reason", "correction_file", "suggested_action", "description"]);
 }
 
+function renderDataGaps() {
+  const summaryTarget = document.querySelector("#data-gap-summary");
+  if (!summaryTarget) return;
+
+  const rosterRows = rosterGapRows();
+  const appearanceRows = appearanceGapRows();
+  const missingKilllistGapRows = missingKilllistRows();
+  const unmatchedVideos = videoReviewRows("unmatched");
+  const lowConfidenceVideos = videoReviewRows("low_confidence");
+  const matchCoverageRows = matchVideoCoverageRows();
+  const matchesWithoutVideos = matchCoverageRows.filter((row) => row.video_count === 0);
+
+  summaryTarget.innerHTML = [
+    metricCard(t(state.language, "columns.roster_gaps"), rosterRows.length),
+    metricCard(t(state.language, "columns.missing_appearances"), appearanceRows.length),
+    metricCard(t(state.language, "columns.unavailable_killlists"), missingKilllistGapRows.length),
+    metricCard(t(state.language, "columns.unmatched_game_videos"), unmatchedVideos.length),
+    metricCard(t(state.language, "columns.low_confidence_videos"), lowConfidenceVideos.length),
+    metricCard(t(state.language, "columns.matches_without_videos"), matchesWithoutVideos.length),
+  ].join("");
+
+  const seasonRows = qualityRowsFromData(state.data)
+    .filter((row) => state.season === "all" || row.season_id === state.season)
+    .filter((row) => !state.search || Object.values(row).join(" ").toLowerCase().includes(state.search))
+    .map((row) => ({
+      season: seasonLink(row.season_id),
+      status: coverageStatusDisplay(row.coverage_status),
+      quality_score: row.quality_score ?? "",
+      priority_gaps: priorityGapsDisplay(row.priority_gaps || row.review_flags || row.missing_categories),
+      missing_appearances: row.killlist_rows_missing_appearances ?? "",
+      unavailable_killlists: row.unavailable_killlist_rows ?? "",
+      unmatched_game_videos: row.unmatched_game_video_rows ?? "",
+      low_confidence_videos: row.low_confidence_video_rows ?? "",
+      matches_without_videos: matchesWithoutVideos.filter((match) => match.season_id === row.season_id).length,
+      roster_gaps: rosterRows.filter((roster) => roster.season_id === row.season_id).length,
+      source: sourceLinks(row.source_urls),
+    }));
+  renderTable(
+    "#data-gap-season-table",
+    seasonRows,
+    ["season", "status", "quality_score", "priority_gaps", "roster_gaps", "missing_appearances", "unavailable_killlists", "unmatched_game_videos", "low_confidence_videos", "matches_without_videos", "source"],
+    ["season", "source"],
+    { filename: "gpl-data-gaps-by-season.csv" },
+  );
+
+  const queueRows = (state.data.reviewIndex ?? [])
+    .filter((row) => !state.search || Object.values(row).join(" ").toLowerCase().includes(state.search))
+    .map((row) => ({
+      review_file: row.review_file,
+      row_count: row.row_count,
+      severity: severityDisplay(row.severity),
+      review_reason: reviewReasonDisplay(row.review_reason),
+      correction_file: row.correction_file,
+      suggested_action: row.suggested_action,
+      description: row.description,
+    }));
+  renderTable(
+    "#data-gap-queue-table",
+    queueRows,
+    ["review_file", "row_count", "severity", "review_reason", "correction_file", "suggested_action", "description"],
+    false,
+    { filename: "gpl-review-queues.csv" },
+  );
+}
+
+function renderRosterGaps() {
+  const summaryTarget = document.querySelector("#roster-gap-summary");
+  if (!summaryTarget) return;
+
+  const rows = rosterGapRows();
+  summaryTarget.innerHTML = [
+    metricCard(t(state.language, "columns.roster_gaps"), rows.length),
+    metricCard(t(state.language, "columns.incomplete_rosters"), rows.filter((row) => numberValue(row.missing_slots) > 0).length),
+    metricCard(t(state.language, "columns.snapshot_rosters"), rows.filter((row) => String(row.roster_flags || "").toLowerCase().includes("snapshot")).length),
+    metricCard(t(state.language, "columns.review_flags"), rows.filter((row) => String(row.roster_flags || "").trim()).length),
+  ].join("");
+
+  renderTable(
+    "#roster-gap-table",
+    rows.map((row) => ({
+      ...row,
+      season: seasonLink(row.season_id),
+      division: divisionDisplay(row.division),
+      roster_phase: rosterPhaseDisplay(row.roster_phase),
+      person: row.person ? personLink(personIdForName(row.person), row.person) : "",
+      team: rosterDetailLink(row.roster_group_key, row.team || t(state.language, "rosters.openDetail")),
+      source: sourceCell(row.source_urls),
+    })),
+    ["season", "division", "roster_phase", "person", "team", "pokemon_count", "missing_slots", "appearances", "kills", "deaths", "differential", "confidence_score", "roster_flags", "source"],
+    ["season", "person", "team", "source"],
+    { filename: "gpl-roster-gaps.csv" },
+  );
+}
+
+function renderAppearanceGaps() {
+  if (!document.querySelector("#appearance-gap-table")) return;
+
+  renderTable(
+    "#appearance-gap-table",
+    appearanceGapRows().map((row) => ({
+      season: seasonLink(row.season_id),
+      division: divisionDisplay(row.division, row.stage),
+      stage: stageDisplay(row.stage),
+      pokemon: pokemonCell(row.pokemon, normalizedKey(row.pokemon)),
+      trainer: row.trainer ? personLink(personIdForName(row.trainer), row.trainer) : "",
+      team: rosterLinkForContext(row, row.team_name),
+      kills: row.kills,
+      review_reason: reviewReasonDisplay(row.review_reason),
+      source: sourceLinks(row.source_urls),
+    })),
+    ["season", "division", "stage", "pokemon", "trainer", "team", "kills", "review_reason", "source"],
+    ["season", "pokemon", "trainer", "team", "source"],
+    { filename: "gpl-missing-killlist-appearances.csv" },
+  );
+
+  renderTable(
+    "#missing-killlist-table",
+    missingKilllistRows().map((row) => ({
+      season: seasonLink(row.season_id),
+      division: divisionDisplay(row.division),
+      trainer: row.trainer ? personLink(personIdForName(row.trainer), row.trainer) : "",
+      team: rosterLinkForContext(row, row.team_name),
+      review_reason: reviewReasonDisplay(row.review_reason),
+      source: sourceLinks(row.source_urls),
+    })),
+    ["season", "division", "trainer", "team", "review_reason", "source"],
+    ["season", "trainer", "team", "source"],
+    { filename: "gpl-missing-killlists.csv" },
+  );
+}
+
+function renderVideoReview() {
+  if (!document.querySelector("#unmatched-video-table")) return;
+
+  renderTable(
+    "#unmatched-video-table",
+    videoReviewRows("unmatched").map(videoReviewTableRow),
+    ["season", "video_type", "detected_week", "title", "channel", "match_status", "confidence", "confidence_tier", "match_basis", "confidence_explanation", "match_id", "source"],
+    ["season", "title", "source"],
+    {
+      filename: "gpl-unmatched-game-videos.csv",
+      extraActions: [{ label: t(state.language, "actions.videoUrls"), onClick: () => downloadVideoReviewUrls("unmatched") }],
+    },
+  );
+
+  renderTable(
+    "#low-confidence-video-table",
+    videoReviewRows("low_confidence").map(videoReviewTableRow),
+    ["season", "video_type", "detected_week", "title", "channel", "match_status", "confidence", "confidence_tier", "match_basis", "confidence_explanation", "match_id", "source"],
+    ["season", "title", "source"],
+    {
+      filename: "gpl-low-confidence-videos.csv",
+      extraActions: [{ label: t(state.language, "actions.videoUrls"), onClick: () => downloadVideoReviewUrls("low_confidence") }],
+    },
+  );
+}
+
+function renderMatchVideoCoverage() {
+  const summaryTarget = document.querySelector("#match-video-summary");
+  if (!summaryTarget) return;
+
+  const rows = matchVideoCoverageRows();
+  summaryTarget.innerHTML = [
+    metricCard(t(state.language, "columns.matches"), rows.length),
+    metricCard(t(state.language, "columns.both_perspectives"), rows.filter((row) => row.video_count >= 2).length),
+    metricCard(t(state.language, "columns.single_perspective"), rows.filter((row) => row.video_count === 1).length),
+    metricCard(t(state.language, "columns.matches_without_videos"), rows.filter((row) => row.video_count === 0).length),
+  ].join("");
+
+  renderTable(
+    "#match-video-coverage-table",
+    rows.map((row) => ({
+      ...row,
+      season: seasonLink(row.season_id),
+      division: divisionDisplay(row.division, row.stage),
+      stage: stageDisplay(row.stage),
+      player_a: rosterParticipantLink(row, "a"),
+      player_b: rosterParticipantLink(row, "b"),
+      videos: videoLinksForMatch(row.match_id),
+      source: sourceLinks(row.source_urls),
+    })),
+    ["season", "division", "stage", "week", "player_a", "player_b", "score", "winner", "video_count", "video_coverage", "missing_perspectives", "videos", "source"],
+    ["season", "player_a", "player_b", "videos", "source"],
+    { filename: "gpl-match-video-coverage.csv" },
+  );
+}
+
+function rosterGapRows() {
+  return rosterDisplayGroups()
+    .overviewRows.filter((row) => rosterNeedsReview(row))
+    .map((row) => ({
+      ...row,
+      missing_slots: Math.max(0, 11 - numberValue(row.pokemon_count)),
+    }))
+    .sort(
+      (a, b) =>
+        seasonOrder(a.season_id) - seasonOrder(b.season_id) ||
+        numberValue(b.missing_slots) - numberValue(a.missing_slots) ||
+        numberValue(a.confidence_score) - numberValue(b.confidence_score) ||
+        String(a.person || a.team).localeCompare(String(b.person || b.team)),
+    );
+}
+
+function rosterNeedsReview(row) {
+  if (numberValue(row.pokemon_count) < 11) return true;
+  const flags = normalizedKey(row.roster_flags);
+  return [
+    "unter 11",
+    "snapshot",
+    "teamgrafik",
+    "unvollstandig",
+    "unvollstaendig",
+    "nicht strukturiert",
+  ].some((needle) => flags.includes(normalizedKey(needle)));
+}
+
+function appearanceGapRows() {
+  return scopedReviewRows(state.data.missingKilllistAppearances ?? [])
+    .sort(
+      (a, b) =>
+        seasonOrder(a.season_id) - seasonOrder(b.season_id) ||
+        divisionPriority(a.division) - divisionPriority(b.division) ||
+        numberValue(b.kills) - numberValue(a.kills) ||
+        String(a.pokemon || "").localeCompare(String(b.pokemon || "")),
+    );
+}
+
+function missingKilllistRows() {
+  return scopedReviewRows(state.data.missingKilllists ?? [])
+    .sort(
+      (a, b) =>
+        seasonOrder(a.season_id) - seasonOrder(b.season_id) ||
+        divisionPriority(a.division) - divisionPriority(b.division) ||
+        String(a.trainer || "").localeCompare(String(b.trainer || "")),
+    );
+}
+
+function scopedReviewRows(rows = []) {
+  return rows.filter((row) => {
+    const seasonId = reviewSeasonId(row);
+    const dataModeOk = applyDataMode(row);
+    const seasonOk = state.season === "all" || seasonId === state.season;
+    const divisionOk = divisionMatches(row, state.division);
+    const searchOk = !state.search || Object.values(row).join(" ").toLowerCase().includes(state.search);
+    return dataModeOk && seasonOk && divisionOk && searchOk;
+  });
+}
+
+function reviewSeasonId(row) {
+  return row.season_id || row.detected_season_id || "";
+}
+
+function videoReviewRows(kind) {
+  const rows = [];
+  if (kind === "unmatched") {
+    rows.push(...(state.data.ambiguousMatches ?? []));
+    rows.push(
+      ...(state.data.videos ?? []).filter((row) => row.video_type === "game" && row.match_status === "unmatched"),
+    );
+  } else {
+    rows.push(...(state.data.lowConfidenceVideos ?? []));
+    rows.push(
+      ...(state.data.videos ?? []).filter((row) => row.match_status === "matched" && ["low", "medium"].includes(row.confidence_tier)),
+    );
+  }
+  return dedupeVideoReviewRows(rows)
+    .filter((row) => {
+      const seasonId = reviewSeasonId(row);
+      const dataModeOk = applyDataMode(row);
+      const seasonOk = state.season === "all" || seasonId === state.season;
+      const divisionOk = divisionMatches(row, state.division);
+      const searchOk = !state.search || Object.values(row).join(" ").toLowerCase().includes(state.search);
+      return dataModeOk && seasonOk && divisionOk && searchOk;
+    })
+    .sort(compareVideoRows);
+}
+
+function dedupeVideoReviewRows(rows = []) {
+  const byVideo = new Map();
+  rows.forEach((row) => {
+    const key = row.video_id || row.video_url || row.title;
+    if (!key) return;
+    const current = byVideo.get(key);
+    if (!current) {
+      byVideo.set(key, { ...row });
+      return;
+    }
+    byVideo.set(key, preferRicherVideoRow(current, row));
+  });
+  return [...byVideo.values()];
+}
+
+function preferRicherVideoRow(left, right) {
+  const score = (row) =>
+    ["channel_title", "best_match_id", "match_id", "confidence", "confidence_tier", "confidence_explanation", "source_urls"]
+      .filter((field) => row[field])
+      .length;
+  return mergeVideoReviewRows(score(right) > score(left) ? left : right, score(right) > score(left) ? right : left);
+}
+
+function mergeVideoReviewRows(base, overlay) {
+  const merged = { ...base };
+  Object.entries(overlay).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      merged[key] = value;
+    }
+  });
+  return merged;
+}
+
+function videoReviewTableRow(row) {
+  const url = row.video_url || sourceFirstUrl(row.source_urls);
+  const title = row.title || row.video_title || row.video_id || t(state.language, "values.video");
+  return {
+    season: seasonLink(reviewSeasonId(row)),
+    video_type: videoTypeDisplay(row.video_type),
+    detected_week: row.detected_week,
+    title: url
+      ? `<a href="${escapeAttr(url)}" target="_blank" rel="noreferrer">${escapeHtml(title)}</a>`
+      : escapeHtml(title),
+    channel: row.channel_title || "",
+    match_status: matchStatusDisplay(row.match_status),
+    confidence: row.confidence,
+    confidence_tier: confidenceTierDisplay(row.confidence_tier),
+    match_basis: row.match_basis,
+    confidence_explanation: row.confidence_explanation,
+    match_id: row.best_match_id || row.match_id || "",
+    source: sourceLinks(row.source_urls || row.video_url),
+  };
+}
+
+function sourceFirstUrl(value) {
+  return String(value ?? "")
+    .split(";")
+    .map((item) => item.trim())
+    .find((item) => item.startsWith("http")) || "";
+}
+
+function downloadVideoReviewUrls(kind) {
+  const urls = videoReviewRows(kind)
+    .map((row) => row.video_url || sourceFirstUrl(row.source_urls))
+    .filter(Boolean);
+  downloadText(`gpl-${kind.replaceAll("_", "-")}-video-urls.txt`, `${[...new Set(urls)].join("\n")}\n`, "text/plain;charset=utf-8");
+}
+
+function matchVideoCoverageRows() {
+  const videosByMatch = groupRows(state.data.matchVideos ?? [], (row) => row.match_id || "");
+  return (state.data.matches ?? [])
+    .filter((row) => {
+      if (["source_video_only", "not_available"].includes(row.data_status)) return false;
+      if (!(row.player_a || row.player_b || row.team_a || row.team_b)) return false;
+      const dataModeOk = applyDataMode(row);
+      const seasonOk = state.season === "all" || row.season_id === state.season;
+      const divisionOk = divisionMatches(row, state.division);
+      const videos = videosByMatch.get(row.match_id) ?? [];
+      const searchText = [Object.values(row).join(" "), ...videos.map((video) => Object.values(video).join(" "))].join(" ").toLowerCase();
+      const searchOk = !state.search || searchText.includes(state.search);
+      return dataModeOk && seasonOk && divisionOk && searchOk;
+    })
+    .sort(compareMatches)
+    .map((row) => {
+      const videos = videosByMatch.get(row.match_id) ?? [];
+      const missingPerspectives = missingMatchVideoPerspectives(row, videos);
+      return {
+        ...row,
+        video_count: videos.length,
+        video_coverage: matchVideoCoverageStatus(videos.length, missingPerspectives),
+        missing_perspectives: missingPerspectives.join(", "),
+        source_urls: joinSourceValues(row.source_urls, ...videos.map((video) => video.source_urls || video.video_url)),
+      };
+    });
+}
+
+function missingMatchVideoPerspectives(matchRow, videos = []) {
+  const participants = [matchRow.player_a || matchRow.team_a, matchRow.player_b || matchRow.team_b].filter(Boolean);
+  if (!participants.length) return [];
+  const perspectives = new Set(videos.map((row) => normalizedKey(row.perspective_person || row.channel_title)).filter(Boolean));
+  if (!perspectives.size) return participants;
+  return participants.filter((participant) => !perspectives.has(normalizedKey(participant)));
+}
+
+function matchVideoCoverageStatus(videoCount, missingPerspectives = []) {
+  if (!videoCount) return t(state.language, "matchVideoCoverage.none");
+  if (videoCount === 1) return t(state.language, "matchVideoCoverage.single");
+  if (missingPerspectives.length) return t(state.language, "matchVideoCoverage.review");
+  return t(state.language, "matchVideoCoverage.both");
+}
+
+function joinSourceValues(...values) {
+  const items = new Set();
+  values.forEach((value) => {
+    String(value ?? "")
+      .split(";")
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .forEach((item) => items.add(item));
+  });
+  return [...items].join(";");
+}
+
 function renderReviewWorkflow() {
   const rows = reviewWorkflowRows(state.data)
     .filter((row) => state.season === "all" || row.season_id === state.season)
@@ -3152,7 +3773,16 @@ const NUMERIC_COLUMNS = new Set([
   "standings",
   "killlists",
   "unavailable_killlists",
+  "roster_gaps",
+  "incomplete_rosters",
+  "missing_slots",
+  "estimated_deaths",
+  "snapshot_rosters",
   "matched_videos",
+  "matches_without_videos",
+  "video_count",
+  "both_perspectives",
+  "single_perspective",
   "wins",
   "losses",
   "draws",

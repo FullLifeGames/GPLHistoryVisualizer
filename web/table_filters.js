@@ -27,9 +27,29 @@ const SELECT_FILTER_COLUMNS = new Set([
 const DISABLED_FILTER_COLUMNS = new Set(["source", "video", "videos"]);
 
 export function selectFilterValues(rows, column, allLabel = "Alle") {
-  const values = [...new Set(rows.map((row) => String(row?.[column] ?? "").trim()).filter(Boolean))]
+  const values = [...new Set(rows.map((row) => plainFilterValue(row?.[column])).filter(Boolean))]
     .sort((left, right) => left.localeCompare(right, undefined, { numeric: true, sensitivity: "base" }));
   return Object.fromEntries([["", allLabel], ...values.map((value) => [value, value])]);
+}
+
+export function plainFilterValue(value) {
+  return decodeHtmlEntities(String(value ?? "").replace(/<[^>]*>/g, " "))
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function decodeHtmlEntities(value) {
+  return value
+    .replaceAll("&amp;", "&")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#039;", "'")
+    .replaceAll("&apos;", "'");
+}
+
+export function selectHeaderFilterFunc(headerValue, rowValue) {
+  return emptyHeaderFilterValue(headerValue) || plainFilterValue(rowValue) === headerValue;
 }
 
 export function selectHeaderFilter(_cell, onRendered, success, _cancel, editorParams = {}) {
@@ -61,7 +81,7 @@ export function tableHeaderFilterConfig(column, rows = [], { allLabel = "Alle", 
   if (SELECT_FILTER_COLUMNS.has(column)) {
     return {
       headerFilter: selectHeaderFilter,
-      headerFilterFunc: "=",
+      headerFilterFunc: selectHeaderFilterFunc,
       headerFilterEmptyCheck: emptyHeaderFilterValue,
       headerFilterParams: {
         values: selectFilterValues(rows, column, allLabel),

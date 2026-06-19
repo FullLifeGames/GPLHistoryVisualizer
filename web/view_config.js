@@ -23,7 +23,16 @@ export const VIEW_GROUPS = [
     id: "data",
     labelKey: "navGroups.data",
     defaultView: "data-coverage",
-    views: ["data-coverage", "review-workflow", "source-claims"],
+    views: [
+      "data-coverage",
+      "data-gaps",
+      "roster-gaps",
+      "appearance-gaps",
+      "video-review",
+      "match-video-coverage",
+      "review-workflow",
+      "source-claims",
+    ],
   },
 ];
 

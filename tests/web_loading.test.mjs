@@ -30,6 +30,7 @@ assert.equal(lazyDatasets.includes("personAllTime"), true);
 assert.equal(lazyDatasets.includes("pokemonAllTime"), true);
 assert.equal(lazyDatasets.includes("matchupSummary"), true);
 assert.equal(lazyDatasets.includes("rosterScores"), true);
+assert.equal(lazyDatasets.includes("rosterMatchdays"), true);
 assert.equal(lazyDatasets.includes("seasonStorylines"), true);
 
 assert.equal(appJs.includes("const VIEW_DATASETS"), true);
@@ -38,7 +39,7 @@ assert.match(appJs, /killlists: \["pokemonDraftOverview", "pokemonAllTime"\]/);
 assert.match(appJs, /"pokemon-drafts": \["pokemonDraftOverview", "pokemonDraftInstances"\]/);
 assert.match(appJs, /matchup: \["matchVideos", "matchupSummary"\]/);
 assert.match(appJs, /"team-rosters": \["pokemonDraftOverview", "teamPokemonUsage", "teamRosters", "rosterScores"\]/);
-assert.match(appJs, /"roster-detail": \["pokemonDraftOverview", "teamPokemonUsage", "teamRosters", "rosterScores"\]/);
+assert.match(appJs, /"roster-detail": \["pokemonDraftOverview", "teamPokemonUsage", "teamRosters", "rosterScores", "rosterMatchdays"\]/);
 assert.match(appJs, /"person-details": \["personAllTime", "videos", "pokemonDraftOverview", "pokemonDraftInstances", "teamPokemonUsage", "teamRosters", "rosterScores"\]/);
 assert.match(appJs, /"season-detail": \["videos", "sourceClaims", "seasonStorylines"\]/);
 assert.equal(appJs.includes("loadCoreDatasets("), true);

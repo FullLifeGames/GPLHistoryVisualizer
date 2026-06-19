@@ -5,6 +5,7 @@ from gpl_history.team_rosters import (
     _draft_roster_rows,
     _extract_block_kader_rows,
     _extract_pair_kader_rows,
+    _extract_s10_playoff_tierlist_roster_rows,
     _extract_usage_kader_rows,
     _killlist_supplement_roster_rows,
     _manual_team_graphic_snapshot_rows,
@@ -89,6 +90,98 @@ def test_extract_pair_kader_rows_can_require_playoff_header_values():
     )
 
     assert [(row["pokemon"], row["slot"]) for row in rows] == [("Ogerpon-Gestein", "1")]
+
+
+def test_s10_playoff_tierlist_rosters_use_complete_pick_blocks():
+    teams = [
+        {
+            "season_id": "season_010",
+            "division": "Playoffs",
+            "team_name": "Throes Mad",
+            "team_name_normalized": "throes mad",
+            "person_name": "Minetube",
+            "person_name_normalized": "minetube",
+        },
+        {
+            "season_id": "season_010",
+            "division": "Playoffs",
+            "team_name": "Wackel Backel",
+            "team_name_normalized": "wackel backel",
+            "person_name": "Bene",
+            "person_name_normalized": "bene",
+        },
+    ]
+    minetube_segment = [
+        "Ramoth",
+        "Maskagato",
+        "Despotar",
+        "Grandiras",
+        "Stalobor",
+        "Milotic",
+        "Panzaeron",
+        "Curelei",
+        "Drifzepeli",
+        "Toxiquak",
+        "Elevoltek",
+    ]
+    bene_segment = [
+        "Ogerpon-Gestein",
+        "Voltolos",
+        "Eisenrad",
+        "Volcanion",
+        "Pixi",
+        "UHaFnir",
+        "Selfe",
+        "Amfira",
+        "Caesurio",
+        "Gastrodon",
+        "Giflor",
+    ]
+    tierlist_rows = [[""] * 29 for _ in range(len(minetube_segment) + len(bene_segment))]
+    for row, pokemon in zip(tierlist_rows, [*minetube_segment, *bene_segment]):
+        row[28] = pokemon
+
+    playoff_kader_rows = [["", "", "", "P1", "P2", "Fin"]]
+    for pokemon in minetube_segment:
+        playoff_kader_rows.append(["Minetube", pokemon, "", "1" if pokemon != "Grandiras" else "", "", ""])
+    for pokemon in bene_segment:
+        playoff_kader_rows.append(["Bene", pokemon, "", "1", "", ""])
+
+    rows = _extract_s10_playoff_tierlist_roster_rows(
+        tierlist_rows,
+        teams,
+        season_id="season_010",
+        division="Playoffs",
+        roster_phase="playoffs",
+        source_table="Playoffs Tierliste",
+        source_file="tierliste.csv",
+        source_urls="tierliste-url",
+        notes="vollstaendig",
+        playoff_kader_rows=playoff_kader_rows,
+        playoff_kader_source_file="kader.csv",
+        playoff_kader_source_urls="kader-url",
+    )
+
+    by_person = {}
+    for row in rows:
+        by_person.setdefault(row["person_name"], []).append(row)
+
+    assert [row["pokemon"] for row in by_person["Minetube"]] == minetube_segment
+    assert [row["slot"] for row in by_person["Minetube"]] == [str(index) for index in range(1, 12)]
+    assert [row["pokemon"] for row in by_person["Bene"]] == [
+        "Ogerpon-Gestein",
+        "Voltolos-I",
+        "Eisenrad",
+        "Volcanion",
+        "Pixi",
+        "UHaFnir",
+        "Selfe",
+        "Amfira",
+        "Caesurio",
+        "Gastrodon",
+        "Giflor",
+    ]
+    assert all(row["source_urls"] == "tierliste-url;kader-url" for row in rows)
 
 
 def test_extract_block_kader_rows_stops_at_section_boundary_and_keeps_out_picks():

@@ -56,6 +56,7 @@ CLAIM_TABLES = {
     "standings": ("standing", ["rank", "player_name", "team_name", "wins", "losses"]),
     "pokemon_draft_instances": ("pokemon_draft", ["pokemon", "person_name", "team_name"]),
     "pokemon_killlists": ("pokemon_killlist", ["pokemon", "trainer", "team_name", "kills"]),
+    "roster_matchdays": ("roster_matchday", ["person_name", "team_name", "pokemon", "week_label", "kills"]),
     "video_archive": ("video", ["title", "video_type", "match_status", "best_match_id"]),
 }
 
@@ -66,6 +67,7 @@ GENERATED_ARTIFACTS = [
     (Path("normalized") / "roster_scores.csv", "data/normalized/roster_scores.csv"),
     (Path("normalized") / "season_storylines.csv", "data/normalized/season_storylines.csv"),
     (Path("normalized") / "team_rosters.csv", "data/normalized/team_rosters.csv"),
+    (Path("normalized") / "roster_matchdays.csv", "data/normalized/roster_matchdays.csv"),
     (Path("normalized") / "pokemon_draft_overview.csv", "data/normalized/pokemon_draft_overview.csv"),
     (Path("normalized") / "pokemon_draft_instances.csv", "data/normalized/pokemon_draft_instances.csv"),
     (Path("normalized") / "data_quality.csv", "data/normalized/data_quality.csv"),
@@ -92,10 +94,12 @@ def check_generated_artifacts(data_dir: Path) -> list[str]:
 
     from .pokemon_drafts import build_and_write_pokemon_draft_overview
     from .review import generate_review_queue
+    from .roster_matchdays import build_and_write_roster_matchdays
     from .team_rosters import build_and_write_team_rosters
     from .aggregates import build_and_write_aggregates
 
     build_and_write_team_rosters(data_dir)
+    build_and_write_roster_matchdays(data_dir)
     build_and_write_pokemon_draft_overview(data_dir)
     generate_data_quality(data_dir)
     build_and_write_aggregates(data_dir)
@@ -310,6 +314,12 @@ def _claim_subject(table_name: str, row: dict[str, str]) -> str:
         pokemon = row.get("pokemon") or ""
         trainer = row.get("trainer") or row.get("team_name") or ""
         return " / ".join(value for value in [pokemon, trainer] if value)
+    if table_name == "roster_matchdays":
+        return " / ".join(
+            value
+            for value in [row.get("person_name"), row.get("team_name"), row.get("pokemon"), row.get("week_label")]
+            if value
+        )
     if table_name == "video_archive":
         return row.get("video_id") or row.get("title") or row.get("video_url") or ""
     return row.get("season_id") or ""
