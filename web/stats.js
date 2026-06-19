@@ -1,6 +1,48 @@
 import { pokemonAssetId } from "./pokemon_names.js";
 
 const ROSTER_RESULT_WEIGHT = 0.45;
+const ROSTER_SCORE_WEIGHTS = {
+  performance: 0.4,
+  balance: 0.15,
+  history: 0.1,
+  confidence: 0.05,
+};
+const POKEMON_SCORE_WEIGHTS = {
+  performance: 0.45,
+  history: 0.12,
+  confidence: 0.08,
+};
+const ROSTER_TIER_ORDER = {
+  AG: 1,
+  Uber: 2,
+  OU: 3,
+  UUBL: 4,
+  UU: 5,
+  RUBL: 6,
+  RU: 7,
+  NUBL: 8,
+  NU: 9,
+  PUBL: 10,
+  PU: 11,
+  ZUBL: 12,
+  ZU: 13,
+  NFE: 14,
+  LC: 15,
+  Unreleased: 16,
+  Illegal: 17,
+};
+const ROSTER_SEASON_GENERATION = {
+  season_001: "gen6",
+  season_002: "gen6",
+  season_003: "gen6",
+  season_004: "gen7",
+  season_005: "gen7",
+  season_006: "gen7",
+  season_007: "gen8",
+  season_008: "gen8",
+  season_009: "gen8",
+  season_010: "gen9",
+};
 
 export function numberValue(value) {
   const parsed = Number.parseFloat(value);
@@ -1011,7 +1053,6 @@ export function teamRosterOverviewRows(rows = [], standings = []) {
       const topSix = sortedPokemon.slice(0, 6);
       const topEleven = sortedPokemon.slice(0, 11);
       const pokemonCount = sortedPokemon.length;
-      const powerScore = rosterComponentScore(topSix, topEleven, "power_score");
       const pokemonPerformanceScore = rosterComponentScore(topSix, topEleven, "performance_score");
       const historyScore = rosterComponentScore(topSix, topEleven, "history_score");
       const confidenceScore = rosterComponentScore(topSix, topEleven, "confidence_score");
@@ -1023,9 +1064,7 @@ export function teamRosterOverviewRows(rows = [], standings = []) {
         resultScore === ""
           ? pokemonPerformanceScore
           : roundOne(pokemonPerformanceScore * (1 - resultWeight) + resultScore * resultWeight);
-      const rosterScore = roundOne(
-        powerScore * 0.3 + performanceScore * 0.4 + balanceScore * 0.15 + historyScore * 0.1 + confidenceScore * 0.05,
-      );
+      const rosterScore = rosterWeightedScore({ performanceScore, balanceScore, historyScore, confidenceScore });
       const appearances = scaledRosterMetric(row.appearances, pokemonCount);
       const usesStandingTotals = standing && hasNumber(standing.kills) && hasNumber(standing.deaths);
       const kills = usesStandingTotals ? numberValue(standing.kills) : scaledRosterMetric(row.kills, pokemonCount);
@@ -1053,7 +1092,6 @@ export function teamRosterOverviewRows(rows = [], standings = []) {
         result_score: resultScore,
         pokemon_performance_score: pokemonPerformanceScore,
         roster_score: rosterScore,
-        power_score: powerScore,
         performance_score: performanceScore,
         balance_score: balanceScore,
         history_score: historyScore,
@@ -1168,7 +1206,6 @@ function combinedRosterGroupRow(group, pokemonByVariant) {
   const topSix = sortedPokemon.slice(0, 6);
   const topEleven = sortedPokemon.slice(0, 11);
   const pokemonCount = sortedPokemon.length;
-  const powerScore = rosterComponentScore(topSix, topEleven, "power_score");
   const pokemonPerformanceScore = rosterComponentScore(topSix, topEleven, "performance_score");
   const historyScore = rosterComponentScore(topSix, topEleven, "history_score");
   const confidenceScore = rosterComponentScore(topSix, topEleven, "confidence_score");
@@ -1192,11 +1229,8 @@ function combinedRosterGroupRow(group, pokemonByVariant) {
     resultScore === ""
       ? pokemonPerformanceScore
       : roundOne(pokemonPerformanceScore * (1 - resultWeight) + resultScore * resultWeight);
-  const computedRosterScore = roundOne(
-    powerScore * 0.3 + performanceScore * 0.4 + balanceScore * 0.15 + historyScore * 0.1 + confidenceScore * 0.05,
-  );
-  const variantScoreCeiling = Math.max(...rows.map((row) => numberValue(row.roster_score)).filter((value) => value > 0), 0);
-  const rosterScore = variantScoreCeiling ? Math.min(computedRosterScore, variantScoreCeiling) : computedRosterScore;
+  const computedRosterScore = rosterWeightedScore({ performanceScore, balanceScore, historyScore, confidenceScore });
+  const rosterScore = computedRosterScore;
   const sourceUrls = new Set();
   const notes = new Set();
   rows.forEach((row) => {
@@ -1218,7 +1252,6 @@ function combinedRosterGroupRow(group, pokemonByVariant) {
     result_score: resultScore,
     pokemon_performance_score: pokemonPerformanceScore,
     roster_score: rosterScore,
-    power_score: powerScore,
     performance_score: performanceScore,
     balance_score: balanceScore,
     history_score: historyScore,
@@ -1478,8 +1511,17 @@ function pokemonDraftInfoIndex(rows = [], normalizeKey = normalizedStatsKey) {
   rows.forEach((row) => {
     const info = {
       pokemon: row.pokemon || row.pokemon_normalized || "",
+      asset_id: row.asset_id || "",
       tier: row.tier || "",
       tier_rank: numberValue(row.tier_rank),
+      gen6_tier: row.gen6_tier || "",
+      gen6_tier_rank: numberValue(row.gen6_tier_rank),
+      gen7_tier: row.gen7_tier || "",
+      gen7_tier_rank: numberValue(row.gen7_tier_rank),
+      gen8_tier: row.gen8_tier || "",
+      gen8_tier_rank: numberValue(row.gen8_tier_rank),
+      gen9_tier: row.gen9_tier || "",
+      gen9_tier_rank: numberValue(row.gen9_tier_rank),
       draft_count: numberValue(row.draft_count),
       title_count: numberValue(row.title_count),
     };
@@ -1517,6 +1559,7 @@ function addRosterPokemon(aggregate, draftIndex, normalizeKey, row) {
   const rosterPhase = row.roster_phase || "";
   const key = `${row.season_id}\u0000${division}\u0000${rosterPhase}\u0000${ownerKey}\u0000${pokemonKey}`;
   const draft = draftInfoForRosterPokemon(draftIndex, normalizeKey, row, pokemonKey);
+  const tierInfo = seasonTierInfoForRosterPokemon(draft, row.season_id);
   const current = aggregate.get(key) ?? {
     season_id: row.season_id,
     division,
@@ -1527,8 +1570,8 @@ function addRosterPokemon(aggregate, draftIndex, normalizeKey, row) {
     pokemon: row.pokemon || draft.pokemon || row.pokemon_normalized || "",
     pokemon_key: pokemonKey,
     slot: row.slot || "",
-    tier: draft.tier || "",
-    tier_rank: draft.tier_rank || "",
+    tier: tierInfo.tier || draft.tier || "",
+    tier_rank: tierInfo.tier_rank || draft.tier_rank || "",
     draft_count: draft.draft_count || 0,
     title_count: draft.title_count || 0,
     appearances: 0,
@@ -1545,8 +1588,8 @@ function addRosterPokemon(aggregate, draftIndex, normalizeKey, row) {
   current.person_key = current.person_key || personKey;
   current.pokemon = current.pokemon || row.pokemon || draft.pokemon || "";
   current.slot = current.slot || row.slot || "";
-  current.tier = current.tier || draft.tier || "";
-  current.tier_rank = current.tier_rank || draft.tier_rank || "";
+  current.tier = current.tier || tierInfo.tier || draft.tier || "";
+  current.tier_rank = current.tier_rank || tierInfo.tier_rank || draft.tier_rank || "";
   current.draft_count = current.draft_count || draft.draft_count || 0;
   current.title_count = current.title_count || draft.title_count || 0;
   current.roster_phase = current.roster_phase || rosterPhase;
@@ -1555,6 +1598,7 @@ function addRosterPokemon(aggregate, draftIndex, normalizeKey, row) {
   current.deaths += numberValue(row.deaths);
   current.missing_deaths = current.missing_deaths || Boolean(row.missing_deaths);
   addRosterNotes(current.notes, row.notes);
+  addRosterNotes(current.notes, tierInfo.note);
   addSourceUrls(current.sourceUrls, row.source_urls);
   aggregate.set(key, current);
 }
@@ -1568,6 +1612,38 @@ function draftInfoForRosterPokemon(draftIndex, normalizeKey, row, pokemonKey) {
     }
   }
   return {};
+}
+
+function seasonTierInfoForRosterPokemon(draft = {}, seasonId = "") {
+  const override = complexRosterTierOverride(draft.asset_id || draft.pokemon, seasonId);
+  if (override) {
+    return {
+      tier: override.tier,
+      tier_rank: ROSTER_TIER_ORDER[override.tier] || "",
+      note: override.note,
+    };
+  }
+  const generation = ROSTER_SEASON_GENERATION[seasonId] || "gen9";
+  const tier = draft[`${generation}_tier`] || draft.tier || "";
+  const tierRank = numberValue(draft[`${generation}_tier_rank`]) || numberValue(draft.tier_rank);
+  return { tier, tier_rank: tierRank || "", note: "" };
+}
+
+function complexRosterTierOverride(assetId, seasonId) {
+  const key = normalizedStatsKey(assetId);
+  if (key === "landorus") {
+    return {
+      tier: "OU",
+      note: "GPL Complex Ban: Demeteros-I ohne Rohe Gewalt als OU bewertet",
+    };
+  }
+  if (key === "greninja" && seasonNumber(seasonId) >= 2) {
+    return {
+      tier: "UU",
+      note: "GPL Complex Ban: Quajutsu ab S2 als UU bewertet",
+    };
+  }
+  return null;
 }
 
 function teamRosterOwnerLookup(rows = [], normalizeKey = normalizedStatsKey) {
@@ -1806,7 +1882,6 @@ function rosterPokemonScore(row, baselines = rosterPerformanceBaselines([row])) 
   const deathsEstimated = Boolean(row.missing_deaths && appearances);
   const deaths = deathsEstimated ? roundOne(appearances * expectedDeathRate) : numberValue(row.deaths);
   const differential = roundOne(kills - deaths);
-  const powerScore = tierPowerScore(row.tier_rank);
   const performanceScore = rosterPerformanceScore({
     appearances,
     kills,
@@ -1817,13 +1892,16 @@ function rosterPokemonScore(row, baselines = rosterPerformanceBaselines([row])) 
   });
   const historyScore = rosterHistoryScore(row);
   const confidenceScore = rosterConfidenceScore(row, deathsEstimated);
-  const pokemonScore = roundOne(powerScore * 0.35 + performanceScore * 0.45 + historyScore * 0.12 + confidenceScore * 0.08);
+  const pokemonScore = roundOne(
+    performanceScore * POKEMON_SCORE_WEIGHTS.performance +
+      historyScore * POKEMON_SCORE_WEIGHTS.history +
+      confidenceScore * POKEMON_SCORE_WEIGHTS.confidence,
+  );
   return {
     deaths,
     differential,
     deaths_estimated: deathsEstimated,
     missing_deaths: row.missing_deaths,
-    power_score: powerScore,
     performance_score: performanceScore,
     history_score: historyScore,
     confidence_score: confidenceScore,
@@ -1845,14 +1923,17 @@ function rosterPerformanceScore({ appearances, kills, deaths, differential, expe
   return clampScore(roundOne(50 + relativeImpact * sampleShrink + usageReliability * 6));
 }
 
-function killsOnlyRosterPerformanceScore(kills) {
-  return clampScore(roundOne(50 + (Math.min(numberValue(kills), 30) / 30) * 25));
+function rosterWeightedScore({ performanceScore, balanceScore, historyScore, confidenceScore }) {
+  return roundOne(
+    performanceScore * ROSTER_SCORE_WEIGHTS.performance +
+      balanceScore * ROSTER_SCORE_WEIGHTS.balance +
+      historyScore * ROSTER_SCORE_WEIGHTS.history +
+      confidenceScore * ROSTER_SCORE_WEIGHTS.confidence,
+  );
 }
 
-function tierPowerScore(tierRank) {
-  const rank = numberValue(tierRank);
-  if (!rank) return 45;
-  return clampScore(roundOne(100 - (rank - 1) * 6.25));
+function killsOnlyRosterPerformanceScore(kills) {
+  return clampScore(roundOne(50 + (Math.min(numberValue(kills), 30) / 30) * 25));
 }
 
 function rosterHistoryScore(row) {

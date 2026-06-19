@@ -1619,7 +1619,6 @@ function renderRosterDetail() {
   visualTarget.innerHTML = rosterTeamSheet(overview, sortedPokemon);
   summaryTarget.innerHTML = [
     metricCard(t(state.language, "columns.roster_score"), overview.roster_score),
-    metricCard(t(state.language, "columns.power_score"), overview.power_score),
     metricCard(t(state.language, "columns.performance_score"), overview.performance_score),
     metricCard(t(state.language, "columns.balance_score"), overview.balance_score),
     metricCard(t(state.language, "columns.history_score"), overview.history_score),
@@ -1887,23 +1886,23 @@ function rosterScoreFormula(row) {
         : `Performance ${row.performance_score} kommt nur aus den Pokémon-Zeilen, weil keine passende Tabellenleistung verfügbar ist.`;
   if (state.language === "en") {
     return [
-      "Roster score = 30% Power + 40% Performance + 15% Balance + 10% History + 5% Confidence.",
+      "Roster score = 40% Performance + 15% Balance + 10% History + 5% Confidence.",
       Number(row.variant_count || 1) > 1
         ? "With multiple roster variants, the score is recomputed from the merged team; buttons only switch the visible variant."
         : "",
       performanceMix,
-      `Parts: Power ${row.power_score}, Performance ${row.performance_score}, Balance ${row.balance_score}, History ${row.history_score}, Confidence ${row.confidence_score}.`,
+      `Parts: Performance ${row.performance_score}, Balance ${row.balance_score}, History ${row.history_score}, Confidence ${row.confidence_score}.`,
       `Shown: Score ${row.roster_score}, Pokémon ${row.pokemon_count}, avg tier rank ${row.avg_tier_rank || "n/a"}.`,
       "Balance uses roster size up to 11, top-11 depth, bench quality, and top-heavy concentration. Lower tiers are not rewarded. Missing death data is estimated and lowers Confidence.",
     ].filter(Boolean).join(" ");
   }
   return [
-    "Kaderscore = 30% Power + 40% Performance + 15% Balance + 10% Historie + 5% Confidence.",
+    "Kaderscore = 40% Performance + 15% Balance + 10% Historie + 5% Confidence.",
     Number(row.variant_count || 1) > 1
       ? "Bei mehreren Kader-Varianten wird der Score aus dem zusammengeführten Team neu berechnet; die Buttons wechseln nur die sichtbare Variante."
       : "",
     performanceMix,
-    `Teilwerte: Power ${row.power_score}, Performance ${row.performance_score}, Balance ${row.balance_score}, Historie ${row.history_score}, Confidence ${row.confidence_score}.`,
+    `Teilwerte: Performance ${row.performance_score}, Balance ${row.balance_score}, Historie ${row.history_score}, Confidence ${row.confidence_score}.`,
     `Angezeigt: Score ${row.roster_score}, Pokémon ${row.pokemon_count}, Ø Tier-Rang ${row.avg_tier_rank || "n/a"}.`,
     "Balance nutzt Kadergröße bis 11, Top-11-Tiefe, Bankqualität und Top-Heavy-Konzentration. Lower-Tiers werden nicht belohnt. Fehlende Todesdaten werden geschätzt und senken Confidence.",
   ].filter(Boolean).join(" ");
@@ -1921,8 +1920,8 @@ function pokemonScoreFormula(row) {
       ? "Performance nutzt hier kills-only: 50 + min(Kills, 30) / 30 * 25, weil Einsätze fehlen."
       : "Performance nutzt den Fallback 45, weil Einsätze und Kills fehlen.";
   return [
-    "Pokémon-Score = 35% Power + 45% Performance + 12% Historie + 8% Confidence.",
-    `Teilwerte: Power ${row.power_score}, Performance ${row.performance_score}, Historie ${row.history_score}, Confidence ${row.confidence_score}.`,
+    "Pokémon-Score = 45% Performance + 12% Historie + 8% Confidence.",
+    `Teilwerte: Performance ${row.performance_score}, Historie ${row.history_score}, Confidence ${row.confidence_score}.`,
     performanceNote,
     `${deathsNote} Werte: Einsätze ${appearances}, Kills ${row.kills}, Tode ${row.deaths}, Differential ${row.differential}.`,
   ].filter(Boolean).join(" ");
@@ -3174,7 +3173,6 @@ const NUMERIC_COLUMNS = new Set([
   "slot",
   "roster_score",
   "pokemon_score",
-  "power_score",
   "performance_score",
   "balance_score",
   "history_score",

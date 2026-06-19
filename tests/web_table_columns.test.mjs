@@ -45,7 +45,7 @@ assert.deepEqual(columnsForProfile(ALL_TIME_COLUMNS, "compact"), ["rank", "name"
 assert.equal(columnsForProfile(POKEMON_KILLLIST_COLUMNS, "compact").includes("seasons"), true);
 assert.equal(columnsForProfile(POKEMON_DRAFT_COLUMNS, "compact").includes("season_count"), true);
 assert.deepEqual(columnsForProfile(ALL_TIME_COLUMNS), ALL_TIME_COLUMNS);
-assert.deepEqual(TEAM_ROSTER_COLUMNS.slice(0, 13), [
+assert.deepEqual(TEAM_ROSTER_COLUMNS.slice(0, 12), [
   "rank",
   "season",
   "division",
@@ -54,13 +54,12 @@ assert.deepEqual(TEAM_ROSTER_COLUMNS.slice(0, 13), [
   "person",
   "team",
   "roster_score",
-  "power_score",
   "performance_score",
   "balance_score",
   "history_score",
   "confidence_score",
 ]);
-assert.deepEqual(TEAM_ROSTER_POKEMON_COLUMNS.slice(0, 13), [
+assert.deepEqual(TEAM_ROSTER_POKEMON_COLUMNS.slice(0, 12), [
   "rank",
   "season",
   "division",
@@ -70,7 +69,6 @@ assert.deepEqual(TEAM_ROSTER_POKEMON_COLUMNS.slice(0, 13), [
   "slot",
   "pokemon",
   "pokemon_score",
-  "power_score",
   "performance_score",
   "history_score",
   "confidence_score",

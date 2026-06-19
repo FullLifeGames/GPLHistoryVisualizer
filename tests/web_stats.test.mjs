@@ -129,6 +129,98 @@ assert.equal(weightedRating(0, 0, 0), "");
 }
 
 {
+  const normalizeTestKey = (value) =>
+    String(value ?? "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  const rosterPokemon = teamRosterPokemonRows(
+    {
+      teamUsage: [
+        {
+          season_id: "season_003",
+          division: "Regular Season",
+          team_name: "Alpha",
+          person_name: "Bene",
+          pokemon: "Quajutsu",
+          pokemon_normalized: "quajutsu",
+          slot: "1",
+          data_status: "sheet_extracted",
+        },
+        {
+          season_id: "season_010",
+          division: "Regular Season",
+          team_name: "Prekani",
+          person_name: "PresentLP",
+          pokemon: "Demeteros-I",
+          pokemon_normalized: "demeteros i",
+          slot: "1",
+          data_status: "sheet_extracted",
+        },
+        {
+          season_id: "season_003",
+          division: "Regular Season",
+          team_name: "Beta",
+          person_name: "B",
+          pokemon: "Samplemon",
+          pokemon_normalized: "samplemon",
+          slot: "1",
+          data_status: "sheet_extracted",
+        },
+      ],
+      pokemonDraftOverview: [
+        {
+          pokemon: "Quajutsu",
+          pokemon_normalized: "quajutsu",
+          asset_id: "greninja",
+          tier: "UUBL",
+          tier_rank: "4",
+          gen6_tier: "Uber",
+          gen6_tier_rank: "2",
+          gen9_tier: "UU",
+          gen9_tier_rank: "5",
+          draft_count: "2",
+          title_count: "0",
+        },
+        {
+          pokemon: "Demeteros-I",
+          pokemon_normalized: "demeteros i",
+          asset_id: "landorus",
+          tier: "Uber",
+          tier_rank: "2",
+          gen9_tier: "Uber",
+          gen9_tier_rank: "2",
+          draft_count: "2",
+          title_count: "0",
+        },
+        {
+          pokemon: "Samplemon",
+          pokemon_normalized: "samplemon",
+          asset_id: "samplemon",
+          tier: "RU",
+          tier_rank: "7",
+          gen6_tier: "OU",
+          gen6_tier_rank: "3",
+          draft_count: "1",
+          title_count: "0",
+        },
+      ],
+    },
+    normalizeTestKey,
+  );
+
+  const byPokemon = Object.fromEntries(rosterPokemon.map((row) => [row.pokemon, row]));
+  assert.equal(byPokemon["Samplemon"].tier, "OU");
+  assert.equal(byPokemon["Samplemon"].tier_rank, 3);
+  assert.equal(byPokemon["Quajutsu"].tier, "UU");
+  assert.equal(byPokemon["Quajutsu"].tier_rank, 5);
+  assert.match(byPokemon["Quajutsu"].notes, /Quajutsu ab S2/);
+  assert.equal(byPokemon["Demeteros-I"].tier, "OU");
+  assert.equal(byPokemon["Demeteros-I"].tier_rank, 3);
+  assert.match(byPokemon["Demeteros-I"].notes, /Demeteros-I ohne Rohe Gewalt/);
+}
+
+{
   const rows = rosterKilllistRows([
     { season_id: "season_009", division: "Overall", pokemon: "UHaFnir", kills: "6" },
     { season_id: "season_009", division: "Doubles", pokemon: "UHaFnir", trainer: "Bene", kills: "3" },
@@ -1482,7 +1574,7 @@ assert.deepEqual(
         differential: -4,
         tier: "LC",
         draft_count: 0,
-        pokemon_score: 30.2,
+        pokemon_score: 25.8,
       },
       {
         season_id: "season_003",
@@ -1495,7 +1587,7 @@ assert.deepEqual(
         differential: 5,
         tier: "OU",
         draft_count: 4,
-        pokemon_score: 69.5,
+        pokemon_score: 38.9,
       },
       {
         season_id: "season_003",
@@ -1508,7 +1600,7 @@ assert.deepEqual(
         differential: 0,
         tier: "NU",
         draft_count: 1,
-        pokemon_score: 45,
+        pokemon_score: 27.5,
       },
     ],
   );
@@ -1555,7 +1647,7 @@ assert.deepEqual(
   assert.equal(rosterPokemon[0].deaths, 1.8);
   assert.equal(rosterPokemon[0].differential, 7.2);
   assert.equal(rosterPokemon[0].missing_deaths, true);
-  assert.ok(rosterPokemon[0].pokemon_score > 70);
+  assert.equal(rosterPokemon[0].pokemon_score, 42);
 
   const overview = teamRosterOverviewRows(rosterPokemon)[0];
   assert.equal(overview.differential, 7.2);
@@ -1696,14 +1788,14 @@ assert.deepEqual(
   assert.equal(rotomWash.draft_count, 12);
   assert.equal(rotomWash.title_count, 2);
   assert.equal(rotomWash.history_score, 82);
-  assert.ok(rotomWash.pokemon_score > 65);
+  assert.equal(rotomWash.pokemon_score, 43.2);
 
   assert.equal(rotomMow.tier, "RU");
   assert.equal(rotomMow.tier_rank, 7);
   assert.equal(rotomMow.draft_count, 8);
   assert.equal(rotomMow.title_count, 1);
   assert.equal(rotomMow.history_score, 62);
-  assert.ok(rotomMow.pokemon_score > 60);
+  assert.equal(rotomMow.pokemon_score, 39.7);
 
   assert.equal(zygarde.tier, "Uber");
   assert.equal(zygarde.tier_rank, 2);
@@ -1711,8 +1803,8 @@ assert.deepEqual(
   assert.equal(zygarde.history_score, 21);
   assert.ok(zygarde.performance_score > 45);
   assert.ok(snibunna.performance_score > zygarde.performance_score);
-  assert.ok(snibunna.pokemon_score > 70);
-  assert.ok(zygarde.pokemon_score > 60);
+  assert.equal(snibunna.pokemon_score, 46.3);
+  assert.equal(zygarde.pokemon_score, 38.9);
 }
 
 {
@@ -1723,8 +1815,7 @@ assert.deepEqual(
   ];
   const overview = teamRosterOverviewRows(rows)[0];
   const expected = Math.round(
-    (overview.power_score * 0.3 +
-      overview.performance_score * 0.4 +
+    (overview.performance_score * 0.4 +
       overview.balance_score * 0.15 +
       overview.history_score * 0.1 +
       overview.confidence_score * 0.05) *
@@ -1732,7 +1823,7 @@ assert.deepEqual(
   ) / 10;
 
   assert.equal(overview.roster_score, expected);
-  assert.equal(overview.power_score, 60);
+  assert.equal("power_score" in overview, false);
   assert.equal(overview.performance_score, 70);
   assert.equal(overview.history_score, 30);
   assert.equal(overview.confidence_score, 90);
@@ -2106,7 +2197,7 @@ assert.deepEqual(
   ];
   const grouped = teamRosterDisplayGroups(overview, pokemonRows);
 
-  assert.equal(grouped.overviewRows[0].roster_score, 65);
+  assert.equal(grouped.overviewRows[0].roster_score, 59.6);
   assert.equal(grouped.overviewRows[0].standing_rank, 1);
 }
 
@@ -2290,7 +2381,7 @@ assert.deepEqual(
   assert.equal(grouped.overviewRows.length, 2);
   assert.equal(beneGroup.overview.division, "Playoffs");
   assert.equal(beneGroup.overview.roster_phase, "playoffs");
-  assert.equal(beneGroup.overview.roster_score, 71.1);
+  assert.equal(beneGroup.overview.roster_score, 50.1);
   assert.equal(beneGroup.overview.kills, 24);
   assert.equal(beneGroup.overview.variant_count, 2);
   assert.deepEqual(beneGroup.pokemonRows.map((row) => row.pokemon), ["Caesurio"]);
@@ -2300,9 +2391,63 @@ assert.deepEqual(
   const selectedBeneGroup = selected.groups.find((group) => group.overview.person === "Bene");
   assert.equal(selectedBeneGroup.overview.rank, beneGroup.overview.rank);
   assert.equal(selectedBeneGroup.overview.division, "Regular Season");
-  assert.equal(selectedBeneGroup.overview.roster_score, 71.1);
+  assert.equal(selectedBeneGroup.overview.roster_score, 50.1);
   assert.equal(selectedBeneGroup.overview.kills, 24);
   assert.deepEqual(selectedBeneGroup.pokemonRows.map((row) => row.pokemon), ["Granforgita"]);
+}
+
+{
+  const overview = [
+    {
+      season_id: "season_010",
+      division: "Regular Season",
+      roster_phase: "regular",
+      person: "Bene",
+      team: "Wackel Backel",
+      roster_score: 50,
+    },
+    {
+      season_id: "season_010",
+      division: "Playoffs",
+      roster_phase: "playoffs",
+      person: "Bene",
+      team: "Wackel Backel",
+      roster_score: 60,
+    },
+  ];
+  const pokemonRows = [
+    {
+      season_id: "season_010",
+      division: "Regular Season",
+      roster_phase: "regular",
+      person: "Bene",
+      team: "Wackel Backel",
+      pokemon: "A",
+      pokemon_score: 90,
+      power_score: 90,
+      performance_score: 90,
+      history_score: 90,
+      confidence_score: 100,
+      tier_rank: 3,
+    },
+    {
+      season_id: "season_010",
+      division: "Playoffs",
+      roster_phase: "playoffs",
+      person: "Bene",
+      team: "Wackel Backel",
+      pokemon: "B",
+      pokemon_score: 90,
+      power_score: 90,
+      performance_score: 90,
+      history_score: 90,
+      confidence_score: 100,
+      tier_rank: 3,
+    },
+  ];
+  const grouped = teamRosterDisplayGroups(overview, pokemonRows);
+
+  assert.ok(grouped.groups[0].overview.roster_score > 60);
 }
 
 {
@@ -2431,7 +2576,7 @@ assert.deepEqual(
   ];
   const grouped = teamRosterDisplayGroups(overview, pokemonRows);
 
-  assert.equal(grouped.overviewRows[0].roster_score, 71.1);
+  assert.equal(grouped.overviewRows[0].roster_score, 50.1);
   assert.equal(grouped.overviewRows[0].kills, 80);
   assert.equal(grouped.overviewRows[0].deaths, 41);
   assert.equal(grouped.overviewRows[0].differential, 39);

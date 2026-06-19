@@ -13,6 +13,13 @@ from .pokemon_names import name_key
 from .storage import ensure_dir
 
 SHOWDOWN_FORMATS_DATA_URL = "https://raw.githubusercontent.com/smogon/pokemon-showdown/master/data/formats-data.ts"
+SHOWDOWN_FORMATS_DATA_URLS = {
+    "gen6": "https://raw.githubusercontent.com/smogon/pokemon-showdown/master/data/mods/gen6/formats-data.ts",
+    "gen7": "https://raw.githubusercontent.com/smogon/pokemon-showdown/master/data/mods/gen7/formats-data.ts",
+    "gen8": "https://raw.githubusercontent.com/smogon/pokemon-showdown/master/data/mods/gen8/formats-data.ts",
+    "gen9": SHOWDOWN_FORMATS_DATA_URL,
+}
+SHOWDOWN_FORMATS_GENERATIONS = ("gen6", "gen7", "gen8", "gen9")
 OLD_PROJECT_KILL_SHEET_ID = "1JZpA-5XDldN2bjfvhvBPHYK-1AENETLnF1UxNEpWlNA"
 OLD_PROJECT_EWIGE_TABELLE_GID = "352888197"
 OLD_PROJECT_EWIGE_TABELLE_URL = (
@@ -29,6 +36,14 @@ POKEMON_DRAFT_OVERVIEW_FIELDS = [
     "asset_id",
     "tier",
     "tier_rank",
+    "gen6_tier",
+    "gen6_tier_rank",
+    "gen7_tier",
+    "gen7_tier_rank",
+    "gen8_tier",
+    "gen8_tier_rank",
+    "gen9_tier",
+    "gen9_tier_rank",
     "draft_count",
     "season_count",
     "season_list",
@@ -77,7 +92,8 @@ TIER_ORDER = {
 
 
 def build_and_write_pokemon_draft_overview(data_dir: Path, refresh: bool = False) -> list[dict[str, Any]]:
-    formats_text = _read_or_fetch_formats_data(data_dir, refresh)
+    generation_formats = _read_or_fetch_generation_formats_data(data_dir, refresh)
+    formats_text = generation_formats["gen9"]
     translations = _read_csv(data_dir / "normalized" / "pokemon_name_translations.csv")
     killlists = _read_csv(data_dir / "normalized" / "pokemon_killlists.csv")
     team_usage = [
@@ -91,6 +107,7 @@ def build_and_write_pokemon_draft_overview(data_dir: Path, refresh: bool = False
         team_usage,
         formats_text,
         _read_csv(data_dir / "normalized" / "champions.csv"),
+        generation_formats_data=generation_formats,
     )
     out_path = data_dir / "normalized" / "pokemon_draft_overview.csv"
     ensure_dir(out_path.parent)
@@ -107,8 +124,11 @@ def build_pokemon_draft_overview(
     team_usage: list[dict[str, str]],
     formats_data: str,
     champions: list[dict[str, str]] | None = None,
+    *,
+    generation_formats_data: dict[str, str] | None = None,
 ) -> list[dict[str, Any]]:
     tier_lookup = parse_showdown_tiers(formats_data)
+    generation_tier_lookup = parse_generation_showdown_tiers(generation_formats_data or {"gen9": formats_data})
     forms = _translation_forms(translations)
     aliases = _translation_aliases(translations)
     overview_killlists = _primary_competition_rows(killlists)
@@ -129,6 +149,7 @@ def build_pokemon_draft_overview(
         teams = {draft["team"] for draft in drafts if draft.get("team")}
         sources = _join_sources(form.get("source_url"), *(draft.get("source_urls") for draft in drafts))
         tier = tier_info.get("tier", "")
+        generation_tiers = _generation_tier_fields(asset, generation_tier_lookup)
         rows.append(
             {
                 "species_id": form.get("species_id", ""),
@@ -138,6 +159,7 @@ def build_pokemon_draft_overview(
                 "asset_id": asset,
                 "tier": tier,
                 "tier_rank": TIER_ORDER.get(tier, 99),
+                **generation_tiers,
                 "draft_count": len(drafts),
                 "season_count": len(seasons),
                 "season_list": _format_season_list(seasons),
@@ -153,7 +175,19 @@ def build_pokemon_draft_overview(
     rows.sort(key=lambda row: (-int(row["draft_count"]), int(row["tier_rank"]), row["pokemon"]))
     for index, row in enumerate(rows, start=1):
         row["rank"] = index
-        for field in ("tier_rank", "draft_count", "season_count", "title_count", "trainer_count", "team_count"):
+        numeric_fields = (
+            "tier_rank",
+            "gen6_tier_rank",
+            "gen7_tier_rank",
+            "gen8_tier_rank",
+            "gen9_tier_rank",
+            "draft_count",
+            "season_count",
+            "title_count",
+            "trainer_count",
+            "team_count",
+        )
+        for field in numeric_fields:
             row[field] = str(row[field])
     return rows
 
@@ -218,6 +252,27 @@ def parse_showdown_tiers(formats_data: str) -> dict[str, dict[str, str]]:
                 "natdex_tier": natdex_tier,
             }
     return tiers
+
+
+def parse_generation_showdown_tiers(formats_by_generation: dict[str, str]) -> dict[str, dict[str, dict[str, str]]]:
+    return {
+        generation: parse_showdown_tiers(formats_data)
+        for generation, formats_data in formats_by_generation.items()
+        if generation in SHOWDOWN_FORMATS_GENERATIONS
+    }
+
+
+def _generation_tier_fields(
+    asset: str,
+    generation_tier_lookup: dict[str, dict[str, dict[str, str]]],
+) -> dict[str, str | int]:
+    fields: dict[str, str | int] = {}
+    for generation in SHOWDOWN_FORMATS_GENERATIONS:
+        tier_info = generation_tier_lookup.get(generation, {}).get(asset, {})
+        tier = tier_info.get("standard_tier") or ""
+        fields[f"{generation}_tier"] = tier
+        fields[f"{generation}_tier_rank"] = TIER_ORDER.get(tier, 99) if tier else ""
+    return fields
 
 
 def _is_gen9_natdex_candidate(tier_info: dict[str, str]) -> bool:
@@ -572,10 +627,22 @@ def _display_score(value: str) -> tuple[int, int]:
 
 
 def _read_or_fetch_formats_data(data_dir: Path, refresh: bool) -> str:
-    cache_path = data_dir / "raw" / "pokemon_showdown" / "formats-data.ts"
+    return _read_or_fetch_formats_data_url(data_dir, "gen9", SHOWDOWN_FORMATS_DATA_URL, refresh)
+
+
+def _read_or_fetch_generation_formats_data(data_dir: Path, refresh: bool) -> dict[str, str]:
+    return {
+        generation: _read_or_fetch_formats_data_url(data_dir, generation, url, refresh)
+        for generation, url in SHOWDOWN_FORMATS_DATA_URLS.items()
+    }
+
+
+def _read_or_fetch_formats_data_url(data_dir: Path, generation: str, url: str, refresh: bool) -> str:
+    filename = "formats-data.ts" if generation == "gen9" else f"{generation}-formats-data.ts"
+    cache_path = data_dir / "raw" / "pokemon_showdown" / filename
     if cache_path.exists() and not refresh:
         return cache_path.read_text(encoding="utf-8")
-    response = requests.get(SHOWDOWN_FORMATS_DATA_URL, timeout=30)
+    response = requests.get(url, timeout=30)
     response.raise_for_status()
     ensure_dir(cache_path.parent)
     cache_path.write_text(response.text, encoding="utf-8")

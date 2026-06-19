@@ -7,6 +7,7 @@ from gpl_history.pokemon_drafts import (
     build_and_write_pokemon_draft_overview,
     build_pokemon_draft_instances,
     build_pokemon_draft_overview,
+    parse_generation_showdown_tiers,
     parse_showdown_tiers,
 )
 
@@ -44,6 +45,32 @@ def test_parse_showdown_tiers_reads_format_data_blocks():
 
     assert tiers["bulbasaur"]["tier"] == "LC"
     assert tiers["charizardmegax"]["tier"] == "Uber"
+
+
+def test_parse_generation_showdown_tiers_preserves_standard_generation_tiers():
+    tiers = parse_generation_showdown_tiers(
+        {
+            "gen6": """
+export const FormatsData = {
+  greninja: {
+    tier: "Uber",
+  },
+};
+""",
+            "gen9": """
+export const FormatsData = {
+  greninja: {
+    tier: "UU",
+    natDexTier: "UUBL",
+  },
+};
+""",
+        }
+    )
+
+    assert tiers["gen6"]["greninja"]["standard_tier"] == "Uber"
+    assert tiers["gen9"]["greninja"]["standard_tier"] == "UU"
+    assert tiers["gen9"]["greninja"]["tier"] == "UUBL"
 
 
 def test_pokemon_draft_csv_writer_uses_lf_line_endings(tmp_path):
@@ -298,6 +325,77 @@ def test_build_pokemon_draft_overview_uses_gen9_natdex_for_never_picked_forms():
     never_picked_assets = {row["asset_id"] for row in rows if row["picked_status"] == "never_picked"}
     assert "gengarmega" in never_picked_assets
     assert "gengargmax" not in never_picked_assets
+
+
+def test_build_pokemon_draft_overview_adds_standard_generation_tiers_for_roster_power():
+    translations = [
+        {
+            "species_id": "658",
+            "german": "Quajutsu",
+            "english": "Greninja",
+            "asset_id": "greninja",
+            "source_url": "pokeapi",
+        },
+    ]
+    team_usage = [
+        {
+            "season_id": "season_003",
+            "pokemon": "Quajutsu",
+            "pokemon_normalized": "quajutsu",
+            "person_name": "Bene",
+            "team_name": "Alpha",
+            "source_urls": "usage-source",
+        }
+    ]
+    generation_formats = {
+        "gen6": """
+export const FormatsData = {
+  greninja: {
+    tier: "Uber",
+  },
+};
+""",
+        "gen7": """
+export const FormatsData = {
+  greninja: {
+    tier: "OU",
+  },
+};
+""",
+        "gen8": """
+export const FormatsData = {
+  greninja: {
+    tier: "Illegal",
+    natDexTier: "OU",
+  },
+};
+""",
+        "gen9": """
+export const FormatsData = {
+  greninja: {
+    tier: "UU",
+    natDexTier: "UUBL",
+  },
+};
+""",
+    }
+
+    rows = build_pokemon_draft_overview(
+        translations,
+        [],
+        team_usage,
+        generation_formats["gen9"],
+        generation_formats_data=generation_formats,
+    )
+
+    row = rows[0]
+    assert row["tier"] == "UUBL"
+    assert row["gen6_tier"] == "Uber"
+    assert row["gen6_tier_rank"] == "2"
+    assert row["gen7_tier"] == "OU"
+    assert row["gen8_tier"] == "Illegal"
+    assert row["gen9_tier"] == "UU"
+    assert row["gen9_tier_rank"] == "5"
 
 
 def test_build_pokemon_draft_overview_counts_titles_from_champion_teams_once_per_season():

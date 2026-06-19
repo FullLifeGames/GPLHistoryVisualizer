@@ -58,7 +58,6 @@ assert.equal(columnTitle("de", "deaths"), "Tode");
 assert.equal(columnTitle("de", "rating"), "Wertung");
 assert.equal(columnTitle("de", "roster_score"), "Kaderscore");
 assert.equal(columnTitle("de", "roster_phase"), "Kaderphase");
-assert.equal(columnTitle("de", "power_score"), "Power");
 assert.equal(columnTitle("de", "performance_score"), "Performance");
 assert.equal(columnTitle("de", "balance_score"), "Balance");
 assert.equal(columnTitle("de", "history_score"), "Historie");

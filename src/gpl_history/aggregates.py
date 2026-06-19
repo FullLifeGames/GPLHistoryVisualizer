@@ -71,12 +71,16 @@ ROSTER_SCORE_FIELDS = [
     "team_name",
     "pokemon_count",
     "roster_score",
-    "power_score",
     "history_score",
     "coverage_score",
     "top_pokemon",
     "source_urls",
 ]
+
+ROSTER_SCORE_WEIGHTS = {
+    "history": 0.25,
+    "coverage": 0.20,
+}
 
 SEASON_STORYLINE_FIELDS = [
     "season_id",
@@ -428,17 +432,18 @@ def roster_score_rows(rosters: list[dict[str, str]], drafts: list[dict[str, str]
         for row in items:
             pokemon_key = row.get("pokemon_normalized") or _name_key(row.get("pokemon"))
             draft = draft_by_key.get(pokemon_key, {})
-            tier_rank = _number(draft.get("tier_rank")) or 500
-            power = max(0, 100 - min(tier_rank, 500) / 5)
             history = min(100, _number(draft.get("draft_count")) * 10 + _number(draft.get("title_count")) * 20)
-            pokemon_items.append((power * 0.7 + history * 0.3, row.get("pokemon") or pokemon_key))
+            pokemon_items.append((history, row.get("pokemon") or pokemon_key))
             _add_urls(sources, row.get("source_urls"))
             _add_urls(sources, draft.get("source_urls"))
         count = len(pokemon_items)
-        power_score = round(sum(item[0] for item in pokemon_items) / count, 1) if count else 0
         history_score = round(sum(min(100, item[0]) for item in pokemon_items) / count, 1) if count else 0
         coverage_score = 100 if count >= 11 else round(count / 11 * 100, 1)
-        roster_score = round(power_score * 0.55 + history_score * 0.25 + coverage_score * 0.20, 1)
+        roster_score = round(
+            history_score * ROSTER_SCORE_WEIGHTS["history"]
+            + coverage_score * ROSTER_SCORE_WEIGHTS["coverage"],
+            1,
+        )
         top_pokemon = ", ".join(name for _, name in sorted(pokemon_items, reverse=True)[:6])
         rows.append(
             {
@@ -449,7 +454,6 @@ def roster_score_rows(rosters: list[dict[str, str]], drafts: list[dict[str, str]
                 "team_name": team_name,
                 "pokemon_count": count,
                 "roster_score": roster_score,
-                "power_score": power_score,
                 "history_score": history_score,
                 "coverage_score": coverage_score,
                 "top_pokemon": top_pokemon,
