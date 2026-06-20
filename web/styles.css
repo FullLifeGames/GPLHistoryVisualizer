@@ -238,6 +238,9 @@ h3 {
 }
 
 .header-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 38px;
   border: 1px solid rgb(56 213 255 / 36%);
   border-radius: var(--radius);
@@ -249,12 +252,34 @@ h3 {
   font-weight: 850;
   padding: 8px 12px;
   backdrop-filter: blur(12px);
+  text-decoration: none;
 }
 
 .header-button:hover,
 .header-button:focus-visible {
   border-color: rgb(255 122 26 / 74%);
   background: rgb(7 89 206 / 56%);
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.issue-link {
+  border-color: rgb(255 122 26 / 58%);
+  background: rgb(255 122 26 / 18%);
+}
+
+.issue-link::before {
+  content: "!";
+  display: inline-grid;
+  width: 18px;
+  height: 18px;
+  margin-right: 7px;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 42%);
+  border-radius: 999px;
+  color: #ffffff;
+  font-size: 11px;
+  line-height: 1;
 }
 
 .status.is-ready {
@@ -513,12 +538,13 @@ input:focus,
 .highlight-card h3 {
   display: flex;
   flex-wrap: nowrap;
-  align-items: center;
+  align-items: baseline;
   gap: 8px;
   min-width: 0;
   margin: 0;
   font-size: 18px;
   line-height: 1.15;
+  justify-content: center;
 }
 
 .highlight-match-title .link-button {
@@ -534,9 +560,8 @@ input:focus,
 .highlight-vs {
   display: inline-flex;
   align-items: center;
-  align-self: center;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1;
   text-transform: uppercase;
 }

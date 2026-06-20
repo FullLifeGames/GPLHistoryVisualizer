@@ -14,6 +14,7 @@ export const TRANSLATIONS = {
       language: "English",
       themeLight: "Nachtmodus",
       themeDark: "Tagmodus",
+      reportIssue: "Problem melden",
     },
     status: {
       loading: "Lade CSV-Daten",
@@ -573,6 +574,7 @@ export const TRANSLATIONS = {
       language: "Deutsch",
       themeLight: "Night Theme",
       themeDark: "Day Theme",
+      reportIssue: "Report Issue",
     },
     status: {
       loading: "Loading CSV data",

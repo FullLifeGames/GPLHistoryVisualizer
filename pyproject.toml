@@ -1,11 +1,15 @@
 [project]
 name = "gpl-history"
-version = "0.1.0"
+version = "1.0.0"
 description = "Reconstruct German Pokémon League history from normalized CSV and source-table data."
 requires-python = ">=3.11"
 dependencies = [
   "requests>=2.31.0",
 ]
+
+[project.urls]
+Repository = "https://github.com/FullLifeGames/GPLHistoryVisualizer"
+Issues = "https://github.com/FullLifeGames/GPLHistoryVisualizer/issues"
 
 [project.optional-dependencies]
 dev = [

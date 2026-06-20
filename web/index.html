@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>GPL History Visualizer</title>
-    <link rel="icon" type="image/png" href="../GPL_Season_10_Logo.png" />
+    <link rel="icon" type="image/png" href="./assets/GPL_Season_10_Logo.png" />
     <link href="https://unpkg.com/tabulator-tables@6.4.0/dist/css/tabulator.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
@@ -12,7 +12,7 @@
     <header class="app-header">
       <div class="brand-lockup">
         <a class="brand-logo" href="#/all-time" aria-label="GPL History Visualizer">
-          <img src="../GPL_Season_10_Logo.png" alt="GPL Season 10" />
+          <img src="./assets/GPL_Season_10_Logo.png" alt="GPL Season 10" />
         </a>
         <div class="brand-copy">
           <h1>GPL History Visualizer</h1>
@@ -20,6 +20,15 @@
         </div>
       </div>
       <div class="header-actions" aria-label="Anzeigeoptionen">
+        <a
+          class="header-button issue-link"
+          href="https://github.com/FullLifeGames/GPLHistoryVisualizer/issues"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Problem oder Datenkorrektur auf GitHub melden"
+          data-i18n="controls.reportIssue"
+          >Problem melden</a
+        >
         <button class="header-button" id="language-toggle" type="button">English</button>
         <button class="header-button" id="theme-toggle" type="button">Nachtmodus</button>
         <div class="status" id="load-status" data-i18n="status.loading">Lade CSV-Daten</div>
@@ -28,7 +37,7 @@
 
     <div id="app-loading" class="loading-overlay" role="status" aria-live="polite">
       <div class="loading-card">
-        <img src="../GPL_Season_10_Logo.png" alt="" aria-hidden="true" />
+        <img src="./assets/GPL_Season_10_Logo.png" alt="" aria-hidden="true" />
         <div>
           <h2 data-i18n="loading.title">GPL-Daten werden geladen</h2>
           <p id="loading-detail" data-i18n="loading.subtitle">CSV-Dateien werden vorbereitet.</p>

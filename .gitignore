@@ -38,6 +38,7 @@ test-results/
 output/
 tmp/
 temp/
+.tmp/
 /pokemon_killlists_s3_s5_manual*.csv
 /team_pokemon_usage.csv
 *.tmp

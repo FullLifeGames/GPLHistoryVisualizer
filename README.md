@@ -2,6 +2,8 @@
 
 CSV-first reconstruction and visualization of German Pokémon League history from public YouTube playlists, video descriptions, Google Sheets, and reviewed correction data.
 
+Report data issues, missing videos, or UI problems through [GitHub Issues](https://github.com/FullLifeGames/GPLHistoryVisualizer/issues).
+
 ## What Is Included
 
 - Python CLI for collecting PresentLP GPL playlists, resolving description URLs, fetching public Google Sheets, normalizing data, scanning participant channels, and validating CSVs.
@@ -38,6 +40,45 @@ python -m pip install -e ".[drive-archive]"
 ```
 
 ## Common Commands
+
+All CLI entry points are mirrored in `package.json` for release work:
+
+```powershell
+npm run setup:py
+npm run collect
+npm run collect:resume
+npm run normalize
+npm run data-quality
+npm run aggregates
+npm run report
+npm run scan-videos
+npm run scan-videos:description-channels
+npm run build-video-archive
+npm run fetch-video-stats
+npm run fetch-video-stats:force
+npm run validate
+npm run validate:strict
+npm run review-queue
+npm run check:generated
+npm run pokemon-names
+npm run pokemon-draft-overview
+npm run pokemon-draft-overview:refresh
+npm run team-rosters
+npm run roster-matchdays
+npm run team-graphic-slots
+npm run test
+npm run release:check
+npm run serve
+```
+
+Drive archive helpers are also available after `npm run setup:drive`:
+
+```powershell
+npm run drive:dry-run
+npm run drive:limit
+npm run drive:no-upload
+npm run drive:archive
+```
 
 Normalize existing raw data:
 
@@ -111,6 +152,14 @@ python -m pytest -q
 node --test tests/*.mjs
 ```
 
+Or use the npm convenience scripts:
+
+```powershell
+npm test
+npm run check:generated
+npm run validate
+```
+
 Serve the web app locally:
 
 ```powershell
@@ -123,7 +172,7 @@ The web app uses Tabulator from unpkg for interactive tables and `@pkmn/img` fro
 
 ## Deployment
 
-`.github/workflows/pages.yml` publishes a lean GitHub Pages artifact containing `web/`, `data/normalized/`, `data/review/`, `docs/`, and the GPL Season 10 logo. It intentionally excludes `data/raw/`.
+`.github/workflows/pages.yml` publishes a lean GitHub Pages artifact containing `web/` including release assets, `data/normalized/`, `data/review/`, and `docs/`. It intentionally excludes `data/raw/`.
 
 ## Manual Corrections
 

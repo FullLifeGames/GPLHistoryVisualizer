@@ -174,6 +174,8 @@ def test_check_generated_artifacts_reports_drift(tmp_path):
     review.mkdir()
     showdown_cache.mkdir(parents=True)
     (showdown_cache / "formats-data.ts").write_text("export const FormatsData = {};\n", encoding="utf-8")
+    for generation in ("gen6", "gen7", "gen8"):
+        (showdown_cache / f"{generation}-formats-data.ts").write_text("export const FormatsData = {};\n", encoding="utf-8")
     _write_csv(normalized / "seasons.csv", [{"season_id": "season_001", "season_label": "Season 1"}])
     _write_csv(normalized / "standings.csv", [])
     _write_csv(normalized / "matches.csv", [])

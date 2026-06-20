@@ -1,0 +1,51 @@
+{
+  "name": "gpl-history-visualizer",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "CSV-first German Pokémon League history visualizer.",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/FullLifeGames/GPLHistoryVisualizer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/FullLifeGames/GPLHistoryVisualizer/issues"
+  },
+  "homepage": "https://fulllifegames.github.io/GPLHistoryVisualizer/",
+  "scripts": {
+    "setup:py": "python -m pip install -e \".[dev]\"",
+    "setup:drive": "python -m pip install -e \".[drive-archive]\"",
+    "cli": "node scripts/run-python-module.mjs gpl_history.cli",
+    "drive": "node scripts/run-python-module.mjs gpl_history.drive_archive",
+    "serve": "python -m http.server 8000",
+    "collect": "node scripts/run-python-module.mjs gpl_history.cli collect --data-dir data",
+    "collect:resume": "node scripts/run-python-module.mjs gpl_history.cli collect --data-dir data --resume",
+    "normalize": "node scripts/run-python-module.mjs gpl_history.cli normalize --data-dir data",
+    "data-quality": "node scripts/run-python-module.mjs gpl_history.cli data-quality --data-dir data",
+    "aggregates": "node scripts/run-python-module.mjs gpl_history.cli aggregates --data-dir data",
+    "report": "node scripts/run-python-module.mjs gpl_history.cli report --data-dir data --out docs/gpl-history.md",
+    "scan-videos": "node scripts/run-python-module.mjs gpl_history.cli scan-videos --data-dir data",
+    "scan-videos:description-channels": "node scripts/run-python-module.mjs gpl_history.cli scan-videos --data-dir data --include-description-channels",
+    "build-video-archive": "node scripts/run-python-module.mjs gpl_history.cli build-video-archive --data-dir data",
+    "fetch-video-stats": "node scripts/run-python-module.mjs gpl_history.cli fetch-video-stats --data-dir data",
+    "fetch-video-stats:force": "node scripts/run-python-module.mjs gpl_history.cli fetch-video-stats --data-dir data --force",
+    "validate": "node scripts/run-python-module.mjs gpl_history.cli validate --data-dir data",
+    "validate:strict": "node scripts/run-python-module.mjs gpl_history.cli validate --data-dir data --strict",
+    "review-queue": "node scripts/run-python-module.mjs gpl_history.cli review-queue --data-dir data",
+    "check:generated": "node scripts/run-python-module.mjs gpl_history.cli check-generated --data-dir data",
+    "pokemon-names": "node scripts/run-python-module.mjs gpl_history.cli pokemon-names --data-dir data --web-dir web",
+    "pokemon-draft-overview": "node scripts/run-python-module.mjs gpl_history.cli pokemon-draft-overview --data-dir data",
+    "pokemon-draft-overview:refresh": "node scripts/run-python-module.mjs gpl_history.cli pokemon-draft-overview --data-dir data --refresh",
+    "team-rosters": "node scripts/run-python-module.mjs gpl_history.cli team-rosters --data-dir data",
+    "roster-matchdays": "node scripts/run-python-module.mjs gpl_history.cli roster-matchdays --data-dir data",
+    "team-graphic-slots": "node scripts/run-python-module.mjs gpl_history.cli team-graphic-slots --data-dir data --graphics-dir output/team-graphics",
+    "drive:dry-run": "node scripts/run-python-module.mjs gpl_history.drive_archive --dry-run",
+    "drive:limit": "node scripts/run-python-module.mjs gpl_history.drive_archive --limit 5",
+    "drive:no-upload": "node scripts/run-python-module.mjs gpl_history.drive_archive --no-upload",
+    "drive:archive": "node scripts/run-python-module.mjs gpl_history.drive_archive",
+    "release:check": "npm run check:generated && npm run validate && npm test",
+    "test:py": "node scripts/run-python-module.mjs pytest -q -p no:cacheprovider",
+    "test:js": "node --test tests/*.mjs",
+    "test": "npm run test:py && npm run test:js"
+  }
+}

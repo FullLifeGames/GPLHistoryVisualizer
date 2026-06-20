@@ -23,6 +23,31 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python package
+        run: python -m pip install -e ".[dev]"
+
+      - name: Check generated artifacts
+        run: python -m gpl_history.cli check-generated --data-dir data
+
+      - name: Validate normalized CSVs
+        run: python -m gpl_history.cli validate --data-dir data
+
+      - name: Run Python tests
+        run: python -m pytest -q
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run Web tests
+        run: npm run test:js
+
       - name: Prepare static site
         run: |
           mkdir -p _site
@@ -31,7 +56,6 @@ jobs:
           cp -R data/normalized _site/data/normalized
           cp -R data/review _site/data/review
           cp -R docs _site/docs
-          cp GPL_Season_10_Logo.png _site/GPL_Season_10_Logo.png
           cat > _site/index.html <<'HTML'
           <!doctype html>
           <html lang="de">

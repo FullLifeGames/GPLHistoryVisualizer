@@ -677,6 +677,10 @@ def test_old_project_team_notes_supply_zero_kill_draft_assignments(tmp_path):
 def test_pokemon_draft_overview_uses_old_project_team_notes(tmp_path):
     (tmp_path / "raw" / "pokemon_showdown").mkdir(parents=True)
     (tmp_path / "raw" / "pokemon_showdown" / "formats-data.ts").write_text(
+        "export const FormatsData = {};\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "raw" / "pokemon_showdown" / "gen6-formats-data.ts").write_text(
         """
 export const FormatsData = {
   latiosmega: {
@@ -687,6 +691,11 @@ export const FormatsData = {
 """,
         encoding="utf-8",
     )
+    for generation in ("gen7", "gen8"):
+        (tmp_path / "raw" / "pokemon_showdown" / f"{generation}-formats-data.ts").write_text(
+            "export const FormatsData = {};\n",
+            encoding="utf-8",
+        )
     sheets_dir = tmp_path / "raw" / "season_003" / "sheets"
     sheets_dir.mkdir(parents=True)
     _write_csv(

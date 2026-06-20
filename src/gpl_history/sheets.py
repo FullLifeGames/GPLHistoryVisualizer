@@ -12,7 +12,7 @@ import requests
 from .storage import ensure_dir, safe_slug
 from .urls import normalize_url, resolve_google_sheets_id
 
-USER_AGENT = "gpl-history/0.1 (+https://github.com/local/gpl-history)"
+USER_AGENT = "gpl-history/1.0 (+https://github.com/FullLifeGames/GPLHistoryVisualizer)"
 
 
 def resolve_redirect(url: str, timeout: int = 12) -> dict[str, Any]:
