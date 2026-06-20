@@ -1040,6 +1040,23 @@ assert.deepEqual(
 assert.deepEqual(
   canonicalKilllistRows(
     [
+      { season_id: "season_010", division: "Playoffs", pokemon: "Eisenkrieger", pokemon_normalized: "eisenkrieger", trainer: "PresentLP", team_name: "Prekani", kills: "2" },
+      { season_id: "season_010", division: "Regular Season", pokemon: "Eisenkrieger", pokemon_normalized: "eisenkrieger", trainer: "OGDNZ", team_name: "Squid Squad", kills: "16" },
+      { season_id: "season_010", division: "Regular Season", pokemon: "UHaFniR", pokemon_normalized: "uhafnir", trainer: "Bene", team_name: "Wackel Backel", kills: "4" },
+      { season_id: "season_010", division: "Playoffs", pokemon: "UHaFniR", pokemon_normalized: "uhafnir", trainer: "Bene", team_name: "Wackel Backel", kills: "9" },
+    ],
+    "all",
+  ).map((row) => `${row.division}:${row.team_name}:${row.trainer}:${row.pokemon}:${row.kills}`),
+  [
+    "Playoffs:Prekani:PresentLP:Eisenkrieger:2",
+    "Playoffs:Wackel Backel:Bene:UHaFniR:9",
+    "Regular Season:Squid Squad:OGDNZ:Eisenkrieger:16",
+  ],
+);
+
+assert.deepEqual(
+  canonicalKilllistRows(
+    [
       { season_id: "season_009", division: "Overall", pokemon: "Pikachu" },
       { season_id: "season_009", division: "Singles", pokemon: "Pikachu" },
     ],
@@ -2307,6 +2324,85 @@ assert.deepEqual(
   assert.equal(rosterPokemon[0].kills, 9);
   assert.match(rosterPokemon[0].source_urls, /playoff-kader/);
   assert.match(rosterPokemon[0].source_urls, /playoff-killlist/);
+}
+
+{
+  const normalizeTestKey = (value) =>
+    String(value ?? "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  const rosterPokemon = teamRosterPokemonRows(
+    {
+      teamUsage: [
+        {
+          season_id: "season_010",
+          division: "Regular Season",
+          roster_phase: "regular",
+          team_name: "Squid Squad",
+          person_name: "OGDNZ",
+          pokemon: "Eisenkrieger",
+          pokemon_normalized: "eisenkrieger",
+          slot: "1",
+          data_status: "sheet_extracted",
+          source_urls: "regular-kader",
+        },
+        {
+          season_id: "season_010",
+          division: "Playoffs",
+          roster_phase: "playoffs",
+          team_name: "Prekani",
+          person_name: "PresentLP",
+          pokemon: "Eisenkrieger",
+          pokemon_normalized: "eisenkrieger",
+          slot: "2",
+          data_status: "sheet_extracted",
+          source_urls: "playoff-kader",
+        },
+      ],
+      killlists: [
+        {
+          season_id: "season_010",
+          division: "Regular Season",
+          stage: "regular_season",
+          team_name: "Squid Squad",
+          trainer: "OGDNZ",
+          pokemon: "Eisenkrieger",
+          pokemon_normalized: "eisenkrieger",
+          appearances: "12",
+          kills: "16",
+          deaths: "",
+          data_status: "sheet_extracted",
+          source_urls: "regular-killlist",
+        },
+        {
+          season_id: "season_010",
+          division: "Playoffs",
+          stage: "playoffs",
+          team_name: "Prekani",
+          trainer: "PresentLP",
+          pokemon: "Eisenkrieger",
+          pokemon_normalized: "eisenkrieger",
+          appearances: "3",
+          kills: "2",
+          deaths: "3",
+          data_status: "sheet_extracted",
+          source_urls: "playoff-killlist",
+        },
+      ],
+      pokemonDraftOverview: [{ pokemon: "Eisenkrieger", pokemon_normalized: "eisenkrieger", tier: "OU", tier_rank: "3", draft_count: "2", title_count: "0" }],
+    },
+    normalizeTestKey,
+  );
+
+  const squid = rosterPokemon.find((row) => row.team === "Squid Squad" && row.roster_phase === "regular" && row.pokemon === "Eisenkrieger");
+  const prekani = rosterPokemon.find((row) => row.team === "Prekani" && row.roster_phase === "playoffs" && row.pokemon === "Eisenkrieger");
+  assert.equal(squid?.kills, 16);
+  assert.equal(squid?.appearances, 12);
+  assert.match(squid?.source_urls ?? "", /regular-killlist/);
+  assert.equal(prekani?.kills, 2);
+  assert.equal(prekani?.appearances, 3);
+  assert.match(prekani?.source_urls ?? "", /playoff-killlist/);
 }
 
 {

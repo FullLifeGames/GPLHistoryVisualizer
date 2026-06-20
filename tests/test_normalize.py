@@ -199,6 +199,36 @@ def test_normalized_killlists_do_not_duplicate_identical_rows():
     assert duplicates == []
 
 
+def test_normalized_killlists_do_not_duplicate_same_source_assignments():
+    output = normalize_all(Path("data"))
+    rows = [row for row in output.pokemon_killlists if row["data_status"] != "not_available"]
+    keys = [
+        (
+            row["season_id"],
+            row["division"],
+            row["stage"],
+            row["pokemon_normalized"],
+            row["trainer_normalized"],
+            row["team_name"],
+            row["source_urls"],
+        )
+        for row in rows
+    ]
+    duplicates = [key for key, count in Counter(keys).items() if count > 1]
+
+    assert duplicates == []
+
+    s2_oktopaul_meistagrif = next(
+        row
+        for row in rows
+        if row["season_id"] == "season_002"
+        and row["division"] == "Regular Season"
+        and row["trainer"] == "Oktopaul"
+        and row["pokemon"] == "Meistagrif"
+    )
+    assert s2_oktopaul_meistagrif["kills"] == "11"
+
+
 def test_s10_killlist_uses_playoff_table_with_deaths():
     output = normalize_all(Path("data"))
     rows = [
@@ -822,4 +852,5 @@ def test_s1_killlist_is_marked_partial_because_source_stops_at_week_7():
     ]
 
     assert s1_rows
-    assert {row["data_status"] for row in s1_rows} == {"partial_sheet_extracted"}
+    assert {row["data_status"] for row in s1_rows} == {"partial_external_old_project_sheet"}
+    assert all(row["appearances"] is not None for row in s1_rows)

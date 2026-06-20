@@ -20,6 +20,7 @@
     "serve": "python -m http.server 8000",
     "collect": "node scripts/run-python-module.mjs gpl_history.cli collect --data-dir data",
     "collect:resume": "node scripts/run-python-module.mjs gpl_history.cli collect --data-dir data --resume",
+    "fetch-external-sheets": "node scripts/run-python-module.mjs gpl_history.cli fetch-external-sheets --data-dir data",
     "normalize": "node scripts/run-python-module.mjs gpl_history.cli normalize --data-dir data",
     "data-quality": "node scripts/run-python-module.mjs gpl_history.cli data-quality --data-dir data",
     "aggregates": "node scripts/run-python-module.mjs gpl_history.cli aggregates --data-dir data",

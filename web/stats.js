@@ -677,12 +677,36 @@ function hasDetailPerformance(row) {
 }
 
 function regularOnlyKilllistRows(canonicalRows, seasonRows) {
-  const canonicalPokemon = new Set(canonicalRows.map((row) => row.pokemon_normalized || normalizedStatsKey(row.pokemon)).filter(Boolean));
+  const canonicalPokemon = new Set();
+  const canonicalOwnerPokemon = new Set();
+  const ownerlessCanonicalPokemon = new Set();
+  canonicalRows.forEach((row) => {
+    const pokemonKey = row.pokemon_normalized || normalizedStatsKey(row.pokemon);
+    if (!pokemonKey) return;
+    canonicalPokemon.add(pokemonKey);
+    const ownerKeys = killlistOwnerKeys(row);
+    if (!ownerKeys.length) {
+      ownerlessCanonicalPokemon.add(pokemonKey);
+      return;
+    }
+    ownerKeys.forEach((ownerKey) => canonicalOwnerPokemon.add(`${pokemonKey}\u0000${ownerKey}`));
+  });
   return seasonRows.filter((row) => {
     if (row.division !== "Regular Season") return false;
     const key = row.pokemon_normalized || normalizedStatsKey(row.pokemon);
-    return key && !canonicalPokemon.has(key);
+    if (!key || !canonicalPokemon.has(key)) return Boolean(key);
+    const ownerKeys = killlistOwnerKeys(row);
+    if (!ownerKeys.length) return false;
+    if (ownerlessCanonicalPokemon.has(key)) return false;
+    return !ownerKeys.some((ownerKey) => canonicalOwnerPokemon.has(`${key}\u0000${ownerKey}`));
   });
+}
+
+function killlistOwnerKeys(row) {
+  return uniqueValues([
+    comparablePersonKey(row.trainer_normalized || row.trainer || row.person_name_normalized || row.person_name, normalizedStatsKey),
+    normalizedStatsKey(row.team_name_normalized || row.team_name || row.team),
+  ]);
 }
 
 function normalizedStatsKey(value) {

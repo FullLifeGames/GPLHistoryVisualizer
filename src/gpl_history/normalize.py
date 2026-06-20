@@ -477,6 +477,7 @@ def normalize_all(data_dir: Path) -> NormalizedOutput:
         output.champions.extend(season_output.champions or [_champion_placeholder(season_id, "No champion evidence adapter result.")])
         output.pokemon_killlists.extend(season_output.pokemon_killlists or [_placeholder(season_id, "pokemon_killlists")])
 
+    output.pokemon_killlists = _replace_season_001_killlists_with_external_old_project(data_dir, output.pokemon_killlists)
     apply_manual_rows(data_dir, output, NORMALIZED_FIELDS)
     team_pokemon_usage = read_manual_table(data_dir, "team_pokemon_usage", TEAM_POKEMON_USAGE_FIELDS)
     output.pokemon_killlists = _apply_team_pokemon_usage_to_killlists(output.pokemon_killlists, team_pokemon_usage)
@@ -2310,6 +2311,37 @@ def _season_killlists(season_id: str, tables: list[dict[str, Any]]) -> list[dict
     return rows or _missing_killlist_rows(season_id)
 
 
+def _replace_season_001_killlists_with_external_old_project(
+    data_dir: Path,
+    rows: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    external_rows = _external_old_project_s1_killlists(data_dir)
+    if not external_rows:
+        return rows
+    return [row for row in rows if row.get("season_id") != "season_001"] + external_rows
+
+
+def _external_old_project_s1_killlists(data_dir: Path) -> list[dict[str, Any]]:
+    workbook_dir = data_dir / "raw" / "external" / "old_project_ewige_tabelle"
+    sheets_index = read_json(workbook_dir / "sheets_index.json", [])
+    rows: list[dict[str, Any]] = []
+    for entry in sheets_index:
+        if entry.get("status") != "available" or not entry.get("raw_path"):
+            continue
+        if not _title_matches(entry.get("title"), "S1 Kills"):
+            continue
+        path = Path(entry["raw_path"])
+        if not path.exists():
+            continue
+        table = _load_sheet_table(path, entry)
+        for row in _standard_killlist("season_001", table, "Regular Season"):
+            enriched = dict(row)
+            enriched["data_status"] = "partial_external_old_project_sheet"
+            enriched["source_urls"] = _sheet_source_url(entry)
+            rows.append(enriched)
+    return _dedupe_killlist_rows(rows)
+
+
 def _old_project_killlist(season_id: str, tables: list[dict[str, Any]]) -> list[dict[str, Any]]:
     column_key, division = _OLD_PROJECT_KILL_COLUMNS[season_id]
     rows: list[dict[str, Any]] = []
@@ -2401,7 +2433,37 @@ def _dedupe_killlist_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
             continue
         seen.add(key)
         unique.append(row)
-    return unique
+    merge_key_fields = [
+        "season_id",
+        "division",
+        "stage",
+        "pokemon_normalized",
+        "trainer_normalized",
+        "team_name",
+        "source_urls",
+    ]
+    merged: dict[tuple[Any, ...], dict[str, Any]] = {}
+    order: list[tuple[Any, ...]] = []
+    for row in unique:
+        key = tuple(row.get(field) for field in merge_key_fields)
+        current = merged.get(key)
+        if current is None:
+            merged[key] = dict(row)
+            order.append(key)
+            continue
+        for field in ("pokemon", "trainer", "team_name"):
+            if not current.get(field) and row.get(field):
+                current[field] = row.get(field)
+        for field in ("appearances", "kills", "deaths", "differential"):
+            current[field] = _sum_killlist_numeric(current.get(field), row.get(field))
+    return [merged[key] for key in order]
+
+
+def _sum_killlist_numeric(left: Any, right: Any) -> str | None:
+    numbers = [_number(str(value)) for value in (left, right) if value is not None and str(value).strip()]
+    if not numbers:
+        return None
+    return _format_number(sum(float(number) for number in numbers))
 
 
 def _standard_killlist(season_id: str, table: dict[str, Any], division: str) -> list[dict[str, Any]]:

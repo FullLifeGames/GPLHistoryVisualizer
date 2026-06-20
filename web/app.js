@@ -9,6 +9,7 @@ import {
 } from "./i18n.js";
 import { parseRouteHash, personRouteHash, pokemonRouteHash, rosterRouteHash, seasonRouteHash, viewRouteHash } from "./router.js";
 import { pokemonAssetId } from "./pokemon_names.js";
+import { normalizeRosterGroupKey, rosterIdentityKey } from "./roster_keys.js";
 import { defaultViewForGroup, viewGroupForView } from "./view_config.js";
 import {
   ALL_TIME_COLUMNS,
@@ -1305,8 +1306,8 @@ function rosterGroupKeyFromRow(row) {
   const division = row.division || "";
   const personName = row.person_name || row.player_name || row.person || row.trainer || row.champion_name || "";
   const teamName = row.team_name || row.team || row.champion_team || inferredTeamForSeasonPerson(season, personName);
-  const teamKey = normalizedKey(row.team_key || row.team_name_normalized || teamName || "");
-  const personKey = normalizedKey(row.person_key || row.person_name_normalized || personName || rosterPersonIdKey(row.person_id || row.champion_person_id));
+  const teamKey = rosterIdentityKey(row.team_key || row.team_name_normalized || teamName || "", normalizedKey);
+  const personKey = rosterIdentityKey(row.person_key || row.person_name_normalized || personName || rosterPersonIdKey(row.person_id || row.champion_person_id), normalizedKey);
   if (!season || (!teamKey && !personKey)) {
     return "";
   }
@@ -1335,7 +1336,7 @@ function rosterVariantFamilyForRoute(row) {
   if (division === "regular season" || division.includes("playoff")) {
     return "main";
   }
-  return division || "unknown";
+  return rosterIdentityKey(division || "unknown", normalizedKey) || "unknown";
 }
 
 function personIdForName(name) {
@@ -1992,9 +1993,10 @@ function _intCompare(a, b) {
 }
 
 function rosterDetailForKey(key) {
-  let group = rosterDisplayGroups({ ignoreFilters: true }).groups.find((item) => item.key === key);
+  const normalizedFocusKey = normalizeRosterGroupKey(key, normalizedKey);
+  let group = rosterDisplayGroups({ ignoreFilters: true }).groups.find((item) => item.key === key || normalizeRosterGroupKey(item.key, normalizedKey) === normalizedFocusKey);
   if (!group) {
-    group = rosterDisplayGroups({ ignoreFilters: true, includeAllDataModes: true }).groups.find((item) => item.key === key);
+    group = rosterDisplayGroups({ ignoreFilters: true, includeAllDataModes: true }).groups.find((item) => item.key === key || normalizeRosterGroupKey(item.key, normalizedKey) === normalizedFocusKey);
   }
   if (!group) return null;
   return {

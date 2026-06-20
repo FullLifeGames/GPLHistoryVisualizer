@@ -1,0 +1,22 @@
+[
+  {
+    "label": "old_project_ewige_tabelle",
+    "sheet_id": "1JZpA-5XDldN2bjfvhvBPHYK-1AENETLnF1UxNEpWlNA",
+    "source_url": "https://docs.google.com/spreadsheets/d/1JZpA-5XDldN2bjfvhvBPHYK-1AENETLnF1UxNEpWlNA/edit?gid=352888197#gid=352888197",
+    "description": "Old GPL all-time workbook with team summaries, S1 kills, S2-S8 kill ranking, logos, and status values.",
+    "status": "available",
+    "tabs": 7,
+    "rows": 2025,
+    "sheets_index_path": "data/raw/external/old_project_ewige_tabelle/sheets_index.json"
+  },
+  {
+    "label": "player_compare",
+    "sheet_id": "1ejA0nLQQnRHKhIvUiBmf4L7qHUqY6y91ifaxzfFuy8c",
+    "source_url": "https://docs.google.com/spreadsheets/d/1ejA0nLQQnRHKhIvUiBmf4L7qHUqY6y91ifaxzfFuy8c/edit?gid=0#gid=0",
+    "description": "GPL player-vs-player comparison workbook with S1-S9 match rows across divisions and conferences.",
+    "status": "available",
+    "tabs": 3,
+    "rows": 6624,
+    "sheets_index_path": "data/raw/external/player_compare/sheets_index.json"
+  }
+]

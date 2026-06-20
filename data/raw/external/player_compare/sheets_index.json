@@ -1,0 +1,53 @@
+[
+  {
+    "sheet_id": "1ejA0nLQQnRHKhIvUiBmf4L7qHUqY6y91ifaxzfFuy8c",
+    "workbook_title": "GPL-Spielervergleich",
+    "gid": "0",
+    "title": "All",
+    "index": 0,
+    "source_url": "https://docs.google.com/spreadsheets/d/1ejA0nLQQnRHKhIvUiBmf4L7qHUqY6y91ifaxzfFuy8c/edit#gid=0",
+    "raw_path": "data/raw/external/player_compare/sheets/1eja0nlqqnrhkhivuibmf4l7qhuqy6y91ifaxzffuy8c_all_0.csv",
+    "status": "available",
+    "status_code": 200,
+    "error": null,
+    "rows": 3293,
+    "columns": 13,
+    "fetch_method": "sheets_api",
+    "external_label": "player_compare",
+    "external_description": "GPL player-vs-player comparison workbook with S1-S9 match rows across divisions and conferences."
+  },
+  {
+    "sheet_id": "1ejA0nLQQnRHKhIvUiBmf4L7qHUqY6y91ifaxzfFuy8c",
+    "workbook_title": "GPL-Spielervergleich",
+    "gid": "1113041162",
+    "title": "Sort",
+    "index": 1,
+    "source_url": "https://docs.google.com/spreadsheets/d/1ejA0nLQQnRHKhIvUiBmf4L7qHUqY6y91ifaxzfFuy8c/edit#gid=1113041162",
+    "raw_path": "data/raw/external/player_compare/sheets/1eja0nlqqnrhkhivuibmf4l7qhuqy6y91ifaxzffuy8c_sort_1113041162.csv",
+    "status": "available",
+    "status_code": 200,
+    "error": null,
+    "rows": 3293,
+    "columns": 10,
+    "fetch_method": "sheets_api",
+    "external_label": "player_compare",
+    "external_description": "GPL player-vs-player comparison workbook with S1-S9 match rows across divisions and conferences."
+  },
+  {
+    "sheet_id": "1ejA0nLQQnRHKhIvUiBmf4L7qHUqY6y91ifaxzfFuy8c",
+    "workbook_title": "GPL-Spielervergleich",
+    "gid": "175875114",
+    "title": "Vergleich",
+    "index": 2,
+    "source_url": "https://docs.google.com/spreadsheets/d/1ejA0nLQQnRHKhIvUiBmf4L7qHUqY6y91ifaxzfFuy8c/edit#gid=175875114",
+    "raw_path": "data/raw/external/player_compare/sheets/1eja0nlqqnrhkhivuibmf4l7qhuqy6y91ifaxzffuy8c_vergleich_175875114.csv",
+    "status": "available",
+    "status_code": 200,
+    "error": null,
+    "rows": 38,
+    "columns": 11,
+    "fetch_method": "sheets_api",
+    "external_label": "player_compare",
+    "external_description": "GPL player-vs-player comparison workbook with S1-S9 match rows across divisions and conferences."
+  }
+]

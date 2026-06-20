@@ -8,6 +8,7 @@ from typing import Any, Callable
 
 from .aggregates import build_and_write_aggregates
 from .data_quality import check_generated_artifacts, generate_data_quality
+from .external_sources import fetch_external_workbooks
 from .match_highlights import build_and_write_match_highlights
 from .normalize import normalize_all
 from .playlists import group_gpl_playlists
@@ -42,6 +43,12 @@ def main(argv: list[str] | None = None) -> int:
     collect.add_argument("--resume", action="store_true", help="Reuse existing raw season files when present.")
     collect.add_argument("--resolve-workers", type=int, default=12, help="Concurrent redirect resolver workers.")
     collect.add_argument("--resolve-timeout", type=int, default=5, help="Per-URL redirect resolver timeout in seconds.")
+
+    external_sheets = subparsers.add_parser(
+        "fetch-external-sheets",
+        help="Fetch known public external GPL workbooks into raw/external.",
+    )
+    external_sheets.add_argument("--data-dir", default="data")
 
     normalize = subparsers.add_parser("normalize", help="Normalize existing raw data into CSVs.")
     normalize.add_argument("--data-dir", default="data")
@@ -105,6 +112,14 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "collect":
         return collect_command(args)
+    if args.command == "fetch-external-sheets":
+        sheets_api_key = os.environ.get("SHEETS_API_KEY")
+        if not sheets_api_key:
+            raise SystemExit("SHEETS_API_KEY is required for external sheet fetching.")
+        results = fetch_external_workbooks(Path(args.data_dir), SheetsApiClient(api_key=sheets_api_key))
+        for result in results:
+            print(f"{result['label']}: {result['tabs']} tabs, {result['rows']} rows")
+        return 0
     if args.command == "normalize":
         normalize_all(Path(args.data_dir))
         build_and_write_team_rosters(Path(args.data_dir))
