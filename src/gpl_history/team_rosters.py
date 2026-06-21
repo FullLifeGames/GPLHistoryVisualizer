@@ -1049,9 +1049,10 @@ def _killlist_supplement_roster_rows(data_dir: Path, roster_rows: list[dict[str,
     slot_counts: dict[tuple[str, str, str, str], int] = defaultdict(int)
 
     for row in roster_rows:
-        if row.get("source_table") != "Manual team graphics":
+        source_table = row.get("source_table")
+        if source_table == "Manual team graphics" and row.get("season_id") not in {"season_003", "season_004", "season_005"}:
             continue
-        if row.get("season_id") not in {"season_003", "season_004", "season_005"}:
+        if source_table not in {"Manual team graphics", "Manual team usage"}:
             continue
         key = _roster_owner_key(row)
         if not key:
@@ -1064,8 +1065,6 @@ def _killlist_supplement_roster_rows(data_dir: Path, roster_rows: list[dict[str,
 
     rows: list[dict[str, Any]] = []
     for row in killlists:
-        if row.get("season_id") not in {"season_003", "season_004", "season_005"}:
-            continue
         if row.get("data_status") == "not_available":
             continue
         pokemon = _pokemon_cell(row.get("pokemon"))

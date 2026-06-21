@@ -563,6 +563,59 @@ def test_killlist_supplements_loose_manual_snapshot_rosters(tmp_path):
     assert rows[0]["source_urls"] == "killlist-source"
 
 
+def test_killlist_supplements_manual_team_usage_rosters(tmp_path):
+    normalized_dir = tmp_path / "normalized"
+    normalized_dir.mkdir()
+    _write_rows(
+        normalized_dir / "pokemon_killlists.csv",
+        [
+            {
+                "season_id": "season_002",
+                "division": "Regular Season",
+                "pokemon": "Latios",
+                "pokemon_normalized": "latios",
+                "trainer": "SteveParker",
+                "trainer_normalized": "steveparker",
+                "team_name": "ToxicBlast",
+                "data_status": "sheet_extracted",
+                "source_urls": "killlist-source",
+            },
+            {
+                "season_id": "season_002",
+                "division": "Regular Season",
+                "pokemon": "Mew",
+                "pokemon_normalized": "mew",
+                "trainer": "SteveParker",
+                "trainer_normalized": "steveparker",
+                "team_name": "ToxicBlast",
+                "data_status": "sheet_extracted",
+                "source_urls": "duplicate-source",
+            },
+        ],
+    )
+    roster_rows = [
+        {
+            "season_id": "season_002",
+            "division": "Regular Season",
+            "team_name": "ToxicBlast",
+            "team_name_normalized": "toxicblast",
+            "person_name": "SteveParker",
+            "person_name_normalized": "steveparker",
+            "pokemon": "Mew",
+            "pokemon_normalized": "mew",
+            "slot": "13",
+            "source_table": "Manual team usage",
+        }
+    ]
+
+    rows = _killlist_supplement_roster_rows(tmp_path, roster_rows)
+
+    assert [(row["pokemon"], row["slot"]) for row in rows] == [("Latios", "14")]
+    assert rows[0]["person_name"] == "SteveParker"
+    assert rows[0]["team_name"] == "ToxicBlast"
+    assert rows[0]["source_table"] == "Pokemon killlist supplement"
+
+
 def test_season_006_killlists_can_supply_conference_and_playoff_rosters(tmp_path):
     normalized_dir = tmp_path / "normalized"
     normalized_dir.mkdir()
