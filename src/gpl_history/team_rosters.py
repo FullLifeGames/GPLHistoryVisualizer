@@ -248,6 +248,7 @@ def build_team_rosters(data_dir: Path) -> list[dict[str, Any]]:
                 )
 
     rows.extend(_season_006_killlist_roster_rows(data_dir, teams))
+    rows.extend(_manual_team_usage_roster_rows(data_dir, teams))
     rows.extend(_manual_team_graphic_snapshot_rows(data_dir, teams))
     rows.extend(_killlist_supplement_roster_rows(data_dir, rows))
     return _sort_roster_rows(_dedupe_rows(rows))
@@ -938,6 +939,36 @@ def _manual_team_graphic_snapshot_rows(data_dir: Path, teams: list[dict[str, Any
                     notes=_manual_team_graphic_notes(row.get("season_id") or ""),
                 )
             )
+    return rows
+
+
+def _manual_team_usage_roster_rows(data_dir: Path, teams: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    manual_path = data_dir / "manual" / "team_pokemon_usage.csv"
+    manual_rows = _read_csv(manual_path)
+    graphic_snapshot_seasons = {"season_003", "season_004", "season_005"}
+    rows: list[dict[str, Any]] = []
+    for row in manual_rows:
+        if row.get("season_id") in graphic_snapshot_seasons or row.get("data_status") == "not_available":
+            continue
+        pokemon = _pokemon_cell(row.get("pokemon"))
+        if pokemon is None:
+            continue
+        team = _manual_team(row, teams)
+        rows.append(
+            _roster_row(
+                season_id=row.get("season_id") or "",
+                division=row.get("division") or "",
+                roster_phase=row.get("roster_phase") or "",
+                team=team,
+                pokemon=pokemon,
+                slot=row.get("slot") or "",
+                source_table="Manual team usage",
+                source_file=row.get("source_file") or str(manual_path.as_posix()),
+                source_urls=row.get("source_urls") or str(manual_path.as_posix()),
+                data_status=row.get("data_status") or "manual_override",
+                notes=row.get("notes") or "Manuelle Kader-Ergänzung",
+            )
+        )
     return rows
 
 
