@@ -8,6 +8,7 @@ from gpl_history.team_rosters import (
     _extract_s10_playoff_tierlist_roster_rows,
     _extract_usage_kader_rows,
     _killlist_supplement_roster_rows,
+    _manual_team_usage_roster_rows,
     _manual_team_graphic_snapshot_rows,
     _parse_initial_draft_picks,
     _parse_rueckrunde_draft_changes,
@@ -416,6 +417,52 @@ def test_manual_s4_team_graphics_are_hinrunde_snapshots(tmp_path):
     assert "Hinrunden-Snapshot" in rows[0]["notes"]
 
 
+def test_manual_s2_team_usage_becomes_normalized_roster_rows(tmp_path):
+    manual_dir = tmp_path / "manual"
+    manual_dir.mkdir()
+    _write_rows(
+        manual_dir / "team_pokemon_usage.csv",
+        [
+            {
+                "season_id": "season_002",
+                "division": "Regular Season",
+                "team_name": "ToxicBlast",
+                "team_name_normalized": "toxicblast",
+                "person_name": "SteveParker",
+                "person_name_normalized": "steveparker",
+                "pokemon": "Mega-Aerodactyl",
+                "pokemon_normalized": "mega aerodactyl",
+                "slot": "10",
+                "source_file": "data/manual/team_pokemon_usage.csv",
+                "source_urls": "data/manual/team_pokemon_usage.csv",
+                "data_status": "manual_override",
+            },
+            {
+                "season_id": "season_004",
+                "division": "Regular Season",
+                "team_name": "Ritter der Tapukokosnuss",
+                "team_name_normalized": "ritter der tapukokosnuss",
+                "person_name": "Bene",
+                "person_name_normalized": "bene",
+                "pokemon": "Quappo",
+                "pokemon_normalized": "quappo",
+                "slot": "1",
+                "data_status": "manual_override",
+            },
+        ],
+    )
+
+    rows = _manual_team_usage_roster_rows(tmp_path, [])
+
+    assert len(rows) == 1
+    assert rows[0]["season_id"] == "season_002"
+    assert rows[0]["person_name"] == "SteveParker"
+    assert rows[0]["team_name"] == "ToxicBlast"
+    assert rows[0]["pokemon"] == "Mega-Aerodactyl"
+    assert rows[0]["data_status"] == "manual_override"
+    assert rows[0]["source_table"] == "Manual team usage"
+
+
 def test_manual_s3_team_graphics_are_rueckrunde_snapshots(tmp_path):
     manual_dir = tmp_path / "manual"
     manual_dir.mkdir()
@@ -514,6 +561,59 @@ def test_killlist_supplements_loose_manual_snapshot_rosters(tmp_path):
     assert [(row["pokemon"], row["roster_phase"], row["slot"]) for row in rows] == [("Lanturn", "rueckrunde", "2")]
     assert rows[0]["source_table"] == "Pokemon killlist supplement"
     assert rows[0]["source_urls"] == "killlist-source"
+
+
+def test_killlist_supplements_manual_team_usage_rosters(tmp_path):
+    normalized_dir = tmp_path / "normalized"
+    normalized_dir.mkdir()
+    _write_rows(
+        normalized_dir / "pokemon_killlists.csv",
+        [
+            {
+                "season_id": "season_002",
+                "division": "Regular Season",
+                "pokemon": "Latios",
+                "pokemon_normalized": "latios",
+                "trainer": "SteveParker",
+                "trainer_normalized": "steveparker",
+                "team_name": "ToxicBlast",
+                "data_status": "sheet_extracted",
+                "source_urls": "killlist-source",
+            },
+            {
+                "season_id": "season_002",
+                "division": "Regular Season",
+                "pokemon": "Mew",
+                "pokemon_normalized": "mew",
+                "trainer": "SteveParker",
+                "trainer_normalized": "steveparker",
+                "team_name": "ToxicBlast",
+                "data_status": "sheet_extracted",
+                "source_urls": "duplicate-source",
+            },
+        ],
+    )
+    roster_rows = [
+        {
+            "season_id": "season_002",
+            "division": "Regular Season",
+            "team_name": "ToxicBlast",
+            "team_name_normalized": "toxicblast",
+            "person_name": "SteveParker",
+            "person_name_normalized": "steveparker",
+            "pokemon": "Mew",
+            "pokemon_normalized": "mew",
+            "slot": "13",
+            "source_table": "Manual team usage",
+        }
+    ]
+
+    rows = _killlist_supplement_roster_rows(tmp_path, roster_rows)
+
+    assert [(row["pokemon"], row["slot"]) for row in rows] == [("Latios", "14")]
+    assert rows[0]["person_name"] == "SteveParker"
+    assert rows[0]["team_name"] == "ToxicBlast"
+    assert rows[0]["source_table"] == "Pokemon killlist supplement"
 
 
 def test_season_006_killlists_can_supply_conference_and_playoff_rosters(tmp_path):
