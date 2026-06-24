@@ -67,6 +67,7 @@ def main(argv: list[str] | None = None) -> int:
     scan_videos.add_argument("--data-dir", default="data")
     scan_videos.add_argument("--max-channels", type=int, default=None, help="Optional development limit.")
     scan_videos.add_argument("--max-pages-per-channel", type=int, default=None, help="Optional uploads playlist page limit.")
+    scan_videos.add_argument("--resume", action="store_true", help="Reuse already refreshed raw upload scans when possible.")
     scan_videos.add_argument(
         "--include-description-channels",
         action="store_true",
@@ -157,6 +158,7 @@ def main(argv: list[str] | None = None) -> int:
             max_channels=args.max_channels,
             max_pages_per_channel=args.max_pages_per_channel,
             include_description_channels=args.include_description_channels,
+            resume=args.resume,
         )
         return 0
     if args.command == "build-video-archive":

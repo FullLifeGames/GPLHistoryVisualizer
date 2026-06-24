@@ -51,6 +51,14 @@ MATCH_HIGHLIGHT_FIELDS = [
 ]
 
 SINGLE_SOURCE_SCORE_FACTOR = 0.85
+STORY_CONTEXT_TOKENS = (
+    "top duell",
+    "top-duell",
+    "topduell",
+    "hype match",
+    "kampf um platz 1",
+    "entscheidet alles",
+)
 
 
 def build_and_write_match_highlights(data_dir: Path) -> list[dict[str, Any]]:
@@ -157,6 +165,7 @@ def build_match_highlights(data_dir: Path) -> list[dict[str, Any]]:
             playoff_match=aggregate["playoff_match"],
             both_sides_spiked=len(aggregate["perspectives"]) >= 2,
             videos=videos,
+            story_match=_is_story_match(videos, match),
         )
         fallback_video = videos[0] if videos else {}
         rows.append(
@@ -232,6 +241,7 @@ def _highlight_score(
     playoff_match: bool,
     both_sides_spiked: bool,
     videos: list[dict[str, str]],
+    story_match: bool = False,
 ) -> tuple[float, list[str]]:
     reasons: list[str] = []
     share_weight = min(1.0, max(0.0, perspective_view_share) / 0.5)
@@ -262,6 +272,14 @@ def _highlight_score(
     if playoff_match:
         score += 8
         reasons.append("Playoff-Kontext")
+    if story_match:
+        story_score = 8
+        if raw_attention_percentile >= 0.8:
+            story_score += 8
+        if engagement_multiplier >= 1.25 or engagement_percentile >= 0.9:
+            story_score += 4
+        score += story_score
+        reasons.append("Story-Kontext")
     if both_sides_spiked:
         score += 8
         reasons.append("beide Perspektiven über Erwartung")
@@ -362,6 +380,20 @@ def _engagement_rate(row: dict[str, str]) -> float:
     likes = _int(row.get("like_count"))
     comments = _int(row.get("comment_count"))
     return (likes + comments * 2) / views * 1000
+
+
+def _is_story_match(videos: list[dict[str, str]], match: dict[str, str]) -> bool:
+    text = _key(
+        " ".join(
+            [
+                match.get("week") or "",
+                match.get("player_a") or "",
+                match.get("player_b") or "",
+                *(row.get("video_title") or "" for row in videos),
+            ]
+        )
+    )
+    return any(token in text for token in STORY_CONTEXT_TOKENS)
 
 
 def _is_close_match(match: dict[str, str], video: list[dict[str, str]]) -> bool:

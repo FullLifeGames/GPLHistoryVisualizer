@@ -1,6 +1,31 @@
 import assert from "node:assert/strict";
 import { TABULATOR_LANGS, columnTitle, nextLanguage, nextTheme, normalizeLanguage, normalizeTheme, t } from "../web/i18n.js";
 
+assert.equal(t("de", "nav.cinema"), "Kino-Modus");
+assert.equal(t("en", "nav.cinema"), "Cinema Mode");
+assert.equal(t("de", "cinema.filtersTitle"), "Kino-Filter");
+assert.equal(t("de", "cinema.orderChronological"), "Spieltag-Reihenfolge");
+assert.equal(t("de", "cinema.orderPublished"), "Älteste zuerst");
+assert.equal(t("de", "cinema.orderHighlights"), "Highlights zuerst");
+assert.equal(t("de", "cinema.perspective"), "Sicht");
+assert.equal(t("de", "cinema.channelSingular"), "Kanal");
+assert.equal(t("de", "cinema.channelPlural"), "Kanäle");
+assert.equal(t("de", "cinema.previousVideo"), "Zurück");
+assert.equal(t("de", "cinema.nextVideo"), "Weiter");
+assert.equal(t("de", "cinema.randomVideo"), "Zufälliges Video");
+assert.equal(t("en", "cinema.filtersTitle"), "Cinema filters");
+assert.equal(t("en", "cinema.orderPublished"), "Oldest first");
+assert.equal(t("en", "cinema.orderHighlights"), "Highlights first");
+assert.equal(t("en", "cinema.channelSingular"), "channel");
+assert.equal(t("en", "cinema.channelPlural"), "channels");
+assert.equal(t("en", "cinema.previousVideo"), "Back");
+assert.equal(t("en", "cinema.nextVideo"), "Next");
+assert.equal(t("en", "cinema.randomVideo"), "Random video");
+assert.equal(t("de", "videoTypes.reference"), "Referenz");
+assert.equal(t("en", "videoTypes.reference"), "Reference");
+assert.equal(t("de", "matchStatuses.livestream"), "Livestream");
+assert.equal(t("en", "matchStatuses.livestream"), "Livestream");
+
 assert.equal(normalizeLanguage("fr-FR"), "de");
 assert.equal(normalizeLanguage("en-US"), "en");
 assert.equal(nextLanguage("de"), "en");

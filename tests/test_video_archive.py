@@ -8,7 +8,9 @@ from gpl_history.video_archive import (
     discover_channel_candidates,
     match_video_to_matches,
     parse_gpl_video_title,
+    scan_video_archive,
 )
+from gpl_history.youtube import YouTubeApiError
 
 
 def test_channel_candidate_from_common_youtube_url_shapes():
@@ -150,6 +152,34 @@ def test_discover_channel_candidates_maps_s10_teilnehmerfeld_handles(tmp_path):
     assert "https://www.youtube.com/@Mewmore" not in by_url
 
 
+def test_discover_channel_candidates_includes_manual_reaction_channels(tmp_path):
+    normalized_dir = tmp_path / "normalized"
+    manual_dir = tmp_path / "manual"
+    normalized_dir.mkdir()
+    manual_dir.mkdir()
+    _write_test_csv(normalized_dir / "teams.csv", [])
+    _write_test_csv(
+        manual_dir / "video_channels.csv",
+        [
+            {
+                "kind": "handle",
+                "value": "@theMinehamsterDE",
+                "canonical_url": "https://www.youtube.com/@theMinehamsterDE",
+                "source_person_names": "theMinehamsterDE",
+                "source_seasons": "",
+                "source_divisions": "Reaction",
+                "source_urls": "https://www.youtube.com/@theMinehamsterDE",
+            }
+        ],
+    )
+
+    candidates = discover_channel_candidates(tmp_path)
+
+    by_url = {candidate["canonical_url"]: candidate for candidate in candidates}
+    assert by_url["https://www.youtube.com/@theMinehamsterDE"]["source_person_names"] == "theMinehamsterDE"
+    assert by_url["https://www.youtube.com/@theMinehamsterDE"]["source_divisions"] == "Reaction"
+
+
 def test_parse_gpl_video_title_extracts_season_week_and_playoff_round():
     parsed = parse_gpl_video_title("GPL Season 10 - Spieltag 7 vs Bene")
     assert parsed["is_gpl"] is True
@@ -176,6 +206,12 @@ def test_parse_gpl_video_title_extracts_season_week_and_playoff_round():
 
     storyline = parse_gpl_video_title("GPL [S4] - Spieltag 22 - vs. Enteikutierung: Relegation oder Liga 1?")
     assert storyline["division"] is None
+
+
+def test_parse_gpl_video_title_rejects_udt_false_positive_even_when_title_mentions_gpl():
+    parsed = parse_gpl_video_title("GPL Liga 2 Letzter vs GPL Vorjahresletzter | UDT Spieltag 6 VS. Pokgalaxy")
+
+    assert parsed["is_gpl"] is False
 
 
 def test_parse_gpl_video_title_treats_matchday_as_week_marker():
@@ -215,6 +251,7 @@ def test_classify_video_type_distinguishes_games_teambuildings_and_other_gpl_vid
     assert classify_video_type("GPL Season 4 - Ankündigung") == "announcement"
     assert classify_video_type("Legendäre GPL Kämpfe | Reaction | GPL S1 Raizor vs Fnupa") == "reaction"
     assert classify_video_type("GPL S6 Recap und Rückblick") == "recap"
+    assert classify_video_type("GPL gehate von Zuschauern (Spieltag 21) ... meine Meinung!") == "reaction"
 
 
     assert classify_video_type('"Curelei ist trash!" - GPL [S9] Rückblick - Spieltag 1') == "recap"
@@ -347,6 +384,69 @@ def test_match_video_to_matches_uses_source_season_when_title_has_no_season():
     assert result is not None
     assert result["match_id"] == "season_010_right"
     assert "source_season" in result["match_basis"]
+
+
+def test_match_video_to_matches_rejects_source_season_when_publish_date_is_far_from_match_week():
+    video = {
+        "title": "GPL - Spieltag 22 - vs. Dancing Darmanitans: #UnluckyShiro",
+        "source_person_names": "Cabgolord",
+        "source_seasons": "season_002",
+        "published_at": "2015-02-15T13:00:00Z",
+    }
+    matches = [
+        {
+            "season_id": "season_002",
+            "match_id": "season_002_wrong_date",
+            "week": "22. Spieltag - Sonntag der 16.08.2015 [12:00 -18:00]",
+            "stage": "regular_season",
+            "division": "Regular Season",
+            "player_a": "Cabgolord",
+            "player_b": "RegiBang",
+            "team_a": "Cabgospot",
+            "team_b": "Dancing Darmanitans",
+        }
+    ]
+
+    assert match_video_to_matches(video, matches) is None
+
+
+def test_match_video_to_matches_uses_publish_date_to_choose_between_source_seasons():
+    video = {
+        "title": "GPL - Spieltag 22 - vs. Dancing Darmanitans: #UnluckyShiro",
+        "source_person_names": "Cabgolord",
+        "source_seasons": "season_001;season_002",
+        "published_at": "2015-02-15T13:00:00Z",
+    }
+    matches = [
+        {
+            "season_id": "season_001",
+            "match_id": "season_001_manual_0022_fnupa_shiro",
+            "week": "22. Spieltag - Sonntag der 15.02.2015 [12:00 -17:00]",
+            "stage": "regular_season",
+            "division": "Regular Season",
+            "player_a": "Cabgolord",
+            "player_b": "Shiro",
+            "team_a": "Fnupagladi",
+            "team_b": "Dancing Darmanitans",
+        },
+        {
+            "season_id": "season_002",
+            "match_id": "season_002_wrong_date",
+            "week": "22. Spieltag - Sonntag der 16.08.2015 [12:00 -18:00]",
+            "stage": "regular_season",
+            "division": "Regular Season",
+            "player_a": "Cabgolord",
+            "player_b": "RegiBang",
+            "team_a": "Cabgospot",
+            "team_b": "Dancing Darmanitans",
+        },
+    ]
+
+    result = match_video_to_matches(video, matches)
+
+    assert result is not None
+    assert result["match_id"] == "season_001_manual_0022_fnupa_shiro"
+    assert result["opponent"] == "Shiro"
 
 
 def test_match_video_to_matches_source_season_and_week_are_enough_for_known_channel():
@@ -714,7 +814,215 @@ def test_build_video_archive_uses_matched_season_when_title_has_no_season(tmp_pa
     assert "week" in archive_rows[0]["match_basis"]
     assert "matched season" in archive_rows[0]["confidence_explanation"]
     assert match_rows[0]["season_id"] == "season_001"
+    assert match_rows[0]["published_at"] == "2014-09-14T10:00:00Z"
     assert (normalized_dir / "video_urls.txt").read_text(encoding="utf-8").strip() == "https://www.youtube.com/watch?v=abc123"
+
+
+def test_scan_video_archive_resume_reuses_current_raw_uploads(tmp_path):
+    raw_dir = tmp_path / "raw" / "video_archive"
+    normalized_dir = tmp_path / "normalized"
+    raw_dir.mkdir(parents=True)
+    normalized_dir.mkdir()
+    uploads_path = raw_dir / "present_uploads.json"
+
+    _write_test_csv(
+        normalized_dir / "teams.csv",
+        [
+            {
+                "season_id": "season_010",
+                "person_id": "person_presentlp",
+                "person_name": "PresentLP",
+                "team_name": "Prekani",
+                "channel_url": "https://www.youtube.com/@PresPres",
+                "data_status": "sheet_extracted",
+            }
+        ],
+    )
+    _write_test_csv(normalized_dir / "matches.csv", [])
+    (raw_dir / "channels.json").write_text(
+        json.dumps(
+            [
+                {
+                    "kind": "handle",
+                    "value": "@PresPres",
+                    "canonical_url": "https://www.youtube.com/@PresPres",
+                    "source_person_names": "PresentLP",
+                    "source_team_names": "Prekani",
+                    "source_seasons": "season_010",
+                    "source_urls": "https://www.youtube.com/@PresPres",
+                    "channelId": "UCpresent",
+                    "title": "Present",
+                    "uploadsPlaylistId": "UUpresent",
+                    "status": "available",
+                    "video_count": 1,
+                    "raw_path": str(uploads_path).replace("\\", "/"),
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    uploads_path.write_text(
+        json.dumps(
+            [
+                {
+                    "videoId": "present-s10",
+                    "title": "GPL S10 Spieltag 1 vs Bene",
+                    "publishedAt": "2025-10-05T12:00:00Z",
+                    "videoPublishedAt": "2025-10-05T12:00:00Z",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    class FailingClient:
+        def resolve_channel(self, *args, **kwargs):
+            raise AssertionError("cached channel should not be resolved")
+
+        def list_playlist_videos(self, *args, **kwargs):
+            raise AssertionError("current raw uploads should not be fetched")
+
+    archive_rows, _ = scan_video_archive(tmp_path, FailingClient(), resume=True)
+
+    assert archive_rows[0]["video_id"] == "present-s10"
+
+
+def test_scan_video_archive_resume_keeps_stale_raw_uploads_when_refresh_hits_quota(tmp_path):
+    raw_dir = tmp_path / "raw" / "video_archive"
+    normalized_dir = tmp_path / "normalized"
+    raw_dir.mkdir(parents=True)
+    normalized_dir.mkdir()
+    uploads_path = raw_dir / "tabasco_uploads.json"
+
+    _write_test_csv(
+        normalized_dir / "teams.csv",
+        [
+            {
+                "season_id": "season_004",
+                "person_id": "person_tabasco_tv",
+                "person_name": "Tabasco TV",
+                "team_name": "Insirnapes",
+                "channel_url": "https://www.youtube.com/channel/UCIgpF-qa1qagv0Xg2O5_6RQ",
+                "data_status": "sheet_extracted",
+            }
+        ],
+    )
+    _write_test_csv(normalized_dir / "matches.csv", [])
+    (raw_dir / "channels.json").write_text(
+        json.dumps(
+            [
+                {
+                    "kind": "channel_id",
+                    "value": "UCIgpF-qa1qagv0Xg2O5_6RQ",
+                    "canonical_url": "https://www.youtube.com/channel/UCIgpF-qa1qagv0Xg2O5_6RQ",
+                    "source_person_names": "Tabasco TV",
+                    "source_team_names": "Insirnapes",
+                    "source_seasons": "season_004",
+                    "source_urls": "https://www.youtube.com/channel/UCIgpF-qa1qagv0Xg2O5_6RQ",
+                    "channelId": "UCIgpF-qa1qagv0Xg2O5_6RQ",
+                    "title": "Tabasco TV",
+                    "uploadsPlaylistId": "UUIgpF-qa1qagv0Xg2O5_6RQ",
+                    "status": "available",
+                    "video_count": 1,
+                    "raw_path": str(uploads_path).replace("\\", "/"),
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    uploads_path.write_text(
+        json.dumps(
+            [
+                {
+                    "videoId": "1t9f2nYGEP4",
+                    "title": "GPL [S4] - Spieltag 11 - vs. Energie Tobutz: Ich habe euch gewarnt.",
+                    "publishedAt": "2017-05-24T12:00:00Z",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    class QuotaClient:
+        def list_playlist_videos(self, *args, **kwargs):
+            raise YouTubeApiError("quota exceeded")
+
+    archive_rows, _ = scan_video_archive(tmp_path, QuotaClient(), resume=True)
+    channel_rows = json.loads((raw_dir / "channels.json").read_text(encoding="utf-8"))
+
+    assert archive_rows[0]["video_id"] == "1t9f2nYGEP4"
+    assert archive_rows[0]["channel_title"] == "Tabasco TV"
+    assert channel_rows[0]["status"] == "available"
+    assert channel_rows[0]["raw_path"] == str(uploads_path).replace("\\", "/")
+    assert "refresh_error" in channel_rows[0]
+
+
+def test_scan_video_archive_resume_recovers_existing_channel_id_uploads_when_raw_path_was_lost(tmp_path):
+    raw_dir = tmp_path / "raw" / "video_archive"
+    normalized_dir = tmp_path / "normalized"
+    raw_dir.mkdir(parents=True)
+    normalized_dir.mkdir()
+    uploads_path = raw_dir / "ucigpf_qa1qagv0xg2o5_6rq_uploads.json"
+
+    _write_test_csv(
+        normalized_dir / "teams.csv",
+        [
+            {
+                "season_id": "season_004",
+                "person_id": "person_tabasco_tv",
+                "person_name": "Tabasco TV",
+                "team_name": "Insirnapes",
+                "channel_url": "https://www.youtube.com/channel/UCIgpF-qa1qagv0Xg2O5_6RQ",
+                "data_status": "sheet_extracted",
+            }
+        ],
+    )
+    _write_test_csv(normalized_dir / "matches.csv", [])
+    (raw_dir / "channels.json").write_text(
+        json.dumps(
+            [
+                {
+                    "kind": "channel_id",
+                    "value": "UCIgpF-qa1qagv0Xg2O5_6RQ",
+                    "canonical_url": "https://www.youtube.com/channel/UCIgpF-qa1qagv0Xg2O5_6RQ",
+                    "source_person_names": "Tabasco TV",
+                    "source_team_names": "Insirnapes",
+                    "source_seasons": "season_004",
+                    "source_urls": "https://www.youtube.com/channel/UCIgpF-qa1qagv0Xg2O5_6RQ",
+                    "status": "unavailable",
+                    "error": "quota exceeded",
+                    "video_count": 0,
+                    "raw_path": None,
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    uploads_path.write_text(
+        json.dumps(
+            [
+                {
+                    "videoId": "1t9f2nYGEP4",
+                    "title": "GPL [S4] - Spieltag 11 - vs. Energie Tobutz: Ich habe euch gewarnt.",
+                    "publishedAt": "2017-05-24T12:00:00Z",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    class QuotaClient:
+        def resolve_channel(self, *args, **kwargs):
+            raise YouTubeApiError("quota exceeded")
+
+    archive_rows, _ = scan_video_archive(tmp_path, QuotaClient(), resume=True)
+    channel_rows = json.loads((raw_dir / "channels.json").read_text(encoding="utf-8"))
+
+    assert archive_rows[0]["video_id"] == "1t9f2nYGEP4"
+    assert archive_rows[0]["channel_title"] == "Tabasco TV"
+    assert channel_rows[0]["status"] == "available"
+    assert channel_rows[0]["raw_path"] == str(uploads_path).replace("\\", "/")
+    assert "refresh_error" in channel_rows[0]
 
 
 def test_build_video_archive_applies_manual_reference_videos_to_matches(tmp_path):
@@ -949,6 +1257,66 @@ def test_build_video_archive_keeps_explicit_liga2_video_without_wrong_match(tmp_
     assert archive_rows[0]["detected_season_id"] == "season_005"
     assert archive_rows[0]["detected_week"] == "1"
     assert archive_rows[0]["match_status"] == "unmatched"
+    assert archive_rows[0]["best_match_id"] is None
+    assert match_rows == []
+
+
+def test_build_video_archive_treats_manual_reaction_channels_as_reactions(tmp_path):
+    raw_dir = tmp_path / "raw" / "video_archive"
+    normalized_dir = tmp_path / "normalized"
+    raw_dir.mkdir(parents=True)
+    normalized_dir.mkdir()
+
+    uploads_path = raw_dir / "reaction_uploads.json"
+    (raw_dir / "channels.json").write_text(
+        json.dumps(
+            [
+                {
+                    "channelId": "UCreaction",
+                    "title": "Hamster",
+                    "canonical_url": "https://www.youtube.com/channel/UCreaction",
+                    "source_person_names": "theMinehamsterDE",
+                    "source_divisions": "Reaction",
+                    "source_urls": "https://www.youtube.com/@theMinehamsterDE",
+                    "raw_path": str(uploads_path).replace("\\", "/"),
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    uploads_path.write_text(
+        json.dumps(
+            [
+                {
+                    "videoId": "reaction-week",
+                    "title": "Das ist KEIN Despotar! | GPL Schau Season X Spieltag 10",
+                    "publishedAt": "2025-12-18T05:01:00Z",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    _write_test_csv(
+        normalized_dir / "matches.csv",
+        [
+            {
+                "season_id": "season_010",
+                "match_id": "season_010_schedule_0010",
+                "division": "Regular Season",
+                "stage": "regular_season",
+                "week": "Spieltag 10",
+                "player_a": "Blocki",
+                "player_b": "RobinVGC",
+                "data_status": "sheet_extracted",
+            }
+        ],
+    )
+    _write_test_csv(normalized_dir / "teams.csv", [])
+
+    archive_rows, match_rows = build_video_archive(tmp_path)
+
+    assert archive_rows[0]["video_type"] == "reaction"
+    assert archive_rows[0]["match_status"] == "reaction"
     assert archive_rows[0]["best_match_id"] is None
     assert match_rows == []
 

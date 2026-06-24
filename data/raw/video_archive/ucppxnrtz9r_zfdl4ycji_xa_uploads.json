@@ -5,6 +5,10 @@
     "position": 0,
     "description": "Som titeln lyder! Kanske ska till\u00e4ggas att de b\u00e5da var n\u00e5got \u00f6verf\u00f6rfriskade ^^",
     "publishedAt": "2010-04-24T21:32:01Z",
+    "videoPublishedAt": "2010-04-24T21:32:01Z",
+    "playlistPublishedAt": "2010-04-24T21:32:01Z",
+    "defaultLanguage": "sv",
+    "defaultAudioLanguage": null,
     "playlistItemId": "VVVwUFhOUlRaOXJfekZkbDRZQ0pJX3hBLk5nU2YyblJJaHRV",
     "privacyStatus": "public"
   },
@@ -14,6 +18,10 @@
     "position": 1,
     "description": "Poe lost!",
     "publishedAt": "2008-05-08T14:45:29Z",
+    "videoPublishedAt": "2008-05-08T14:45:29Z",
+    "playlistPublishedAt": "2008-05-08T14:45:29Z",
+    "defaultLanguage": "sv",
+    "defaultAudioLanguage": null,
     "playlistItemId": "VVVwUFhOUlRaOXJfekZkbDRZQ0pJX3hBLmpkeXJHaEpCVVkw",
     "privacyStatus": "public"
   }

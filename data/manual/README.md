@@ -10,6 +10,18 @@ Rules:
 
 The templates are header-only by default and do not change normalized output until rows are added.
 
+## Manual Video Channels
+
+Use `data/manual/video_channels.csv` for extra YouTube channels that are useful video sources but are not regular
+participant team channels, for example reaction channels or reviewed side channels.
+
+The scan command treats these rows like discovered participant channels and keeps their `source_urls` in the generated
+video archive:
+
+```powershell
+gpl-history scan-videos --data-dir data --include-description-channels
+```
+
 ## S3-S5 Pokémon Usage Entry
 
 Use `web/manual-killlist-entry.html` to assign the old S3-S5 Pokémon kill rows to players with a select field.

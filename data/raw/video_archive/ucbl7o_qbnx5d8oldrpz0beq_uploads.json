@@ -5,6 +5,10 @@
     "position": 0,
     "description": "",
     "publishedAt": "2026-01-05T16:21:20Z",
+    "videoPublishedAt": "2026-01-05T16:21:20Z",
+    "playlistPublishedAt": "2026-01-05T16:21:20Z",
+    "defaultLanguage": "en",
+    "defaultAudioLanguage": null,
     "playlistItemId": "VVVCTDdPLXFiblg1RDhPbGRyUHowQmVRLnZPQUh5NXVxNkdV",
     "privacyStatus": "public"
   },
@@ -14,6 +18,10 @@
     "position": 1,
     "description": "",
     "publishedAt": "2026-01-05T16:21:01Z",
+    "videoPublishedAt": "2026-01-05T16:21:01Z",
+    "playlistPublishedAt": "2026-01-05T16:21:01Z",
+    "defaultLanguage": "de",
+    "defaultAudioLanguage": null,
     "playlistItemId": "VVVCTDdPLXFiblg1RDhPbGRyUHowQmVRLmJTcjRZNU1ZN0VR",
     "privacyStatus": "public"
   }

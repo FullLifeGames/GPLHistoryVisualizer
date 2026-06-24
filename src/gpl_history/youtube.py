@@ -15,6 +15,7 @@ class YouTubeClient:
     api_key: str
     api_keys: tuple[str, ...] = ()
     timeout: int = 30
+    snippet_language: str = "de"
 
     base_url = "https://www.googleapis.com/youtube/v3"
 
@@ -155,13 +156,19 @@ class YouTubeClient:
             description = video_snippet.get("description")
             if description is None:
                 description = snippet.get("description")
+            video_published_at = video_snippet.get("publishedAt") or content.get("videoPublishedAt")
+            playlist_published_at = snippet.get("publishedAt")
             videos.append(
                 {
                     "title": title,
                     "videoId": video_id,
                     "position": snippet.get("position"),
                     "description": description,
-                    "publishedAt": video_snippet.get("publishedAt") or content.get("videoPublishedAt"),
+                    "publishedAt": video_published_at or playlist_published_at,
+                    "videoPublishedAt": video_published_at,
+                    "playlistPublishedAt": playlist_published_at,
+                    "defaultLanguage": video_snippet.get("defaultLanguage"),
+                    "defaultAudioLanguage": video_snippet.get("defaultAudioLanguage"),
                     "playlistItemId": item.get("id"),
                     "privacyStatus": item.get("status", {}).get("privacyStatus"),
                 }
@@ -176,7 +183,7 @@ class YouTubeClient:
             chunk = video_ids[start : start + 50]
             if not chunk:
                 continue
-            payload = self._get("videos", part="snippet", id=",".join(chunk), maxResults=50)
+            payload = self._get("videos", part="snippet", id=",".join(chunk), maxResults=50, hl=self.snippet_language)
             for item in payload.get("items", []):
                 snippets[item["id"]] = item.get("snippet", {})
         return snippets

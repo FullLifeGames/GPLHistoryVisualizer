@@ -5,6 +5,10 @@
     "position": 0,
     "description": "",
     "publishedAt": "2023-04-10T12:17:35Z",
+    "videoPublishedAt": "2023-04-10T12:17:35Z",
+    "playlistPublishedAt": "2023-04-10T12:17:35Z",
+    "defaultLanguage": "en",
+    "defaultAudioLanguage": null,
     "playlistItemId": "VVVwOUk1Zk9adzlFR3p4NHJEMzFHZkZBLlk4dkxpY2RFcm5F",
     "privacyStatus": "public"
   },
@@ -14,6 +18,10 @@
     "position": 1,
     "description": "",
     "publishedAt": "2023-04-02T16:24:23Z",
+    "videoPublishedAt": "2023-04-02T16:24:23Z",
+    "playlistPublishedAt": "2023-04-02T16:24:23Z",
+    "defaultLanguage": "lv",
+    "defaultAudioLanguage": null,
     "playlistItemId": "VVVwOUk1Zk9adzlFR3p4NHJEMzFHZkZBLm1makJxb21pUVBF",
     "privacyStatus": "public"
   },
@@ -23,6 +31,10 @@
     "position": 2,
     "description": "",
     "publishedAt": "2023-03-28T17:00:13Z",
+    "videoPublishedAt": "2023-03-28T17:00:13Z",
+    "playlistPublishedAt": "2023-03-28T17:00:13Z",
+    "defaultLanguage": "lv",
+    "defaultAudioLanguage": null,
     "playlistItemId": "VVVwOUk1Zk9adzlFR3p4NHJEMzFHZkZBLnlGbm0xWFdmRXA4",
     "privacyStatus": "public"
   },
@@ -32,6 +44,10 @@
     "position": 3,
     "description": "",
     "publishedAt": "2023-03-25T16:30:28Z",
+    "videoPublishedAt": "2023-03-25T16:30:28Z",
+    "playlistPublishedAt": "2023-03-25T16:30:28Z",
+    "defaultLanguage": "lv",
+    "defaultAudioLanguage": null,
     "playlistItemId": "VVVwOUk1Zk9adzlFR3p4NHJEMzFHZkZBLnl6QnNibnJsb2RZ",
     "privacyStatus": "public"
   }

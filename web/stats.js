@@ -75,6 +75,429 @@ export function rowMatchesSearch(row, search = "") {
   return textMatchesSearch(Object.values(row ?? {}).join(" "), search);
 }
 
+export function cinemaVideoKey(row = {}) {
+  return [row.match_id, row.video_id || row.video_url, row.title].filter(Boolean).join("::");
+}
+
+export function cinemaAdjacentVideoKey(rows = [], selectedKey = "", direction = 1) {
+  if (!rows.length) return "";
+  const keys = rows.map((row) => cinemaVideoKey(row));
+  const currentIndex = Math.max(0, keys.indexOf(selectedKey));
+  const nextIndex = Math.min(rows.length - 1, Math.max(0, currentIndex + Number(direction || 0)));
+  return keys[nextIndex] || "";
+}
+
+export function cinemaVideoRows(data = {}, options = {}) {
+  const normalizeKey = options.normalizeKey || normalizedStatsKey;
+  const season = options.season || "all";
+  const participant = normalizeKey(options.participant || "all");
+  const perspective = normalizeKey(options.perspective || "all");
+  const videoType = normalizeKey(options.videoType || "battle");
+  const stage = normalizeKey(options.stage || "all");
+  const search = options.search || "";
+  const highlightIndex = cinemaMatchHighlightIndex(data.matchHighlights ?? []);
+  const rows = dedupeCinemaRows([
+    ...(data.matchVideos ?? []).map((row) => cinemaRowFromMatchVideo(row, normalizeKey)),
+    ...(data.videos ?? []).map((row) => cinemaRowFromArchiveVideo(row, normalizeKey)),
+  ]).map((row) => attachCinemaMatchHighlight(row, highlightIndex));
+
+  return rows
+    .filter((row) => row.video_url || row.video_id)
+    .filter((row) => season === "all" || row.season_id === season)
+    .filter((row) => cinemaRegularMatchdayOk(row, normalizeKey))
+    .filter((row) => cinemaVideoTypeMatches(row, videoType, normalizeKey))
+    .filter((row) => stage === "all" || normalizeKey(row.stage_group) === stage || normalizeKey(row.stage) === stage || normalizeKey(row.division) === stage)
+    .filter((row) => {
+      if (!participant || participant === "all") return true;
+      return cinemaParticipantKeys(row, normalizeKey).some((value) => value.includes(participant));
+    })
+    .filter((row) => {
+      if (!perspective || perspective === "all") return true;
+      return cinemaPerspectiveKeys(row, normalizeKey).some((value) => value.includes(perspective));
+    })
+    .filter((row) => rowMatchesSearch(row, search))
+    .sort((a, b) => compareCinemaRows(a, b, options.order || "published"));
+}
+
+function cinemaRowFromMatchVideo(row, normalizeKey = normalizedStatsKey) {
+  const playerA = row.player_a || row.team_a || "";
+  const playerB = row.player_b || row.team_b || "";
+  return {
+    ...row,
+    season_id: row.season_id || "",
+    division: row.division || "",
+    stage: row.stage || "",
+    stage_group: cinemaStageGroup(row, normalizeKey),
+    week: row.week || "",
+    match_id: row.match_id || "",
+    player_a: playerA,
+    player_b: playerB,
+    match_label: cinemaMatchLabel(playerA, playerB, row),
+    video_id: row.video_id || "",
+    video_url: row.video_url || sourceFirstVideoUrl(row.source_urls),
+    title: row.video_title || row.title || row.video_id || "",
+    video_type: row.video_type || "game",
+    perspective_person: row.perspective_person || "",
+    opponent: row.opponent || "",
+    channel_title: row.channel_title || "",
+    source_kind: "match",
+  };
+}
+
+function cinemaRowFromArchiveVideo(row, normalizeKey = normalizedStatsKey) {
+  return {
+    ...row,
+    season_id: row.detected_season_id || row.season_id || "",
+    division: row.division || "",
+    stage: row.detected_stage || row.stage || "",
+    stage_group: cinemaStageGroup({ ...row, stage: row.detected_stage || row.stage }, normalizeKey),
+    week: row.detected_week ? `${row.detected_week}. Spieltag` : row.week || "",
+    match_id: row.best_match_id || row.match_id || "",
+    player_a: "",
+    player_b: "",
+    match_label: cinemaMatchLabel("", "", row),
+    video_id: row.video_id || "",
+    video_url: row.video_url || sourceFirstVideoUrl(row.source_urls),
+    title: row.title || row.video_title || row.video_id || "",
+    video_type: row.video_type || "other",
+    perspective_person: row.perspective_person || row.source_person_names || "",
+    opponent: row.opponent || "",
+    channel_title: row.channel_title || "",
+    source_kind: "archive",
+  };
+}
+
+function cinemaMatchLabel(playerA, playerB, row) {
+  if (playerA && playerB) return `${playerA} vs ${playerB}`;
+  if (row.perspective_person && row.opponent) return `${row.perspective_person} vs ${row.opponent}`;
+  return row.title || row.video_title || row.video_id || "";
+}
+
+function dedupeCinemaRows(rows) {
+  const byKey = new Map();
+  rows.forEach((row) => {
+    const key = `${row.video_id || row.video_url}\u0000${row.match_id || ""}`;
+    if (!row.video_id && !row.video_url) return;
+    const current = byKey.get(key);
+    if (!current || cinemaRowRichness(row) > cinemaRowRichness(current)) {
+      byKey.set(key, current ? mergeCinemaRows(row, current) : row);
+    } else {
+      byKey.set(key, mergeCinemaRows(current, row));
+    }
+  });
+  return [...byKey.values()];
+}
+
+function cinemaMatchHighlightIndex(rows = []) {
+  const byMatch = new Map();
+  rows.forEach((row) => {
+    const matchId = String(row.match_id || "");
+    if (!matchId) return;
+    const current = byMatch.get(matchId);
+    if (
+      !current ||
+      numberValue(row.highlight_score) > numberValue(current.highlight_score) ||
+      (numberValue(row.highlight_score) === numberValue(current.highlight_score) && numberValue(row.view_peak) > numberValue(current.view_peak))
+    ) {
+      byMatch.set(matchId, row);
+    }
+  });
+  return byMatch;
+}
+
+function attachCinemaMatchHighlight(row, highlightIndex) {
+  const highlight = highlightIndex.get(String(row.match_id || ""));
+  if (!highlight) return row;
+  return {
+    ...row,
+    match_highlight_score: highlight.highlight_score || row.match_highlight_score || "",
+    match_view_peak: highlight.view_peak || row.match_view_peak || "",
+    match_view_total: highlight.view_total || row.match_view_total || "",
+    match_highlight_reasons: highlight.highlight_reasons || row.match_highlight_reasons || "",
+    match_video_urls: highlight.video_urls || row.match_video_urls || "",
+    match_highlight_source_urls: highlight.source_urls || row.match_highlight_source_urls || "",
+  };
+}
+
+function mergeCinemaRows(primary, secondary) {
+  const merged = { ...secondary, ...primary };
+  Object.entries(secondary).forEach(([field, value]) => {
+    if ((merged[field] === "" || merged[field] === null || merged[field] === undefined) && value !== "" && value !== null && value !== undefined) {
+      merged[field] = value;
+    }
+  });
+  merged.source_kind = primary.source_kind === "match" || secondary.source_kind === "match" ? "match" : primary.source_kind || secondary.source_kind || "";
+  merged.source_urls = mergeDelimitedValues(primary.source_urls, secondary.source_urls);
+  return merged;
+}
+
+function mergeDelimitedValues(...values) {
+  return [...new Set(values
+    .flatMap((value) => String(value ?? "").split(";"))
+    .map((value) => value.trim())
+    .filter(Boolean))]
+    .join(";");
+}
+
+function cinemaRowRichness(row) {
+  return ["match_id", "player_a", "player_b", "score", "view_count", "like_count", "comment_count", "published_at"]
+    .filter((field) => row[field])
+    .length + (row.source_kind === "match" ? 10 : 0);
+}
+
+function cinemaVideoTypeMatches(row, videoType, normalizeKey = normalizedStatsKey) {
+  if (!videoType || videoType === "all") return true;
+  const current = normalizeKey(row.video_type || "");
+  if (videoType === "battle") return ["game", "livestream"].includes(current);
+  return current === videoType;
+}
+
+function cinemaStageGroup(row, normalizeKey = normalizedStatsKey) {
+  const text = normalizeKey([row.stage, row.detected_stage, row.division, row.week, row.title, row.video_title].filter(Boolean).join(" "));
+  if (text.includes("playoff") || text.includes("viertel") || text.includes("halbfinal") || text.includes("platz 3") || text.includes("finale") || text.includes("final")) {
+    return "playoffs";
+  }
+  if (text.includes("regular") || text.includes("hauptrunde") || text.includes("spieltag") || text.includes("liga")) {
+    return "regular";
+  }
+  return "other";
+}
+
+function cinemaRegularMatchdayOk(row, normalizeKey = normalizedStatsKey) {
+  if (row.stage_group !== "regular") return true;
+  const type = normalizeKey(row.video_type || "");
+  if (!["game", "livestream"].includes(type)) return true;
+  return cinemaWeekOrder(row) < 100;
+}
+
+function cinemaParticipantKeys(row, normalizeKey = normalizedStatsKey) {
+  return [
+    row.perspective_person,
+    row.opponent,
+    row.player_a,
+    row.player_b,
+    row.channel_title,
+    row.source_person_names,
+    row.source_team_names,
+    row.title,
+  ]
+    .map((value) => normalizeKey(value))
+    .filter(Boolean);
+}
+
+export function cinemaPerspectiveParticipantOptions(rows = [], options = {}) {
+  const normalizeKey = options.normalizeKey || normalizedStatsKey;
+  const byParticipant = new Map();
+  rows.forEach((row) => {
+    const participants = cinemaPerspectiveParticipantNames(row, normalizeKey);
+    if (!participants.length) return;
+    const channel = cinemaChannelIdentity(row);
+    participants.forEach((name) => {
+      const value = normalizeKey(name);
+      if (!value || value === "unknown") return;
+      if (!byParticipant.has(value)) {
+        byParticipant.set(value, { value, label: name, channels: new Set() });
+      }
+      if (channel) {
+        byParticipant.get(value).channels.add(channel);
+      }
+    });
+  });
+
+  return [...byParticipant.values()]
+    .sort((left, right) => left.label.localeCompare(right.label))
+    .map((entry) => ({
+      value: entry.value,
+      label: entry.label,
+      channelCount: entry.channels.size,
+      channels: [...entry.channels].sort(),
+    }));
+}
+
+function cinemaPerspectiveKeys(row, normalizeKey = normalizedStatsKey) {
+  const participantKeys = cinemaPerspectiveParticipantNames(row, normalizeKey)
+    .map((value) => normalizeKey(value))
+    .filter(Boolean);
+  if (participantKeys.length) {
+    return participantKeys;
+  }
+  return [row.channel_title]
+    .map((value) => normalizeKey(value))
+    .filter(Boolean);
+}
+
+function cinemaPerspectiveParticipantNames(row, normalizeKey = normalizedStatsKey) {
+  const byKey = new Map();
+  [row.perspective_person, row.source_person_names].forEach((value) => {
+    splitDelimitedValues(value).forEach((name) => {
+      const key = normalizeKey(name);
+      if (!key || key === "unknown") return;
+      byKey.set(key, byKey.get(key) || name);
+    });
+  });
+  return [...byKey.values()];
+}
+
+function splitDelimitedValues(value) {
+  return String(value ?? "")
+    .split(";")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function cinemaChannelIdentity(row) {
+  return [row.channel_id, row.channel_url, row.channel_title]
+    .map((value) => String(value ?? "").trim())
+    .find(Boolean) || "";
+}
+
+function compareCinemaRows(a, b, order) {
+  if (order === "highlights") {
+    return (
+      cinemaHighlightSortValue(b) - cinemaHighlightSortValue(a) ||
+      numberValue(b.match_view_peak) - numberValue(a.match_view_peak) ||
+      numberValue(b.view_count) - numberValue(a.view_count) ||
+      cinemaChronologyOrder(a, b)
+    );
+  }
+  if (order === "published") {
+    return cinemaPublishedOrder(a, b);
+  }
+  if (order === "views") {
+    return numberValue(b.view_count) - numberValue(a.view_count) || cinemaChronologyOrder(a, b);
+  }
+  if (order === "newest") {
+    return cinemaNewestOrder(a, b);
+  }
+  return cinemaChronologyOrder(a, b);
+}
+
+function cinemaHighlightSortValue(row = {}) {
+  const matchScore = numberValue(row.match_highlight_score);
+  if (matchScore) return matchScore;
+  const explicitScore = numberValue(row.highlight_score);
+  if (explicitScore) return explicitScore;
+
+  const trendZ = Math.max(
+    numberValue(row.views_trend_z_score),
+    numberValue(row.views_trend_z_score_peak),
+    numberValue(row.views_trend_z_score_match),
+  );
+  const trendMultiplier = Math.max(
+    numberValue(row.views_trend_multiplier),
+    numberValue(row.view_trend_multiplier_peak),
+    numberValue(row.view_trend_multiplier_match),
+    numberValue(row.views_multiplier),
+  );
+  const engagement = Math.max(
+    numberValue(row.engagement_multiplier),
+    numberValue(row.engagement_multiplier_peak),
+    numberValue(row.engagement_z_score),
+    numberValue(row.engagement_z_score_peak),
+  );
+  const reasonCount = String(row.highlight_reasons || row.video_highlight_reasons || row.views_trend_highlight_reasons || "")
+    .split(";")
+    .map((reason) => reason.trim())
+    .filter(Boolean).length;
+
+  return trendZ * 10 + trendMultiplier * 8 + engagement * 6 + reasonCount * 5;
+}
+
+function cinemaChronologyOrder(a, b) {
+  return (
+    seasonNumber(a.season_id) - seasonNumber(b.season_id) ||
+    cinemaWeekOrder(a) - cinemaWeekOrder(b) ||
+    String(a.match_id || "").localeCompare(String(b.match_id || "")) ||
+    cinemaVideoTypeOrder(a) - cinemaVideoTypeOrder(b) ||
+    cinemaBattleSegmentOrder(a) - cinemaBattleSegmentOrder(b) ||
+    String(a.published_at || "").localeCompare(String(b.published_at || "")) ||
+    String(a.title || "").localeCompare(String(b.title || ""))
+  );
+}
+
+function cinemaPublishedOrder(a, b) {
+  const aTime = cinemaPublishedTime(a);
+  const bTime = cinemaPublishedTime(b);
+  if (Number.isFinite(aTime) && Number.isFinite(bTime)) {
+    return aTime - bTime || cinemaChronologyOrder(a, b);
+  }
+  if (Number.isFinite(aTime) !== Number.isFinite(bTime)) {
+    return Number.isFinite(aTime) ? -1 : 1;
+  }
+  return cinemaChronologyOrder(a, b);
+}
+
+function cinemaNewestOrder(a, b) {
+  const aTime = cinemaPublishedTime(a);
+  const bTime = cinemaPublishedTime(b);
+  if (Number.isFinite(aTime) && Number.isFinite(bTime)) {
+    return bTime - aTime || cinemaChronologyOrder(a, b);
+  }
+  if (Number.isFinite(aTime) !== Number.isFinite(bTime)) {
+    return Number.isFinite(aTime) ? -1 : 1;
+  }
+  return cinemaChronologyOrder(a, b);
+}
+
+function cinemaPublishedTime(row) {
+  const time = Date.parse(row.published_at || "");
+  return Number.isFinite(time) ? time : Number.NaN;
+}
+
+function cinemaVideoTypeOrder(row) {
+  const type = normalizedStatsKey(row.video_type || "");
+  if (type === "teambuilding") return 10;
+  if (type.includes("draft")) return 15;
+  if (type === "game" || type === "livestream") return 20;
+  if (type === "analysis" || type === "analyse" || type.includes("ruckblick") || type.includes("review")) return 30;
+  if (type === "reference") return 35;
+  return 40;
+}
+
+function cinemaBattleSegmentOrder(row) {
+  const text = normalizedStatsKey([row.title, row.video_title, row.week].filter(Boolean).join(" "));
+  const match =
+    text.match(/\b(?:kampf|battle|round|runde|game)\s*(\d+)\b/) ||
+    text.match(/\b(?:bo3|best of 3)\s*(\d+)\b/);
+  return match ? Number(match[1]) : 999;
+}
+
+function cinemaWeekOrder(row) {
+  const text = normalizedStatsKey([row.week, row.stage, row.division, row.title].filter(Boolean).join(" "));
+  const weekNumber =
+    cinemaWeekNumber(row.week) ??
+    cinemaWeekNumber(row.detected_week) ??
+    cinemaWeekNumber([row.title, row.video_title].filter(Boolean).join(" "));
+  if (weekNumber !== null) return weekNumber;
+  if (text.includes("vorrunde")) return 100;
+  if (text.includes("viertel")) return 110;
+  if (text.includes("halb")) return 120;
+  if (text.includes("platz 3")) return 130;
+  if (text.includes("final")) return 140;
+  return row.stage_group === "playoffs" ? 150 : 999;
+}
+
+function cinemaWeekNumber(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+  const directWeek = raw.match(/^\d+$/);
+  if (directWeek) return Number(directWeek[0]);
+  const text = normalizedStatsKey(raw);
+  const match =
+    text.match(/\bspieltag\s*0*(\d+)\b/) ||
+    text.match(/\bmatchday\s*0*(\d+)\b/) ||
+    text.match(/\bst\s*0*(\d+)\b/) ||
+    text.match(/(?:^|\s)0*(\d+)\s*spieltag\b/);
+  return match ? Number(match[1]) : null;
+}
+
+function sourceFirstVideoUrl(value) {
+  return String(value ?? "")
+    .split(";")
+    .map((item) => item.trim())
+    .find((item) => item.startsWith("http") && (item.includes("youtube.com") || item.includes("youtu.be"))) || "";
+}
+
 export function isAnalysisSourceVideo(row = {}) {
   const videoType = normalizedStatsKey(row.video_type);
   const text = normalizedStatsKey([row.video_title, row.title, row.match_basis, row.confidence_explanation].join(" "));

@@ -24,7 +24,6 @@ const SELECT_FILTER_COLUMNS = new Set([
   "stage",
   "status",
   "tier",
-  "title",
   "video_type",
 ]);
 

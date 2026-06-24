@@ -58,3 +58,61 @@ def test_youtube_api_keys_from_env_orders_primary_then_numbered(monkeypatch):
     monkeypatch.setenv("YOUTUBE_API_KEY_3", "third")
 
     assert cli._youtube_api_keys_from_env() == ["first", "second", "third", "tenth"]
+
+
+def test_list_playlist_videos_prefers_original_video_snippet_and_video_timestamp(monkeypatch):
+    calls = []
+
+    def fake_get(url, params, timeout):
+        calls.append((url.rsplit("/", 1)[-1], dict(params)))
+        if url.endswith("/playlistItems"):
+            return _FakeResponse(
+                200,
+                {
+                    "items": [
+                        {
+                            "id": "playlist-item",
+                            "snippet": {
+                                "title": "I've waited 13 weeks for this moment... | GPL Matchday 13",
+                                "description": "",
+                                "publishedAt": "2026-01-01T10:00:00Z",
+                                "position": 0,
+                            },
+                            "contentDetails": {
+                                "videoId": "video-1",
+                                "videoPublishedAt": "2025-12-28T16:00:04Z",
+                            },
+                            "status": {"privacyStatus": "public"},
+                        }
+                    ]
+                },
+            )
+        return _FakeResponse(
+            200,
+            {
+                "items": [
+                    {
+                        "id": "video-1",
+                        "snippet": {
+                            "title": "Auf diesen Moment habe ich 13 Wochen gewartet... | GPL Spieltag 13",
+                            "description": "Originale deutsche Beschreibung",
+                            "publishedAt": "2025-12-28T16:00:04Z",
+                            "defaultLanguage": "de",
+                            "defaultAudioLanguage": "de",
+                        },
+                    }
+                ]
+            },
+        )
+
+    monkeypatch.setattr(youtube.requests, "get", fake_get)
+
+    [video] = YouTubeClient(api_key="key").list_playlist_videos("uploads")
+
+    assert video["title"] == "Auf diesen Moment habe ich 13 Wochen gewartet... | GPL Spieltag 13"
+    assert video["description"] == "Originale deutsche Beschreibung"
+    assert video["publishedAt"] == "2025-12-28T16:00:04Z"
+    assert video["videoPublishedAt"] == "2025-12-28T16:00:04Z"
+    assert video["playlistPublishedAt"] == "2026-01-01T10:00:00Z"
+    assert video["defaultLanguage"] == "de"
+    assert ("videos", "de") in [(endpoint, params.get("hl")) for endpoint, params in calls]

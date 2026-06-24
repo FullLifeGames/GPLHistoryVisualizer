@@ -4,6 +4,7 @@ import csv
 import re
 import unicodedata
 from collections import defaultdict
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -57,6 +58,7 @@ MATCH_VIDEO_FIELDS = [
     "video_url",
     "video_title",
     "video_type",
+    "published_at",
     "perspective_person",
     "opponent",
     "confidence",
@@ -69,10 +71,13 @@ MATCH_VIDEO_FIELDS = [
 ]
 
 _GPL_RE = re.compile(r"(?:\bgpl\b|german\s+pok[eé]mon\s+league)", re.IGNORECASE)
+_FOREIGN_LEAGUE_RE = re.compile(r"\budt\b", re.IGNORECASE)
 _SEASON_RE = re.compile(r"(?:season|saison|staffel|\bs)\s*0?([0-9]{1,2})\b", re.IGNORECASE)
 _WEEK_RE = re.compile(r"(?:spieltag|matchday|sp\.?|st\.?|week|woche)\s*#?\s*0?([0-9]{1,2})\b", re.IGNORECASE)
 _WEEK_PREFIX_RE = re.compile(r"\b0?([0-9]{1,2})\.\s*(?:spieltag|matchday|st\.?|week|woche)\b", re.IGNORECASE)
 _VERSUS_RE = re.compile(r"(?:\bvs\.?\b|\bversus\b|\bgegen\b)", re.IGNORECASE)
+_DATE_RE = re.compile(r"\b([0-9]{1,2})\.([0-9]{1,2})\.([0-9]{4})\b")
+_PUBLISH_DATE_TOLERANCE_DAYS = 60
 _TEAMBUILDING_TOKENS = {
     "teambuilding",
     "team building",
@@ -99,6 +104,8 @@ _CATEGORY_TOKENS = {
         "reaktion",
         "reagiere",
         "reagiert",
+        "gehate",
+        "meine meinung",
     },
     "recap": {
         "recap",
@@ -184,8 +191,9 @@ def parse_gpl_video_title(title: str | None) -> dict[str, Any]:
 
     season_match = _SEASON_RE.search(text)
     week_match = _WEEK_RE.search(text) or _WEEK_PREFIX_RE.search(text)
+    is_gpl = bool(_GPL_RE.search(text)) and not _FOREIGN_LEAGUE_RE.search(folded)
     return {
-        "is_gpl": bool(_GPL_RE.search(text)),
+        "is_gpl": is_gpl,
         "season_id": f"season_{int(season_match.group(1)):03d}" if season_match else None,
         "division": _division_from_title(text),
         "week_number": int(week_match.group(1)) if week_match else None,
@@ -259,23 +267,31 @@ def discover_channel_candidates(data_dir: Path, include_description_channels: bo
         candidate = channel_candidate_from_url(row.get("channel_url"))
         if not candidate:
             continue
-        key = (candidate["kind"], candidate["value"].lower())
-        current = candidates.get(key) or {
-            **candidate,
-            "sources": set(),
-            "person_ids": set(),
-            "person_names": set(),
-            "team_names": set(),
-            "seasons": set(),
-            "divisions": set(),
-        }
-        _add_nonempty(current["sources"], row.get("channel_url"))
-        _add_nonempty(current["person_ids"], row.get("person_id"))
-        _add_nonempty(current["person_names"], row.get("person_name"))
-        _add_nonempty(current["team_names"], row.get("team_name"))
-        _add_nonempty(current["seasons"], row.get("season_id"))
-        _add_nonempty(current["divisions"], row.get("division"))
-        candidates[key] = current
+        _add_channel_candidate(
+            candidates,
+            candidate,
+            sources=[row.get("channel_url")],
+            person_ids=[row.get("person_id")],
+            person_names=[row.get("person_name")],
+            team_names=[row.get("team_name")],
+            seasons=[row.get("season_id")],
+            divisions=[row.get("division")],
+        )
+
+    for row in _read_csv(data_dir / "manual" / "video_channels.csv"):
+        candidate = _manual_channel_candidate(row)
+        if not candidate:
+            continue
+        _add_channel_candidate(
+            candidates,
+            candidate,
+            sources=[row.get("source_urls"), row.get("canonical_url"), row.get("channel_url")],
+            person_ids=[row.get("source_person_ids")],
+            person_names=[row.get("source_person_names")],
+            team_names=[row.get("source_team_names")],
+            seasons=[row.get("source_seasons")],
+            divisions=[row.get("source_divisions")],
+        )
 
     if include_description_channels:
         for mention in _description_participant_channel_mentions(data_dir):
@@ -289,24 +305,17 @@ def discover_channel_candidates(data_dir: Path, include_description_channels: bo
             )
             if not matched_rows:
                 continue
-            key = (candidate["kind"], candidate["value"].lower())
-            current = candidates.get(key) or {
-                **candidate,
-                "sources": set(),
-                "person_ids": set(),
-                "person_names": set(),
-                "team_names": set(),
-                "seasons": set(),
-                "divisions": set(),
-            }
-            _add_nonempty(current["sources"], mention.get("url"))
             for row in matched_rows:
-                _add_nonempty(current["person_ids"], row.get("person_id"))
-                _add_nonempty(current["person_names"], row.get("person_name"))
-                _add_nonempty(current["team_names"], row.get("team_name"))
-                _add_nonempty(current["seasons"], row.get("season_id"))
-                _add_nonempty(current["divisions"], row.get("division"))
-            candidates[key] = current
+                _add_channel_candidate(
+                    candidates,
+                    candidate,
+                    sources=[mention.get("url")],
+                    person_ids=[row.get("person_id")],
+                    person_names=[row.get("person_name")],
+                    team_names=[row.get("team_name")],
+                    seasons=[row.get("season_id")],
+                    divisions=[row.get("division")],
+                )
 
     rows = []
     for current in candidates.values():
@@ -322,6 +331,70 @@ def discover_channel_candidates(data_dir: Path, include_description_channels: bo
             }
         )
     return sorted(rows, key=lambda row: (row["source_person_names"], row["canonical_url"]))
+
+
+def _add_channel_candidate(
+    candidates: dict[tuple[str, str], dict[str, Any]],
+    candidate: dict[str, str],
+    *,
+    sources: list[str | None],
+    person_ids: list[str | None],
+    person_names: list[str | None],
+    team_names: list[str | None],
+    seasons: list[str | None],
+    divisions: list[str | None],
+) -> None:
+    key = (candidate["kind"], candidate["value"].lower())
+    current = candidates.get(key) or {
+        **candidate,
+        "sources": set(),
+        "person_ids": set(),
+        "person_names": set(),
+        "team_names": set(),
+        "seasons": set(),
+        "divisions": set(),
+    }
+    for values, target in (
+        (sources, current["sources"]),
+        (person_ids, current["person_ids"]),
+        (person_names, current["person_names"]),
+        (team_names, current["team_names"]),
+        (seasons, current["seasons"]),
+        (divisions, current["divisions"]),
+    ):
+        for value in values:
+            for part in _split_values(value):
+                _add_nonempty(target, part)
+    candidates[key] = current
+
+
+def _manual_channel_candidate(row: dict[str, str]) -> dict[str, str] | None:
+    kind = str(row.get("kind") or "").strip()
+    value = str(row.get("value") or "").strip()
+    canonical_url = str(row.get("canonical_url") or row.get("channel_url") or "").strip()
+    if not canonical_url:
+        canonical_url = next(iter(_split_values(row.get("source_urls"))), "")
+
+    if kind and value:
+        if kind == "handle" and not value.startswith("@"):
+            value = f"@{value}"
+        return {
+            "kind": kind,
+            "value": value,
+            "canonical_url": canonical_url or _canonical_channel_url(kind, value),
+        }
+    return channel_candidate_from_url(canonical_url)
+
+
+def _canonical_channel_url(kind: str, value: str) -> str:
+    if kind == "handle":
+        return f"https://www.youtube.com/{value}"
+    if kind == "channel_id":
+        return f"https://www.youtube.com/channel/{value}"
+    if kind in {"username", "custom"}:
+        prefix = "user" if kind == "username" else "c"
+        return f"https://www.youtube.com/{prefix}/{value}"
+    return value
 
 
 def _description_participant_channel_mentions(data_dir: Path) -> list[dict[str, str]]:
@@ -447,17 +520,30 @@ def scan_video_archive(
     max_channels: int | None = None,
     max_pages_per_channel: int | None = None,
     include_description_channels: bool = False,
+    resume: bool = False,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     raw_dir = ensure_dir(data_dir / "raw" / "video_archive")
+    channels_path = raw_dir / "channels.json"
     candidates = discover_channel_candidates(data_dir, include_description_channels=include_description_channels)
     if max_channels is not None:
         candidates = candidates[:max_channels]
 
-    channel_rows: list[dict[str, Any]] = []
+    rows_by_key: dict[tuple[str, str], dict[str, Any]] = {}
+    if resume:
+        for row in read_json(channels_path, []):
+            key = _channel_record_key(row)
+            if key:
+                rows_by_key[key] = row
+
     for candidate in candidates:
-        record = dict(candidate)
+        key = (candidate["kind"], candidate["value"].lower())
+        record = _merge_cached_channel_record(candidate, rows_by_key.get(key))
+        if resume and _cached_upload_scan_is_current(record):
+            rows_by_key[key] = record
+            write_json(channels_path, list(rows_by_key.values()))
+            continue
         try:
-            channel = _resolve_channel_candidate(client, candidate)
+            channel = _cached_channel_resolution(record) or _resolve_channel_candidate(client, candidate)
             record.update(channel)
             playlist_id = channel.get("uploadsPlaylistId")
             videos = client.list_playlist_videos(playlist_id, max_pages=max_pages_per_channel) if playlist_id else []
@@ -472,11 +558,109 @@ def scan_video_archive(
                 }
             )
         except YouTubeApiError as exc:
-            record.update({"status": "unavailable", "error": str(exc), "video_count": 0, "raw_path": None})
-        channel_rows.append(record)
+            cached_raw_path = _cached_raw_path(record) or _infer_raw_upload_path(raw_dir, record, candidate)
+            if cached_raw_path:
+                videos = read_json(cached_raw_path, [])
+                if not record.get("channelId") and candidate.get("kind") == "channel_id":
+                    record["channelId"] = candidate.get("value")
+                if not record.get("title"):
+                    record["title"] = _first_nonempty(_split_values(record.get("source_person_names") or candidate.get("source_person_names")))
+                record.update(
+                    {
+                        "status": "available",
+                        "error": None,
+                        "refresh_error": str(exc),
+                        "video_count": len(videos),
+                        "raw_path": str(cached_raw_path).replace("\\", "/"),
+                    }
+                )
+            else:
+                record.update({"status": "unavailable", "error": str(exc), "video_count": 0, "raw_path": None})
+        rows_by_key[key] = record
+        write_json(channels_path, list(rows_by_key.values()))
 
-    write_json(raw_dir / "channels.json", channel_rows)
+    write_json(channels_path, list(rows_by_key.values()))
     return build_video_archive(data_dir)
+
+
+def _channel_record_key(row: dict[str, Any]) -> tuple[str, str] | None:
+    kind = str(row.get("kind") or "").strip()
+    value = str(row.get("value") or "").strip().lower()
+    if kind and value:
+        return (kind, value)
+    return None
+
+
+def _merge_cached_channel_record(candidate: dict[str, Any], cached: dict[str, Any] | None) -> dict[str, Any]:
+    if not cached:
+        return dict(candidate)
+    record = dict(cached)
+    for key, value in candidate.items():
+        if value not in (None, ""):
+            record[key] = value
+    return record
+
+
+def _cached_upload_scan_is_current(record: dict[str, Any]) -> bool:
+    if record.get("status") != "available" or not record.get("raw_path"):
+        return False
+    raw_path = _cached_raw_path(record)
+    if not raw_path:
+        return False
+    videos = read_json(raw_path, [])
+    if not videos:
+        return True
+    return any(
+        "videoPublishedAt" in video or "playlistPublishedAt" in video or "defaultLanguage" in video
+        for video in videos
+    )
+
+
+def _cached_raw_path(record: dict[str, Any]) -> Path | None:
+    raw_path = record.get("raw_path")
+    if not raw_path:
+        return None
+    path = Path(str(raw_path))
+    if path.exists():
+        return path
+    return None
+
+
+def _infer_raw_upload_path(raw_dir: Path, record: dict[str, Any], candidate: dict[str, Any]) -> Path | None:
+    channel_ids = [
+        record.get("channelId"),
+        candidate.get("channelId"),
+        record.get("value") if record.get("kind") == "channel_id" else None,
+        candidate.get("value") if candidate.get("kind") == "channel_id" else None,
+    ]
+    for channel_id in channel_ids:
+        if not channel_id:
+            continue
+        path = raw_dir / f"{safe_slug(str(channel_id))}_uploads.json"
+        if path.exists():
+            return path
+    return None
+
+
+def _cached_channel_resolution(record: dict[str, Any]) -> dict[str, Any] | None:
+    if not record.get("channelId") or not record.get("uploadsPlaylistId"):
+        return None
+    return {
+        "channelId": record.get("channelId"),
+        "title": record.get("title"),
+        "description": record.get("description"),
+        "publishedAt": record.get("publishedAt"),
+        "customUrl": record.get("customUrl"),
+        "uploadsPlaylistId": record.get("uploadsPlaylistId"),
+        "source": record.get("source"),
+    }
+
+
+def _forced_video_type_from_channel(channel: dict[str, Any]) -> str | None:
+    divisions = {_fold_text(value) for value in _split_values(channel.get("source_divisions"))}
+    if "reaction" in divisions:
+        return "reaction"
+    return None
 
 
 def build_video_archive(data_dir: Path) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
@@ -509,6 +693,7 @@ def build_video_archive(data_dir: Path) -> tuple[list[dict[str, Any]], list[dict
             parsed = parse_gpl_video_title(title)
             if not parsed["is_gpl"]:
                 continue
+            video_type = _forced_video_type_from_channel(channel) or parsed["video_type"]
             key = (channel.get("channelId") or channel.get("canonical_url") or "", video_id or title or "")
             if key in seen_videos:
                 continue
@@ -518,7 +703,7 @@ def build_video_archive(data_dir: Path) -> tuple[list[dict[str, Any]], list[dict
                 "video_id": video_id,
                 "video_url": video_url(video_id),
                 "title": title,
-                "video_type": parsed["video_type"],
+                "video_type": video_type,
                 "published_at": video.get("publishedAt"),
                 "channel_id": channel.get("channelId"),
                 "channel_title": channel.get("title"),
@@ -534,14 +719,16 @@ def build_video_archive(data_dir: Path) -> tuple[list[dict[str, Any]], list[dict
                 "detected_round": parsed["round"],
                 "source_urls": _join_unique([video_url(video_id), channel.get("source_urls"), channel.get("canonical_url")]),
             }
-            match = match_video_to_matches(
-                {
-                    **video_row,
-                    "channel_person_name": source_person_names,
-                    "channel_team_name": channel.get("source_team_names"),
-                },
-                matches,
-            )
+            match = None
+            if video_type == "game":
+                match = match_video_to_matches(
+                    {
+                        **video_row,
+                        "channel_person_name": source_person_names,
+                        "channel_team_name": channel.get("source_team_names"),
+                    },
+                    matches,
+                )
             if match:
                 video_row["detected_season_id"] = video_row.get("detected_season_id") or match.get("season_id")
                 video_row["division"] = video_row.get("division") or match.get("division")
@@ -563,7 +750,6 @@ def build_video_archive(data_dir: Path) -> tuple[list[dict[str, Any]], list[dict
                 )
                 match_video_rows.append(_match_video_row(match, video_row))
             else:
-                video_type = parsed["video_type"]
                 video_row.update(
                     {
                         "match_status": video_type if video_type != "game" else "unmatched",
@@ -776,7 +962,10 @@ def match_video_to_matches(video: dict[str, Any], matches: list[dict[str, Any]])
     for match in matches:
         if parsed["season_id"] and match.get("season_id") != parsed["season_id"]:
             continue
-        if not parsed["season_id"] and source_seasons and match.get("season_id") not in source_seasons:
+        date_delta = _publish_date_match_delta_days(video, match) if not parsed["season_id"] else None
+        if not parsed["season_id"] and date_delta is not None and date_delta > _PUBLISH_DATE_TOLERANCE_DAYS:
+            continue
+        if not parsed["season_id"] and source_seasons and match.get("season_id") not in source_seasons and date_delta is None:
             continue
         if parsed["division"] and match.get("division") != parsed["division"]:
             continue
@@ -792,6 +981,10 @@ def match_video_to_matches(video: dict[str, Any], matches: list[dict[str, Any]])
             score += 35
             reasons.append("source_season")
             explanations.append(f"matched source season {match.get('season_id')}")
+        elif date_delta is not None:
+            score += 10
+            reasons.append("publish_date")
+            explanations.append(f"publish date is within {date_delta} days of match week")
         if parsed["stage"] == "playoffs" and match.get("stage") == "playoffs":
             score += 15
             reasons.append("stage")
@@ -900,6 +1093,7 @@ def _match_video_row(match: dict[str, Any], video: dict[str, Any]) -> dict[str, 
         "video_url": video.get("video_url"),
         "video_title": video.get("title"),
         "video_type": video.get("video_type"),
+        "published_at": video.get("published_at") or video.get("publishedAt") or video.get("videoPublishedAt"),
         "perspective_person": video.get("perspective_person"),
         "opponent": video.get("opponent"),
         "confidence": video.get("confidence"),
@@ -1012,6 +1206,43 @@ def _contains_name(haystack_key: str, value: str | None) -> bool:
     compact_haystack = haystack_key.replace(" ", "")
     compact_key = key.replace(" ", "")
     return key in haystack_key or compact_key in compact_haystack
+
+
+def _publish_date_match_delta_days(video: dict[str, Any], match: dict[str, Any]) -> int | None:
+    published = _published_date(video)
+    match_date = _date_from_text(match.get("week")) or _date_from_text(match.get("date"))
+    if not published or not match_date:
+        return None
+    return abs((published - match_date).days)
+
+
+def _published_date(video: dict[str, Any]) -> datetime.date | None:
+    value = (
+        video.get("published_at")
+        or video.get("publishedAt")
+        or video.get("videoPublishedAt")
+        or video.get("playlistPublishedAt")
+    )
+    text = str(value or "").strip()
+    if not text:
+        return None
+    if re.fullmatch(r"\d{8}", text):
+        text = f"{text[:4]}-{text[4:6]}-{text[6:]}"
+    try:
+        return datetime.fromisoformat(text.replace("Z", "+00:00")).date()
+    except ValueError:
+        return _date_from_text(text)
+
+
+def _date_from_text(value: str | None) -> datetime.date | None:
+    match = _DATE_RE.search(str(value or ""))
+    if not match:
+        return None
+    day, month, year = (int(part) for part in match.groups())
+    try:
+        return datetime(year, month, day).date()
+    except ValueError:
+        return None
 
 
 def _week_number(value: str | None) -> int | None:

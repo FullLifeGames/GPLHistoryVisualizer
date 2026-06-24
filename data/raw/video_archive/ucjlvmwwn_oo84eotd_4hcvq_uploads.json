@@ -5,6 +5,10 @@
     "position": 0,
     "description": "Reel",
     "publishedAt": "2017-09-09T22:06:22Z",
+    "videoPublishedAt": "2017-09-09T22:06:22Z",
+    "playlistPublishedAt": "2017-09-09T22:06:22Z",
+    "defaultLanguage": "en",
+    "defaultAudioLanguage": null,
     "playlistItemId": "VVVqbFZNV3dOX29PODRFT3RELTRIQ1ZRLmdZclZ3T0REa3lR",
     "privacyStatus": "public"
   }

@@ -1,3 +1,4 @@
 video_id,season_id,match_id,division,stage,week,round,video_type,perspective_person,opponent,confidence,match_basis,confidence_explanation
 0UElsZUhmV8,season_010,,Regular Season,regular_season,Spieltag 1,,reference,,,100,manual_reference,User-provided S10 live-event reference for all Spieltag 1 battles.
 25cLVY-vNDg,season_010,,Playoffs,playoffs,Finale,finale,livestream,,,100,manual_final_stream,User-provided GPL S10 finale stream containing the Bo3 final.
+jEUG3t8s1W8,season_008,season_008_schedule_0090,Liga 2,regular_season,3. Spieltag - Mittwoch der 05.05.2021,,game,OGDNZ,Maxi von Vogel,100,manual_description_reference,PresentLP S8 recap description links OG DNZ as Liga 2 Spieltag 3 perspective.

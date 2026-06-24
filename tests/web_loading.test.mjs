@@ -48,7 +48,7 @@ assert.match(appJs, /"season-detail": \["videos", "sourceClaims", "seasonStoryli
 assert.equal(appJs.includes("loadCoreDatasets("), true);
 assert.equal(appJs.includes("ensureDatasetsForView("), true);
 assert.equal(appJs.includes("updateLoadingProgress("), true);
-assert.equal(appJs.includes('fetch(url, { cache: "no-store" })'), false);
+assert.equal(appJs.includes('fetch(url, { cache: "no-store" })'), true);
 
 const loadingStateRenderer = appJs.match(/function renderViewLoadingState\(viewName, keys\) \{[\s\S]*?\n\}/)?.[0] ?? "";
 assert.match(loadingStateRenderer, /destroyTable\(`#\$\{target\.id\}`\)/);

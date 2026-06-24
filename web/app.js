@@ -30,6 +30,9 @@ import { textSorter, weekSortValue } from "./table_sort.js";
 import {
   aggregatePersonStats,
   canonicalKilllistRows,
+  cinemaAdjacentVideoKey,
+  cinemaPerspectiveParticipantOptions,
+  cinemaVideoRows,
   detailRowsWithDraftInstances,
   displayNumber,
   divisionMatches,
@@ -114,6 +117,7 @@ const VIEW_DATASETS = {
   "match-plan": ["matchVideos"],
   "battle-history": ["matchVideos"],
   "match-highlights": ["matchHighlights", "matchVideos"],
+  "cinema": ["matchHighlights", "matchVideos", "videos"],
   "team-rosters": ["pokemonDraftOverview", "teamPokemonUsage", "teamRosters", "rosterScores"],
   "roster-detail": ["pokemonDraftOverview", "teamPokemonUsage", "teamRosters", "rosterScores", "rosterMatchdays"],
   "video-archive": ["videos"],
@@ -191,6 +195,16 @@ const state = {
   draftTierFilter: "all",
   rosterCardLimit: 24,
   matchHighlightCardLimit: 8,
+  cinema: {
+    season: "all",
+    participant: "all",
+    perspective: "all",
+    videoType: "all",
+    stage: "all",
+    order: "published",
+    search: "",
+    selectedKey: "",
+  },
   rosterVariantSelection: {},
   autoSeasonDefault: false,
   autoDataModeDefault: null,
@@ -213,6 +227,14 @@ const divisionFilter = document.querySelector("#division-filter");
 const searchFilter = document.querySelector("#search-filter");
 const matchupA = document.querySelector("#matchup-a");
 const matchupB = document.querySelector("#matchup-b");
+const cinemaSeasonFilter = document.querySelector("#cinema-season-filter");
+const cinemaParticipantFilter = document.querySelector("#cinema-participant-filter");
+const cinemaPerspectiveFilter = document.querySelector("#cinema-perspective-filter");
+const cinemaTypeFilter = document.querySelector("#cinema-type-filter");
+const cinemaStageFilter = document.querySelector("#cinema-stage-filter");
+const cinemaOrderFilter = document.querySelector("#cinema-order-filter");
+const cinemaSearchFilter = document.querySelector("#cinema-search-filter");
+const cinemaRandomButton = document.querySelector("#cinema-random-button");
 const tableInstances = new Map();
 
 init();
@@ -229,6 +251,7 @@ async function init() {
     populateSeasonFilter();
     populateDivisionFilter();
     populateMatchupOptions();
+    populateCinemaControls();
     render();
     statusEl.textContent = t(state.language, "status.loaded");
     statusEl.classList.add("is-ready");
@@ -256,6 +279,7 @@ function bindControls() {
     divisionFilter.value = state.division;
     populateDivisionFilter();
     populateMatchupOptions();
+    populateCinemaControls();
     render();
     if (state.view === "matchup") {
       renderMatchup();
@@ -280,6 +304,7 @@ function bindControls() {
     populateDivisionFilter();
     dataModeFilter.value = state.dataMode;
     populateMatchupOptions();
+    populateCinemaControls();
     render();
     if (state.view === "matchup") {
       renderMatchup();
@@ -310,6 +335,7 @@ function bindControls() {
     resetRosterCardLimit();
     resetMatchHighlightCardLimit();
     populateMatchupOptions();
+    populateCinemaControls();
     render();
   });
 
@@ -318,6 +344,7 @@ function bindControls() {
     resetRosterCardLimit();
     resetMatchHighlightCardLimit();
     populateMatchupOptions();
+    populateCinemaControls();
     render();
   });
 
@@ -326,6 +353,7 @@ function bindControls() {
     resetRosterCardLimit();
     resetMatchHighlightCardLimit();
     populateMatchupOptions();
+    populateCinemaControls();
     render();
   });
 
@@ -348,6 +376,9 @@ function bindControls() {
       renderPokemonDrafts();
     });
   }
+
+  bindCinemaControls();
+  bindResponsiveFilterPanels();
 
   document.addEventListener("click", (event) => {
     const matchupLink = event.target.closest("[data-matchup-select]");
@@ -386,6 +417,20 @@ function bindControls() {
       state.matchHighlightCardLimit += defaultMatchHighlightCardLimit();
       renderMatchHighlights();
     }
+    const cinemaStepButton = event.target.closest("[data-cinema-step]");
+    if (cinemaStepButton) {
+      event.preventDefault();
+      stepCinemaVideo(Number(cinemaStepButton.dataset.cinemaStep || 0));
+      return;
+    }
+    const cinemaCard = event.target.closest("[data-cinema-video-key]");
+    if (cinemaCard) {
+      event.preventDefault();
+      state.cinema.selectedKey = cinemaCard.dataset.cinemaVideoKey || "";
+      renderCinema();
+      document.querySelector("#cinema-screen")?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      return;
+    }
     const rosterVariantButton = event.target.closest("[data-roster-variant-key]");
     if (rosterVariantButton) {
       event.preventDefault();
@@ -404,10 +449,12 @@ async function handleRouteChange() {
   applyRouteFromHash();
   populateDivisionFilter();
   populateMatchupOptions();
+  populateCinemaControls();
   const loadedLazyDatasets = await ensureDatasetsForView(state.view);
   if (loadedLazyDatasets) {
     populateDivisionFilter();
     populateMatchupOptions();
+    populateCinemaControls();
     statusEl.textContent = t(state.language, "status.loaded");
     statusEl.classList.add("is-ready");
   }
@@ -458,6 +505,58 @@ function setMatchupSelectValue(select, value) {
   }
   select.value = key;
   return true;
+}
+
+function bindCinemaControls() {
+  [
+    [cinemaSeasonFilter, "season", "all"],
+    [cinemaParticipantFilter, "participant", "all"],
+    [cinemaPerspectiveFilter, "perspective", "all"],
+    [cinemaTypeFilter, "videoType", "all"],
+    [cinemaStageFilter, "stage", "all"],
+    [cinemaOrderFilter, "order", "published"],
+  ].forEach(([control, key, fallback]) => {
+    control?.addEventListener("change", () => {
+      state.cinema[key] = control.value || fallback;
+      state.cinema.selectedKey = "";
+      renderCinema();
+    });
+  });
+  cinemaSearchFilter?.addEventListener("input", () => {
+    state.cinema.search = cinemaSearchFilter.value.trim();
+    state.cinema.selectedKey = "";
+    renderCinema();
+  });
+  cinemaRandomButton?.addEventListener("click", () => {
+    pickRandomCinemaVideo();
+  });
+}
+
+function bindResponsiveFilterPanels() {
+  const panels = [...document.querySelectorAll(".compact-filter-panel")];
+  if (!panels.length || !window.matchMedia) return;
+  const query = window.matchMedia("(max-width: 720px)");
+  const apply = () => {
+    panels.forEach((panel) => {
+      if (panel.dataset.userToggled === "1") return;
+      const shouldOpen = !query.matches;
+      if (panel.open !== shouldOpen) {
+        panel.dataset.autoToggled = "1";
+        panel.open = shouldOpen;
+      }
+    });
+  };
+  panels.forEach((panel) => {
+    panel.addEventListener("toggle", () => {
+      if (panel.dataset.autoToggled === "1") {
+        delete panel.dataset.autoToggled;
+        return;
+      }
+      panel.dataset.userToggled = "1";
+    });
+  });
+  query.addEventListener?.("change", apply);
+  apply();
 }
 
 function applyRouteFromHash() {
@@ -558,6 +657,7 @@ function applyViewDataModeDefaults(viewName, previousView) {
 
 function setActiveView(viewName) {
   state.view = viewName;
+  document.querySelector(".toolbar")?.classList.toggle("is-cinema-hidden", viewName === "cinema");
   document.querySelectorAll(".tab").forEach((item) => {
     const activeGroup = viewGroupForView(viewName);
     const inActiveGroup = item.dataset.viewGroup === activeGroup;
@@ -757,7 +857,7 @@ async function fetchDataset(key) {
   }
   const url = typeof spec === "string" ? spec : spec.url;
   const optional = typeof spec === "string" ? false : Boolean(spec.optional);
-  const response = await fetch(url);
+  const response = await fetch(url, { cache: "no-store" });
   if (!response.ok && optional) {
     return [];
   }
@@ -909,6 +1009,134 @@ function populateMatchupOptions() {
   });
 }
 
+function populateCinemaControls() {
+  if (!cinemaSeasonFilter || !cinemaParticipantFilter || !cinemaPerspectiveFilter || !cinemaTypeFilter || !cinemaStageFilter || !cinemaOrderFilter) {
+    return;
+  }
+  const rows = cinemaRows({ season: "all", participant: "all", perspective: "all", videoType: "all", stage: "all", search: "", order: "chronological" });
+  const seasonOptions = [
+    { value: "all", label: t(state.language, "filters.allSeasons") },
+    ...(state.data.seasons ?? []).map((season) => ({ value: season.season_id, label: seasonDisplay(season.season_id) })),
+  ];
+  const participantOptions = [
+    { value: "all", label: t(state.language, "cinema.allParticipants") },
+    ...cinemaParticipantOptions(rows),
+  ];
+  const perspectiveOptions = [
+    { value: "all", label: t(state.language, "cinema.allPerspectives") },
+    ...cinemaPerspectiveOptions(rows),
+  ];
+  const typeOptions = [
+    { value: "battle", label: t(state.language, "cinema.battleType") },
+    { value: "all", label: t(state.language, "cinema.allTypes") },
+    ...cinemaTypeOptions(rows),
+  ];
+  const stageOptions = [
+    { value: "all", label: t(state.language, "cinema.allStages") },
+    { value: "regular", label: t(state.language, "cinema.regularStage") },
+    { value: "playoffs", label: t(state.language, "cinema.playoffStage") },
+    { value: "other", label: t(state.language, "cinema.otherStage") },
+  ];
+  setSelectOptions(cinemaSeasonFilter, seasonOptions, state.cinema.season);
+  if (cinemaSeasonFilter.value !== state.cinema.season) {
+    state.cinema.season = cinemaSeasonFilter.value || "all";
+  }
+  setSelectOptions(cinemaParticipantFilter, participantOptions, state.cinema.participant);
+  if (cinemaParticipantFilter.value !== state.cinema.participant) {
+    state.cinema.participant = cinemaParticipantFilter.value || "all";
+  }
+  setSelectOptions(cinemaPerspectiveFilter, perspectiveOptions, state.cinema.perspective);
+  if (cinemaPerspectiveFilter.value !== state.cinema.perspective) {
+    state.cinema.perspective = cinemaPerspectiveFilter.value || "all";
+  }
+  setSelectOptions(cinemaTypeFilter, typeOptions, state.cinema.videoType);
+  if (cinemaTypeFilter.value !== state.cinema.videoType) {
+    state.cinema.videoType = cinemaTypeFilter.value || "all";
+  }
+  setSelectOptions(cinemaStageFilter, stageOptions, state.cinema.stage);
+  if (cinemaStageFilter.value !== state.cinema.stage) {
+    state.cinema.stage = cinemaStageFilter.value || "all";
+  }
+  cinemaOrderFilter.value = state.cinema.order;
+  if (cinemaSearchFilter && cinemaSearchFilter.value !== state.cinema.search) {
+    cinemaSearchFilter.value = state.cinema.search;
+  }
+}
+
+function cinemaRows(overrides = {}) {
+  return cinemaVideoRows(
+    {
+      matchHighlights: state.data.matchHighlights ?? [],
+      matchVideos: state.data.matchVideos ?? [],
+      videos: state.data.videos ?? [],
+    },
+    {
+      season: state.cinema.season,
+      participant: state.cinema.participant,
+      perspective: state.cinema.perspective,
+      videoType: state.cinema.videoType,
+      stage: state.cinema.stage,
+      order: state.cinema.order,
+      search: state.cinema.search,
+      normalizeKey: normalizedKey,
+      ...overrides,
+    },
+  );
+}
+
+function cinemaParticipantOptions(rows) {
+  const people = new Map();
+  rows.forEach((row) => {
+    [
+      row.perspective_person,
+      row.opponent,
+      row.player_a,
+      row.player_b,
+      row.channel_title,
+      row.source_person_names,
+    ].forEach((value) => {
+      String(value ?? "")
+        .split(";")
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .forEach((name) => {
+          const key = normalizedKey(name);
+          if (!key || key === "unknown") return;
+          people.set(key, people.get(key) || name);
+        });
+    });
+  });
+  return [...people.entries()]
+    .sort((left, right) => left[1].localeCompare(right[1]))
+    .map(([value, label]) => ({ value, label }));
+}
+
+function cinemaPerspectiveOptions(rows) {
+  return cinemaPerspectiveParticipantOptions(rows, { normalizeKey: normalizedKey })
+    .map((option) => ({ value: option.value, label: cinemaPerspectiveOptionLabel(option) }));
+}
+
+function cinemaPerspectiveOptionLabel(option) {
+  if (!option.channelCount) return option.label;
+  const key = option.channelCount === 1 ? "cinema.channelSingular" : "cinema.channelPlural";
+  return `${option.label} (${option.channelCount} ${t(state.language, key)})`;
+}
+
+function cinemaTypeOptions(rows) {
+  const types = new Set(rows.map((row) => row.video_type).filter(Boolean));
+  return [...types]
+    .sort((left, right) => videoTypePriority(left) - videoTypePriority(right) || videoTypeDisplay(left).localeCompare(videoTypeDisplay(right)))
+    .map((type) => ({ value: type, label: videoTypeDisplay(type) || type }));
+}
+
+function setSelectOptions(select, options, selectedValue) {
+  const previous = selectedValue || select.value;
+  select.innerHTML = options
+    .map((option) => `<option value="${escapeAttr(option.value)}">${escapeHtml(option.label)}</option>`)
+    .join("");
+  select.value = options.some((option) => option.value === previous) ? previous : options[0]?.value || "";
+}
+
 function matchupOptions() {
   const statRows = filteredPersonStats({ primaryOnly: state.dataMode === "primary" });
   const champions = filtered(state.data.champions ?? []).filter((row) => ["source_evidenced", "user_provided"].includes(row.data_status));
@@ -926,6 +1154,7 @@ function render() {
   renderMatchPlan();
   renderBracketOverview();
   renderMatchHighlights();
+  renderCinema();
   renderTeamRosters();
   renderRosterDetail();
   renderVideoArchive();
@@ -2846,6 +3075,190 @@ function matchHighlightCard(row, rank) {
   `;
 }
 
+function renderCinema() {
+  const screen = document.querySelector("#cinema-screen");
+  const list = document.querySelector("#cinema-list");
+  if (!screen || !list) return;
+
+  const rows = cinemaRows();
+  const selectedIndex = Math.max(0, rows.findIndex((row) => cinemaVideoKey(row) === state.cinema.selectedKey));
+  const selected = rows[selectedIndex] || rows[0];
+  if (!rows.length || !selected) {
+    screen.innerHTML = `<p class="empty">${escapeHtml(t(state.language, "cinema.empty"))}</p>`;
+    list.innerHTML = "";
+    return;
+  }
+
+  const selectedKey = cinemaVideoKey(selected);
+  state.cinema.selectedKey = selectedKey;
+  screen.innerHTML = cinemaScreen(selected, rows.length, selectedIndex);
+  list.innerHTML = rows.map((row, index) => cinemaCard(row, index + 1, cinemaVideoKey(row) === selectedKey)).join("");
+}
+
+function stepCinemaVideo(offset) {
+  const rows = cinemaRows();
+  const nextKey = cinemaAdjacentVideoKey(rows, state.cinema.selectedKey, offset);
+  if (!nextKey || nextKey === state.cinema.selectedKey) return;
+  state.cinema.selectedKey = nextKey;
+  renderCinema();
+  document.querySelector("#cinema-screen")?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
+
+function pickRandomCinemaVideo() {
+  const rows = cinemaRows();
+  if (!rows.length) {
+    state.cinema.selectedKey = "";
+    renderCinema();
+    return;
+  }
+  const current = state.cinema.selectedKey;
+  let index = Math.floor(Math.random() * rows.length);
+  if (rows.length > 1 && cinemaVideoKey(rows[index]) === current) {
+    index = (index + 1) % rows.length;
+  }
+  state.cinema.selectedKey = cinemaVideoKey(rows[index]);
+  renderCinema();
+}
+
+function cinemaScreen(row, total, selectedIndex = 0) {
+  const videoId = cinemaVideoId(row);
+  const embed = videoId
+    ? `<iframe src="https://www.youtube-nocookie.com/embed/${escapeAttr(videoId)}" srcdoc="${escapeAttr(cinemaEmbedSrcdoc(row, videoId))}" title="${escapeAttr(row.title || row.match_label || t(state.language, "values.video"))}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`
+    : `<div class="cinema-player-empty">${escapeHtml(t(state.language, "highlightMatches.card.noVideo"))}</div>`;
+  return `
+    <article class="cinema-player-card">
+      <div class="cinema-player">
+        ${embed}
+        <div class="cinema-playback-controls" aria-label="${escapeAttr(t(state.language, "cinema.playbackControls"))}">
+          <button class="cinema-nav-button cinema-nav-button--previous" type="button" data-cinema-step="-1" aria-label="${escapeAttr(t(state.language, "cinema.previousVideo"))}" title="${escapeAttr(t(state.language, "cinema.previousVideo"))}" ${selectedIndex <= 0 ? "disabled" : ""}><span class="cinema-nav-icon" aria-hidden="true">&larr;</span></button>
+          <button class="cinema-nav-button cinema-nav-button--next" type="button" data-cinema-step="1" aria-label="${escapeAttr(t(state.language, "cinema.nextVideo"))}" title="${escapeAttr(t(state.language, "cinema.nextVideo"))}" ${selectedIndex >= total - 1 ? "disabled" : ""}><span class="cinema-nav-icon" aria-hidden="true">&rarr;</span></button>
+        </div>
+      </div>
+      <div class="cinema-player-info">
+        <span>${escapeHtml(t(state.language, "cinema.nowPlaying"))} · ${escapeHtml(String(total))} ${escapeHtml(t(state.language, "summary.videos"))}</span>
+        <h3>${cinemaMatchTitle(row)}</h3>
+        <p>${escapeHtml(row.title || "")}</p>
+        <div class="cinema-meta-row">
+          ${cinemaMetaItems(row)
+            .map((item) => `<span>${escapeHtml(item.label)}<strong>${escapeHtml(item.value)}</strong></span>`)
+            .join("")}
+        </div>
+        <div class="cinema-actions">
+          ${row.video_url ? `<a class="header-button" href="${escapeAttr(row.video_url)}" target="_blank" rel="noreferrer">${escapeHtml(t(state.language, "cinema.watchOnYoutube"))}</a>` : ""}
+          ${sourceLinks(row.source_urls)}
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+function cinemaCard(row, rank, active = false) {
+  const thumbnail = cinemaThumbnail(row);
+  return `
+    <article class="cinema-card ${active ? "is-active" : ""}">
+      <button type="button" data-cinema-video-key="${escapeAttr(cinemaVideoKey(row))}" aria-pressed="${active ? "true" : "false"}">
+        <span class="cinema-card-rank">#${escapeHtml(String(rank))}</span>
+        <img src="${escapeAttr(thumbnail)}" alt="" loading="lazy" />
+        <span class="cinema-card-body">
+          <span class="cinema-card-meta">${escapeHtml(cinemaCardMeta(row))}</span>
+          <strong>${escapeHtml(cinemaPlainMatchTitle(row))}</strong>
+          <span>${escapeHtml(row.title || "")}</span>
+        </span>
+        <span class="cinema-card-stats">
+          <span>${escapeHtml(t(state.language, "highlightMatches.card.views"))}<strong>${escapeHtml(displayNumber(row.view_count) || "0")}</strong></span>
+          <span>${escapeHtml(t(state.language, "highlightMatches.card.perspective"))}<strong>${escapeHtml(row.perspective_person || row.channel_title || "")}</strong></span>
+        </span>
+      </button>
+    </article>
+  `;
+}
+
+function cinemaMetaItems(row) {
+  return [
+    { label: t(state.language, "columns.season"), value: seasonDisplay(row.season_id) },
+    { label: t(state.language, "columns.stage"), value: cinemaStageDisplay(row.stage_group) },
+    { label: t(state.language, "columns.week"), value: row.week || "" },
+    { label: t(state.language, "columns.video_type"), value: cinemaVideoTypeDisplay(row.video_type) },
+    { label: t(state.language, "highlightMatches.card.views"), value: displayNumber(row.view_count) || "0" },
+  ].filter((item) => item.value);
+}
+
+function cinemaCardMeta(row) {
+  return [
+    seasonDisplay(row.season_id),
+    cinemaStageDisplay(row.stage_group),
+    row.week,
+    cinemaVideoTypeDisplay(row.video_type),
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+function cinemaMatchTitle(row) {
+  const playerA = row.player_a || "";
+  const playerB = row.player_b || "";
+  if (playerA && playerB) {
+    return `${personLink(personIdForName(playerA), playerA)} <span class="highlight-vs">vs</span> ${personLink(personIdForName(playerB), playerB)}`;
+  }
+  if (row.perspective_person && row.opponent) {
+    return `${personLink(personIdForName(row.perspective_person), row.perspective_person)} <span class="highlight-vs">vs</span> ${personLink(personIdForName(row.opponent), row.opponent)}`;
+  }
+  return escapeHtml(row.match_label || row.title || row.video_id || t(state.language, "values.video"));
+}
+
+function cinemaPlainMatchTitle(row) {
+  if (row.player_a && row.player_b) return `${row.player_a} vs ${row.player_b}`;
+  if (row.perspective_person && row.opponent) return `${row.perspective_person} vs ${row.opponent}`;
+  return row.match_label || row.title || row.video_id || t(state.language, "values.video");
+}
+
+function cinemaVideoKey(row) {
+  return [row.match_id, row.video_id || row.video_url, row.title].filter(Boolean).join("::");
+}
+
+function cinemaVideoId(row) {
+  return row.video_id || youtubeVideoIdFromUrl(row.video_url || sourceFirstUrl(row.source_urls));
+}
+
+function cinemaThumbnail(row) {
+  const videoId = cinemaVideoId(row);
+  return videoId
+    ? `https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/mqdefault.jpg`
+    : "./assets/GPL_Season_10_Logo.png";
+}
+
+function cinemaEmbedSrcdoc(row, videoId) {
+  const title = escapeHtml(row.title || row.match_label || t(state.language, "values.video"));
+  const thumbnail = `https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/hqdefault.jpg`;
+  const embedUrl = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?autoplay=1`;
+  return `
+    <style>
+      *{box-sizing:border-box}body{margin:0;background:#020407;font-family:Inter,Arial,sans-serif}
+      a{position:absolute;inset:0;display:grid;place-items:center;overflow:hidden;color:white;text-decoration:none}
+      img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(1.08)}
+      span{position:relative;display:grid;width:76px;height:76px;place-items:center;border-radius:999px;background:#f20d17;box-shadow:0 12px 30px rgb(0 0 0 / 34%)}
+      span:before{content:"";margin-left:5px;border-top:16px solid transparent;border-bottom:16px solid transparent;border-left:24px solid white}
+      strong{position:absolute;left:18px;right:18px;bottom:16px;text-shadow:0 3px 16px #000;font-size:18px;text-align:left}
+    </style>
+    <a href="${embedUrl}" aria-label="${title}">
+      <img src="${thumbnail}" alt="">
+      <span></span>
+      <strong>${title}</strong>
+    </a>
+  `;
+}
+
+function cinemaVideoTypeDisplay(videoType) {
+  if (videoType === "livestream") return t(state.language, "videoTypes.livestream");
+  return videoTypeDisplay(videoType);
+}
+
+function cinemaStageDisplay(stageGroup) {
+  if (stageGroup === "regular") return t(state.language, "cinema.regularStage");
+  if (stageGroup === "playoffs") return t(state.language, "cinema.playoffStage");
+  return t(state.language, "cinema.otherStage");
+}
+
 function legacyMatchHighlightCard(row) {
   const reasons = String(row.highlight_reasons || "")
     .split(";")
@@ -2936,7 +3349,7 @@ function renderVideoArchive() {
   renderTable(
     "#video-archive-table",
     rows,
-    ["season", "division", "video_type", "stage", "detected_week", "perspective_person", "opponent", "title", "channel", "match_status", "confidence", "confidence_tier", "match_basis", "confidence_explanation", "match_id", "view_count", "views_trend_multiplier", "views_expected", "views_week_factor", "views_trend_percentile", "views_trend_z_score", "views_trend_highlight_reasons", "views_multiplier", "views_percentile", "views_z_score", "video_highlight_reasons", "like_count", "comment_count", "duration_seconds", "stats_fetched_at", "published_at"],
+    ["season", "division", "video_type", "stage", "detected_week", "published_at", "perspective_person", "opponent", "title", "channel", "match_status", "confidence", "confidence_tier", "match_basis", "confidence_explanation", "match_id", "view_count", "views_trend_multiplier", "views_expected", "views_week_factor", "views_trend_percentile", "views_trend_z_score", "views_trend_highlight_reasons", "views_multiplier", "views_percentile", "views_z_score", "video_highlight_reasons", "like_count", "comment_count", "duration_seconds", "stats_fetched_at"],
     ["title"],
     {
       filename: "gpl-video-archive.csv",

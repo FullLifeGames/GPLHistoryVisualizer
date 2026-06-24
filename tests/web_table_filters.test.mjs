@@ -59,6 +59,11 @@ assert.deepEqual(tableHeaderFilterConfig("pokemon", rows, { placeholder: "Filter
   headerFilterPlaceholder: "Filtern",
 });
 
+assert.deepEqual(tableHeaderFilterConfig("title", rows, { placeholder: "Filtern" }), {
+  headerFilter: "input",
+  headerFilterPlaceholder: "Filtern",
+});
+
 assert.deepEqual(tableHeaderFilterConfig("source", rows), {
   headerFilter: false,
 });

@@ -5,6 +5,10 @@
     "position": 0,
     "description": "Showing name of the game on 6 subscribers",
     "publishedAt": "2020-06-06T13:32:46Z",
+    "videoPublishedAt": "2020-06-06T13:32:46Z",
+    "playlistPublishedAt": "2020-06-06T13:32:46Z",
+    "defaultLanguage": "en",
+    "defaultAudioLanguage": null,
     "playlistItemId": "VVVYSlhicl9aRDdRRkoySWZXSnBRY19RLjB1X285SC13bEtN",
     "privacyStatus": "public"
   },
@@ -14,6 +18,10 @@
     "position": 1,
     "description": "Im gonna show you on ragdoll factory how to push!!!?!!!!",
     "publishedAt": "2020-05-14T01:59:09Z",
+    "videoPublishedAt": "2020-05-14T01:59:09Z",
+    "playlistPublishedAt": "2020-05-14T01:59:09Z",
+    "defaultLanguage": "en",
+    "defaultAudioLanguage": null,
     "playlistItemId": "VVVYSlhicl9aRDdRRkoySWZXSnBRY19RLnBJb216UDZjY0Zn",
     "privacyStatus": "public"
   },
@@ -23,6 +31,10 @@
     "position": 2,
     "description": "Like and sub for tutorial on how to play",
     "publishedAt": "2020-05-13T14:33:49Z",
+    "videoPublishedAt": "2020-05-13T14:33:49Z",
+    "playlistPublishedAt": "2020-05-13T14:33:49Z",
+    "defaultLanguage": "en",
+    "defaultAudioLanguage": null,
     "playlistItemId": "VVVYSlhicl9aRDdRRkoySWZXSnBRY19RLmdpQWpuUk03QXB3",
     "privacyStatus": "public"
   }

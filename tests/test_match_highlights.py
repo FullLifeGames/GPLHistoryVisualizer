@@ -204,6 +204,37 @@ def test_match_highlights_penalizes_single_source_scores() -> None:
     assert "mehrere Perspektiven" in multi_reasons
 
 
+def test_match_highlights_rewards_story_context_without_overriding_video_signals() -> None:
+    kwargs = {
+        "match_view_multiplier": 0.94,
+        "match_views_percentile": 0.37,
+        "match_views_z_score": -0.34,
+        "raw_attention_percentile": 0.85,
+        "perspective_multiplier": 1,
+        "perspective_views_percentile": 0.58,
+        "perspective_views_z_score": 0.15,
+        "perspective_view_share": 0.73,
+        "engagement_multiplier": 1.29,
+        "engagement_percentile": 1,
+        "engagement_z_score": 3.15,
+        "close_match": False,
+        "playoff_match": False,
+        "both_sides_spiked": False,
+        "videos": [
+            {"video_title": "GPL [S9] - Spieltag 02 - vs. Voltwizards: Unkonzentriert!"},
+            {"video_title": "[GPL S9] Das Top-Duell der Season!? | Spieltag #02: vs. @Bene"},
+        ],
+    }
+
+    plain_score, plain_reasons = _highlight_score(**kwargs, story_match=False)
+    story_score, story_reasons = _highlight_score(**kwargs, story_match=True)
+
+    assert story_score > plain_score + 15
+    assert story_score < plain_score + 25
+    assert "Story-Kontext" not in plain_reasons
+    assert "Story-Kontext" in story_reasons
+
+
 def test_match_highlights_ignore_teambuilding_rows(tmp_path: Path) -> None:
     normalized = tmp_path / "normalized"
     normalized.mkdir()

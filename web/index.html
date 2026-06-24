@@ -69,6 +69,7 @@
         <button class="tab" data-view-group="seasons" data-view="table-history" data-i18n="nav.tableHistory">Tabellenverlauf</button>
         <button class="tab" data-view-group="seasons" data-view="match-plan" data-i18n="nav.matchPlan">Spielplan</button>
         <button class="tab" data-view-group="seasons" data-view="video-archive" data-i18n="nav.videoArchive">Video-Archiv</button>
+        <button class="tab" data-view-group="seasons" data-view="cinema" data-i18n="nav.cinema">Kino-Modus</button>
         <button class="tab" data-view-group="data" data-view="data-coverage" data-i18n="nav.dataCoverage">Datenlage</button>
         <button class="tab" data-view-group="data" data-view="data-gaps" data-i18n="nav.dataGaps">Lückenübersicht</button>
         <button class="tab" data-view-group="data" data-view="roster-gaps" data-i18n="nav.rosterGaps">Kaderlücken</button>
@@ -203,13 +204,64 @@
             </div>
             <div>
               <strong data-i18n="highlightMatches.contextFormula">Zusatzpunkte = Engagement, knappe Kämpfe, Playoffs und Perspektiven</strong>
-              <p data-i18n="highlightMatches.contextFormulaNote">Likes und Kommentare zählen über die Engagementrate; knappe Ergebnisse, Playoffs, hohe Rohreichweite und mehrere verfügbare Sichten geben Kontext-Boni. Kämpfe mit nur einer Quelle werden um 15% gedämpft.</p>
+              <p data-i18n="highlightMatches.contextFormulaNote">Likes und Kommentare zählen über die Engagementrate; knappe Ergebnisse, Playoffs, hohe Rohreichweite, Story-Titel und mehrere verfügbare Sichten geben Kontext-Boni. Kämpfe mit nur einer Quelle werden um 15% gedämpft.</p>
             </div>
           </div>
         </details>
         <div id="match-highlight-summary" class="summary-grid"></div>
         <div id="match-highlight-cards" class="highlight-card-grid"></div>
         <div id="match-highlight-table" class="table-wrap"></div>
+      </section>
+
+      <section id="view-cinema" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.cinemaTitle">Kino-Modus</h2>
+          <p data-i18n="sections.cinemaDescription">Gefilterte Watch-Ansicht für GPL-Kämpfe, Playoff-Strecken und Video-Kategorien.</p>
+        </div>
+        <details class="cinema-controls compact-filter-panel" open>
+          <summary data-i18n="cinema.filtersTitle">Kino-Filter</summary>
+          <div class="cinema-filter-grid">
+            <label>
+              <span data-i18n="filters.season">Saison</span>
+              <select id="cinema-season-filter"></select>
+            </label>
+            <label>
+              <span data-i18n="cinema.battleWith">Kampf mit</span>
+              <select id="cinema-participant-filter"></select>
+            </label>
+            <label>
+              <span data-i18n="cinema.perspective">Sicht</span>
+              <select id="cinema-perspective-filter"></select>
+            </label>
+            <label>
+              <span data-i18n="columns.video_type">Kategorie</span>
+              <select id="cinema-type-filter"></select>
+            </label>
+            <label>
+              <span data-i18n="columns.stage">Phase</span>
+              <select id="cinema-stage-filter"></select>
+            </label>
+            <label>
+              <span data-i18n="cinema.order">Sortierung</span>
+              <select id="cinema-order-filter">
+                <option value="published" data-i18n="cinema.orderPublished">Älteste zuerst</option>
+                <option value="chronological" data-i18n="cinema.orderChronological">Spieltag-Reihenfolge</option>
+                <option value="highlights" data-i18n="cinema.orderHighlights">Highlights zuerst</option>
+                <option value="newest" data-i18n="cinema.orderNewest">Neueste zuerst</option>
+                <option value="views" data-i18n="cinema.orderViews">Meiste Views</option>
+              </select>
+            </label>
+            <label>
+              <span data-i18n="filters.search">Suche</span>
+              <input id="cinema-search-filter" type="search" placeholder="Bene, Finale, Spieltag 12" data-i18n-placeholder="cinema.searchPlaceholder" />
+            </label>
+            <div class="cinema-filter-actions">
+              <button id="cinema-random-button" type="button" class="table-action" data-i18n="cinema.randomVideo">Zufälliges Video</button>
+            </div>
+          </div>
+        </details>
+        <div id="cinema-screen" class="cinema-screen"></div>
+        <div id="cinema-list" class="cinema-layout"></div>
       </section>
 
       <section id="view-team-rosters" class="view">

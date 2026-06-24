@@ -2,6 +2,10 @@ import assert from "node:assert/strict";
 import {
   aggregatePersonStats,
   canonicalKilllistRows,
+  cinemaAdjacentVideoKey,
+  cinemaPerspectiveParticipantOptions,
+  cinemaVideoKey,
+  cinemaVideoRows,
   detailRowsWithDraftInstances,
   displayNumber,
   eloRatings,
@@ -61,6 +65,372 @@ assert.equal(textMatchesSearch("RegiBang S5 Flexing Masskito", "bene s4, regiban
 
 assert.equal(isAnalysisSourceVideo({ video_title: "Analyse: @RegiBang vs @Bene | Flinch-Spektakel | GPL [S4]" }), true);
 assert.equal(isAnalysisSourceVideo({ video_title: "GPL [S4] - Spieltag 08 - vs. Flexing Masskito: Kampf um Platz 1!" }), false);
+
+{
+  const rows = [
+    { match_id: "m1", video_id: "v1", title: "Video 1" },
+    { match_id: "m2", video_id: "v2", title: "Video 2" },
+    { match_id: "m3", video_id: "v3", title: "Video 3" },
+  ];
+  assert.equal(cinemaVideoKey(rows[1]), "m2::v2::Video 2");
+  assert.equal(cinemaAdjacentVideoKey(rows, cinemaVideoKey(rows[1]), -1), cinemaVideoKey(rows[0]));
+  assert.equal(cinemaAdjacentVideoKey(rows, cinemaVideoKey(rows[1]), 1), cinemaVideoKey(rows[2]));
+  assert.equal(cinemaAdjacentVideoKey(rows, cinemaVideoKey(rows[0]), -1), cinemaVideoKey(rows[0]));
+  assert.equal(cinemaAdjacentVideoKey(rows, cinemaVideoKey(rows[2]), 1), cinemaVideoKey(rows[2]));
+}
+
+{
+  const data = {
+    matchVideos: [
+      {
+        season_id: "season_010",
+        match_id: "m1",
+        division: "Regular Season",
+        stage: "regular_season",
+        week: "Spieltag 1",
+        player_a: "PresentLP",
+        player_b: "Bene",
+        video_id: "present-main",
+        video_url: "https://youtu.be/present-main",
+        video_title: "Present Hauptkanal",
+        video_type: "game",
+        perspective_person: "PresentLP",
+        opponent: "Bene",
+        channel_title: "PresentLP",
+        channel_url: "https://www.youtube.com/@PresentLP",
+      },
+      {
+        season_id: "season_010",
+        match_id: "m2",
+        division: "Regular Season",
+        stage: "regular_season",
+        week: "Spieltag 2",
+        player_a: "Bene",
+        player_b: "Dauni",
+        video_id: "bene-main",
+        video_url: "https://youtu.be/bene-main",
+        video_title: "Bene Hauptkanal",
+        video_type: "game",
+        perspective_person: "Bene",
+        opponent: "Dauni",
+        channel_title: "Bene",
+        channel_url: "https://www.youtube.com/@Bene",
+      },
+    ],
+    videos: [
+      {
+        detected_season_id: "season_010",
+        detected_week: "3",
+        detected_stage: "regular_season",
+        video_id: "present-side",
+        video_url: "https://youtu.be/present-side",
+        title: "Present Zweitkanal",
+        video_type: "game",
+        source_person_names: "PresentLP",
+        channel_id: "UC-pres-side",
+        channel_title: "PresPres",
+        channel_url: "https://www.youtube.com/@PresPres",
+      },
+      {
+        detected_season_id: "season_010",
+        detected_week: "4",
+        detected_stage: "regular_season",
+        video_id: "channel-only",
+        video_url: "https://youtu.be/channel-only",
+        title: "Nicht zugeordneter Kanal",
+        video_type: "game",
+        channel_title: "MysteryChannel",
+        channel_url: "https://www.youtube.com/@MysteryChannel",
+      },
+    ],
+  };
+  const rows = cinemaVideoRows(data, { season: "season_010", videoType: "game", order: "chronological" });
+  const options = cinemaPerspectiveParticipantOptions(rows);
+
+  assert.deepEqual(
+    options.map(({ value, label, channelCount }) => ({ value, label, channelCount })),
+    [
+      { value: "bene", label: "Bene", channelCount: 1 },
+      { value: "presentlp", label: "PresentLP", channelCount: 2 },
+    ],
+  );
+  assert.equal(options.some((option) => option.label === "PresPres"), false);
+  assert.deepEqual(
+    cinemaVideoRows(data, { season: "season_010", perspective: "presentlp", videoType: "game", order: "chronological" }).map((row) => row.video_id),
+    ["present-main", "present-side"],
+  );
+  assert.deepEqual(
+    cinemaVideoRows(data, { season: "season_010", perspective: "prespres", videoType: "game", order: "chronological" }).map((row) => row.video_id),
+    [],
+  );
+}
+
+{
+  const rows = cinemaVideoRows(
+    {
+      matchVideos: [
+        {
+          season_id: "season_010",
+          match_id: "s10_week_12",
+          division: "Regular Season",
+          stage: "regular_season",
+          week: "12. Spieltag",
+          player_a: "Bene",
+          player_b: "PresentLP",
+          score: "3 - 0",
+          video_id: "bene12",
+          video_url: "https://www.youtube.com/watch?v=bene12",
+          video_title: "Bene vs PresentLP",
+          video_type: "game",
+          perspective_person: "Bene",
+          opponent: "PresentLP",
+          channel_title: "Bene",
+          view_count: "1200",
+        },
+        {
+          season_id: "season_010",
+          match_id: "s10_final",
+          division: "Playoffs",
+          stage: "playoffs",
+          week: "Finale",
+          player_a: "Bene",
+          player_b: "Minetube",
+          score: "2 - 1",
+          video_id: "finale",
+          video_url: "https://www.youtube.com/watch?v=finale",
+          video_title: "GPL S10 Finale",
+          video_type: "livestream",
+          perspective_person: "PresentLP",
+          opponent: "Bene",
+          channel_title: "PresentLP",
+          view_count: "9000",
+        },
+        {
+          season_id: "season_010",
+          match_id: "s10_semifinal",
+          division: "Playoffs",
+          stage: "playoffs",
+          week: "Halbfinale",
+          player_a: "PresentLP",
+          player_b: "Bene",
+          score: "0 - 2",
+          video_id: "semi",
+          video_url: "https://www.youtube.com/watch?v=semi",
+          video_title: "Dieser Kampf entscheidet ALLES",
+          video_type: "game",
+          perspective_person: "PresentLP",
+          opponent: "Bene",
+          channel_title: "PresentLP",
+          view_count: "5000",
+        },
+      ],
+      videos: [
+        {
+          detected_season_id: "season_010",
+          detected_week: "12",
+          detected_stage: "regular_season",
+          video_id: "tb12",
+          video_url: "https://www.youtube.com/watch?v=tb12",
+          title: "Bene S10 Spieltag 12 Teambuilding",
+          video_type: "teambuilding",
+          perspective_person: "Bene",
+          opponent: "PresentLP",
+          channel_title: "Bene",
+        },
+      ],
+    },
+    { season: "season_010", participant: "Bene", videoType: "game" },
+  );
+
+  assert.deepEqual(rows.map((row) => row.video_id), ["bene12", "semi"]);
+  assert.equal(rows[0].match_label, "Bene vs PresentLP");
+  assert.equal(rows[1].stage_group, "playoffs");
+}
+
+{
+  const rows = cinemaVideoRows(
+    {
+      matchVideos: [
+        { season_id: "season_010", division: "Playoffs", stage: "playoffs", week: "Finale", player_a: "Bene", player_b: "Minetube", video_id: "final", video_url: "https://youtu.be/final", video_title: "Finale", video_type: "game" },
+        { season_id: "season_010", division: "Playoffs", stage: "playoffs", week: "Viertelfinale", player_a: "Nestfloh", player_b: "Bene", video_id: "quarter", video_url: "https://youtu.be/quarter", video_title: "Viertel", video_type: "game" },
+        { season_id: "season_010", division: "Playoffs", stage: "playoffs", week: "Halbfinale", player_a: "PresentLP", player_b: "Bene", video_id: "semi", video_url: "https://youtu.be/semi", video_title: "Halb", video_type: "game" },
+        { season_id: "season_010", division: "Playoffs", stage: "playoffs", week: "Spiel um Platz 3", player_a: "Minetube", player_b: "PresentLP", video_id: "third", video_url: "https://youtu.be/third", video_title: "GPL S10 Spiel um Platz 3", video_type: "game" },
+      ],
+    },
+    { season: "season_010", stage: "playoffs", videoType: "all" },
+  );
+
+  assert.deepEqual(rows.map((row) => row.week), ["Viertelfinale", "Halbfinale", "Spiel um Platz 3", "Finale"]);
+}
+
+{
+  const rows = cinemaVideoRows(
+    {
+      matchVideos: [
+        { season_id: "season_004", division: "Liga 1", stage: "regular_season", week: "1. Spieltag", player_a: "A", player_b: "B", video_id: "w1", video_url: "https://youtu.be/w1", video_title: "Spieltag 1", video_type: "game" },
+        { season_id: "season_004", division: "Liga 1", stage: "regular_season", week: "10. Spieltag", player_a: "A", player_b: "C", video_id: "w10", video_url: "https://youtu.be/w10", video_title: "Spieltag 10", video_type: "game" },
+        { season_id: "season_004", division: "Liga 1", stage: "regular_season", week: "2. Spieltag", player_a: "A", player_b: "D", video_id: "w2", video_url: "https://youtu.be/w2", video_title: "Spieltag 2", video_type: "game" },
+      ],
+    },
+    { season: "season_004", stage: "regular", videoType: "all" },
+  );
+
+  assert.deepEqual(rows.map((row) => row.video_id), ["w1", "w2", "w10"]);
+}
+
+{
+  const rows = cinemaVideoRows(
+    {
+      matchVideos: [
+        { season_id: "season_010", match_id: "m10", division: "Regular Season", stage: "regular_season", week: "Spieltag 10", player_a: "A", player_b: "B", video_id: "w10", video_url: "https://youtu.be/w10", video_title: "GPL [S10] - Spieltag 10 - Kampf", video_type: "game" },
+        { season_id: "season_010", match_id: "m2", division: "Regular Season", stage: "regular_season", week: "Spieltag 2", player_a: "A", player_b: "C", video_id: "w2", video_url: "https://youtu.be/w2", video_title: "GPL [S10] - Spieltag 02 - Kampf", video_type: "game" },
+      ],
+    },
+    { season: "season_010", stage: "regular", videoType: "game", order: "chronological" },
+  );
+
+  assert.deepEqual(rows.map((row) => row.video_id), ["w2", "w10"]);
+}
+
+{
+  const rows = cinemaVideoRows(
+    {
+      videos: [
+        { detected_season_id: "season_010", detected_stage: "regular_season", week: "1. Spieltag", video_id: "w1", video_url: "https://youtu.be/w1", title: "GPL S10 Spieltag 1", video_type: "game" },
+        { detected_season_id: "season_010", detected_stage: "regular_season", week: "2. Spieltag", video_id: "w2", video_url: "https://youtu.be/w2", title: "GPL S10 zweiter Kampf", video_type: "game" },
+        { detected_season_id: "season_010", detected_stage: "regular_season", week: "10. Spieltag", video_id: "w10", video_url: "https://youtu.be/w10", title: "GPL S10 Spieltag 10", video_type: "game" },
+      ],
+    },
+    { season: "season_010", stage: "regular", videoType: "all", order: "chronological" },
+  );
+
+  assert.deepEqual(rows.map((row) => row.video_id), ["w1", "w2", "w10"]);
+}
+
+{
+  const rows = cinemaVideoRows(
+    {
+      matchVideos: [
+        { season_id: "season_010", match_id: "m1", division: "Regular Season", stage: "regular_season", week: "Spieltag 1", player_a: "Bene", player_b: "Dauni", video_id: "game1", video_url: "https://youtu.be/game1", video_title: "Spieltag 1 Kampf", video_type: "game", published_at: "2025-10-12T12:00:00Z" },
+        { season_id: "season_010", match_id: "m2", division: "Regular Season", stage: "regular_season", week: "Spieltag 2", player_a: "Bene", player_b: "KingBlex", video_id: "game2", video_url: "https://youtu.be/game2", video_title: "Spieltag 2 Kampf", video_type: "game", published_at: "2025-10-05T12:00:00Z" },
+      ],
+    },
+    { season: "season_010", videoType: "game" },
+  );
+
+  assert.deepEqual(rows.map((row) => row.video_id), ["game2", "game1"]);
+}
+
+{
+  const rows = cinemaVideoRows(
+    {
+      matchVideos: [
+        { season_id: "season_010", match_id: "m1", division: "Regular Season", stage: "regular_season", week: "Spieltag 1", player_a: "Bene", player_b: "Dauni", video_id: "game1", video_url: "https://youtu.be/game1", video_title: "Spieltag 1 Kampf", video_type: "game", published_at: "2025-10-01T12:00:00Z" },
+      ],
+      videos: [
+        { detected_season_id: "season_010", best_match_id: "m1", detected_week: "1", detected_stage: "regular_season", video_id: "build1", video_url: "https://youtu.be/build1", title: "Spieltag 1 Teambuilding", video_type: "teambuilding", published_at: "2025-10-02T12:00:00Z" },
+      ],
+    },
+    { season: "season_010", stage: "regular", videoType: "all", order: "chronological" },
+  );
+
+  assert.deepEqual(rows.map((row) => row.video_id), ["build1", "game1"]);
+}
+
+{
+  const rows = cinemaVideoRows(
+    {
+      matchVideos: [
+        { season_id: "season_010", match_id: "final", division: "Playoffs", stage: "playoffs", week: "Finale", player_a: "Bene", player_b: "Raizor", video_id: "fight2", video_url: "https://youtu.be/fight2", video_title: "GPL S10 Finale Kampf 2", video_type: "game", published_at: "2026-01-01T10:00:00Z" },
+        { season_id: "season_010", match_id: "final", division: "Playoffs", stage: "playoffs", week: "Finale", player_a: "Bene", player_b: "Raizor", video_id: "fight1", video_url: "https://youtu.be/fight1", video_title: "GPL S10 Finale Kampf 1", video_type: "game", published_at: "2026-01-01T11:00:00Z" },
+      ],
+    },
+    { season: "season_010", stage: "playoffs", videoType: "game", order: "chronological" },
+  );
+
+  assert.deepEqual(rows.map((row) => row.video_id), ["fight1", "fight2"]);
+}
+
+{
+  const rows = cinemaVideoRows(
+    {
+      matchVideos: [
+        { season_id: "season_010", match_id: "m1", division: "Regular Season", stage: "regular_season", week: "Spieltag 1", player_a: "Bene", player_b: "Dauni", video_id: "game1", video_url: "https://youtu.be/game1", video_title: "Spieltag 1 Kampf", video_type: "game" },
+      ],
+      videos: [
+        { detected_season_id: "season_010", best_match_id: "m1", detected_week: "1", detected_stage: "regular_season", video_id: "game1", video_url: "https://youtu.be/game1", title: "Spieltag 1 Kampf", video_type: "game", perspective_person: "Bene", opponent: "Dauni", published_at: "2025-10-01T12:00:00Z", view_count: "1234" },
+      ],
+    },
+    { season: "season_010", videoType: "game" },
+  );
+
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].published_at, "2025-10-01T12:00:00Z");
+  assert.equal(rows[0].view_count, "1234");
+  assert.equal(rows[0].match_label, "Bene vs Dauni");
+}
+
+{
+  const rows = cinemaVideoRows(
+    {
+      matchVideos: [
+        { season_id: "season_004", division: "Liga 1", stage: "regular_season", week: "1. Spieltag", player_a: "A", player_b: "B", video_id: "views", video_url: "https://youtu.be/views", video_title: "Viele Views", video_type: "game", view_count: "40000", highlight_score: "10" },
+        { season_id: "season_004", division: "Liga 1", stage: "regular_season", week: "2. Spieltag", player_a: "A", player_b: "C", video_id: "highlight", video_url: "https://youtu.be/highlight", video_title: "Top Highlight", video_type: "game", view_count: "9000", highlight_score: "88" },
+        { season_id: "season_004", division: "Liga 1", stage: "regular_season", week: "3. Spieltag", player_a: "A", player_b: "D", video_id: "trend", video_url: "https://youtu.be/trend", video_title: "Trend Highlight", video_type: "game", view_count: "12000", views_trend_z_score: "6.5", views_trend_multiplier: "2.4" },
+      ],
+    },
+    { season: "season_004", stage: "regular", videoType: "game", order: "highlights" },
+  );
+
+  assert.deepEqual(rows.map((row) => row.video_id), ["highlight", "trend", "views"]);
+}
+
+{
+  const rows = cinemaVideoRows(
+    {
+      matchHighlights: [
+        { season_id: "season_004", match_id: "match-a", highlight_score: "90", view_peak: "1200" },
+        { season_id: "season_004", match_id: "match-b", highlight_score: "70", view_peak: "50000" },
+      ],
+      matchVideos: [
+        { season_id: "season_004", match_id: "match-b", division: "Liga 1", stage: "regular_season", week: "1. Spieltag", player_a: "A", player_b: "B", video_id: "huge-video", video_url: "https://youtu.be/huge-video", video_title: "Huge single video", video_type: "game", view_count: "50000", views_trend_z_score: "9", views_trend_multiplier: "4" },
+        { season_id: "season_004", match_id: "match-a", division: "Liga 1", stage: "regular_season", week: "2. Spieltag", player_a: "A", player_b: "C", video_id: "match-highlight", video_url: "https://youtu.be/match-highlight", video_title: "Higher match highlight", video_type: "game", view_count: "1200" },
+      ],
+    },
+    { season: "season_004", stage: "regular", videoType: "game", order: "highlights" },
+  );
+
+  assert.deepEqual(rows.map((row) => row.video_id), ["match-highlight", "huge-video"]);
+  assert.equal(rows[0].match_highlight_score, "90");
+}
+
+{
+  const rows = cinemaVideoRows(
+    {
+      videos: [
+        { detected_season_id: "season_001", detected_stage: "regular_season", video_id: "intro", video_url: "https://youtu.be/intro", title: "GPL S1 Kampf ohne Spieltag", video_type: "game", perspective_person: "PresentLP" },
+        { detected_season_id: "season_001", detected_stage: "regular_season", detected_week: "2", video_id: "w2", video_url: "https://youtu.be/w2", title: "GPL S1 Spieltag 2", video_type: "game", perspective_person: "PresentLP" },
+      ],
+    },
+    { season: "season_001", stage: "regular", videoType: "game" },
+  );
+
+  assert.deepEqual(rows.map((row) => row.video_id), ["w2"]);
+}
+
+{
+  const rows = cinemaVideoRows(
+    {
+      matchVideos: [
+        { season_id: "season_010", division: "Playoffs", stage: "playoffs", week: "Halbfinale", player_a: "Bene", player_b: "PresentLP", video_id: "bene-view", video_url: "https://youtu.be/bene", video_title: "Bene Sicht", video_type: "game", perspective_person: "Bene", opponent: "PresentLP" },
+        { season_id: "season_010", division: "Playoffs", stage: "playoffs", week: "Halbfinale", player_a: "Bene", player_b: "PresentLP", video_id: "present-view", video_url: "https://youtu.be/present", video_title: "Present Sicht", video_type: "game", perspective_person: "PresentLP", opponent: "Bene" },
+      ],
+    },
+    { season: "season_010", participant: "Bene", perspective: "PresentLP", stage: "playoffs", videoType: "game" },
+  );
+
+  assert.deepEqual(rows.map((row) => row.video_id), ["present-view"]);
+}
 
 {
   const normalizeTestKey = (value) =>

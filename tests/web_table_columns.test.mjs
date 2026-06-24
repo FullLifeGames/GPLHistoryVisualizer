@@ -148,6 +148,7 @@ const videoColumns = [
   "video_type",
   "stage",
   "detected_week",
+  "published_at",
   "perspective_person",
   "opponent",
   "title",
@@ -158,7 +159,6 @@ const videoColumns = [
   "match_basis",
   "confidence_explanation",
   "match_id",
-  "published_at",
 ];
 assert.deepEqual(columnsForProfile(videoColumns, "compact"), [
   "season",
@@ -166,6 +166,7 @@ assert.deepEqual(columnsForProfile(videoColumns, "compact"), [
   "video_type",
   "stage",
   "detected_week",
+  "published_at",
   "perspective_person",
   "opponent",
   "title",
@@ -175,6 +176,7 @@ assert.deepEqual(columnsForProfile(videoColumns, "sources"), [
   "season",
   "division",
   "video_type",
+  "published_at",
   "title",
   "match_status",
   "confidence",
