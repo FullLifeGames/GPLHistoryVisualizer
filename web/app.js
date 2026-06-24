@@ -1066,6 +1066,7 @@ function populateCinemaControls() {
 function cinemaRows(overrides = {}) {
   return cinemaVideoRows(
     {
+      seasons: state.data.seasons ?? [],
       matchHighlights: state.data.matchHighlights ?? [],
       matchVideos: state.data.matchVideos ?? [],
       videos: state.data.videos ?? [],
@@ -4027,14 +4028,15 @@ function weekNumber(value) {
 function videoTypePriority(value) {
   return {
     game: 1,
-    teambuilding: 2,
-    draft_analysis: 3,
-    announcement: 4,
-    update: 5,
-    recap: 6,
-    reaction: 7,
-    tierlist: 8,
-    other: 9,
+    showmatch: 2,
+    teambuilding: 3,
+    draft_analysis: 4,
+    announcement: 5,
+    update: 6,
+    recap: 7,
+    reaction: 8,
+    tierlist: 9,
+    other: 10,
   }[value] ?? 50;
 }
 

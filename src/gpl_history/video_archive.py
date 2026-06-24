@@ -71,7 +71,8 @@ MATCH_VIDEO_FIELDS = [
 ]
 
 _GPL_RE = re.compile(r"(?:\bgpl\b|german\s+pok[eé]mon\s+league)", re.IGNORECASE)
-_FOREIGN_LEAGUE_RE = re.compile(r"\budt\b", re.IGNORECASE)
+_FOREIGN_LEAGUE_RE = re.compile(r"\b(?:gpc|udt)\b", re.IGNORECASE)
+_NON_GPL_SERIES_RE = re.compile(r"\bpaldea\s*-?\s*fabrik\b", re.IGNORECASE)
 _SEASON_RE = re.compile(r"(?:season|saison|staffel|\bs)\s*0?([0-9]{1,2})\b", re.IGNORECASE)
 _WEEK_RE = re.compile(r"(?:spieltag|matchday|sp\.?|st\.?|week|woche)\s*#?\s*0?([0-9]{1,2})\b", re.IGNORECASE)
 _WEEK_PREFIX_RE = re.compile(r"\b0?([0-9]{1,2})\.\s*(?:spieltag|matchday|st\.?|week|woche)\b", re.IGNORECASE)
@@ -85,6 +86,12 @@ _TEAMBUILDING_TOKENS = {
     "team preview",
     "teamvorstellung",
     "kaderanalyse",
+}
+_SHOWMATCH_TOKENS = {
+    "show battle",
+    "showbattle",
+    "showkampf",
+    "showmatch",
 }
 _CATEGORY_TOKENS = {
     "announcement": {
@@ -191,7 +198,7 @@ def parse_gpl_video_title(title: str | None) -> dict[str, Any]:
 
     season_match = _SEASON_RE.search(text)
     week_match = _WEEK_RE.search(text) or _WEEK_PREFIX_RE.search(text)
-    is_gpl = bool(_GPL_RE.search(text)) and not _FOREIGN_LEAGUE_RE.search(folded)
+    is_gpl = bool(_GPL_RE.search(text)) and not _FOREIGN_LEAGUE_RE.search(folded) and not _NON_GPL_SERIES_RE.search(folded)
     return {
         "is_gpl": is_gpl,
         "season_id": f"season_{int(season_match.group(1)):03d}" if season_match else None,
@@ -227,6 +234,8 @@ def classify_video_type(title: str | None) -> str:
     has_round = _round_label_from_text(text) is not None
     has_versus = bool(_VERSUS_RE.search(text))
     has_teambuilding = any(token in folded for token in _TEAMBUILDING_TOKENS)
+    if any(token in folded for token in _SHOWMATCH_TOKENS):
+        return "showmatch"
     if has_teambuilding and not _is_teambuilding_joke_match_title(folded, has_week=has_week, has_round=has_round, has_versus=has_versus):
         return "teambuilding"
     if re.search(r"\br\s*(?:u|ue)?ckblick\b", folded):
@@ -668,6 +677,7 @@ def build_video_archive(data_dir: Path) -> tuple[list[dict[str, Any]], list[dict
     channel_rows = _merge_channel_rows(read_json(raw_dir / "channels.json", []))
     excluded_video_ids = _manual_excluded_video_ids(data_dir)
     teams = _read_csv(data_dir / "normalized" / "teams.csv")
+    season_windows = _season_date_windows(_read_csv(data_dir / "normalized" / "seasons.csv"))
     matches = [
         row
         for row in _read_csv(data_dir / "normalized" / "matches.csv")
@@ -693,6 +703,11 @@ def build_video_archive(data_dir: Path) -> tuple[list[dict[str, Any]], list[dict
             parsed = parse_gpl_video_title(title)
             if not parsed["is_gpl"]:
                 continue
+            inferred_season_id = parsed["season_id"] or _season_from_publish_date(
+                video,
+                season_windows,
+                channel.get("source_seasons"),
+            )
             video_type = _forced_video_type_from_channel(channel) or parsed["video_type"]
             key = (channel.get("channelId") or channel.get("canonical_url") or "", video_id or title or "")
             if key in seen_videos:
@@ -713,7 +728,7 @@ def build_video_archive(data_dir: Path) -> tuple[list[dict[str, Any]], list[dict
                 "source_team_names": channel.get("source_team_names"),
                 "source_seasons": channel.get("source_seasons"),
                 "division": parsed["division"],
-                "detected_season_id": parsed["season_id"],
+                "detected_season_id": inferred_season_id,
                 "detected_week": str(parsed["week_number"]) if parsed["week_number"] is not None else None,
                 "detected_stage": parsed["stage"],
                 "detected_round": parsed["round"],
@@ -1214,6 +1229,44 @@ def _publish_date_match_delta_days(video: dict[str, Any], match: dict[str, Any])
     if not published or not match_date:
         return None
     return abs((published - match_date).days)
+
+
+def _season_date_windows(rows: list[dict[str, str]]) -> list[tuple[str, datetime.date, datetime.date]]:
+    windows: list[tuple[str, datetime.date, datetime.date]] = []
+    for row in rows:
+        season_id = row.get("season_id")
+        start = _published_date({"published_at": row.get("start_date")})
+        end = _published_date({"published_at": row.get("end_date")})
+        if not season_id or not start or not end:
+            continue
+        windows.append((season_id, start, end))
+    return windows
+
+
+def _season_from_publish_date(
+    video: dict[str, Any],
+    season_windows: list[tuple[str, datetime.date, datetime.date]],
+    source_seasons: str | None = None,
+) -> str | None:
+    published = _published_date(video)
+    if not published:
+        return None
+    allowed_seasons = {season for season in _split_values(source_seasons) if re.fullmatch(r"season_\d{3}", season)}
+    best_season: str | None = None
+    best_delta: int | None = None
+    for season_id, start, end in season_windows:
+        if allowed_seasons and season_id not in allowed_seasons:
+            continue
+        if start <= published <= end:
+            delta = 0
+        else:
+            delta = min(abs((published - start).days), abs((published - end).days))
+        if delta > _PUBLISH_DATE_TOLERANCE_DAYS:
+            continue
+        if best_delta is None or delta < best_delta:
+            best_season = season_id
+            best_delta = delta
+    return best_season
 
 
 def _published_date(video: dict[str, Any]) -> datetime.date | None:

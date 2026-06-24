@@ -23,8 +23,14 @@ assert.equal(t("en", "cinema.nextVideo"), "Next");
 assert.equal(t("en", "cinema.randomVideo"), "Random video");
 assert.equal(t("de", "videoTypes.reference"), "Referenz");
 assert.equal(t("en", "videoTypes.reference"), "Reference");
+assert.equal(t("de", "videoTypes.showmatch"), "Showkampf");
+assert.equal(t("en", "videoTypes.showmatch"), "Show Battle");
+assert.equal(t("de", "stages.showmatch"), "Showkampf");
+assert.equal(t("en", "stages.showmatch"), "Show Battle");
 assert.equal(t("de", "matchStatuses.livestream"), "Livestream");
 assert.equal(t("en", "matchStatuses.livestream"), "Livestream");
+assert.equal(t("de", "matchStatuses.showmatch"), "Showkampf");
+assert.equal(t("en", "matchStatuses.showmatch"), "Show Battle");
 
 assert.equal(normalizeLanguage("fr-FR"), "de");
 assert.equal(normalizeLanguage("en-US"), "en");

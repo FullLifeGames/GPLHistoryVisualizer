@@ -95,10 +95,11 @@ export function cinemaVideoRows(data = {}, options = {}) {
   const videoType = normalizeKey(options.videoType || "battle");
   const stage = normalizeKey(options.stage || "all");
   const search = options.search || "";
+  const seasonWindows = cinemaSeasonWindows(data);
   const highlightIndex = cinemaMatchHighlightIndex(data.matchHighlights ?? []);
   const rows = dedupeCinemaRows([
     ...(data.matchVideos ?? []).map((row) => cinemaRowFromMatchVideo(row, normalizeKey)),
-    ...(data.videos ?? []).map((row) => cinemaRowFromArchiveVideo(row, normalizeKey)),
+    ...(data.videos ?? []).map((row) => cinemaRowFromArchiveVideo(row, normalizeKey, seasonWindows)),
   ]).map((row) => attachCinemaMatchHighlight(row, highlightIndex));
 
   return rows
@@ -144,10 +145,10 @@ function cinemaRowFromMatchVideo(row, normalizeKey = normalizedStatsKey) {
   };
 }
 
-function cinemaRowFromArchiveVideo(row, normalizeKey = normalizedStatsKey) {
+function cinemaRowFromArchiveVideo(row, normalizeKey = normalizedStatsKey, seasonWindows = new Map()) {
   return {
     ...row,
-    season_id: row.detected_season_id || row.season_id || "",
+    season_id: row.detected_season_id || row.season_id || uniqueSourceSeason(row.source_seasons, row.published_at, seasonWindows) || "",
     division: row.division || "",
     stage: row.detected_stage || row.stage || "",
     stage_group: cinemaStageGroup({ ...row, stage: row.detected_stage || row.stage }, normalizeKey),
@@ -165,6 +166,46 @@ function cinemaRowFromArchiveVideo(row, normalizeKey = normalizedStatsKey) {
     channel_title: row.channel_title || "",
     source_kind: "archive",
   };
+}
+
+function uniqueSourceSeason(value, publishedAt = "", seasonWindows = new Map()) {
+  const seasons = splitDelimitedValues(value);
+  if (seasons.length !== 1) return "";
+  const season = seasons[0];
+  const window = seasonWindows.get(season);
+  if (!window) return "";
+  const publishedTime = Date.parse(publishedAt || "");
+  if (!Number.isFinite(publishedTime)) return "";
+  return publishedTime >= window.start && publishedTime <= window.end ? season : "";
+}
+
+function cinemaSeasonWindows(data = {}) {
+  const windows = new Map();
+  (data.seasons ?? []).forEach((season) => {
+    addSeasonWindowDate(windows, season.season_id, season.start_date);
+    addSeasonWindowDate(windows, season.season_id, season.end_date);
+  });
+  (data.matchVideos ?? []).forEach((row) => addSeasonWindowDate(windows, row.season_id, row.published_at));
+  (data.videos ?? []).forEach((row) => addSeasonWindowDate(windows, row.detected_season_id || row.season_id, row.published_at));
+  const paddingMs = 60 * 24 * 60 * 60 * 1000;
+  windows.forEach((window) => {
+    window.start -= paddingMs;
+    window.end += paddingMs;
+  });
+  return windows;
+}
+
+function addSeasonWindowDate(windows, seasonId, dateValue) {
+  if (!seasonId) return;
+  const time = Date.parse(dateValue || "");
+  if (!Number.isFinite(time)) return;
+  const current = windows.get(seasonId);
+  if (!current) {
+    windows.set(seasonId, { start: time, end: time });
+    return;
+  }
+  current.start = Math.min(current.start, time);
+  current.end = Math.max(current.end, time);
 }
 
 function cinemaMatchLabel(playerA, playerB, row) {
@@ -449,6 +490,7 @@ function cinemaVideoTypeOrder(row) {
   if (type === "teambuilding") return 10;
   if (type.includes("draft")) return 15;
   if (type === "game" || type === "livestream") return 20;
+  if (type === "showmatch") return 25;
   if (type === "analysis" || type === "analyse" || type.includes("ruckblick") || type.includes("review")) return 30;
   if (type === "reference") return 35;
   return 40;

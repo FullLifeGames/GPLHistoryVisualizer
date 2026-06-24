@@ -166,6 +166,71 @@ assert.equal(isAnalysisSourceVideo({ video_title: "GPL [S4] - Spieltag 08 - vs. 
 }
 
 {
+  const data = {
+    seasons: [
+      {
+        season_id: "season_010",
+        start_date: "2025-10-04T16:01:45Z",
+        end_date: "2025-12-14T17:01:29Z",
+      },
+    ],
+    matchVideos: [
+      {
+        season_id: "season_010",
+        match_id: "s10_playoff",
+        stage: "playoffs",
+        week: "Viertelfinale",
+        video_id: "",
+        video_url: "",
+        video_title: "S10 Playoffs",
+        video_type: "game",
+        published_at: "2026-01-11T11:00:00Z",
+      },
+    ],
+    videos: [
+      {
+        source_seasons: "season_010",
+        detected_stage: "regular_season",
+        video_id: "flobert-tb1",
+        video_url: "https://youtu.be/flobert-tb1",
+        title: "Wie bricht man dieses Team? GPL-Teambuilding 1 vs. @blockiplus",
+        video_type: "teambuilding",
+        published_at: "2025-10-06T17:41:45Z",
+        source_person_names: "Nestfloh",
+        channel_title: "Flobert",
+      },
+      {
+        source_seasons: "season_010",
+        detected_stage: "regular_season",
+        video_id: "old-reaction",
+        video_url: "https://youtu.be/old-reaction",
+        title: "Nestfloh reagiert auf die GPL - ElektechN9ne vs. Dauni (Spieltag 1)",
+        video_type: "reaction",
+        published_at: "2021-04-18T18:00:00Z",
+        source_person_names: "Nestfloh",
+        channel_title: "Flobert",
+      },
+      {
+        source_seasons: "season_008;season_009;season_010",
+        detected_stage: "regular_season",
+        video_id: "multi-season-other",
+        video_url: "https://youtu.be/multi-season-other",
+        title: "Mein GPL-Kader!",
+        video_type: "other",
+        published_at: "2025-10-06T17:41:45Z",
+        source_person_names: "Nestfloh",
+        channel_title: "Nestfloh",
+      },
+    ],
+  };
+
+  assert.deepEqual(
+    cinemaVideoRows(data, { season: "season_010", videoType: "all", order: "chronological" }).map((row) => row.video_id),
+    ["flobert-tb1"],
+  );
+}
+
+{
   const rows = cinemaVideoRows(
     {
       matchVideos: [

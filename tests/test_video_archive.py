@@ -242,8 +242,21 @@ def test_parse_gpl_video_title_detects_plural_english_playoff_rounds():
     assert parsed["video_type"] == "game"
 
 
+def test_parse_gpl_video_title_rejects_gpc_foreign_league_titles():
+    parsed = parse_gpl_video_title("Der GPL Kollege! - GPC - Spieltag 2 - vs. @DauniDaunstar")
+
+    assert parsed["is_gpl"] is False
+
+
+def test_parse_gpl_video_title_rejects_paldea_fabrik_false_positive_titles():
+    parsed = parse_gpl_video_title("GPL Teilnehmer in der Paldea-Fabrik!? 💥 Paldea-Fabrik #36")
+
+    assert parsed["is_gpl"] is False
+
+
 def test_classify_video_type_distinguishes_games_teambuildings_and_other_gpl_videos():
     assert classify_video_type("GPL [S8] Spieltag 3 vs Bene") == "game"
+    assert classify_video_type("GPL Showkampf gegen Minetube!") == "showmatch"
     assert classify_video_type("GPL Season 10 Teambuilding - Wackel Backel") == "teambuilding"
     assert classify_video_type("German Pokémon League S7 Team Building mit Draftanalyse") == "teambuilding"
     assert classify_video_type("GPL [S4] - Spieltag 22 - vs. Enteikutierung: Teambuilding!") == "teambuilding"
@@ -1476,6 +1489,168 @@ def test_build_video_archive_skips_manual_false_positive_videos(tmp_path):
     archive_rows, match_rows = build_video_archive(tmp_path)
 
     assert archive_rows == []
+    assert match_rows == []
+
+
+def test_build_video_archive_can_reclassify_excluded_raw_showmatch_as_manual_archive_row(tmp_path):
+    raw_dir = tmp_path / "raw" / "video_archive"
+    normalized_dir = tmp_path / "normalized"
+    manual_dir = tmp_path / "manual"
+    raw_dir.mkdir(parents=True)
+    normalized_dir.mkdir()
+    manual_dir.mkdir()
+
+    uploads_path = raw_dir / "bene_uploads.json"
+    (raw_dir / "channels.json").write_text(
+        json.dumps(
+            [
+                {
+                    "channelId": "UCbene",
+                    "title": "Bene",
+                    "canonical_url": "https://www.youtube.com/@Bene",
+                    "source_person_names": "Bene",
+                    "source_team_names": "Wackel Backel",
+                    "source_seasons": "season_010",
+                    "source_urls": "https://www.youtube.com/@Bene",
+                    "raw_path": str(uploads_path).replace("\\", "/"),
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    uploads_path.write_text(
+        json.dumps(
+            [
+                {
+                    "videoId": "LcW38V5_oPQ",
+                    "title": "GPL Showkampf gegen Minetube!",
+                    "publishedAt": "2021-05-18T16:00:10Z",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    _write_test_csv(
+        manual_dir / "video_exclusions.csv",
+        [
+            {
+                "video_id": "LcW38V5_oPQ",
+                "reason": "manual_reclassified_showmatch",
+                "source_urls": "https://www.youtube.com/watch?v=LcW38V5_oPQ",
+            }
+        ],
+    )
+    _write_test_csv(
+        manual_dir / "video_archive.csv",
+        [
+            {
+                "video_id": "LcW38V5_oPQ",
+                "video_url": "https://www.youtube.com/watch?v=LcW38V5_oPQ",
+                "title": "GPL Showkampf gegen Minetube!",
+                "video_type": "showmatch",
+                "published_at": "2021-05-18T16:00:10Z",
+                "channel_title": "Bene",
+                "channel_url": "https://www.youtube.com/@Bene",
+                "source_person_names": "Bene",
+                "source_seasons": "season_008",
+                "detected_season_id": "season_008",
+                "detected_stage": "regular_season",
+                "match_status": "showmatch",
+                "perspective_person": "Bene",
+                "opponent": "Minetube",
+                "source_urls": "https://www.youtube.com/watch?v=LcW38V5_oPQ;https://www.youtube.com/@Bene",
+            }
+        ],
+    )
+    _write_test_csv(
+        normalized_dir / "matches.csv",
+        [
+            {
+                "season_id": "season_010",
+                "match_id": "season_010_schedule_0031",
+                "division": "Regular Season",
+                "stage": "regular_season",
+                "week": "Spieltag 4",
+                "player_a": "Minetube",
+                "player_b": "Bene",
+                "team_a": "Backel Gefackel",
+                "team_b": "Wackel Backel",
+                "data_status": "sheet_extracted",
+            }
+        ],
+    )
+    _write_test_csv(normalized_dir / "teams.csv", [])
+
+    archive_rows, match_rows = build_video_archive(tmp_path)
+
+    assert len(archive_rows) == 1
+    assert archive_rows[0]["video_id"] == "LcW38V5_oPQ"
+    assert archive_rows[0]["video_type"] == "showmatch"
+    assert archive_rows[0]["detected_season_id"] == "season_008"
+    assert archive_rows[0]["match_status"] == "showmatch"
+    assert match_rows == []
+
+
+def test_build_video_archive_infers_preseason_s1_videos_from_publish_date(tmp_path):
+    raw_dir = tmp_path / "raw" / "video_archive"
+    normalized_dir = tmp_path / "normalized"
+    raw_dir.mkdir(parents=True)
+    normalized_dir.mkdir()
+
+    uploads_path = raw_dir / "present_uploads.json"
+    (raw_dir / "channels.json").write_text(
+        json.dumps(
+            [
+                {
+                    "channelId": "UCpresent",
+                    "title": "PresentLP",
+                    "canonical_url": "https://www.youtube.com/user/PresentLP",
+                    "source_person_names": "PresentLP",
+                    "source_team_names": "Prekani",
+                    "source_seasons": "season_001;season_002;season_003",
+                    "source_urls": "https://www.youtube.com/user/PresentLP",
+                    "raw_path": str(uploads_path).replace("\\", "/"),
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    uploads_path.write_text(
+        json.dumps(
+            [
+                {
+                    "videoId": "RtEBA9VGr0g",
+                    "title": "GPL Teaser [31.08.2014] | PresentLP",
+                    "publishedAt": "2014-08-24T13:00:04Z",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    _write_test_csv(
+        normalized_dir / "seasons.csv",
+        [
+            {
+                "season_id": "season_001",
+                "start_date": "2014-09-14T10:00:06Z",
+                "end_date": "2015-02-15T15:00:01Z",
+            },
+            {
+                "season_id": "season_002",
+                "start_date": "2015-03-15T12:23:13Z",
+                "end_date": "2015-09-20T17:20:26Z",
+            },
+        ],
+    )
+    _write_test_csv(normalized_dir / "matches.csv", [])
+    _write_test_csv(normalized_dir / "teams.csv", [])
+
+    archive_rows, match_rows = build_video_archive(tmp_path)
+
+    assert len(archive_rows) == 1
+    assert archive_rows[0]["video_id"] == "RtEBA9VGr0g"
+    assert archive_rows[0]["detected_season_id"] == "season_001"
+    assert archive_rows[0]["match_status"] == "other"
     assert match_rows == []
 
 
