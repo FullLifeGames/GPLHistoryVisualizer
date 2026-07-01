@@ -200,6 +200,9 @@ assert.equal(dataModeSelect.includes('value="primary"'), true);
 assert.equal(dataModeSelect.includes('value="all"'), true);
 assert.equal(dataModeSelect.includes('value="league2"'), true);
 assert.equal(dataModeSelect.includes('value="league1"'), false);
+assert.match(appJs, /dataMode:\s*initialDataMode\(\)/);
+assert.match(appJs, /function initialDataMode\(\)[\s\S]*parseRouteHash\(window\.location\.hash\)[\s\S]*route\.view === "all-time"[\s\S]*return "primary"[\s\S]*readPreference\("gpl-data-mode", "primary"\)/);
+assert.doesNotMatch(appJs, /"all-time":\s*"primary"/);
 assert.match(appJs, /normalizeDataMode\(value\)[\s\S]*?value === "league2" \|\| value === "all"/);
 assert.match(appJs, /state\.dataMode === "all"[\s\S]*?return true/);
 assert.match(appJs, /function aggregateAllTimeRows\(\)[\s\S]*?state\.season !== "all"[\s\S]*?return null/);
@@ -222,4 +225,7 @@ assert.equal(appJs.includes('teamPokemonUsage: "Team-PokÃ©mon-Zuordnungen"'), 
 assert.equal(appJs.includes('missingKilllistAppearances: "Offene EinsÃ¤tze"'), false);
 assert.equal(appJs.includes("Qualitt"), false);
 assert.equal(appJs.includes("Prioritten"), false);
+assert.equal(appJs.includes("columnHeaderHtml("), true);
+assert.equal(appJs.includes("columnHints.rating"), true);
+assert.equal(stylesCss.includes(".column-help"), true);
 assert.match(appJs, /numberValue\(b\.rating\)[\s\S]*?numberValue\(b\.elo\)/);

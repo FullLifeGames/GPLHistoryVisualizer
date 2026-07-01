@@ -38,6 +38,8 @@ import {
   teamRosterPokemonRows,
   titleInfoWithinSeasonList,
   textMatchesSearch,
+  bayesRating,
+  bayesRatingValue,
   weightedRating,
   weightedRatingValue,
   killDifferential,
@@ -56,6 +58,8 @@ assert.equal(winPercentage(0, 0, 0), "");
 
 assert.equal(weightedRatingValue(0, 0, 0), null);
 assert.equal(weightedRating(0, 0, 0), "");
+assert.equal(bayesRatingValue(0, 0, 0), null);
+assert.equal(bayesRating(0, 0, 0), "");
 
 assert.equal(textMatchesSearch("Bene Saison 4 Ritter der Tapukokosnuss", "bene s4"), true);
 assert.equal(textMatchesSearch("Bene season_004 Ritter der Tapukokosnuss", "bene s4"), true);
@@ -1011,10 +1015,12 @@ assert.equal(isAnalysisSourceVideo({ video_title: "GPL [S4] - Spieltag 08 - vs. 
   assert.equal(grouped.groups[0].pokemonRows[0].pokemon, "Boreos-T");
 }
 
+assert.equal(bayesRating(4, 4, 0), "39.1");
 assert.equal(weightedRatingValue(4, 4, 0), 50);
 assert.equal(weightedRating(4, 4, 0), "50.0");
 
-assert.ok(weightedRatingValue(10, 0, 0) > weightedRatingValue(1, 0, 0));
+assert.ok(bayesRatingValue(10, 0, 0) > bayesRatingValue(1, 0, 0));
+assert.equal(bayesRating(10, 0, 0), "63.4");
 assert.equal(weightedRating(10, 0, 0), "72.7");
 
 assert.equal(displayNumber(0), 0);
@@ -1914,7 +1920,7 @@ assert.deepEqual(
     title_seasons: "S10",
     best_season: "S10",
     best_record: "10-1-0",
-    best_rating: "69.6",
+    best_rating: "60.2",
     signature_pokemon: "UHaFniR",
   },
 );

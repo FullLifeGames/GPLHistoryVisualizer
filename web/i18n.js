@@ -298,6 +298,9 @@ export const TRANSLATIONS = {
       all: "Gesamtübersicht + Liga 2",
       leagueTwo: "Liga 2",
     },
+    columnHints: {
+      rating: "Bayes Rating: konservativer Beta(6,6)-Posterior. Remis zählen halb, kleine Samples bekommen einen Unsicherheitsabzug.",
+    },
     coverage: {
       missingTitle: "Bekannte Lücken",
       reviewTitle: "Review-Queues",
@@ -850,6 +853,9 @@ export const TRANSLATIONS = {
       primary: "Overall",
       all: "Overall + League 2",
       leagueTwo: "League 2",
+    },
+    columnHints: {
+      rating: "Bayes rating: conservative Beta(6,6) posterior. Draws count half, small samples get an uncertainty penalty.",
     },
     pokemonDetails: {
       focus: "Pokémon",

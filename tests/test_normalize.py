@@ -38,6 +38,17 @@ def test_aliases_merge_to_preferred_person_display_names():
     assert _display_name("DragoonofDoom") == "Dauni"
     assert _canonical_name("Dauni & Hydronic") == "dauni daunstar hydronic"
     assert _display_name("Dauni Daunstar & Hydronic") == "Dauni & Hydronic"
+    assert _display_name("Steve's Super Fun Time") == "SteveParker"
+    assert _display_name("Belmont") == "BelmontGabriel"
+    assert _display_name("BraveBirdGames") == "BraveBird"
+    assert _display_name("CrowdCrontroller") == "CrowdController"
+    assert _display_name("FreeCale") == "Raikani"
+    assert _display_name("K-O-H") == "WolvX"
+    assert _display_name("Kayze") == "LetsKayze"
+    assert _display_name("Light Gaming") == "LightGaming"
+    assert _display_name("Minetube13") == "Minetube"
+    assert _display_name("Stratocopter") == "Stratocopter TV"
+    assert _display_name("Zant017") == "Zant"
     assert _display_name("Raizor Zockt") == "Raizor"
     assert _display_name("ProfessorN") == "Professor N"
     assert _canonical_name("CabgoLord") == "fnupa"
@@ -47,6 +58,9 @@ def test_aliases_merge_to_preferred_person_display_names():
     assert _canonical_name("FanmadeTim") == "fanmadeletsplay"
     assert _person_id("FanmadeTim") == "person_fanmadeletsplay"
     assert _display_name("FanmadeTim") == "FanmadeLetsPlay"
+    assert _canonical_name("ImpeldownTV") == "barry d sin of speed"
+    assert _person_id("ImpeldownTV") == "person_barry_d_sin_of_speed"
+    assert _display_name("ImpeldownTV") == "Barry D. Sin of Speed"
 
 
 def test_write_csv_retries_transient_windows_invalid_argument(tmp_path, monkeypatch):
@@ -599,6 +613,36 @@ def test_s6_playoff_matches_are_filterable_as_playoffs():
     }
 
 
+def test_s6_lazycakes_uses_dauni_despite_shared_teammauni_channel():
+    output = normalize_all(Path("data"))
+
+    s6_standings = {
+        row["team_name"]: row
+        for row in output.standings
+        if row["season_id"] == "season_006" and row["is_primary"] == "true"
+    }
+    s6_stints = {
+        row["team_name"]: row
+        for row in output.person_stints
+        if row["season_id"] == "season_006" and row["stage"] == "full_season"
+    }
+    s6_teams = {
+        row["team_name"]: row
+        for row in output.teams
+        if row["season_id"] == "season_006"
+    }
+
+    assert s6_standings["Lazycakes"]["player_name"] == "Dauni"
+    assert s6_standings["Lazycakes"]["person_id"] == "person_dauni_daunstar"
+    assert s6_stints["Lazycakes"]["person_name"] == "Dauni"
+    assert s6_teams["Lazycakes"]["person_name"] == "Dauni"
+
+    assert s6_standings["Youngstars"]["player_name"] == "Maxi von Vogel"
+    assert s6_standings["Youngstars"]["person_id"] == "person_maxi_von_vogel"
+    assert s6_stints["Youngstars"]["person_name"] == "Maxi von Vogel"
+    assert s6_teams["Youngstars"]["person_name"] == "Maxi von Vogel"
+
+
 def test_schedule_parser_does_not_apply_right_side_playoff_header_to_left_blocks():
     rows = [
         ["", "1. Spieltag - Sonntag der 14.04.2019", "", "", "", "7. Spieltag - Sonntag der 26.05.2019"],
@@ -724,7 +768,7 @@ def test_liga2_video_description_schedules_are_imported_without_changing_s2_cham
         if row["season_id"] == "season_002"
         and row["division"] == "Liga 2"
         and row["player_a"] == "LucarioLP"
-        and row["player_b"] == "Zant017"
+        and row["player_b"] == "Zant"
         and row["week"].startswith("1. Spieltag")
     )
     s4_match = next(
@@ -753,6 +797,29 @@ def test_liga2_video_description_schedules_are_imported_without_changing_s2_cham
     s2_champion = next(row for row in output.champions if row["season_id"] == "season_002")
     assert s2_champion["champion_name"] == "SteveParker"
     assert s2_champion["champion_team"] == "ToxicBlast"
+
+
+def test_legacy_schedule_player_names_are_normalized_to_canonical_people():
+    output = normalize_all(Path("data"))
+
+    s2_freecale = next(row for row in output.matches if row["match_id"] == "season_002_schedule_0187")
+    s2_glebber_san = next(row for row in output.matches if row["match_id"] == "season_002_schedule_0191")
+    s2_philipp = next(row for row in output.matches if row["match_id"] == "season_002_schedule_0192")
+    s5_belmont = next(row for row in output.matches if row["match_id"] == "season_005_schedule_0141")
+    s5_crowd_typo = next(row for row in output.matches if row["match_id"] == "season_005_schedule_0220")
+    s3_light_kayze = next(row for row in output.matches if row["match_id"] == "season_003_schedule_0184")
+
+    assert s2_freecale["player_b"] == "Raikani"
+    assert s2_freecale["winner"] == "Raikani"
+    assert s2_glebber_san["player_b"] == "Domibri"
+    assert s2_glebber_san["winner"] == "Domibri"
+    assert s2_philipp["player_b"] == "Shizumania"
+    assert s2_philipp["winner"] == "Shizumania"
+    assert s5_belmont["player_a"] == "BelmontGabriel"
+    assert s5_belmont["winner"] == "BelmontGabriel"
+    assert s5_crowd_typo["player_b"] == "CrowdController"
+    assert s3_light_kayze["player_a"] == "LightGaming"
+    assert s3_light_kayze["player_b"] == "LetsKayze"
 
 
 def test_s2_liga2_killlist_from_video_description_is_not_mixed_into_regular_season():

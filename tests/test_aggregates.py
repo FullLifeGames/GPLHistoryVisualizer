@@ -1,7 +1,7 @@
 import csv
 from pathlib import Path
 
-from gpl_history.aggregates import build_and_write_aggregates, pokemon_all_time_rows
+from gpl_history.aggregates import build_and_write_aggregates, person_all_time_rows, pokemon_all_time_rows
 
 
 def test_build_and_write_aggregates_writes_person_pokemon_matchup_roster_and_story_rows(tmp_path):
@@ -185,7 +185,7 @@ def test_build_and_write_aggregates_writes_person_pokemon_matchup_roster_and_sto
         "losses": "0",
         "draws": "0",
         "win_pct": "100.0",
-        "weighted_rating": "57.1",
+        "weighted_rating": "44.4",
         "elo": "1531",
         "points": "6",
         "kills": "11",
@@ -390,6 +390,61 @@ def test_build_and_write_aggregates_uses_normalized_person_aliases(tmp_path):
     assert any(row["person_id"] == "person_art_n_gaming" and row["person_name"] == "Art'n'Gaming" for row in person_rows)
     assert {row["person_id"] for row in matchup_rows} == {"person_daumenkino", "person_art_n_gaming"}
     assert {row["opponent_id"] for row in matchup_rows} == {"person_daumenkino", "person_art_n_gaming"}
+
+
+def test_person_all_time_counts_match_only_players_without_standings():
+    rows = person_all_time_rows(
+        people=[
+            {"person_id": "person_burakio", "person_name": "Burakio"},
+            {"person_id": "person_killuasan", "person_name": "KilluaSan"},
+            {"person_id": "person_standing_player", "person_name": "Standing Player"},
+        ],
+        stints=[
+            {
+                "season_id": "season_003",
+                "person_id": "person_standing_player",
+                "person_name": "Standing Player",
+                "rank": "1",
+                "matches": "2",
+                "wins": "2",
+                "losses": "0",
+                "draws": "0",
+                "source_urls": "standing-source",
+            }
+        ],
+        champions=[],
+        matches=[
+            {
+                "season_id": "season_003",
+                "match_id": "m1",
+                "player_a": "Burakio",
+                "player_b": "KilluaSan",
+                "winner": "Burakio",
+                "score_a": "3",
+                "score_b": "0",
+                "source_urls": "match-source-1",
+            },
+            {
+                "season_id": "season_003",
+                "match_id": "m2",
+                "player_a": "Standing Player",
+                "player_b": "Burakio",
+                "winner": "Standing Player",
+                "score_a": "2",
+                "score_b": "0",
+                "source_urls": "match-source-2",
+            },
+        ],
+    )
+
+    by_id = {row["person_id"]: row for row in rows}
+    assert by_id["person_burakio"]["matches"] == "2"
+    assert by_id["person_burakio"]["wins"] == "1"
+    assert by_id["person_burakio"]["losses"] == "1"
+    assert by_id["person_burakio"]["season_list"] == "S3"
+    assert by_id["person_killuasan"]["matches"] == "1"
+    assert by_id["person_killuasan"]["losses"] == "1"
+    assert by_id["person_standing_player"]["matches"] == "2"
 
 
 def _write_csv(path: Path, rows: list[dict[str, str]]) -> None:

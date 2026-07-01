@@ -301,6 +301,10 @@ _S9_VICTORY_INSTINCT_SINGLES_SPLITS = [
     ("El Scizor", 8, 14),
 ]
 
+_STANDING_TEAM_PERSON_OVERRIDES = {
+    ("season_006", "lazycakes"): "Dauni",
+}
+
 _ALIAS_CANONICAL = {
     "presentlp": "present",
     "present": "present",
@@ -318,6 +322,8 @@ _ALIAS_CANONICAL = {
     "sin of speed": "barry d sin of speed",
     "sinofspeed": "barry d sin of speed",
     "barry d sin of speed": "barry d sin of speed",
+    "impeldowntv": "barry d sin of speed",
+    "impeldown tv": "barry d sin of speed",
     "regi": "regibang",
     "regibang": "regibang",
     "lauris enteitainment": "lauris",
@@ -357,14 +363,34 @@ _ALIAS_CANONICAL = {
     "raizorzockt": "raizor",
     "crowd": "crowdcontroller",
     "crowdcontroller": "crowdcontroller",
+    "crowdcontrollerlp": "crowdcontroller",
+    "crowdcontroller lp": "crowdcontroller",
+    "crowdcrontroller": "crowdcontroller",
     "professorn": "professor n",
     "professor n": "professor n",
+    "stratocopter": "stratocopter tv",
     "stratocoptertv": "stratocopter tv",
     "stratocopter tv": "stratocopter tv",
     "tabascotv": "tabasco tv",
     "tabasco tv": "tabasco tv",
+    "belmont": "belmontgabriel",
     "belmontgabriellp": "belmontgabriel",
     "belmontgabriel": "belmontgabriel",
+    "bravebirdgames": "bravebird",
+    "bravebird": "bravebird",
+    "freecale": "raikani",
+    "freecalelps": "raikani",
+    "freecale lps": "raikani",
+    "k o h": "wolvx",
+    "kayze": "letskayze",
+    "light gaming": "lightgaming",
+    "lightgaming": "lightgaming",
+    "minetube13": "minetube",
+    "minetube": "minetube",
+    "steve s super fun time": "steveparker",
+    "steves super fun time": "steveparker",
+    "zant017": "zant",
+    "zant": "zant",
     "thedirtydancer64": "dirtyd64",
     "dirtyd64": "dirtyd64",
     "cabgolord": "fnupa",
@@ -403,13 +429,21 @@ _PREFERRED_DISPLAY = {
     "pokebazi": "PokeBazi",
     "present": "PresentLP",
     "professor n": "Professor N",
+    "bravebird": "BraveBird",
+    "belmontgabriel": "BelmontGabriel",
+    "letskayze": "LetsKayze",
+    "lightgaming": "LightGaming",
+    "minetube": "Minetube",
+    "raikani": "Raikani",
+    "steveparker": "SteveParker",
+    "wolvx": "WolvX",
+    "zant": "Zant",
     "raizor": "Raizor",
     "regibang": "RegiBang",
     "shiro": "Shiro",
     "silva": "Silva",
     "stratocopter tv": "Stratocopter TV",
     "tabasco tv": "Tabasco TV",
-    "belmontgabriel": "BelmontGabriel",
     "diaswordplay": "DiaSwordPlay",
     "fanmadeletsplay": "FanmadeLetsPlay",
     "fnupa": "Cabgolord",
@@ -867,7 +901,7 @@ def _standard_standings_from_tables(
             if not rank or not team:
                 continue
             channel_url = _null(_cell(padded, column.get("channel")))
-            person_name = _person_from_standing(team, channel_url, None)
+            person_name = _person_from_standing_team(season_id, team, channel_url, None)
             rows.append(
                 _standing_row(
                     season_id=season_id,
@@ -1780,7 +1814,7 @@ def _season_matches(season_id: str, tables: list[dict[str, Any]], videos: list[d
 
 
 def _apply_controller_overrides(season_id: str, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    if season_id not in {"season_003", "season_005", "season_009"}:
+    if season_id not in {"season_002", "season_003", "season_005", "season_009"}:
         return rows
     for row in rows:
         if row.get("data_status") == "not_available":
@@ -1788,13 +1822,27 @@ def _apply_controller_overrides(season_id: str, rows: list[dict[str, Any]]) -> l
         week = _week_number(row.get("week"))
         if week is None:
             continue
-        if season_id == "season_003":
+        if season_id == "season_002":
+            _apply_s2_controller_override(row)
+        elif season_id == "season_003":
             _apply_s3_controller_override(row, week)
         elif season_id == "season_005":
             _apply_s5_controller_override(row, week)
         elif season_id == "season_009":
             _apply_s9_controller_override(row, week)
     return rows
+
+
+def _apply_s2_controller_override(row: dict[str, Any]) -> None:
+    if row.get("division") != "Liga 2":
+        return
+    replacements = {
+        "glebber": "Domibri",
+        "glebber san": "Domibri",
+        "philipp1337": "Shizumania",
+        "speedeevee": "Shizumania",
+    }
+    _replace_match_players(row, replacements)
 
 
 def _apply_s3_controller_override(row: dict[str, Any], week: int) -> None:
@@ -1849,6 +1897,23 @@ def _apply_s9_controller_override(row: dict[str, Any], week: int) -> None:
                 row["data_status"] = "sheet_extracted_with_user_correction"
         elif player_key_normalized == "bene":
             row[team_key] = "Victory Instinct"
+
+
+def _replace_match_players(row: dict[str, Any], replacements: dict[str, str]) -> None:
+    old_winner_key = _canonical_name(row.get("winner"))
+    replaced = False
+    for side in ("a", "b"):
+        player_key = f"player_{side}"
+        player_key_value = _canonical_name(row.get(player_key))
+        replacement = replacements.get(player_key_value or "")
+        if not replacement:
+            continue
+        row[player_key] = replacement
+        if old_winner_key == player_key_value:
+            row["winner"] = replacement
+        replaced = True
+    if replaced and row.get("data_status") == "sheet_extracted":
+        row["data_status"] = "sheet_extracted_with_user_correction"
 
 
 def _manual_playoff_matches(season_id: str, tables: list[dict[str, Any]], start_counter: int) -> list[dict[str, Any]]:
@@ -3031,6 +3096,14 @@ def _person_from_standing(team: str | None, channel_url: str | None, explicit: s
     if from_url:
         return from_url
     return _null(explicit) or _null(team)
+
+
+def _person_from_standing_team(season_id: str, team: str | None, channel_url: str | None, explicit: str | None) -> str | None:
+    team_key = _canonical_name(team) or ""
+    override = _STANDING_TEAM_PERSON_OVERRIDES.get((season_id, team_key))
+    if override:
+        return override
+    return _person_from_standing(team, channel_url, explicit)
 
 
 def _person_from_url(value: str | None) -> str | None:

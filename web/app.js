@@ -179,10 +179,18 @@ const DATASET_LABELS = {
   seasonStorylines: "Saisonakten-Aggregate",
 };
 
+function initialDataMode() {
+  const route = parseRouteHash(window.location.hash);
+  if (route.view === "all-time") {
+    return "primary";
+  }
+  return normalizeDataMode(readPreference("gpl-data-mode", "primary"));
+}
+
 const state = {
   view: "all-time",
   season: "all",
-  dataMode: normalizeDataMode(readPreference("gpl-data-mode", "primary")),
+  dataMode: initialDataMode(),
   columnProfile: normalizeColumnProfile(readPreference("gpl-column-profile", "full")),
   division: "all",
   language: normalizeLanguage(readPreference("gpl-language", "de")),
@@ -4453,8 +4461,11 @@ function buildTabulatorColumns(columns, htmlColumns, rows = []) {
       allLabel: t(state.language, "filters.allValues"),
       placeholder: t(state.language, "filters.header"),
     });
+    const hint = columnHint(column);
     return {
       title: columnTitle(state.language, column),
+      titleFormatter: () => columnHeaderHtml(column),
+      headerTooltip: hint || false,
       field: column,
       sorter: sorterFor(column),
       ...filterConfig,
@@ -4464,6 +4475,28 @@ function buildTabulatorColumns(columns, htmlColumns, rows = []) {
       minWidth: minWidthFor(column),
     };
   });
+}
+
+function columnHint(column) {
+  const key = columnHintKey(column);
+  const hint = t(state.language, key);
+  return hint === key ? "" : hint;
+}
+
+function columnHintKey(column) {
+  if (column === "rating") {
+    return "columnHints.rating";
+  }
+  return `columnHints.${column}`;
+}
+
+function columnHeaderHtml(column) {
+  const title = columnTitle(state.language, column);
+  const hint = columnHint(column);
+  if (!hint) {
+    return escapeHtml(title);
+  }
+  return `<span class="column-header-with-help">${escapeHtml(title)} <span class="column-help" title="${escapeAttr(hint)}" aria-label="${escapeAttr(hint)}">i</span></span>`;
 }
 
 function appendHiddenSortColumns(columns, rows) {
@@ -4662,7 +4695,7 @@ function tableHtml(rows, columns, html = false) {
   const htmlColumns = new Set(html === true ? ["video"] : Array.isArray(html) ? html : []);
   return `
     <table>
-      <thead><tr>${columns.map((column) => `<th>${escapeHtml(columnTitle(state.language, column))}</th>`).join("")}</tr></thead>
+      <thead><tr>${columns.map((column) => `<th${columnHint(column) ? ` title="${escapeAttr(columnHint(column))}"` : ""}>${columnHeaderHtml(column)}</th>`).join("")}</tr></thead>
       <tbody>
         ${rows
           .map(

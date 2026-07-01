@@ -1,6 +1,9 @@
 import { pokemonAssetId } from "./pokemon_names.js";
 
 const ROSTER_RESULT_WEIGHT = 0.45;
+const BAYES_PRIOR_RATE = 0.5;
+const BAYES_PRIOR_GAMES = 12;
+const BAYES_UNCERTAINTY_WEIGHT = 1;
 const ROSTER_SCORE_WEIGHTS = {
   performance: 0.4,
   balance: 0.15,
@@ -568,7 +571,41 @@ export function winPercentage(wins, losses, draws) {
   return value === null ? "" : `${value.toFixed(1)}%`;
 }
 
-export function weightedRatingValue(wins, losses, draws, priorRate = 0.5, priorGames = 12) {
+export function bayesRatingValue(
+  wins,
+  losses,
+  draws,
+  priorRate = BAYES_PRIOR_RATE,
+  priorGames = BAYES_PRIOR_GAMES,
+  uncertaintyWeight = BAYES_UNCERTAINTY_WEIGHT,
+) {
+  const winCount = numberValue(wins);
+  const drawCount = numberValue(draws);
+  const lossCount = numberValue(losses);
+  const games = winCount + lossCount + drawCount;
+  if (!games) {
+    return null;
+  }
+  const successes = winCount + drawCount * 0.5;
+  const failures = lossCount + drawCount * 0.5;
+  const alpha = priorRate * priorGames + successes;
+  const beta = (1 - priorRate) * priorGames + failures;
+  const total = alpha + beta;
+  if (!total) {
+    return null;
+  }
+  const mean = alpha / total;
+  const variance = (alpha * beta) / (total ** 2 * (total + 1));
+  const value = (mean - uncertaintyWeight * Math.sqrt(Math.max(0, variance))) * 100;
+  return Math.max(0, Math.min(100, value));
+}
+
+export function bayesRating(wins, losses, draws, priorRate = BAYES_PRIOR_RATE, priorGames = BAYES_PRIOR_GAMES) {
+  const value = bayesRatingValue(wins, losses, draws, priorRate, priorGames);
+  return value === null ? "" : value.toFixed(1);
+}
+
+export function weightedRatingValue(wins, losses, draws, priorRate = BAYES_PRIOR_RATE, priorGames = BAYES_PRIOR_GAMES) {
   const winCount = numberValue(wins);
   const drawCount = numberValue(draws);
   const total = winCount + numberValue(losses) + drawCount;
@@ -578,7 +615,7 @@ export function weightedRatingValue(wins, losses, draws, priorRate = 0.5, priorG
   return ((winCount + drawCount * 0.5 + priorRate * priorGames) / (total + priorGames)) * 100;
 }
 
-export function weightedRating(wins, losses, draws, priorRate = 0.5, priorGames = 12) {
+export function weightedRating(wins, losses, draws, priorRate = BAYES_PRIOR_RATE, priorGames = BAYES_PRIOR_GAMES) {
   const value = weightedRatingValue(wins, losses, draws, priorRate, priorGames);
   return value === null ? "" : value.toFixed(1);
 }
@@ -790,7 +827,7 @@ export function aggregatePersonStats(statRows, championRows = []) {
     .sort(
       (a, b) =>
         b.seasonsWon.size - a.seasonsWon.size ||
-        (weightedRatingValue(b.wins, b.losses, b.draws) ?? -1) - (weightedRatingValue(a.wins, a.losses, a.draws) ?? -1) ||
+        (bayesRatingValue(b.wins, b.losses, b.draws) ?? -1) - (bayesRatingValue(a.wins, a.losses, a.draws) ?? -1) ||
         b.points - a.points ||
         b.wins - a.wins ||
         a.name.localeCompare(b.name),
@@ -808,7 +845,7 @@ export function aggregatePersonStats(statRows, championRows = []) {
       losses: row.losses,
       draws: row.draws,
       win_pct: winPercentage(row.wins, row.losses, row.draws),
-      rating: weightedRating(row.wins, row.losses, row.draws),
+      rating: bayesRating(row.wins, row.losses, row.draws),
       points: row.points,
       kills: row.kills,
       deaths: row.deaths,
@@ -2676,7 +2713,7 @@ export function personStorySummary(statRows = [], championRows = [], pokemonRows
   const best = rows
     .map((row) => ({
       row,
-      ratingValue: weightedRatingValue(row.wins, row.losses, row.draws) ?? -1,
+      ratingValue: bayesRatingValue(row.wins, row.losses, row.draws) ?? -1,
     }))
     .sort((a, b) => b.ratingValue - a.ratingValue || numberValue(b.row.points) - numberValue(a.row.points))[0];
   const signature = [...pokemonRows].sort((a, b) => numberValue(b.kills) - numberValue(a.kills) || numberValue(b.differential) - numberValue(a.differential))[0];
@@ -2688,7 +2725,7 @@ export function personStorySummary(statRows = [], championRows = [], pokemonRows
     title_seasons: formatSeasonList(titleRows.map((row) => row.season_id)),
     best_season: best?.row?.season_id ? formatSeasonList([best.row.season_id]) : "",
     best_record: best?.row ? `${numberValue(best.row.wins)}-${numberValue(best.row.losses)}-${numberValue(best.row.draws)}` : "",
-    best_rating: best?.row ? weightedRating(best.row.wins, best.row.losses, best.row.draws) : "",
+    best_rating: best?.row ? bayesRating(best.row.wins, best.row.losses, best.row.draws) : "",
     signature_pokemon: signature?.pokemon || "",
   };
 }

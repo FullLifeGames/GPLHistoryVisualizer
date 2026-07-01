@@ -82,6 +82,10 @@ ROSTER_SCORE_WEIGHTS = {
     "coverage": 0.20,
 }
 
+BAYES_PRIOR_RATE = 0.5
+BAYES_PRIOR_GAMES = 12
+BAYES_UNCERTAINTY_WEIGHT = 1.0
+
 SEASON_STORYLINE_FIELDS = [
     "season_id",
     "season_label",
@@ -155,15 +159,19 @@ def person_all_time_rows(
 ) -> list[dict[str, Any]]:
     names_by_id = {row.get("person_id") or _person_id(row.get("person_name")): row.get("person_name") or "" for row in people}
     accumulators: dict[str, PersonAccumulator] = {}
+    represented_person_seasons: set[tuple[str, str]] = set()
 
     for row in stints:
         person_name = row.get("person_name") or ""
         person_id = row.get("person_id") or _person_id(person_name)
         if not person_id or not person_name:
             continue
+        season_id = row.get("season_id") or ""
+        if season_id:
+            represented_person_seasons.add((person_id, season_id))
         current = accumulators.setdefault(person_id, PersonAccumulator(person_id, names_by_id.get(person_id) or person_name))
         current.person_name = current.person_name or person_name
-        _add_nonempty(current.seasons, row.get("season_id"))
+        _add_nonempty(current.seasons, season_id)
         current.matches += _number(row.get("matches"))
         current.wins += _number(row.get("wins"))
         current.losses += _number(row.get("losses"))
@@ -188,6 +196,16 @@ def person_all_time_rows(
         _add_nonempty(current.title_seasons, row.get("season_id"))
         _add_nonempty(current.seasons, row.get("season_id"))
         _add_urls(current.source_urls, row.get("source_urls"))
+
+    for person_id, stats in _match_stats_by_person(matches, represented_person_seasons).items():
+        current = accumulators.setdefault(person_id, PersonAccumulator(person_id, names_by_id.get(person_id) or _display_from_id(person_id)))
+        current.seasons.update(stats["seasons"])
+        current.matches += stats["matches"]
+        current.wins += stats["wins"]
+        current.losses += stats["losses"]
+        current.draws += stats["draws"]
+        current.points += stats["wins"] * 3 + stats["draws"]
+        current.source_urls.update(stats["source_urls"])
 
     elo_by_person = _elo_by_person(matches)
     match_sources = _match_sources_by_person(matches)
@@ -232,6 +250,48 @@ def person_all_time_rows(
             str(item.get("person_name")),
         ),
     )
+
+
+def _match_stats_by_person(matches: list[dict[str, str]], represented_person_seasons: set[tuple[str, str]]) -> dict[str, dict[str, Any]]:
+    stats: dict[str, dict[str, Any]] = {}
+    for row in matches:
+        if not _has_played_match_result(row):
+            continue
+        season_id = row.get("season_id") or ""
+        left = row.get("player_a") or ""
+        right = row.get("player_b") or ""
+        left_id = _person_id(left)
+        right_id = _person_id(right)
+        winner_id = _person_id(row.get("winner"))
+        if not season_id or not left_id or not right_id:
+            continue
+        for person_id, opponent_id in ((left_id, right_id), (right_id, left_id)):
+            if (person_id, season_id) in represented_person_seasons:
+                continue
+            current = stats.setdefault(
+                person_id,
+                {"seasons": set(), "matches": 0, "wins": 0, "losses": 0, "draws": 0, "source_urls": set()},
+            )
+            current["seasons"].add(season_id)
+            current["matches"] += 1
+            if winner_id == person_id:
+                current["wins"] += 1
+            elif winner_id == opponent_id:
+                current["losses"] += 1
+            else:
+                current["draws"] += 1
+            _add_urls(current["source_urls"], row.get("source_urls"))
+    return stats
+
+
+def _has_played_match_result(row: dict[str, str]) -> bool:
+    if row.get("data_status") in {"not_available", "source_video_only"}:
+        return False
+    if not row.get("player_a") or not row.get("player_b"):
+        return False
+    if row.get("winner"):
+        return True
+    return _number_or_none(row.get("score_a")) is not None and _number_or_none(row.get("score_b")) is not None
 
 
 @dataclass
@@ -358,13 +418,13 @@ def _regular_only_killlist_rows(canonical_rows: list[dict[str, str]], season_row
 def matchup_summary_rows(matches: list[dict[str, str]]) -> list[dict[str, Any]]:
     accumulators: dict[tuple[str, str], dict[str, Any]] = {}
     for row in matches:
-        if row.get("data_status") == "not_available":
+        if row.get("data_status") in {"not_available", "source_video_only"}:
             continue
         left = row.get("player_a") or ""
         right = row.get("player_b") or ""
         if not left or not right:
             continue
-        winner = row.get("winner") or ""
+        winner_id = _person_id(row.get("winner"))
         for person, opponent in [(left, right), (right, left)]:
             key = (_person_id(person), _person_id(opponent))
             current = accumulators.setdefault(
@@ -382,9 +442,9 @@ def matchup_summary_rows(matches: list[dict[str, str]]) -> list[dict[str, Any]]:
                 },
             )
             current["matches"] += 1
-            if winner == person:
+            if winner_id == key[0]:
                 current["wins"] += 1
-            elif winner == opponent:
+            elif winner_id == key[1]:
                 current["losses"] += 1
             else:
                 current["draws"] += 1
@@ -513,14 +573,16 @@ def season_storyline_rows(
 def _elo_by_person(matches: list[dict[str, str]], initial_rating: float = 1500, k_factor: float = 32) -> dict[str, float]:
     ratings: dict[str, float] = defaultdict(lambda: initial_rating)
     for row in sorted(matches, key=lambda item: (_season_sort(item.get("season_id") or ""), _week_sort(item.get("week") or ""), item.get("match_id") or "")):
+        if row.get("data_status") in {"not_available", "source_video_only"}:
+            continue
         left = row.get("player_a") or ""
         right = row.get("player_b") or ""
         if not left or not right:
             continue
         left_key = _person_id(left)
         right_key = _person_id(right)
-        winner = row.get("winner") or ""
-        left_score = 1 if winner == left else 0 if winner == right else 0.5
+        winner_key = _person_id(row.get("winner"))
+        left_score = 1 if winner_key == left_key else 0 if winner_key == right_key else 0.5
         right_score = 1 - left_score
         left_rating = ratings[left_key]
         right_rating = ratings[right_key]
@@ -534,6 +596,8 @@ def _elo_by_person(matches: list[dict[str, str]], initial_rating: float = 1500, 
 def _match_sources_by_person(matches: list[dict[str, str]]) -> dict[str, set[str]]:
     sources: dict[str, set[str]] = defaultdict(set)
     for row in matches:
+        if row.get("data_status") in {"not_available", "source_video_only"}:
+            continue
         for value in [row.get("player_a"), row.get("player_b")]:
             if value:
                 _add_urls(sources[_person_id(value)], row.get("source_urls"))
@@ -569,6 +633,19 @@ def _number(value: Any) -> float:
         return float(match.group(0)) if match else 0
 
 
+def _number_or_none(value: Any) -> float | None:
+    if value is None:
+        return None
+    text = str(value).strip().replace(",", ".")
+    if not text:
+        return None
+    try:
+        return float(text)
+    except ValueError:
+        match = re.search(r"-?[0-9]+(?:\.[0-9]+)?", text)
+        return float(match.group(0)) if match else None
+
+
 def _format_number(value: Any) -> str:
     if value is None:
         return ""
@@ -585,10 +662,39 @@ def _percent(wins: float, losses: float, draws: float) -> str:
     return f"{((wins + draws * 0.5) / total * 100):.1f}"
 
 
-def _weighted_rating(wins: float, losses: float, draws: float, prior_rate: float = 0.5, prior_games: float = 12) -> str:
+def _weighted_rating(
+    wins: float,
+    losses: float,
+    draws: float,
+    prior_rate: float = BAYES_PRIOR_RATE,
+    prior_games: float = BAYES_PRIOR_GAMES,
+) -> str:
+    value = _bayes_rating_value(wins, losses, draws, prior_rate, prior_games)
+    return "" if value is None else f"{value:.1f}"
+
+
+def _bayes_rating_value(
+    wins: float,
+    losses: float,
+    draws: float,
+    prior_rate: float = BAYES_PRIOR_RATE,
+    prior_games: float = BAYES_PRIOR_GAMES,
+    uncertainty_weight: float = BAYES_UNCERTAINTY_WEIGHT,
+) -> float | None:
     games = wins + losses + draws
-    value = ((wins + draws * 0.5) + prior_rate * prior_games) / (games + prior_games) * 100
-    return f"{value:.1f}"
+    if not games:
+        return None
+    successes = wins + draws * 0.5
+    failures = losses + draws * 0.5
+    alpha = prior_rate * prior_games + successes
+    beta = (1 - prior_rate) * prior_games + failures
+    total = alpha + beta
+    if total <= 0:
+        return None
+    mean = alpha / total
+    variance = (alpha * beta) / ((total**2) * (total + 1))
+    value = (mean - uncertainty_weight * math.sqrt(max(0, variance))) * 100
+    return max(0, min(100, value))
 
 
 def _person_id(value: str | None) -> str:
