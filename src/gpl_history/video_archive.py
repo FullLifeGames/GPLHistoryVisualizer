@@ -675,6 +675,7 @@ def _forced_video_type_from_channel(channel: dict[str, Any]) -> str | None:
 def build_video_archive(data_dir: Path) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     raw_dir = data_dir / "raw" / "video_archive"
     channel_rows = _merge_channel_rows(read_json(raw_dir / "channels.json", []))
+    channel_candidates = _channel_candidates_by_key(data_dir)
     excluded_video_ids = _manual_excluded_video_ids(data_dir)
     teams = _read_csv(data_dir / "normalized" / "teams.csv")
     season_windows = _season_date_windows(_read_csv(data_dir / "normalized" / "seasons.csv"))
@@ -692,8 +693,10 @@ def build_video_archive(data_dir: Path) -> tuple[list[dict[str, Any]], list[dict
         raw_path = channel.get("raw_path")
         if not raw_path:
             continue
+        matching_channel = _matching_channel_source_metadata(channel, channel_candidates)
         source_person_names = _normalized_source_person_names(channel.get("source_person_names"))
         source_person_ids = _normalized_source_person_ids(channel.get("source_person_ids"), source_person_names)
+        matching_source_person_names = _normalized_source_person_names(matching_channel.get("source_person_names"))
         videos = read_json(Path(raw_path), [])
         for video in videos:
             video_id = video.get("videoId")
@@ -739,8 +742,8 @@ def build_video_archive(data_dir: Path) -> tuple[list[dict[str, Any]], list[dict
                 match = match_video_to_matches(
                     {
                         **video_row,
-                        "channel_person_name": source_person_names,
-                        "channel_team_name": channel.get("source_team_names"),
+                        "channel_person_name": matching_source_person_names,
+                        "channel_team_name": matching_channel.get("source_team_names"),
                     },
                     matches,
                 )
@@ -808,6 +811,66 @@ def build_video_archive(data_dir: Path) -> tuple[list[dict[str, Any]], list[dict
     _write_csv(out_dir / "match_videos.csv", MATCH_VIDEO_FIELDS, match_video_rows)
     _write_video_url_list(out_dir / "video_urls.txt", archive_rows)
     return archive_rows, match_video_rows
+
+
+def _channel_candidates_by_key(data_dir: Path) -> dict[tuple[str, str], dict[str, Any]]:
+    return {
+        (candidate["kind"], candidate["value"].lower()): candidate
+        for candidate in discover_channel_candidates(data_dir)
+    }
+
+
+def _matching_channel_source_metadata(
+    channel: dict[str, Any],
+    candidates: dict[tuple[str, str], dict[str, Any]],
+) -> dict[str, Any]:
+    key = _channel_record_key(channel)
+    candidate = candidates.get(key) if key else None
+    if candidate and _cached_channel_source_metadata_is_stale(channel, candidate):
+        return _merge_cached_channel_source_metadata(channel, candidate)
+    return channel
+
+
+def _cached_channel_source_metadata_is_stale(
+    row: dict[str, Any],
+    candidate: dict[str, Any],
+) -> bool:
+    cached_people = set(_split_values(row.get("source_person_names")))
+    candidate_people = set(_split_values(candidate.get("source_person_names")))
+    if not candidate_people.difference(cached_people):
+        return False
+
+    cached_teams = set(_split_values(row.get("source_team_names")))
+    candidate_teams = set(_split_values(candidate.get("source_team_names")))
+    cached_seasons = set(_split_values(row.get("source_seasons")))
+    candidate_seasons = set(_split_values(candidate.get("source_seasons")))
+    return (
+        len(cached_teams) > 1
+        and cached_teams.issubset(candidate_teams)
+        and bool(cached_seasons.intersection(candidate_seasons) or not cached_seasons or not candidate_seasons)
+    )
+
+
+def _merge_cached_channel_source_metadata(row: dict[str, Any], candidate: dict[str, Any]) -> dict[str, Any]:
+    merged = dict(row)
+    for field in (
+        "source_person_ids",
+        "source_team_names",
+        "source_seasons",
+        "source_divisions",
+        "source_urls",
+    ):
+        values = {*_split_values(row.get(field)), *_split_values(candidate.get(field))}
+        merged[field] = _join_sorted(values)
+    person_names = {
+        *_split_values(row.get("source_person_names")),
+        *_split_values(candidate.get("source_person_names")),
+    }
+    merged["source_person_names"] = _join_display_names(person_names)
+    for field in ("kind", "value", "canonical_url"):
+        if not merged.get(field) and candidate.get(field):
+            merged[field] = candidate[field]
+    return merged
 
 
 def _manual_excluded_video_ids(data_dir: Path) -> set[str]:

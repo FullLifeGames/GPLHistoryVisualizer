@@ -1722,6 +1722,161 @@ def test_build_video_archive_sorts_weeks_numerically(tmp_path):
     assert [row["detected_week"] for row in archive_rows] == ["2", "11"]
 
 
+def test_build_video_archive_uses_current_shared_channel_metadata_for_matching(tmp_path):
+    raw_dir = tmp_path / "raw" / "video_archive"
+    normalized_dir = tmp_path / "normalized"
+    raw_dir.mkdir(parents=True)
+    normalized_dir.mkdir()
+
+    team_mauni_uploads = raw_dir / "team_mauni_uploads.json"
+    bene_uploads = raw_dir / "bene_uploads.json"
+    (raw_dir / "channels.json").write_text(
+        json.dumps(
+            [
+                {
+                    "kind": "username",
+                    "value": "TeamMauni",
+                    "channelId": "UCteammauni",
+                    "title": "Team Mauni",
+                    "canonical_url": "https://www.youtube.com/user/TeamMauni",
+                    "source_person_ids": "person_maxi_von_vogel",
+                    "source_person_names": "Maxi von Vogel",
+                    "source_team_names": "Lazycakes;Youngstars",
+                    "source_seasons": "season_006",
+                    "source_urls": "https://www.youtube.com/user/TeamMauni",
+                    "raw_path": str(team_mauni_uploads).replace("\\", "/"),
+                },
+                {
+                    "kind": "handle",
+                    "value": "@Bene",
+                    "channelId": "UCbene",
+                    "title": "Bene",
+                    "canonical_url": "https://www.youtube.com/@Bene",
+                    "source_person_ids": "person_bene",
+                    "source_person_names": "Bene",
+                    "source_team_names": "Kleinsteins;Gate",
+                    "source_seasons": "season_006",
+                    "source_urls": "https://www.youtube.com/@Bene",
+                    "raw_path": str(bene_uploads).replace("\\", "/"),
+                },
+            ]
+        ),
+        encoding="utf-8",
+    )
+    team_mauni_uploads.write_text(
+        json.dumps(
+            [
+                {
+                    "videoId": "GLuc2UqeYjg",
+                    "title": "Der Minetube-Kader und die Minetube-Plays! - GPL [S6] - Spieltag 08 - VS. Triyolotree | Maxi",
+                    "publishedAt": "2019-06-02T15:00:04Z",
+                },
+                {
+                    "videoId": "7h5D7AOsc9w",
+                    "title": "Das Hit or Miss Festival - GPL [S6] - Spieltag 08 - vs. KleinSteins; Gate | Dauni",
+                    "publishedAt": "2019-06-05T14:00:01Z",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    bene_uploads.write_text(
+        json.dumps(
+            [
+                {
+                    "videoId": "66SCMFW272E",
+                    "title": "GPL [S6] - Spieltag 08 - vs. Lazycakes: Triff!",
+                    "publishedAt": "2019-06-05T14:00:00Z",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    _write_test_csv(
+        normalized_dir / "matches.csv",
+        [
+            {
+                "season_id": "season_006",
+                "match_id": "season_006_schedule_0034",
+                "division": "Sun Conference",
+                "stage": "regular_season",
+                "week": "8. Spieltag - Sonntag der 02.06.2019",
+                "player_a": "Minetube",
+                "player_b": "Maxi von Vogel",
+                "team_a": "",
+                "team_b": "",
+                "score_a": "0",
+                "score_b": "1",
+                "data_status": "sheet_extracted",
+            },
+            {
+                "season_id": "season_006",
+                "match_id": "season_006_schedule_0098",
+                "division": "Moon Conference",
+                "stage": "regular_season",
+                "week": "8. Spieltag - Mittwoch der 05.06.2019",
+                "player_a": "Dauni",
+                "player_b": "Bene",
+                "team_a": "",
+                "team_b": "",
+                "score_a": "3",
+                "score_b": "0",
+                "data_status": "sheet_extracted",
+            },
+        ],
+    )
+    _write_test_csv(
+        normalized_dir / "teams.csv",
+        [
+            {
+                "season_id": "season_006",
+                "person_id": "person_maxi_von_vogel",
+                "person_name": "Maxi von Vogel",
+                "team_name": "Youngstars",
+                "division": "Sun Conference",
+                "channel_url": "https://www.youtube.com/user/TeamMauni",
+                "data_status": "sheet_extracted",
+            },
+            {
+                "season_id": "season_006",
+                "person_id": "person_dauni_daunstar",
+                "person_name": "Dauni",
+                "team_name": "Lazycakes",
+                "division": "Moon Conference",
+                "channel_url": "https://www.youtube.com/user/TeamMauni",
+                "data_status": "sheet_extracted",
+            },
+            {
+                "season_id": "season_006",
+                "person_id": "person_bene",
+                "person_name": "Bene",
+                "team_name": "Kleinsteins;Gate",
+                "division": "Moon Conference",
+                "channel_url": "https://www.youtube.com/@Bene",
+                "data_status": "sheet_extracted",
+            },
+        ],
+    )
+
+    archive_rows, match_rows = build_video_archive(tmp_path)
+
+    archive_by_id = {row["video_id"]: row for row in archive_rows}
+    assert archive_by_id["7h5D7AOsc9w"]["source_person_names"] == "Maxi von Vogel"
+    assert archive_by_id["7h5D7AOsc9w"]["best_match_id"] == "season_006_schedule_0098"
+    assert archive_by_id["7h5D7AOsc9w"]["perspective_person"] == "Dauni"
+    assert archive_by_id["GLuc2UqeYjg"]["best_match_id"] == "season_006_schedule_0034"
+    assert archive_by_id["GLuc2UqeYjg"]["perspective_person"] == "Maxi von Vogel"
+    assert archive_by_id["66SCMFW272E"]["best_match_id"] == "season_006_schedule_0098"
+    assert {
+        (row["video_id"], row["match_id"], row["perspective_person"], row["opponent"])
+        for row in match_rows
+    } == {
+        ("GLuc2UqeYjg", "season_006_schedule_0034", "Maxi von Vogel", "Minetube"),
+        ("7h5D7AOsc9w", "season_006_schedule_0098", "Dauni", "Bene"),
+        ("66SCMFW272E", "season_006_schedule_0098", "Bene", "Dauni"),
+    }
+
+
 def _write_test_csv(path, rows):
     fields = sorted({key for row in rows for key in row}) or ["data_status"]
     with path.open("w", encoding="utf-8", newline="") as handle:
