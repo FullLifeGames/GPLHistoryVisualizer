@@ -248,6 +248,7 @@ const cinemaSearchFilter = document.querySelector("#cinema-search-filter");
 const cinemaRandomButton = document.querySelector("#cinema-random-button");
 const tableInstances = new Map();
 const tableCleanups = new Map();
+let activeColumnHelpAnchor = null;
 const LINKABLE_SEASON_COLUMNS = new Set(["season", "season_id", "season_list", "title_seasons", "best_season"]);
 const LINKABLE_PERSON_COLUMNS = new Set(["name", "person", "trainer", "trainers", "player_a", "player_b", "winner", "opponent", "perspective_person", "peak_perspective", "champion"]);
 const VIEW_RENDERERS = {
@@ -409,6 +410,7 @@ function bindControls() {
 
   bindCinemaControls();
   bindResponsiveFilterPanels();
+  bindColumnHelpTooltips();
 
   document.addEventListener("click", (event) => {
     const matchupLink = event.target.closest("[data-matchup-select]");
@@ -778,6 +780,9 @@ function applyLanguage() {
   });
   document.querySelectorAll("[data-i18n-title]").forEach((element) => {
     element.setAttribute("title", t(state.language, element.dataset.i18nTitle));
+  });
+  document.querySelectorAll("[data-i18n-tooltip]").forEach((element) => {
+    element.dataset.tooltip = t(state.language, element.dataset.i18nTooltip);
   });
   document.querySelectorAll("[data-i18n-aria-label]").forEach((element) => {
     element.setAttribute("aria-label", t(state.language, element.dataset.i18nAriaLabel));
@@ -4615,11 +4620,10 @@ function buildTabulatorColumns(columns, htmlColumns, rows = [], stickyIdentity =
       allLabel: t(state.language, "filters.allValues"),
       placeholder: t(state.language, "filters.header"),
     });
-    const hint = columnHint(column, hintColumns);
     return {
       title: columnTitle(state.language, column),
       titleFormatter: () => columnHeaderHtml(column, hintColumns),
-      headerTooltip: hint || false,
+      headerTooltip: false,
       field: column,
       sorter: sorterFor(column),
       ...filterConfig,
@@ -4797,7 +4801,76 @@ function columnHeaderHtml(column, hintColumns = null) {
 }
 
 function columnHelpHtml(hint) {
-  return `<span class="column-help" title="${escapeAttr(hint)}" aria-label="${escapeAttr(hint)}">i</span>`;
+  return `<span class="column-help" data-tooltip="${escapeAttr(hint)}" aria-label="${escapeAttr(hint)}" tabindex="0">i</span>`;
+}
+
+function bindColumnHelpTooltips() {
+  document.addEventListener("pointerover", (event) => {
+    const anchor = event.target.closest?.(".column-help[data-tooltip]");
+    if (anchor) {
+      showColumnHelpTooltip(anchor);
+    }
+  });
+  document.addEventListener("pointerout", (event) => {
+    const anchor = event.target.closest?.(".column-help[data-tooltip]");
+    if (anchor && !anchor.contains(event.relatedTarget)) {
+      hideColumnHelpTooltip(anchor);
+    }
+  });
+  document.addEventListener("focusin", (event) => {
+    const anchor = event.target.closest?.(".column-help[data-tooltip]");
+    if (anchor) {
+      showColumnHelpTooltip(anchor);
+    }
+  });
+  document.addEventListener("focusout", (event) => {
+    const anchor = event.target.closest?.(".column-help[data-tooltip]");
+    if (anchor) {
+      hideColumnHelpTooltip(anchor);
+    }
+  });
+  window.addEventListener("scroll", () => hideColumnHelpTooltip(), true);
+  window.addEventListener("resize", () => hideColumnHelpTooltip());
+}
+
+function showColumnHelpTooltip(anchor) {
+  const text = anchor.dataset.tooltip || anchor.getAttribute("aria-label") || "";
+  if (!text) return;
+  const tooltip = document.querySelector("#column-help-tooltip") || document.createElement("div");
+  tooltip.id = "column-help-tooltip";
+  tooltip.className = "app-tooltip";
+  tooltip.textContent = text;
+  tooltip.hidden = false;
+  if (!tooltip.parentElement) {
+    document.body.appendChild(tooltip);
+  }
+  activeColumnHelpAnchor = anchor;
+  positionColumnHelpTooltip(anchor, tooltip);
+  tooltip.classList.add("is-visible");
+}
+
+function hideColumnHelpTooltip(anchor = null) {
+  if (anchor && activeColumnHelpAnchor !== anchor) return;
+  const tooltip = document.querySelector("#column-help-tooltip");
+  if (!tooltip) return;
+  tooltip.classList.remove("is-visible");
+  tooltip.hidden = true;
+  activeColumnHelpAnchor = null;
+}
+
+function positionColumnHelpTooltip(anchor, tooltip) {
+  const margin = 12;
+  const gap = 8;
+  const anchorRect = anchor.getBoundingClientRect();
+  const tooltipRect = tooltip.getBoundingClientRect();
+  const maxLeft = Math.max(margin, window.innerWidth - tooltipRect.width - margin);
+  const preferredLeft = anchorRect.left + anchorRect.width / 2 - tooltipRect.width / 2;
+  const left = Math.max(margin, Math.min(preferredLeft, maxLeft));
+  const belowTop = anchorRect.bottom + gap;
+  const aboveTop = anchorRect.top - tooltipRect.height - gap;
+  const top = belowTop + tooltipRect.height + margin <= window.innerHeight ? belowTop : Math.max(margin, aboveTop);
+  tooltip.style.left = `${Math.round(left)}px`;
+  tooltip.style.top = `${Math.round(top)}px`;
 }
 
 function appendHiddenSortColumns(columns, rows) {
@@ -4998,8 +5071,7 @@ function tableHtml(rows, columns, html = false, hintColumns = null) {
   return `
     <table>
       <thead><tr>${columns.map((column) => {
-        const hint = columnHint(column, hintColumns);
-        return `<th${hint ? ` title="${escapeAttr(hint)}"` : ""}>${columnHeaderHtml(column, hintColumns)}</th>`;
+        return `<th>${columnHeaderHtml(column, hintColumns)}</th>`;
       }).join("")}</tr></thead>
       <tbody>
         ${rows

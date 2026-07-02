@@ -17,6 +17,9 @@
   --accent-warm: #ff7a1a;
   --accent-red: #ef4e2f;
   --warn: #bd5d09;
+  --tooltip-bg: #f8fbff;
+  --tooltip-ink: #07111f;
+  --tooltip-line: #c9d8e8;
   --shadow: 0 20px 56px rgb(6 35 65 / 14%);
   --radius: 8px;
   font-family:
@@ -42,6 +45,9 @@
   --accent-warm: #ff8a24;
   --accent-red: #ff6547;
   --warn: #ffb05e;
+  --tooltip-bg: #f4f8fb;
+  --tooltip-ink: #07101b;
+  --tooltip-line: #8aa9c8;
   --shadow: 0 22px 64px rgb(0 0 0 / 42%);
 }
 
@@ -466,7 +472,7 @@ input:focus,
 
 .summary-card {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   display: grid;
   gap: 5px;
   padding: 11px 13px;
@@ -2570,6 +2576,7 @@ tbody tr:hover {
 }
 
 .column-help {
+  position: relative;
   display: inline-grid;
   place-items: center;
   width: 16px;
@@ -2582,6 +2589,45 @@ tbody tr:hover {
   line-height: 1;
   text-transform: none;
   cursor: help;
+}
+
+.summary-card .column-help,
+.metric .column-help {
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1;
+  text-transform: none;
+}
+
+.app-tooltip {
+  position: fixed;
+  z-index: 2000;
+  max-width: min(320px, calc(100vw - 24px));
+  padding: 8px 10px;
+  border: 1px solid var(--tooltip-line);
+  border-radius: 6px;
+  background: var(--tooltip-bg);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 30%);
+  color: var(--tooltip-ink);
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: 0;
+  line-height: 1.35;
+  opacity: 0;
+  pointer-events: none;
+  text-align: left;
+  text-transform: none;
+  transition: opacity 120ms ease;
+  white-space: normal;
+}
+
+.app-tooltip[hidden] {
+  display: none;
+}
+
+.app-tooltip.is-visible {
+  opacity: 1;
 }
 
 .tabulator .tabulator-col-sorter .tabulator-arrow {
