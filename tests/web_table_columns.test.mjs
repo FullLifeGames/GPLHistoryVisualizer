@@ -54,11 +54,16 @@ assert.deepEqual(MATCH_HIGHLIGHT_COLUMNS.slice(0, 11), [
   "highlight_reasons",
 ]);
 
-assert.deepEqual(COLUMN_PROFILE_KEYS, ["compact", "performance", "history", "sources", "full"]);
+assert.deepEqual(COLUMN_PROFILE_KEYS, ["compact", "full"]);
 assert.deepEqual(columnsForProfile(ALL_TIME_COLUMNS, "compact"), ["rank", "name", "seasons_won", "rating", "seasons", "matches", "win_pct", "points", "elo"]);
 assert.equal(columnsForProfile(POKEMON_KILLLIST_COLUMNS, "compact").includes("seasons"), true);
 assert.equal(columnsForProfile(POKEMON_DRAFT_COLUMNS, "compact").includes("season_count"), true);
+assert.deepEqual(
+  columnsForProfile(["trainer", "appearances", "kills", "deaths", "differential", "seasons", "season_list", "teams"], "compact"),
+  ["trainer", "appearances", "kills", "seasons", "teams"],
+);
 assert.deepEqual(columnsForProfile(ALL_TIME_COLUMNS), ALL_TIME_COLUMNS);
+assert.deepEqual(columnsForProfile(ALL_TIME_COLUMNS, "performance"), ALL_TIME_COLUMNS);
 assert.deepEqual(TEAM_ROSTER_COLUMNS.slice(0, 12), [
   "rank",
   "season",
@@ -98,7 +103,7 @@ assert.deepEqual(TEAM_ROSTER_POKEMON_COLUMNS.slice(-7), [
 ]);
 assert.deepEqual(columnsForProfile(TEAM_ROSTER_COLUMNS, "compact"), ["rank", "season", "division", "roster_phase", "variants", "person", "team", "roster_score", "pokemon_count", "roster_flags"]);
 assert.equal(columnsForProfile(["season", "videos", "source"], "compact").includes("videos"), true);
-assert.equal(columnsForProfile(["season", "videos", "source"], "sources").includes("videos"), true);
+assert.deepEqual(columnsForProfile(["season", "videos", "source"], "sources"), ["season", "videos", "source"]);
 assert.deepEqual(columnsForProfile(MATCH_HIGHLIGHT_COLUMNS, "compact"), [
   "rank",
   "season",
@@ -121,25 +126,6 @@ assert.deepEqual(columnsForProfile(MATCH_HIGHLIGHT_COLUMNS, "compact"), [
   "video_count",
   "videos",
 ]);
-assert.deepEqual(columnsForProfile(ALL_TIME_COLUMNS, "performance"), [
-  "rank",
-  "name",
-  "seasons_won",
-  "rating",
-  "seasons",
-  "matches",
-  "win_pct",
-  "wins",
-  "losses",
-  "draws",
-  "points",
-  "kills",
-  "deaths",
-  "differential",
-  "best_rank",
-  "elo",
-]);
-assert.deepEqual(columnsForProfile(ALL_TIME_COLUMNS, "history"), ["rank", "name", "seasons_won", "title_seasons", "seasons", "season_list", "best_rank"]);
 assert.deepEqual(columnsForProfile(ALL_TIME_COLUMNS, "full"), ALL_TIME_COLUMNS);
 
 const videoColumns = [
@@ -172,16 +158,4 @@ assert.deepEqual(columnsForProfile(videoColumns, "compact"), [
   "title",
   "match_status",
 ]);
-assert.deepEqual(columnsForProfile(videoColumns, "sources"), [
-  "season",
-  "division",
-  "video_type",
-  "published_at",
-  "title",
-  "match_status",
-  "confidence",
-  "confidence_tier",
-  "match_basis",
-  "confidence_explanation",
-  "match_id",
-]);
+assert.deepEqual(columnsForProfile(videoColumns, "sources"), videoColumns);

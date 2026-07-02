@@ -77,9 +77,6 @@ export const TRANSLATIONS = {
     },
     columnProfiles: {
       compact: "Kompakt",
-      performance: "Leistung",
-      history: "Historie",
-      sources: "Quellen",
       full: "Alles",
     },
     summary: {
@@ -162,7 +159,6 @@ export const TRANSLATIONS = {
       pokemonTitle: "Pokémon, Drafts & Kills",
       videoTitle: "Videos",
       matchupTitle: "Matchups",
-      missingTitle: "Offene Killlisten",
     },
     pokemonDetails: {
       focus: "Pokémon",
@@ -190,7 +186,7 @@ export const TRANSLATIONS = {
       showMore: "Mehr anzeigen",
       scoreFormulaTitle: "Kaderscore-Formel",
       rosterFormula: "Score = 40% Performance + 15% Balance + 10% Historie + 5% Confidence",
-      rosterFormulaNote: "Der Score nutzt Ergebnis-/Pokémon-Leistung, Kaderbalance, Historie und Datenvertrauen; Tierstärke ist keine Score-Komponente mehr.",
+      rosterFormulaNote: "Der Score nutzt Ergebnis-/Pokémon-Leistung, Kaderbalance, Historie und Datenvertrauen.",
       performanceFormula: "Performance = Pokémon-Leistung plus Tabellenleistung",
       performanceFormulaNote: "Bei belegten Kadern zählt das Saisonergebnis mit 45%. Bei Snapshot- oder rekonstruierten Kadern zählt es nur mit 18%, damit eine volle Saison nicht zu stark auf einen unsicheren Kader gelegt wird.",
       balanceFormula: "Balance = Kadergröße, Tiefe und Konzentration",
@@ -679,9 +675,6 @@ export const TRANSLATIONS = {
     },
     columnProfiles: {
       compact: "Compact",
-      performance: "Performance",
-      history: "History",
-      sources: "Sources",
       full: "All",
     },
     summary: {
@@ -764,7 +757,6 @@ export const TRANSLATIONS = {
       pokemonTitle: "Pokémon, Drafts & Kills",
       videoTitle: "Videos",
       matchupTitle: "Matchups",
-      missingTitle: "Open Killlists",
     },
     pokemonDrafts: {
       all: "All Pokémon",
@@ -883,7 +875,7 @@ export const TRANSLATIONS = {
       showMore: "Show more",
       scoreFormulaTitle: "Roster score formula",
       rosterFormula: "Score = 40% Performance + 15% Balance + 10% History + 5% Confidence",
-      rosterFormulaNote: "The score uses result/Pokémon performance, roster balance, history, and data confidence; tier strength is no longer a score component.",
+      rosterFormulaNote: "The score uses result/Pokémon performance, roster balance, history, and data confidence.",
       performanceFormula: "Performance = Pokémon performance plus table result",
       performanceFormulaNote: "For sourced rosters, season results count at 45%. For snapshot or reconstructed rosters they count at 18%, so a full season is not over-applied to an uncertain roster.",
       balanceFormula: "Balance = roster size, depth, and concentration",

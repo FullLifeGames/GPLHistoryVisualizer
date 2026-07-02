@@ -1219,10 +1219,6 @@ function performanceDisplay(row, field) {
   return numberValue(row.performance_rows) > 0 ? displayNumber(row[field]) : "";
 }
 
-function draftDetailStatus(row) {
-  return numberValue(row.performance_rows) > 0 ? "" : t(state.language, "values.draftOnly");
-}
-
 function applyDataMode(row) {
   const division = row.division || "";
   if (state.dataMode === "all") {
@@ -2594,10 +2590,9 @@ function renderPokemonDetail() {
         seasons: row.seasons,
         season_list: row.season_list,
         teams: row.teams,
-        status: draftDetailStatus(row),
       };
     }),
-    ["trainer", "appearances", "kills", "deaths", "differential", "seasons", "season_list", "teams", "status"],
+    ["trainer", "appearances", "kills", "deaths", "differential", "seasons", "season_list", "teams"],
     ["trainer"],
   );
   renderTable(
@@ -2611,9 +2606,8 @@ function renderPokemonDetail() {
       differential: performanceDisplay(row, "differential"),
       trainers: row.trainers,
       teams: row.teams,
-      status: draftDetailStatus(row),
     })),
-    ["season", "divisions", "appearances", "kills", "deaths", "differential", "trainers", "teams", "status"],
+    ["season", "divisions", "appearances", "kills", "deaths", "differential", "trainers", "teams"],
     ["season"],
   );
   renderTable(
@@ -2627,10 +2621,9 @@ function renderPokemonDetail() {
       kills: performanceDisplay(row, "kills"),
       deaths: performanceDisplay(row, "deaths"),
       differential: performanceDisplay(row, "differential"),
-      status: draftDetailStatus(row),
       source: sourceLinks(row.source_urls),
     })),
-    ["season", "division", "trainer", "team", "appearances", "kills", "deaths", "differential", "status", "source"],
+    ["season", "division", "trainer", "team", "appearances", "kills", "deaths", "differential", "source"],
     ["season", "trainer", "team", "source"],
   );
 }
@@ -4056,7 +4049,6 @@ function renderPersonDetails() {
     "#person-pokemon-section",
     "#person-video-section",
     "#person-matchup-section",
-    "#person-missing-section",
   ];
   const allStatRows = filteredPersonStats();
   const allChampions = filtered(state.data.champions ?? []).filter((row) => ["source_evidenced", "user_provided"].includes(row.data_status));
@@ -4110,7 +4102,6 @@ function renderPersonDetails() {
     normalizedKey,
     state.data.teams ?? [],
   ).map((row) => ({
-    trainer: personDisplayName(row.trainer),
     pokemon: pokemonCell(row.pokemon),
     appearances: performanceDisplay(row, "appearances"),
     kills: performanceDisplay(row, "kills"),
@@ -4118,9 +4109,7 @@ function renderPersonDetails() {
     differential: performanceDisplay(row, "differential"),
     seasons: row.seasons,
     season_list: row.season_list,
-    divisions: row.divisions,
     teams: row.teams,
-    status: draftDetailStatus(row),
     source: sourceLink(row.source_urls),
   }));
   const storyPokemonRows = personPokemonHighlights(
@@ -4162,24 +4151,12 @@ function renderPersonDetails() {
         opponent: matchupSelectButton(row.opponent_key, row.opponent, "b", matchupPrimary),
       }))
     : [];
-  const missingKilllistRows = filtered(state.data.killlists ?? [])
-    .filter((row) => row.data_status === "not_available")
-    .filter((row) => !focusKey || isFocusedPersonValue(row.trainer || row.trainer_normalized, focusKey))
-    .map((row) => ({
-      season: seasonDisplay(row.season_id),
-      division: divisionDisplay(row.division, row.stage),
-      trainer: row.trainer,
-      team: row.team_name,
-      status: statusDisplay(row.data_status),
-      source: sourceLinks(row.source_urls),
-    }));
 
   renderTable("#person-timeline-table", timelineRows, ["season", "division", "team", "record", "win_pct", "rating", "points", "kills", "deaths", "differential", "title", "source"], ["season", "team", "source"]);
   renderTable("#person-season-table", detailRows, PERSON_SEASON_COLUMNS, ["season", "team", "source"]);
-  renderTable("#person-pokemon-table", pokemonRows, ["trainer", "pokemon", "appearances", "kills", "deaths", "differential", "seasons", "season_list", "divisions", "teams", "status", "source"], ["pokemon", "source"]);
+  renderTable("#person-pokemon-table", pokemonRows, ["pokemon", "appearances", "kills", "deaths", "differential", "seasons", "season_list", "teams", "source"], ["pokemon", "source"]);
   renderTable("#person-video-table", personVideos, ["season", "video_type", "detected_week", "opponent", "title", "match_status", "confidence", "confidence_tier", "match_basis", "confidence_explanation", "published_at"], ["title"]);
   renderTable("#person-matchup-table", matchupRows, MATCHUP_COLUMNS, ["opponent"]);
-  renderTable("#person-missing-table", missingKilllistRows, ["season", "division", "trainer", "team", "status", "source"], ["source"]);
 }
 
 function personSummaryCards(story, allTime) {
