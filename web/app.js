@@ -250,6 +250,31 @@ const tableInstances = new Map();
 const tableCleanups = new Map();
 const LINKABLE_SEASON_COLUMNS = new Set(["season", "season_id", "season_list", "title_seasons", "best_season"]);
 const LINKABLE_PERSON_COLUMNS = new Set(["name", "person", "trainer", "trainers", "player_a", "player_b", "winner", "opponent", "perspective_person", "peak_perspective", "champion"]);
+const VIEW_RENDERERS = {
+  "all-time": renderAllTime,
+  matchup: renderMatchup,
+  killlists: renderKilllists,
+  "pokemon-drafts": renderPokemonDrafts,
+  "pokemon-detail": renderPokemonDetail,
+  "battle-history": renderBracketOverview,
+  "match-highlights": renderMatchHighlights,
+  "season-detail": renderSeasonDetail,
+  "table-history": renderTableHistory,
+  "match-plan": renderMatchPlan,
+  "video-archive": renderVideoArchive,
+  cinema: renderCinema,
+  "team-rosters": renderTeamRosters,
+  "roster-detail": renderRosterDetail,
+  "person-details": renderPersonDetails,
+  "data-coverage": renderDataCoverage,
+  "data-gaps": renderDataGaps,
+  "roster-gaps": renderRosterGaps,
+  "appearance-gaps": renderAppearanceGaps,
+  "video-review": renderVideoReview,
+  "match-video-coverage": renderMatchVideoCoverage,
+  "review-workflow": renderReviewWorkflow,
+  "source-claims": renderSourceClaims,
+};
 
 init();
 
@@ -295,9 +320,6 @@ function bindControls() {
     populateMatchupOptions();
     populateCinemaControls();
     render();
-    if (state.view === "matchup") {
-      renderMatchup();
-    }
   });
 
   columnProfileFilter.addEventListener("change", () => {
@@ -305,9 +327,6 @@ function bindControls() {
     columnProfileFilter.value = state.columnProfile;
     savePreference("gpl-column-profile", state.columnProfile);
     render();
-    if (state.view === "matchup") {
-      renderMatchup();
-    }
   });
 
   languageToggle.addEventListener("click", () => {
@@ -320,9 +339,6 @@ function bindControls() {
     populateMatchupOptions();
     populateCinemaControls();
     render();
-    if (state.view === "matchup") {
-      renderMatchup();
-    }
   });
 
   themeToggle.addEventListener("click", () => {
@@ -464,6 +480,7 @@ async function handleRouteChange() {
   populateDivisionFilter();
   populateMatchupOptions();
   populateCinemaControls();
+  await yieldBeforeViewRender();
   const loadedLazyDatasets = await ensureDatasetsForView(state.view);
   if (loadedLazyDatasets) {
     populateDivisionFilter();
@@ -473,9 +490,15 @@ async function handleRouteChange() {
     statusEl.classList.add("is-ready");
   }
   render();
-  if (state.view === "matchup") {
-    renderMatchup();
+}
+
+function yieldBeforeViewRender() {
+  if (typeof requestAnimationFrame !== "function") {
+    return Promise.resolve();
   }
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => resolve());
+  });
 }
 
 function navigateToView(viewName) {
@@ -1168,28 +1191,12 @@ function render() {
   if (!state.data.seasons) {
     return;
   }
-  renderAllTime();
-  renderKilllists();
-  renderPokemonDrafts();
-  renderTableHistory();
-  renderMatchPlan();
-  renderBracketOverview();
-  renderMatchHighlights();
-  renderCinema();
-  renderTeamRosters();
-  renderRosterDetail();
-  renderVideoArchive();
-  renderPersonDetails();
-  renderPokemonDetail();
-  renderDataCoverage();
-  renderDataGaps();
-  renderRosterGaps();
-  renderAppearanceGaps();
-  renderVideoReview();
-  renderMatchVideoCoverage();
-  renderReviewWorkflow();
-  renderSourceClaims();
-  renderSeasonDetail();
+  renderCurrentView();
+}
+
+function renderCurrentView() {
+  const renderView = VIEW_RENDERERS[state.view] || VIEW_RENDERERS["all-time"];
+  renderView?.call(null);
 }
 
 function filtered(rows) {
