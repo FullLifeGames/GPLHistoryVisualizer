@@ -202,8 +202,6 @@ def test_normalized_killlists_do_not_duplicate_identical_rows():
             row["team_name"],
             row["appearances"],
             row["kills"],
-            row["deaths"],
-            row["differential"],
             row["source_urls"],
         )
         for row in rows
@@ -243,7 +241,7 @@ def test_normalized_killlists_do_not_duplicate_same_source_assignments():
     assert s2_oktopaul_meistagrif["kills"] == "11"
 
 
-def test_s10_killlist_uses_playoff_table_usage_column_as_appearances():
+def test_s10_killlist_counts_playoff_battle_columns_as_appearances():
     output = normalize_all(Path("data"))
     rows = [
         row
@@ -257,14 +255,14 @@ def test_s10_killlist_uses_playoff_table_usage_column_as_appearances():
     ramoth = next(row for row in rows if row["pokemon"] == "Ramoth" and row["trainer"] == "Minetube")
     assert ramoth["appearances"] == "2"
     assert ramoth["kills"] == "3"
-    assert ramoth["deaths"] is None
-    assert ramoth["differential"] is None
+    assert "deaths" not in ramoth
+    assert "differential" not in ramoth
 
     maskagato = next(row for row in rows if row["pokemon"] == "Maskagato" and row["trainer"] == "Minetube")
-    assert maskagato["appearances"] == "11"
+    assert maskagato["appearances"] == "12"
     assert maskagato["kills"] == "9"
-    assert maskagato["deaths"] is None
-    assert maskagato["differential"] is None
+    assert "deaths" not in maskagato
+    assert "differential" not in maskagato
 
 
 def test_s10_killlist_keeps_regular_season_rows_for_roster_context():
@@ -300,7 +298,6 @@ def test_s10_killlist_keeps_regular_season_rows_for_roster_context():
     assert regular_ogerpon["team_name"] == "Wackel Backel"
     assert regular_ogerpon["appearances"] == "10"
     assert regular_ogerpon["kills"] == "13"
-    assert regular_ogerpon["deaths"] is None
 
 
 def test_killlists_capture_appearances_where_sources_expose_usage_columns():
@@ -433,8 +430,6 @@ def test_old_project_sheet_supplies_s3_to_s5_pokemon_kills_with_reviewed_team_us
     assert sample["team_name"] == "Victini Bottom"
     assert sample["data_status"] == "manual_graphic_assignment"
     assert sample["appearances"] is None
-    assert sample["deaths"] is None
-    assert sample["differential"] is None
     assert "1JZpA-5XDldN2bjfvhvBPHYK-1AENETLnF1UxNEpWlNA" in sample["source_urls"]
     assert "data/manual/team_pokemon_usage.csv" in sample["source_urls"]
 

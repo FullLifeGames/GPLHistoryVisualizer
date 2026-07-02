@@ -9,8 +9,6 @@ export const MANUAL_KILLLIST_FIELDS = [
   "team_name",
   "appearances",
   "kills",
-  "deaths",
-  "differential",
   "data_status",
   "source_urls",
 ];
@@ -129,8 +127,6 @@ export function buildManualKilllistRows(reviewRows, assignments, manualSourceUrl
         team_name: assignment.team_name || "",
         appearances: row.appearances || "",
         kills: row.kills || "",
-        deaths: row.deaths || "",
-        differential: row.differential || "",
         data_status: "manual_override",
         source_urls: mergeSources(row.source_urls, manualSource),
       };

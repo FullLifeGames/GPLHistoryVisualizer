@@ -175,8 +175,6 @@ const rows = buildManualKilllistRows(
       pokemon_normalized: "snibunna",
       appearances: "",
       kills: "20",
-      deaths: "",
-      differential: "",
       source_urls: sourceUrl,
     },
   ],
@@ -206,8 +204,6 @@ assert.deepEqual(rows, [
     team_name: "Unlimited Blade Works",
     appearances: "",
     kills: "20",
-    deaths: "",
-    differential: "",
     data_status: "manual_override",
     source_urls: `${sourceUrl};data/manual/pokemon_killlists.csv`,
   },
@@ -216,8 +212,8 @@ assert.deepEqual(rows, [
 assert.equal(
   csvFromRows(MANUAL_KILLLIST_FIELDS, rows),
   [
-    "season_id,division,stage,pokemon,pokemon_normalized,trainer,trainer_normalized,team_name,appearances,kills,deaths,differential,data_status,source_urls",
-    'season_003,Regular Season,regular_season,Snibunna,snibunna,Bene,bene,Unlimited Blade Works,,20,,,manual_override,https://docs.google.com/spreadsheets/d/old/edit#gid=1;data/manual/pokemon_killlists.csv',
+    "season_id,division,stage,pokemon,pokemon_normalized,trainer,trainer_normalized,team_name,appearances,kills,data_status,source_urls",
+    'season_003,Regular Season,regular_season,Snibunna,snibunna,Bene,bene,Unlimited Blade Works,,20,manual_override,https://docs.google.com/spreadsheets/d/old/edit#gid=1;data/manual/pokemon_killlists.csv',
     "",
   ].join("\n"),
 );

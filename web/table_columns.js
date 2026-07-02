@@ -6,7 +6,7 @@ function withRecordColumns(prefix, suffix = []) {
 
 export const ALL_TIME_COLUMNS = withRecordColumns(
   ["rank", "name", "seasons_won", "title_seasons", "rating", "seasons", "season_list"],
-  ["points", "kills", "best_rank", "elo"],
+  ["points", "kills", "deaths", "differential", "best_rank", "elo"],
 );
 
 export const POKEMON_DRAFT_COLUMNS = [
@@ -85,12 +85,12 @@ export const TEAM_ROSTER_POKEMON_COLUMNS = [
 
 export const TABLE_HISTORY_COLUMNS = withRecordColumns(
   ["season", "division", "rank", "person", "team"],
-  ["points", "kills", "source"],
+  ["points", "kills", "deaths", "differential", "source"],
 );
 
 export const SEASON_STANDINGS_COLUMNS = withRecordColumns(
   ["division", "rank", "person", "team"],
-  ["points", "kills", "status", "source"],
+  ["points", "kills", "deaths", "differential", "status", "source"],
 );
 
 export const PERSON_SEASON_COLUMNS = withRecordColumns(

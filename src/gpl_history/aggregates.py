@@ -39,8 +39,6 @@ POKEMON_ALL_TIME_FIELDS = [
     "pokemon_normalized",
     "appearances",
     "kills",
-    "deaths",
-    "differential",
     "seasons",
     "season_list",
     "titles",
@@ -300,8 +298,6 @@ class PokemonAccumulator:
     pokemon_normalized: str
     appearances: float = 0
     kills: float = 0
-    deaths: float = 0
-    differential: float = 0
     seasons: set[str] = field(default_factory=set)
     title_seasons: set[str] = field(default_factory=set)
     trainers: set[str] = field(default_factory=set)
@@ -335,8 +331,6 @@ def pokemon_all_time_rows(
         current.pokemon = current.pokemon or pokemon
         current.appearances += _number(row.get("appearances"))
         current.kills += _number(row.get("kills"))
-        current.deaths += _number(row.get("deaths"))
-        current.differential += _number(row.get("differential")) if row.get("differential") not in {None, ""} else _number(row.get("kills")) - _number(row.get("deaths"))
         _add_nonempty(current.seasons, row.get("season_id"))
         _add_nonempty(current.trainers, row.get("trainer"))
         _add_nonempty(current.teams, row.get("team_name"))
@@ -366,8 +360,6 @@ def pokemon_all_time_rows(
                 "pokemon_normalized": item.pokemon_normalized,
                 "appearances": _format_number(item.appearances),
                 "kills": _format_number(item.kills),
-                "deaths": _format_number(item.deaths),
-                "differential": _format_number(item.differential),
                 "seasons": len(item.seasons),
                 "season_list": _format_season_list(sorted(item.seasons, key=_season_sort)),
                 "titles": len(item.title_seasons),
@@ -377,7 +369,7 @@ def pokemon_all_time_rows(
                 "source_urls": _join_urls(item.source_urls),
             }
         )
-    return sorted(rows, key=lambda item: (-_number(item.get("kills")), -_number(item.get("differential")), str(item.get("pokemon"))))
+    return sorted(rows, key=lambda item: (-_number(item.get("kills")), str(item.get("pokemon"))))
 
 
 def _canonical_pokemon_killlist_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:

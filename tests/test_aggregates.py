@@ -80,8 +80,6 @@ def test_build_and_write_aggregates_writes_person_pokemon_matchup_roster_and_sto
                 "team_name": "Wackel Backel",
                 "appearances": "2",
                 "kills": "9",
-                "deaths": "3",
-                "differential": "6",
                 "source_urls": "https://sheet.test/kills",
             }
         ],
@@ -194,7 +192,10 @@ def test_build_and_write_aggregates_writes_person_pokemon_matchup_roster_and_sto
         "best_rank": "1",
         "source_urls": "https://sheet.test/final;https://sheet.test/m1;https://sheet.test/m2;https://sheet.test/standings",
     }
-    assert _read_csv(normalized / "pokemon_all_time.csv")[0]["titles"] == "1"
+    pokemon_all_time = _read_csv(normalized / "pokemon_all_time.csv")[0]
+    assert pokemon_all_time["titles"] == "1"
+    assert "deaths" not in pokemon_all_time
+    assert "differential" not in pokemon_all_time
     assert _read_csv(normalized / "matchup_summary.csv")[0]["matches"] == "2"
     assert _read_csv(normalized / "roster_scores.csv")[0]["pokemon_count"] == "2"
     assert _read_csv(normalized / "season_storylines.csv")[0]["top_pokemon"] == "UHaFnir"
@@ -212,7 +213,6 @@ def test_pokemon_all_time_rows_uses_canonical_split_and_playoff_killlists():
                 "team_name": "Scherzkekse",
                 "appearances": "23",
                 "kills": "19",
-                "deaths": "",
                 "source_urls": "s9-overall",
             },
             {
@@ -224,7 +224,6 @@ def test_pokemon_all_time_rows_uses_canonical_split_and_playoff_killlists():
                 "team_name": "Scherzkekse",
                 "appearances": "13",
                 "kills": "12",
-                "deaths": "",
                 "source_urls": "s9-singles",
             },
             {
@@ -236,7 +235,6 @@ def test_pokemon_all_time_rows_uses_canonical_split_and_playoff_killlists():
                 "team_name": "Scherzkekse",
                 "appearances": "10",
                 "kills": "7",
-                "deaths": "",
                 "source_urls": "s9-doubles",
             },
             {
@@ -248,7 +246,6 @@ def test_pokemon_all_time_rows_uses_canonical_split_and_playoff_killlists():
                 "team_name": "",
                 "appearances": "12",
                 "kills": "14",
-                "deaths": "11",
                 "source_urls": "s10-playoffs",
             },
             {
@@ -260,7 +257,6 @@ def test_pokemon_all_time_rows_uses_canonical_split_and_playoff_killlists():
                 "team_name": "Prekani",
                 "appearances": "10",
                 "kills": "11",
-                "deaths": "",
                 "source_urls": "s10-regular",
             },
             {
@@ -272,7 +268,6 @@ def test_pokemon_all_time_rows_uses_canonical_split_and_playoff_killlists():
                 "team_name": "Prekani",
                 "appearances": "10",
                 "kills": "5",
-                "deaths": "",
                 "source_urls": "s10-regular-only",
             },
         ],
@@ -282,6 +277,8 @@ def test_pokemon_all_time_rows_uses_canonical_split_and_playoff_killlists():
     by_pokemon = {row["pokemon_normalized"]: row for row in rows}
     assert by_pokemon["demeteros t"]["kills"] == "33"
     assert by_pokemon["demeteros t"]["appearances"] == "35"
+    assert "deaths" not in by_pokemon["demeteros t"]
+    assert "differential" not in by_pokemon["demeteros t"]
     assert by_pokemon["demeteros t"]["source_urls"] == "s10-playoffs;s9-overall"
     assert by_pokemon["glurak"]["kills"] == "5"
 

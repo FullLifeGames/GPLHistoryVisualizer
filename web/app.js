@@ -180,6 +180,8 @@ const DATASET_LABELS = {
   seasonStorylines: "Saisonakten-Aggregate",
 };
 
+const POKEMON_USAGE_HINT_COLUMNS = new Set(["appearances", "kills", "kill_rate"]);
+
 function initialDataMode() {
   const route = parseRouteHash(window.location.hash);
   if (route.view === "all-time") {
@@ -1681,6 +1683,8 @@ function renderAllTime() {
       rating: row.rating,
       points: displayNumber(row.points),
       kills: displayNumber(row.kills),
+      deaths: displayNumber(row.deaths),
+      differential: displayNumber(row.differential),
       best_rank: row.best_rank,
     }));
 
@@ -1710,6 +1714,8 @@ function aggregateAllTimeRows() {
       rating: row.weighted_rating,
       points: row.points,
       kills: row.kills,
+      deaths: row.deaths,
+      differential: row.differential,
       best_rank: row.best_rank,
     }));
 }
@@ -1725,7 +1731,7 @@ function personComparableKey(value) {
 function renderKilllists() {
   const aggregateRows = aggregateKilllistRows();
   if (aggregateRows) {
-    renderTable("#killlists-table", aggregateRows, POKEMON_KILLLIST_COLUMNS, ["pokemon"]);
+    renderTable("#killlists-table", aggregateRows, POKEMON_KILLLIST_COLUMNS, ["pokemon"], { hintColumns: POKEMON_USAGE_HINT_COLUMNS });
     return;
   }
 
@@ -1737,7 +1743,7 @@ function renderKilllists() {
     kill_rate: killRateDisplay(row),
     pokemon: pokemonCell(row.pokemon),
   }));
-  renderTable("#killlists-table", rows, POKEMON_KILLLIST_COLUMNS, ["pokemon"]);
+  renderTable("#killlists-table", rows, POKEMON_KILLLIST_COLUMNS, ["pokemon"], { hintColumns: POKEMON_USAGE_HINT_COLUMNS });
 }
 
 function pokemonDraftHistoryIndex() {
@@ -1865,14 +1871,14 @@ function renderTeamRosters() {
     groupedRosters.overviewRows.map(rosterOverviewTableRow),
     TEAM_ROSTER_COLUMNS,
     ["season", "variants", "person", "team", "roster_score", "top_pokemon", "source"],
-    { filename: "team-roster-ranking.csv" },
+    { filename: "team-roster-ranking.csv", hintColumns: POKEMON_USAGE_HINT_COLUMNS },
   );
   renderTable(
     "#team-roster-pokemon-table",
     groupedRosters.pokemonRows.map((row, index) => rosterPokemonTableRow(row, index + 1)),
     TEAM_ROSTER_POKEMON_COLUMNS,
     ["season", "person", "pokemon", "pokemon_score", "source"],
-    { filename: "team-roster-pokemon.csv" },
+    { filename: "team-roster-pokemon.csv", hintColumns: POKEMON_USAGE_HINT_COLUMNS },
   );
 }
 
@@ -1976,8 +1982,8 @@ function rosterCard(row, pokemonRows) {
       <div class="roster-metrics">
         ${rosterMetric("columns.pokemon_count", row.pokemon_count)}
         ${rosterMetric("columns.avg_tier_rank", row.avg_tier_rank || "n/a")}
-        ${rosterMetric("columns.kills", row.kills, columnHint("kills"))}
-        ${rosterMetric("columns.kill_rate", killRateDisplay(row), columnHint("kill_rate"))}
+        ${rosterMetric("columns.kills", row.kills, pokemonColumnHint("kills"))}
+        ${rosterMetric("columns.kill_rate", killRateDisplay(row), pokemonColumnHint("kill_rate"))}
       </div>
       <div class="roster-pokemon-list">
         ${sortedPokemon.map((pokemon) => rosterPokemonChip(pokemon)).join("")}
@@ -1993,7 +1999,7 @@ function rosterMetric(labelKey, value, hint = "") {
 }
 
 function rosterMatchdayMetric(column, value) {
-  return `<span><strong>${escapeHtml(String(value))}</strong> ${columnHeaderHtml(column)}</span>`;
+  return `<span><strong>${escapeHtml(String(value))}</strong> ${columnHeaderHtml(column, POKEMON_USAGE_HINT_COLUMNS)}</span>`;
 }
 
 function rosterPokemonChip(row) {
@@ -2044,9 +2050,9 @@ function renderRosterDetail() {
     metricCard(t(state.language, "columns.history_score"), overview.history_score),
     metricCard(t(state.language, "columns.confidence_score"), overview.confidence_score),
     metricCard(t(state.language, "columns.pokemon_count"), overview.pokemon_count),
-    metricCard(t(state.language, "columns.appearances"), displayNumber(overview.appearances), columnHint("appearances")),
-    metricCard(t(state.language, "columns.kills"), displayNumber(overview.kills), columnHint("kills")),
-    metricCard(t(state.language, "columns.kill_rate"), killRateDisplay(overview), columnHint("kill_rate")),
+    metricCard(t(state.language, "columns.appearances"), displayNumber(overview.appearances), pokemonColumnHint("appearances")),
+    metricCard(t(state.language, "columns.kills"), displayNumber(overview.kills), pokemonColumnHint("kills")),
+    metricCard(t(state.language, "columns.kill_rate"), killRateDisplay(overview), pokemonColumnHint("kill_rate")),
   ].join("");
   if (matchdaySection && matchdayTarget) {
     matchdaySection.hidden = !matchdayRows.length;
@@ -2057,7 +2063,7 @@ function renderRosterDetail() {
     sortedPokemon.map((row, index) => rosterPokemonTableRow(row, index + 1)),
     TEAM_ROSTER_POKEMON_COLUMNS,
     ["season", "person", "team", "pokemon", "pokemon_score", "source"],
-    { filename: `roster-${seasonSlug(overview.season_id)}-${normalizedKey(overview.team || overview.person || "detail")}.csv` },
+    { filename: `roster-${seasonSlug(overview.season_id)}-${normalizedKey(overview.team || overview.person || "detail")}.csv`, hintColumns: POKEMON_USAGE_HINT_COLUMNS },
   );
 }
 
@@ -2116,8 +2122,8 @@ function rosterMatchdayMatrix(overview, pokemonRows, rows) {
           <tr>
             <th class="roster-matchday-pokemon">${escapeHtml(t(state.language, "columns.pokemon"))}</th>
             ${weeks.map((week) => `<th>${escapeHtml(week.label)}</th>`).join("")}
-            <th>${columnHeaderHtml("appearances")}</th>
-            <th>${columnHeaderHtml("kills")}</th>
+            <th>${columnHeaderHtml("appearances", POKEMON_USAGE_HINT_COLUMNS)}</th>
+            <th>${columnHeaderHtml("kills", POKEMON_USAGE_HINT_COLUMNS)}</th>
           </tr>
           <tr>
             <th class="roster-matchday-pokemon">${escapeHtml(t(state.language, "columns.record"))}</th>
@@ -2596,9 +2602,9 @@ function renderPokemonDetail() {
   );
   const story = pokemonStorySummary(pokemonDetailRows, focus.key, normalizedKey, titles);
   summaryTarget.innerHTML = [
-    metricCard(t(state.language, "columns.appearances"), displayNumber(detail.summary.appearances), columnHint("appearances")),
-    metricCard(t(state.language, "columns.kills"), displayNumber(detail.summary.kills), columnHint("kills")),
-    metricCard(t(state.language, "columns.kill_rate"), killRateDisplay(detail.summary), columnHint("kill_rate")),
+    metricCard(t(state.language, "columns.appearances"), displayNumber(detail.summary.appearances), pokemonColumnHint("appearances")),
+    metricCard(t(state.language, "columns.kills"), displayNumber(detail.summary.kills), pokemonColumnHint("kills")),
+    metricCard(t(state.language, "columns.kill_rate"), killRateDisplay(detail.summary), pokemonColumnHint("kill_rate")),
     metricCard(t(state.language, "columns.titles"), displayNumber(story.titles)),
     metricCard(t(state.language, "columns.title_seasons"), story.title_seasons || t(state.language, "summary.notAvailable")),
     metricCard(t(state.language, "columns.season_list"), story.season_list || t(state.language, "summary.notAvailable")),
@@ -2623,6 +2629,7 @@ function renderPokemonDetail() {
     }),
     ["trainer", "appearances", "kills", "kill_rate", "seasons", "season_list", "teams"],
     ["trainer"],
+    { hintColumns: POKEMON_USAGE_HINT_COLUMNS },
   );
   renderTable(
     "#pokemon-timeline-table",
@@ -2637,6 +2644,7 @@ function renderPokemonDetail() {
     })),
     ["season", "divisions", "appearances", "kills", "kill_rate", "trainers", "teams"],
     ["season"],
+    { hintColumns: POKEMON_USAGE_HINT_COLUMNS },
   );
   renderTable(
     "#pokemon-season-table",
@@ -2652,6 +2660,7 @@ function renderPokemonDetail() {
     })),
     ["season", "division", "trainer", "team", "appearances", "kills", "kill_rate", "source"],
     ["season", "trainer", "team", "source"],
+    { hintColumns: POKEMON_USAGE_HINT_COLUMNS },
   );
 }
 
@@ -2704,6 +2713,8 @@ function renderTableHistory() {
     win_pct: winPercentage(row.wins, row.losses, row.draws),
     points: row.points,
     kills: row.kills,
+    deaths: row.deaths,
+    differential: row.differential,
     source: sourceLink(row.source_urls),
   }));
   renderTable("#table-history-table", rows, TABLE_HISTORY_COLUMNS, ["season", "person", "team", "source"]);
@@ -3547,7 +3558,7 @@ function renderRosterGaps() {
     })),
     ["season", "division", "roster_phase", "person", "team", "pokemon_count", "missing_slots", "appearances", "kills", "kill_rate", "confidence_score", "roster_flags", "source"],
     ["season", "person", "team", "source"],
-    { filename: "gpl-roster-gaps.csv" },
+    { filename: "gpl-roster-gaps.csv", hintColumns: POKEMON_USAGE_HINT_COLUMNS },
   );
 }
 
@@ -3569,7 +3580,7 @@ function renderAppearanceGaps() {
     })),
     ["season", "division", "stage", "pokemon", "trainer", "team", "kills", "review_reason", "source"],
     ["season", "pokemon", "trainer", "team", "source"],
-    { filename: "gpl-missing-killlist-appearances.csv" },
+    { filename: "gpl-missing-killlist-appearances.csv", hintColumns: POKEMON_USAGE_HINT_COLUMNS },
   );
 
   renderTable(
@@ -3946,6 +3957,8 @@ function renderSeasonDetail() {
       win_pct: winPercentage(row.wins, row.losses, row.draws),
       points: row.points,
       kills: row.kills,
+      deaths: row.deaths,
+      differential: row.differential,
       status: statusDisplay(row.data_status),
       source: sourceLinks(row.source_urls),
     }));
@@ -3976,7 +3989,13 @@ function renderSeasonDetail() {
     status: statusDisplay(row.data_status),
     source: sourceLinks(row.source_urls),
   }));
-  renderTable("#season-detail-killlists", killlists, ["division", "pokemon", "trainer", "team", "appearances", "kills", "kill_rate", "status", "source"], ["pokemon", "trainer", "team", "source"]);
+  renderTable(
+    "#season-detail-killlists",
+    killlists,
+    ["division", "pokemon", "trainer", "team", "appearances", "kills", "kill_rate", "status", "source"],
+    ["pokemon", "trainer", "team", "source"],
+    { hintColumns: POKEMON_USAGE_HINT_COLUMNS },
+  );
 
   const videos = filteredVideoRows(state.data.videos ?? [])
     .sort(compareVideoRows)
@@ -4115,6 +4134,8 @@ function renderPersonDetails() {
       rating: weightedRating(row.wins, row.losses, row.draws),
       points: row.points ?? "",
       kills: row.kills ?? "",
+      deaths: row.deaths ?? "",
+      differential: row.differential ?? "",
       title: titleSeasons.has(row.season_id) ? t(state.language, "values.yes") : "",
       source: sourceLink(row.source_urls),
     }));
@@ -4173,9 +4194,15 @@ function renderPersonDetails() {
       }))
     : [];
 
-  renderTable("#person-timeline-table", timelineRows, ["season", "division", "team", "record", "win_pct", "rating", "points", "kills", "title", "source"], ["season", "team", "source"]);
+  renderTable("#person-timeline-table", timelineRows, ["season", "division", "team", "record", "win_pct", "rating", "points", "kills", "deaths", "differential", "title", "source"], ["season", "team", "source"]);
   renderTable("#person-season-table", detailRows, PERSON_SEASON_COLUMNS, ["season", "team", "source"]);
-  renderTable("#person-pokemon-table", pokemonRows, ["pokemon", "appearances", "kills", "kill_rate", "seasons", "season_list", "teams", "source"], ["pokemon", "source"]);
+  renderTable(
+    "#person-pokemon-table",
+    pokemonRows,
+    ["pokemon", "appearances", "kills", "kill_rate", "seasons", "season_list", "teams", "source"],
+    ["pokemon", "source"],
+    { hintColumns: POKEMON_USAGE_HINT_COLUMNS },
+  );
   renderTable("#person-video-table", personVideos, ["season", "video_type", "detected_week", "opponent", "title", "match_status", "confidence", "confidence_tier", "match_basis", "confidence_explanation", "published_at"], ["title"]);
   renderTable("#person-matchup-table", matchupRows, MATCHUP_COLUMNS, ["opponent"]);
 }
@@ -4196,7 +4223,9 @@ function personSummaryCards(story, allTime) {
     metricCard(t(state.language, "columns.matches"), value(allTime?.matches)),
     metricCard(`${t(state.language, "columns.record")} / ${t(state.language, "columns.win_pct")}`, value(recordAndWinPct)),
     metricCard(t(state.language, "columns.points"), value(displayNumber(allTime?.points))),
-    metricCard(t(state.language, "columns.kills"), value(displayNumber(allTime?.kills)), columnHint("kills")),
+    metricCard(t(state.language, "columns.kills"), value(displayNumber(allTime?.kills))),
+    metricCard(t(state.language, "columns.deaths"), value(displayNumber(allTime?.deaths))),
+    metricCard(t(state.language, "columns.differential"), value(displayNumber(allTime?.differential))),
     metricCard(t(state.language, "columns.best_rank"), value(allTime?.best_rank)),
     metricCard(t(state.language, "columns.best_season"), value(story.best_season)),
     metricCard(t(state.language, "columns.signature_pokemon"), value(story.signature_pokemon)),
@@ -4495,6 +4524,7 @@ function renderTable(selector, rows, columns, html = false, options = {}) {
   const explicitHtmlColumns = htmlColumnSet(html);
   const displayRows = decorateTableRows(rows, visibleColumns, explicitHtmlColumns);
   const htmlColumns = tableHtmlColumns(visibleColumns, explicitHtmlColumns);
+  const hintColumns = options.hintColumns ? new Set(options.hintColumns) : null;
   target.dataset.columnProfile = state.columnProfile;
   target.classList.toggle("is-short-table", rows.length <= 25);
   target.innerHTML = `
@@ -4524,13 +4554,13 @@ function renderTable(selector, rows, columns, html = false, options = {}) {
 
   if (!window.Tabulator) {
     host.classList.add("is-native-table");
-    host.innerHTML = tableHtml(displayRows, visibleColumns, htmlColumns);
+    host.innerHTML = tableHtml(displayRows, visibleColumns, htmlColumns, hintColumns);
     wireTableScrollAid(selector, target, host);
     return;
   }
 
   const stickyIdentity = stickyIdentityColumn(visibleColumns, options.stickyColumn);
-  const tabulatorColumns = buildTabulatorColumns(visibleColumns, htmlColumns, displayRows, stickyIdentity);
+  const tabulatorColumns = buildTabulatorColumns(visibleColumns, htmlColumns, displayRows, stickyIdentity, hintColumns);
   appendHiddenSortColumns(tabulatorColumns, displayRows);
   const tableMount = document.createElement("div");
   tableMount.className = "table-tabulator";
@@ -4569,7 +4599,7 @@ function destroyTable(selector) {
   }
 }
 
-function buildTabulatorColumns(columns, htmlColumns, rows = [], stickyIdentity = null) {
+function buildTabulatorColumns(columns, htmlColumns, rows = [], stickyIdentity = null, hintColumns = null) {
   return columns.map((column) => {
     const numeric = NUMERIC_COLUMNS.has(column);
     const sticky = column === stickyIdentity;
@@ -4578,10 +4608,10 @@ function buildTabulatorColumns(columns, htmlColumns, rows = [], stickyIdentity =
       allLabel: t(state.language, "filters.allValues"),
       placeholder: t(state.language, "filters.header"),
     });
-    const hint = columnHint(column);
+    const hint = columnHint(column, hintColumns);
     return {
       title: columnTitle(state.language, column),
-      titleFormatter: () => columnHeaderHtml(column),
+      titleFormatter: () => columnHeaderHtml(column, hintColumns),
       headerTooltip: hint || false,
       field: column,
       sorter: sorterFor(column),
@@ -4727,10 +4757,20 @@ function tableScrollElement(host) {
   return host.querySelector(".tabulator-tableholder") || host;
 }
 
-function columnHint(column) {
+function columnHint(column, hintColumns = null) {
+  if (column === "kills" && !hintColumns?.has("kills")) {
+    return "";
+  }
+  if (hintColumns && column !== "rating" && !hintColumns.has(column)) {
+    return "";
+  }
   const key = columnHintKey(column);
   const hint = t(state.language, key);
   return hint === key ? "" : hint;
+}
+
+function pokemonColumnHint(column) {
+  return columnHint(column, POKEMON_USAGE_HINT_COLUMNS);
 }
 
 function columnHintKey(column) {
@@ -4740,9 +4780,9 @@ function columnHintKey(column) {
   return `columnHints.${column}`;
 }
 
-function columnHeaderHtml(column) {
+function columnHeaderHtml(column, hintColumns = null) {
   const title = columnTitle(state.language, column);
-  const hint = columnHint(column);
+  const hint = columnHint(column, hintColumns);
   if (!hint) {
     return escapeHtml(title);
   }
@@ -4946,11 +4986,14 @@ function minWidthFor(column) {
   return NUMERIC_COLUMNS.has(column) || column === "win_pct" ? 96 : 128;
 }
 
-function tableHtml(rows, columns, html = false) {
+function tableHtml(rows, columns, html = false, hintColumns = null) {
   const htmlColumns = htmlColumnSet(html);
   return `
     <table>
-      <thead><tr>${columns.map((column) => `<th${columnHint(column) ? ` title="${escapeAttr(columnHint(column))}"` : ""}>${columnHeaderHtml(column)}</th>`).join("")}</tr></thead>
+      <thead><tr>${columns.map((column) => {
+        const hint = columnHint(column, hintColumns);
+        return `<th${hint ? ` title="${escapeAttr(hint)}"` : ""}>${columnHeaderHtml(column, hintColumns)}</th>`;
+      }).join("")}</tr></thead>
       <tbody>
         ${rows
           .map(

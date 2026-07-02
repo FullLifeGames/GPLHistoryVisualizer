@@ -139,8 +139,6 @@ NORMALIZED_FIELDS = {
         "team_name",
         "appearances",
         "kills",
-        "deaths",
-        "differential",
         "data_status",
         "source_urls",
     ],
@@ -522,6 +520,7 @@ def normalize_all(data_dir: Path) -> NormalizedOutput:
         output.person_stints,
         output.standings,
     )
+    output.pokemon_killlists = [_strip_legacy_killlist_fields(row) for row in output.pokemon_killlists]
     output.people = _people_from_output(output)
     output.aliases_review = _alias_review(output)
     apply_manual_rows(data_dir, output, {"people": NORMALIZED_FIELDS["people"], "aliases_review": NORMALIZED_FIELDS["aliases_review"]})
@@ -1709,15 +1708,6 @@ def _number_sum(*values: str | None) -> float:
     return sum(float(_number(value) or 0) for value in values)
 
 
-def _number_difference(left: str | None, right: str | None) -> str | None:
-    left_number = _number(left)
-    right_number = _number(right)
-    if left_number is None or right_number is None:
-        return None
-    value = float(left_number) - float(right_number)
-    return _format_number(value)
-
-
 def _format_number(value: float) -> str:
     return str(int(value)) if value.is_integer() else str(value)
 
@@ -2437,8 +2427,6 @@ def _old_project_killlist(season_id: str, tables: list[dict[str, Any]]) -> list[
                     "team_name": None,
                     "appearances": None,
                     "kills": _format_number(float(kills)),
-                    "deaths": None,
-                    "differential": None,
                     "data_status": "sheet_extracted",
                     "source_urls": source_url,
                 }
@@ -2472,8 +2460,6 @@ def _missing_killlist_rows(season_id: str) -> list[dict[str, Any]]:
             "team_name": team_name,
             "appearances": None,
             "kills": None,
-            "deaths": None,
-            "differential": None,
             "data_status": "not_available",
             "source_urls": source["source_urls"],
         }
@@ -2490,8 +2476,6 @@ def _dedupe_killlist_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         "team_name",
         "appearances",
         "kills",
-        "deaths",
-        "differential",
         "source_urls",
     ]
     seen: set[tuple[Any, ...]] = set()
@@ -2523,9 +2507,16 @@ def _dedupe_killlist_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         for field in ("pokemon", "trainer", "team_name"):
             if not current.get(field) and row.get(field):
                 current[field] = row.get(field)
-        for field in ("appearances", "kills", "deaths", "differential"):
+        for field in ("appearances", "kills"):
             current[field] = _sum_killlist_numeric(current.get(field), row.get(field))
     return [merged[key] for key in order]
+
+
+def _strip_legacy_killlist_fields(row: dict[str, Any]) -> dict[str, Any]:
+    clean = dict(row)
+    clean.pop("deaths", None)
+    clean.pop("differential", None)
+    return clean
 
 
 def _sum_killlist_numeric(left: Any, right: Any) -> str | None:
@@ -2560,8 +2551,6 @@ def _standard_killlist(season_id: str, table: dict[str, Any], division: str) -> 
                 "team_name": _null(team),
                 "appearances": appearances,
                 "kills": _number(kills),
-                "deaths": _number(_first(record, ["deaths", "tode", "death", "d"])),
-                "differential": _number(_first(record, ["differential", "diff", "+/-", "differenz"])),
                 "data_status": "sheet_extracted",
                 "source_urls": source_url,
             }
@@ -2654,8 +2643,6 @@ def _s9_killlist(season_id: str, table: dict[str, Any], division: str) -> list[d
                 "team_name": team,
                 "appearances": _number(_cell(raw, appearances_column)),
                 "kills": _number(kills),
-                "deaths": None,
-                "differential": None,
                 "data_status": "sheet_extracted",
                 "source_urls": source_url,
             }
@@ -2691,8 +2678,6 @@ def _s9_victory_instinct_singles_killlist_rows(
                 "team_name": team,
                 "appearances": appearances,
                 "kills": kills,
-                "deaths": None,
-                "differential": None,
                 "data_status": "sheet_extracted",
                 "source_urls": source_url,
             }
@@ -2765,10 +2750,9 @@ def _s10_killlist(season_id: str, table: dict[str, Any], division: str, playoff:
         padded = raw + [""] * 60
         if playoff:
             pokemon, trainer, kills, team = padded[2], padded[4], padded[23], None
-            appearances = _number(padded[24]) or _filled_cell_count(padded[6:22])
-            deaths = None
+            appearances = _filled_cell_count(padded[6:22])
         else:
-            pokemon, trainer, kills, deaths, team = padded[3], padded[5], padded[21], None, padded[23]
+            pokemon, trainer, kills, team = padded[3], padded[5], padded[21], padded[23]
             appearances = _filled_cell_count(padded[8:21])
         if not _null(pokemon) or not _null(trainer):
             continue
@@ -2785,8 +2769,6 @@ def _s10_killlist(season_id: str, table: dict[str, Any], division: str, playoff:
                 "team_name": _null(team),
                 "appearances": appearances,
                 "kills": _number(kills),
-                "deaths": _number(deaths),
-                "differential": _number_difference(kills, deaths),
                 "data_status": "sheet_extracted",
                 "source_urls": source_url,
             }
