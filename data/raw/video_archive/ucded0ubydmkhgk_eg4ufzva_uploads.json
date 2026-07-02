@@ -8,7 +8,7 @@
     "videoPublishedAt": "2026-06-14T18:30:37Z",
     "playlistPublishedAt": "2026-06-14T18:30:37Z",
     "defaultLanguage": "de",
-    "defaultAudioLanguage": null,
+    "defaultAudioLanguage": "de",
     "playlistItemId": "VVVkRWQwVUJZRE1rSEdrLUVnNHVmWlZBLkR5R2Vhd3NqUGRZ",
     "privacyStatus": "public"
   },
@@ -1906,7 +1906,7 @@
     "videoPublishedAt": "2025-03-03T14:53:36Z",
     "playlistPublishedAt": "2025-03-03T14:53:36Z",
     "defaultLanguage": "de",
-    "defaultAudioLanguage": null,
+    "defaultAudioLanguage": "de",
     "playlistItemId": "VVVkRWQwVUJZRE1rSEdrLUVnNHVmWlZBLlJqOVBsZDBpV2pB",
     "privacyStatus": "public"
   },

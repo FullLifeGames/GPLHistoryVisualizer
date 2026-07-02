@@ -294,7 +294,7 @@
     "videoPublishedAt": "2026-04-01T07:26:40Z",
     "playlistPublishedAt": "2026-04-01T07:26:40Z",
     "defaultLanguage": "de",
-    "defaultAudioLanguage": null,
+    "defaultAudioLanguage": "de",
     "playlistItemId": "VVVHSm9QTGwtNE5yaVRNVXNOTUstOVpnLnFEaVc5VWdCcm4w",
     "privacyStatus": "public"
   },
@@ -22017,7 +22017,7 @@
     "videoPublishedAt": "2017-08-09T18:00:02Z",
     "playlistPublishedAt": "2017-08-09T18:00:02Z",
     "defaultLanguage": "de",
-    "defaultAudioLanguage": null,
+    "defaultAudioLanguage": "de",
     "playlistItemId": "VVVHSm9QTGwtNE5yaVRNVXNOTUstOVpnLmZ5aU5OY2w4c2p3",
     "privacyStatus": "public"
   },
@@ -25475,7 +25475,7 @@
     "videoPublishedAt": "2016-12-25T15:30:32Z",
     "playlistPublishedAt": "2016-12-25T15:30:32Z",
     "defaultLanguage": "de",
-    "defaultAudioLanguage": "de",
+    "defaultAudioLanguage": null,
     "playlistItemId": "VVVHSm9QTGwtNE5yaVRNVXNOTUstOVpnLmk0Nmwtc1kyX1h3",
     "privacyStatus": "public"
   },
@@ -27074,7 +27074,7 @@
     "videoPublishedAt": "2016-09-14T19:30:01Z",
     "playlistPublishedAt": "2016-09-14T19:30:01Z",
     "defaultLanguage": "de",
-    "defaultAudioLanguage": "de",
+    "defaultAudioLanguage": null,
     "playlistItemId": "VVVHSm9QTGwtNE5yaVRNVXNOTUstOVpnLk5nNUszVlI3NS04",
     "privacyStatus": "public"
   },
@@ -28296,7 +28296,7 @@
     "videoPublishedAt": "2016-06-12T15:00:01Z",
     "playlistPublishedAt": "2016-06-12T15:00:01Z",
     "defaultLanguage": "de",
-    "defaultAudioLanguage": null,
+    "defaultAudioLanguage": "de",
     "playlistItemId": "VVVHSm9QTGwtNE5yaVRNVXNOTUstOVpnLklENWNIcDdMbVFn",
     "privacyStatus": "public"
   },
@@ -28543,7 +28543,7 @@
     "videoPublishedAt": "2016-05-27T20:00:02Z",
     "playlistPublishedAt": "2016-05-27T20:00:02Z",
     "defaultLanguage": "de",
-    "defaultAudioLanguage": null,
+    "defaultAudioLanguage": "de",
     "playlistItemId": "VVVHSm9QTGwtNE5yaVRNVXNOTUstOVpnLlVtMG9LZnBUMzVZ",
     "privacyStatus": "public"
   },
@@ -29882,7 +29882,7 @@
     "videoPublishedAt": "2016-02-08T20:23:11Z",
     "playlistPublishedAt": "2016-02-08T20:23:11Z",
     "defaultLanguage": "de",
-    "defaultAudioLanguage": null,
+    "defaultAudioLanguage": "de",
     "playlistItemId": "VVVHSm9QTGwtNE5yaVRNVXNOTUstOVpnLmlGTXkzWmh6VkZN",
     "privacyStatus": "public"
   },
@@ -31975,7 +31975,7 @@
     "videoPublishedAt": "2015-08-25T16:01:27Z",
     "playlistPublishedAt": "2015-08-25T16:01:27Z",
     "defaultLanguage": "en",
-    "defaultAudioLanguage": "de",
+    "defaultAudioLanguage": null,
     "playlistItemId": "VVVHSm9QTGwtNE5yaVRNVXNOTUstOVpnLmhQVUpTWGs3Rk9j",
     "privacyStatus": "public"
   },

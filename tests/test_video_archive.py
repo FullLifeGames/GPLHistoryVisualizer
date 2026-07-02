@@ -1,5 +1,6 @@
 import csv
 import json
+from pathlib import Path
 
 from gpl_history.video_archive import (
     build_video_archive,
@@ -11,6 +12,9 @@ from gpl_history.video_archive import (
     scan_video_archive,
 )
 from gpl_history.youtube import YouTubeApiError
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_channel_candidate_from_common_youtube_url_shapes():
@@ -178,6 +182,31 @@ def test_discover_channel_candidates_includes_manual_reaction_channels(tmp_path)
     by_url = {candidate["canonical_url"]: candidate for candidate in candidates}
     assert by_url["https://www.youtube.com/@theMinehamsterDE"]["source_person_names"] == "theMinehamsterDE"
     assert by_url["https://www.youtube.com/@theMinehamsterDE"]["source_divisions"] == "Reaction"
+
+
+def test_manual_reaction_channels_include_present_and_nestfloh_side_channels():
+    candidates = discover_channel_candidates(REPO_ROOT / "data")
+
+    by_url = {candidate["canonical_url"]: candidate for candidate in candidates}
+    expected_channels = {
+        "https://www.youtube.com/@PresVODs": {
+            "source_person_ids": "person_present",
+            "source_person_names": "PresentLP",
+            "example_url": "https://www.youtube.com/watch?v=MH_YC4MC8Mo",
+        },
+        "https://www.youtube.com/@RealFlocki": {
+            "source_person_ids": "person_nestfloh",
+            "source_person_names": "Nestfloh",
+            "example_url": "https://www.youtube.com/watch?v=NLYdULW3hQA",
+        },
+    }
+
+    for channel_url, expected in expected_channels.items():
+        candidate = by_url[channel_url]
+        assert candidate["source_person_ids"] == expected["source_person_ids"]
+        assert candidate["source_person_names"] == expected["source_person_names"]
+        assert candidate["source_divisions"] == "Reaction"
+        assert expected["example_url"] in candidate["source_urls"].split(";")
 
 
 def test_parse_gpl_video_title_extracts_season_week_and_playoff_round():

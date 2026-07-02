@@ -86,7 +86,7 @@
     "videoPublishedAt": "2026-03-08T21:59:48Z",
     "playlistPublishedAt": "2026-03-08T21:59:48Z",
     "defaultLanguage": "es",
-    "defaultAudioLanguage": null,
+    "defaultAudioLanguage": "es",
     "playlistItemId": "VVUwbGRmT3lGX3g3SlRsb0phaGxaekFnLlM0R3dSM2xmNFBJ",
     "privacyStatus": "public"
   },
@@ -190,7 +190,7 @@
     "videoPublishedAt": "2026-03-08T21:21:57Z",
     "playlistPublishedAt": "2026-03-08T21:21:57Z",
     "defaultLanguage": "es",
-    "defaultAudioLanguage": null,
+    "defaultAudioLanguage": "es",
     "playlistItemId": "VVUwbGRmT3lGX3g3SlRsb0phaGxaekFnLk41Z0NCMGc5Y3F3",
     "privacyStatus": "public"
   },
