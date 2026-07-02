@@ -6,7 +6,7 @@ function withRecordColumns(prefix, suffix = []) {
 
 export const ALL_TIME_COLUMNS = withRecordColumns(
   ["rank", "name", "seasons_won", "title_seasons", "rating", "seasons", "season_list"],
-  ["points", "kills", "deaths", "differential", "best_rank", "elo"],
+  ["points", "kills", "best_rank", "elo"],
 );
 
 export const POKEMON_DRAFT_COLUMNS = [
@@ -28,8 +28,7 @@ export const POKEMON_KILLLIST_COLUMNS = [
   "pokemon",
   "appearances",
   "kills",
-  "deaths",
-  "differential",
+  "kill_rate",
   "seasons",
   "season_list",
   "titles",
@@ -56,8 +55,7 @@ export const TEAM_ROSTER_COLUMNS = [
   "top_pokemon",
   "appearances",
   "kills",
-  "deaths",
-  "differential",
+  "kill_rate",
   "roster_flags",
   "source",
 ];
@@ -71,8 +69,7 @@ export const TEAM_ROSTER_POKEMON_COLUMNS = [
   "confidence_score",
   "appearances",
   "kills",
-  "deaths",
-  "differential",
+  "kill_rate",
   "title_count",
   "draft_count",
   "tier",
@@ -88,12 +85,12 @@ export const TEAM_ROSTER_POKEMON_COLUMNS = [
 
 export const TABLE_HISTORY_COLUMNS = withRecordColumns(
   ["season", "division", "rank", "person", "team"],
-  ["points", "kills", "deaths", "differential", "source"],
+  ["points", "kills", "source"],
 );
 
 export const SEASON_STANDINGS_COLUMNS = withRecordColumns(
   ["division", "rank", "person", "team"],
-  ["points", "kills", "deaths", "differential", "status", "source"],
+  ["points", "kills", "status", "source"],
 );
 
 export const PERSON_SEASON_COLUMNS = withRecordColumns(
@@ -228,6 +225,7 @@ const COMPACT_COLUMNS = new Set([
   "points",
   "kills",
   "appearances",
+  "kill_rate",
   "status",
   "match_status",
   "quality_score",
@@ -272,7 +270,7 @@ export function columnsForProfile(columns, profile = "full") {
   let selected = columns.filter((column) => allowed.has(column));
   const pokemonMetricTable = columns.includes("pokemon") || columns.includes("trainer") || columns.includes("trainers");
   if (normalized === "compact" && !pokemonMetricTable) {
-    selected = selected.filter((column) => !["appearances", "kills"].includes(column));
+    selected = selected.filter((column) => !["appearances", "kills", "kill_rate"].includes(column));
   }
   if (selected.length) {
     return selected;

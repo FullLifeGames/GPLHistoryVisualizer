@@ -1640,12 +1640,12 @@ input:focus,
   border-bottom: 1px solid var(--line);
 }
 
-.roster-metrics span {
+.roster-metrics > span {
   padding: 9px 10px;
   border-right: 1px solid var(--cell-line);
 }
 
-.roster-metrics span:last-child {
+.roster-metrics > span:last-child {
   border-right: 0;
 }
 
@@ -2242,7 +2242,7 @@ input:focus,
   font-weight: 850;
 }
 
-.roster-matchday-toolbar span {
+.roster-matchday-toolbar > span {
   display: inline-flex;
   align-items: center;
   min-height: 28px;

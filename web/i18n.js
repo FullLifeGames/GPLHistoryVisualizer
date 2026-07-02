@@ -302,6 +302,9 @@ export const TRANSLATIONS = {
     },
     columnHints: {
       rating: "Bayes Rating: konservativer Beta(6,6)-Posterior. Remis zählen halb, kleine Samples bekommen einen Unsicherheitsabzug.",
+      appearances: "Kills / Einsätze = Killquote. Einsätze und Kills sind nur dort vollständig, wo Killlisten oder manuell geprüfte Quellen auswertbar sind. Viele ältere Saisons enthalten keine vollständigen Einsatz- oder Killdaten; 0 oder leere Werte können Datenlücken bedeuten.",
+      kills: "Kills / Einsätze = Killquote. Einsätze und Kills sind nur dort vollständig, wo Killlisten oder manuell geprüfte Quellen auswertbar sind. Viele ältere Saisons enthalten keine vollständigen Einsatz- oder Killdaten; 0 oder leere Werte können Datenlücken bedeuten.",
+      kill_rate: "Kills / Einsätze = Killquote. Einsätze und Kills sind nur dort vollständig, wo Killlisten oder manuell geprüfte Quellen auswertbar sind. Viele ältere Saisons enthalten keine vollständigen Einsatz- oder Killdaten; 0 oder leere Werte können Datenlücken bedeuten.",
     },
     coverage: {
       missingTitle: "Bekannte Lücken",
@@ -580,6 +583,7 @@ export const TRANSLATIONS = {
       team: "Team",
       appearances: "Einsätze",
       kills: "Kills",
+      kill_rate: "Killquote",
       deaths: "Tode",
       differential: "Differenz",
       status: "Status",
@@ -861,6 +865,9 @@ export const TRANSLATIONS = {
     },
     columnHints: {
       rating: "Bayes rating: conservative Beta(6,6) posterior. Draws count half, small samples get an uncertainty penalty.",
+      appearances: "Kills / appearances = kill rate. Appearances and kills are only complete where killlists or manually reviewed sources can be evaluated. Many older seasons do not have complete appearance or kill data; 0 or empty values can indicate data gaps.",
+      kills: "Kills / appearances = kill rate. Appearances and kills are only complete where killlists or manually reviewed sources can be evaluated. Many older seasons do not have complete appearance or kill data; 0 or empty values can indicate data gaps.",
+      kill_rate: "Kills / appearances = kill rate. Appearances and kills are only complete where killlists or manually reviewed sources can be evaluated. Many older seasons do not have complete appearance or kill data; 0 or empty values can indicate data gaps.",
     },
     pokemonDetails: {
       focus: "Pokémon",
@@ -1185,6 +1192,7 @@ export const TRANSLATIONS = {
       team: "Team",
       appearances: "Appearances",
       kills: "Kills",
+      kill_rate: "Kill Rate",
       deaths: "Deaths",
       differential: "Differential",
       status: "Status",

@@ -23,6 +23,8 @@ function recordWindow(columns) {
 assert.equal(ALL_TIME_COLUMNS.includes("teams"), false);
 assert.equal(ALL_TIME_COLUMNS.includes("elo"), true);
 assert.equal(ALL_TIME_COLUMNS.at(-1), "elo");
+assert.equal(ALL_TIME_COLUMNS.includes("deaths"), false);
+assert.equal(ALL_TIME_COLUMNS.includes("differential"), false);
 assert.ok(ALL_TIME_COLUMNS.indexOf("rating") < ALL_TIME_COLUMNS.indexOf("elo"));
 assert.deepEqual(recordWindow(ALL_TIME_COLUMNS), ["matches", "win_pct", "wins", "losses", "draws"]);
 
@@ -36,10 +38,20 @@ assert.deepEqual(
   POKEMON_KILLLIST_COLUMNS.slice(POKEMON_KILLLIST_COLUMNS.indexOf("season_list") + 1, POKEMON_KILLLIST_COLUMNS.indexOf("season_list") + 3),
   ["titles", "title_seasons"],
 );
+assert.deepEqual(
+  POKEMON_KILLLIST_COLUMNS.slice(POKEMON_KILLLIST_COLUMNS.indexOf("appearances"), POKEMON_KILLLIST_COLUMNS.indexOf("appearances") + 3),
+  ["appearances", "kills", "kill_rate"],
+);
+assert.equal(POKEMON_KILLLIST_COLUMNS.includes("deaths"), false);
+assert.equal(POKEMON_KILLLIST_COLUMNS.includes("differential"), false);
 
 assert.deepEqual(recordWindow(TABLE_HISTORY_COLUMNS), ["matches", "win_pct", "wins", "losses", "draws"]);
 assert.deepEqual(recordWindow(SEASON_STANDINGS_COLUMNS), ["matches", "win_pct", "wins", "losses", "draws"]);
 assert.deepEqual(recordWindow(PERSON_SEASON_COLUMNS), ["matches", "win_pct", "wins", "losses", "draws"]);
+assert.equal(TABLE_HISTORY_COLUMNS.includes("deaths"), false);
+assert.equal(TABLE_HISTORY_COLUMNS.includes("differential"), false);
+assert.equal(SEASON_STANDINGS_COLUMNS.includes("deaths"), false);
+assert.equal(SEASON_STANDINGS_COLUMNS.includes("differential"), false);
 assert.deepEqual(MATCHUP_COLUMNS, ["opponent", "matches", "win_pct", "wins", "losses", "draws"]);
 assert.deepEqual(MATCH_HIGHLIGHT_COLUMNS.slice(0, 11), [
   "rank",
@@ -60,8 +72,8 @@ assert.deepEqual(columnsForProfile(ALL_TIME_COLUMNS, "compact"), ["rank", "name"
 assert.equal(columnsForProfile(POKEMON_KILLLIST_COLUMNS, "compact").includes("seasons"), true);
 assert.equal(columnsForProfile(POKEMON_DRAFT_COLUMNS, "compact").includes("season_count"), true);
 assert.deepEqual(
-  columnsForProfile(["trainer", "appearances", "kills", "deaths", "differential", "seasons", "season_list", "teams"], "compact"),
-  ["trainer", "appearances", "kills", "seasons", "teams"],
+  columnsForProfile(["trainer", "appearances", "kills", "kill_rate", "seasons", "season_list", "teams"], "compact"),
+  ["trainer", "appearances", "kills", "kill_rate", "seasons", "teams"],
 );
 assert.deepEqual(columnsForProfile(ALL_TIME_COLUMNS), ALL_TIME_COLUMNS);
 assert.deepEqual(columnsForProfile(ALL_TIME_COLUMNS, "performance"), ALL_TIME_COLUMNS);
@@ -88,10 +100,10 @@ assert.deepEqual(TEAM_ROSTER_POKEMON_COLUMNS.slice(0, 12), [
   "confidence_score",
   "appearances",
   "kills",
-  "deaths",
-  "differential",
+  "kill_rate",
   "title_count",
   "draft_count",
+  "tier",
 ]);
 assert.deepEqual(TEAM_ROSTER_POKEMON_COLUMNS.slice(-7), [
   "season",
@@ -102,6 +114,12 @@ assert.deepEqual(TEAM_ROSTER_POKEMON_COLUMNS.slice(-7), [
   "slot",
   "source",
 ]);
+assert.equal(TEAM_ROSTER_COLUMNS.includes("deaths"), false);
+assert.equal(TEAM_ROSTER_COLUMNS.includes("differential"), false);
+assert.deepEqual(
+  TEAM_ROSTER_COLUMNS.slice(TEAM_ROSTER_COLUMNS.indexOf("appearances"), TEAM_ROSTER_COLUMNS.indexOf("appearances") + 3),
+  ["appearances", "kills", "kill_rate"],
+);
 assert.deepEqual(columnsForProfile(TEAM_ROSTER_COLUMNS, "compact"), ["rank", "season", "division", "roster_phase", "variants", "person", "team", "roster_score", "pokemon_count", "roster_flags"]);
 assert.equal(columnsForProfile(["season", "videos", "source"], "compact").includes("videos"), true);
 assert.deepEqual(columnsForProfile(["season", "videos", "source"], "sources"), ["season", "videos", "source"]);

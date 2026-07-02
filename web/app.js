@@ -1229,6 +1229,23 @@ function performanceDisplay(row, field) {
   return numberValue(row.performance_rows) > 0 ? displayNumber(row[field]) : "";
 }
 
+function numericCellValue(value) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+  const parsed = Number.parseFloat(String(value).replace(",", "."));
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function killRateDisplay(row) {
+  const appearances = numericCellValue(row?.appearances);
+  const kills = numericCellValue(row?.kills);
+  if (!appearances || kills === null) {
+    return "";
+  }
+  return displayNumber(Number((kills / appearances).toFixed(2)));
+}
+
 function applyDataMode(row) {
   const division = row.division || "";
   if (state.dataMode === "all") {
@@ -1243,8 +1260,11 @@ function applyDataMode(row) {
   return division !== "Liga 2";
 }
 
-function metricCard(label, value) {
-  return `<article class="summary-card"><span>${escapeHtml(label)}</span><strong>${escapeHtml(String(value))}</strong></article>`;
+function metricCard(label, value, hint = "") {
+  const labelHtml = hint
+    ? `<span class="summary-card-label column-header-with-help">${escapeHtml(label)} ${columnHelpHtml(hint)}</span>`
+    : `<span>${escapeHtml(label)}</span>`;
+  return `<article class="summary-card">${labelHtml}<strong>${escapeHtml(String(value))}</strong></article>`;
 }
 
 function seasonDisplay(seasonId) {
@@ -1661,8 +1681,6 @@ function renderAllTime() {
       rating: row.rating,
       points: displayNumber(row.points),
       kills: displayNumber(row.kills),
-      deaths: displayNumber(row.deaths),
-      differential: displayNumber(row.differential),
       best_rank: row.best_rank,
     }));
 
@@ -1692,8 +1710,6 @@ function aggregateAllTimeRows() {
       rating: row.weighted_rating,
       points: row.points,
       kills: row.kills,
-      deaths: row.deaths,
-      differential: row.differential,
       best_rank: row.best_rank,
     }));
 }
@@ -1718,6 +1734,7 @@ function renderKilllists() {
   const rows = summarizeKilllists(canonicalKilllistRows(filtered(state.data.killlists ?? []), state.division)).map((row) => ({
     ...row,
     ...pokemonHistoryFields(row, titles, draftHistory),
+    kill_rate: killRateDisplay(row),
     pokemon: pokemonCell(row.pokemon),
   }));
   renderTable("#killlists-table", rows, POKEMON_KILLLIST_COLUMNS, ["pokemon"]);
@@ -1766,8 +1783,7 @@ function aggregateKilllistRows() {
       pokemon: pokemonCell(row.pokemon, row.pokemon_normalized || normalizedKey(row.pokemon)),
       appearances: row.appearances,
       kills: row.kills,
-      deaths: row.deaths,
-      differential: row.differential,
+      kill_rate: killRateDisplay(row),
       seasons: row.seasons,
       season_list: shortSeasonList(row.season_list),
       titles: row.titles,
@@ -1898,6 +1914,7 @@ function rosterOverviewTableRow(row) {
     team: rosterDetailLink(row.roster_group_key, row.team || t(state.language, "rosters.openDetail")),
     roster_score: scoreFormulaCell(row.roster_score, rosterScoreFormula(row)),
     top_pokemon: topPokemonLinks(row.top_pokemon),
+    kill_rate: killRateDisplay(row),
     source: sourceCell(row.source_urls),
   };
 }
@@ -1913,6 +1930,7 @@ function rosterPokemonTableRow(row, rank) {
     team: rosterDetailLink(rosterGroupKeyFromRow(row), row.team || t(state.language, "rosters.openDetail")),
     pokemon: pokemonCell(row.pokemon, row.pokemon_key || normalizedKey(row.pokemon)),
     pokemon_score: scoreFormulaCell(row.pokemon_score, pokemonScoreFormula(row)),
+    kill_rate: killRateDisplay(row),
     source: sourceCell(row.source_urls),
   };
 }
@@ -1958,8 +1976,8 @@ function rosterCard(row, pokemonRows) {
       <div class="roster-metrics">
         ${rosterMetric("columns.pokemon_count", row.pokemon_count)}
         ${rosterMetric("columns.avg_tier_rank", row.avg_tier_rank || "n/a")}
-        ${rosterMetric("columns.kills", row.kills)}
-        ${rosterMetric("columns.differential", row.differential)}
+        ${rosterMetric("columns.kills", row.kills, columnHint("kills"))}
+        ${rosterMetric("columns.kill_rate", killRateDisplay(row), columnHint("kill_rate"))}
       </div>
       <div class="roster-pokemon-list">
         ${sortedPokemon.map((pokemon) => rosterPokemonChip(pokemon)).join("")}
@@ -1969,8 +1987,13 @@ function rosterCard(row, pokemonRows) {
   `;
 }
 
-function rosterMetric(labelKey, value) {
-  return `<span><small>${escapeHtml(t(state.language, labelKey))}</small><strong>${escapeHtml(String(value))}</strong></span>`;
+function rosterMetric(labelKey, value, hint = "") {
+  const label = escapeHtml(t(state.language, labelKey));
+  return `<span><small>${label}${hint ? ` ${columnHelpHtml(hint)}` : ""}</small><strong>${escapeHtml(String(value))}</strong></span>`;
+}
+
+function rosterMatchdayMetric(column, value) {
+  return `<span><strong>${escapeHtml(String(value))}</strong> ${columnHeaderHtml(column)}</span>`;
 }
 
 function rosterPokemonChip(row) {
@@ -2021,9 +2044,9 @@ function renderRosterDetail() {
     metricCard(t(state.language, "columns.history_score"), overview.history_score),
     metricCard(t(state.language, "columns.confidence_score"), overview.confidence_score),
     metricCard(t(state.language, "columns.pokemon_count"), overview.pokemon_count),
-    metricCard(t(state.language, "columns.kills"), displayNumber(overview.kills)),
-    metricCard(t(state.language, "columns.deaths"), displayNumber(overview.deaths)),
-    metricCard(t(state.language, "columns.differential"), displayNumber(overview.differential)),
+    metricCard(t(state.language, "columns.appearances"), displayNumber(overview.appearances), columnHint("appearances")),
+    metricCard(t(state.language, "columns.kills"), displayNumber(overview.kills), columnHint("kills")),
+    metricCard(t(state.language, "columns.kill_rate"), killRateDisplay(overview), columnHint("kill_rate")),
   ].join("");
   if (matchdaySection && matchdayTarget) {
     matchdaySection.hidden = !matchdayRows.length;
@@ -2082,8 +2105,8 @@ function rosterMatchdayMatrix(overview, pokemonRows, rows) {
   const sources = uniqueSourceUrls(rows);
   return `
     <div class="roster-matchday-toolbar">
-      <span><strong>${escapeHtml(String(appearances))}</strong> ${escapeHtml(t(state.language, "columns.appearances"))}</span>
-      <span><strong>${escapeHtml(displayNumber(kills))}</strong> ${escapeHtml(t(state.language, "columns.kills"))}</span>
+      ${rosterMatchdayMetric("appearances", appearances)}
+      ${rosterMatchdayMetric("kills", displayNumber(kills))}
       <span><strong>${escapeHtml(String(weeks.length))}</strong> ${escapeHtml(t(state.language, "rosters.matchdayWeeks"))}</span>
       ${sources ? `<span class="roster-matchday-source">${sourceLinks(sources)}</span>` : ""}
     </div>
@@ -2093,8 +2116,8 @@ function rosterMatchdayMatrix(overview, pokemonRows, rows) {
           <tr>
             <th class="roster-matchday-pokemon">${escapeHtml(t(state.language, "columns.pokemon"))}</th>
             ${weeks.map((week) => `<th>${escapeHtml(week.label)}</th>`).join("")}
-            <th>${escapeHtml(t(state.language, "columns.appearances"))}</th>
-            <th>${escapeHtml(t(state.language, "columns.kills"))}</th>
+            <th>${columnHeaderHtml("appearances")}</th>
+            <th>${columnHeaderHtml("kills")}</th>
           </tr>
           <tr>
             <th class="roster-matchday-pokemon">${escapeHtml(t(state.language, "columns.record"))}</th>
@@ -2501,7 +2524,7 @@ function rosterScoreFormula(row) {
       performanceMix,
       `Parts: Performance ${row.performance_score}, Balance ${row.balance_score}, History ${row.history_score}, Confidence ${row.confidence_score}.`,
       `Shown: Score ${row.roster_score}, Pokémon ${row.pokemon_count}, avg tier rank ${row.avg_tier_rank || "n/a"}.`,
-      "Balance uses roster size up to 11, top-11 depth, bench quality, and top-heavy concentration. Lower tiers are not rewarded. Missing death data is estimated and lowers Confidence.",
+      "Balance uses roster size up to 11, top-11 depth, bench quality, and top-heavy concentration. Lower tiers are not rewarded. Missing usage data lowers Confidence.",
     ].filter(Boolean).join(" ");
   }
   return [
@@ -2512,18 +2535,16 @@ function rosterScoreFormula(row) {
     performanceMix,
     `Teilwerte: Performance ${row.performance_score}, Balance ${row.balance_score}, Historie ${row.history_score}, Confidence ${row.confidence_score}.`,
     `Angezeigt: Score ${row.roster_score}, Pokémon ${row.pokemon_count}, Ø Tier-Rang ${row.avg_tier_rank || "n/a"}.`,
-    "Balance nutzt Kadergröße bis 11, Top-11-Tiefe, Bankqualität und Top-Heavy-Konzentration. Lower-Tiers werden nicht belohnt. Fehlende Todesdaten werden geschätzt und senken Confidence.",
+    "Balance nutzt Kadergröße bis 11, Top-11-Tiefe, Bankqualität und Top-Heavy-Konzentration. Lower-Tiers werden nicht belohnt. Fehlende Einsatzdaten senken Confidence.",
   ].filter(Boolean).join(" ");
 }
 
 function pokemonScoreFormula(row) {
   const appearances = numberValue(row.appearances);
   const kills = numberValue(row.kills);
-  const deathsNote = row.deaths_estimated
-    ? `Tode geschätzt über erwartete Todesrate ${row.expected_death_rate}.`
-    : "Tode aus Quelle übernommen.";
+  const killRate = killRateDisplay(row);
   const performanceNote = appearances
-    ? "Performance vergleicht Kills/Einsätze und Differential/Einsätze mit erwarteten Raten und dämpft kleine Samples."
+    ? "Performance vergleicht Kills/Einsätze mit erwarteten Raten und dämpft kleine Samples."
     : kills
       ? "Performance nutzt hier kills-only: 50 + min(Kills, 30) / 30 * 25, weil Einsätze fehlen."
       : "Performance nutzt den Fallback 45, weil Einsätze und Kills fehlen.";
@@ -2531,7 +2552,7 @@ function pokemonScoreFormula(row) {
     "Pokémon-Score = 45% Performance + 12% Historie + 8% Confidence.",
     `Teilwerte: Performance ${row.performance_score}, Historie ${row.history_score}, Confidence ${row.confidence_score}.`,
     performanceNote,
-    `${deathsNote} Werte: Einsätze ${appearances}, Kills ${row.kills}, Tode ${row.deaths}, Differential ${row.differential}.`,
+    `Werte: Einsätze ${appearances}, Kills ${row.kills}, Killquote ${killRate || "n/a"}.`,
   ].filter(Boolean).join(" ");
 }
 
@@ -2575,10 +2596,9 @@ function renderPokemonDetail() {
   );
   const story = pokemonStorySummary(pokemonDetailRows, focus.key, normalizedKey, titles);
   summaryTarget.innerHTML = [
-    metricCard(t(state.language, "columns.appearances"), displayNumber(detail.summary.appearances)),
-    metricCard(t(state.language, "columns.kills"), displayNumber(detail.summary.kills)),
-    metricCard(t(state.language, "columns.deaths"), displayNumber(detail.summary.deaths)),
-    metricCard(t(state.language, "columns.differential"), displayNumber(detail.summary.differential)),
+    metricCard(t(state.language, "columns.appearances"), displayNumber(detail.summary.appearances), columnHint("appearances")),
+    metricCard(t(state.language, "columns.kills"), displayNumber(detail.summary.kills), columnHint("kills")),
+    metricCard(t(state.language, "columns.kill_rate"), killRateDisplay(detail.summary), columnHint("kill_rate")),
     metricCard(t(state.language, "columns.titles"), displayNumber(story.titles)),
     metricCard(t(state.language, "columns.title_seasons"), story.title_seasons || t(state.language, "summary.notAvailable")),
     metricCard(t(state.language, "columns.season_list"), story.season_list || t(state.language, "summary.notAvailable")),
@@ -2595,14 +2615,13 @@ function renderPokemonDetail() {
         trainer: personLink(personIdForName(trainerName), trainerName),
         appearances: performanceDisplay(row, "appearances"),
         kills: performanceDisplay(row, "kills"),
-        deaths: performanceDisplay(row, "deaths"),
-        differential: performanceDisplay(row, "differential"),
+        kill_rate: performanceDisplay(row, "appearances") ? killRateDisplay(row) : "",
         seasons: row.seasons,
         season_list: row.season_list,
         teams: row.teams,
       };
     }),
-    ["trainer", "appearances", "kills", "deaths", "differential", "seasons", "season_list", "teams"],
+    ["trainer", "appearances", "kills", "kill_rate", "seasons", "season_list", "teams"],
     ["trainer"],
   );
   renderTable(
@@ -2612,12 +2631,11 @@ function renderPokemonDetail() {
       divisions: row.divisions,
       appearances: performanceDisplay(row, "appearances"),
       kills: performanceDisplay(row, "kills"),
-      deaths: performanceDisplay(row, "deaths"),
-      differential: performanceDisplay(row, "differential"),
+      kill_rate: performanceDisplay(row, "appearances") ? killRateDisplay(row) : "",
       trainers: row.trainers,
       teams: row.teams,
     })),
-    ["season", "divisions", "appearances", "kills", "deaths", "differential", "trainers", "teams"],
+    ["season", "divisions", "appearances", "kills", "kill_rate", "trainers", "teams"],
     ["season"],
   );
   renderTable(
@@ -2629,11 +2647,10 @@ function renderPokemonDetail() {
       team: rosterLinkForContext(row, row.team_name),
       appearances: performanceDisplay(row, "appearances"),
       kills: performanceDisplay(row, "kills"),
-      deaths: performanceDisplay(row, "deaths"),
-      differential: performanceDisplay(row, "differential"),
+      kill_rate: performanceDisplay(row, "appearances") ? killRateDisplay(row) : "",
       source: sourceLinks(row.source_urls),
     })),
-    ["season", "division", "trainer", "team", "appearances", "kills", "deaths", "differential", "source"],
+    ["season", "division", "trainer", "team", "appearances", "kills", "kill_rate", "source"],
     ["season", "trainer", "team", "source"],
   );
 }
@@ -2687,8 +2704,6 @@ function renderTableHistory() {
     win_pct: winPercentage(row.wins, row.losses, row.draws),
     points: row.points,
     kills: row.kills,
-    deaths: row.deaths,
-    differential: row.differential,
     source: sourceLink(row.source_urls),
   }));
   renderTable("#table-history-table", rows, TABLE_HISTORY_COLUMNS, ["season", "person", "team", "source"]);
@@ -3527,9 +3542,10 @@ function renderRosterGaps() {
       roster_phase: rosterPhaseDisplay(row.roster_phase),
       person: row.person ? personLink(personIdForName(row.person), row.person) : "",
       team: rosterDetailLink(row.roster_group_key, row.team || t(state.language, "rosters.openDetail")),
+      kill_rate: killRateDisplay(row),
       source: sourceCell(row.source_urls),
     })),
-    ["season", "division", "roster_phase", "person", "team", "pokemon_count", "missing_slots", "appearances", "kills", "deaths", "differential", "confidence_score", "roster_flags", "source"],
+    ["season", "division", "roster_phase", "person", "team", "pokemon_count", "missing_slots", "appearances", "kills", "kill_rate", "confidence_score", "roster_flags", "source"],
     ["season", "person", "team", "source"],
     { filename: "gpl-roster-gaps.csv" },
   );
@@ -3930,8 +3946,6 @@ function renderSeasonDetail() {
       win_pct: winPercentage(row.wins, row.losses, row.draws),
       points: row.points,
       kills: row.kills,
-      deaths: row.deaths,
-      differential: row.differential,
       status: statusDisplay(row.data_status),
       source: sourceLinks(row.source_urls),
     }));
@@ -3958,12 +3972,11 @@ function renderSeasonDetail() {
     team: rosterLinkForContext(row, row.team_name),
     appearances: row.appearances,
     kills: row.kills,
-    deaths: row.deaths,
-    differential: row.differential,
+    kill_rate: killRateDisplay(row),
     status: statusDisplay(row.data_status),
     source: sourceLinks(row.source_urls),
   }));
-  renderTable("#season-detail-killlists", killlists, ["division", "pokemon", "trainer", "team", "appearances", "kills", "deaths", "differential", "status", "source"], ["pokemon", "trainer", "team", "source"]);
+  renderTable("#season-detail-killlists", killlists, ["division", "pokemon", "trainer", "team", "appearances", "kills", "kill_rate", "status", "source"], ["pokemon", "trainer", "team", "source"]);
 
   const videos = filteredVideoRows(state.data.videos ?? [])
     .sort(compareVideoRows)
@@ -4102,8 +4115,6 @@ function renderPersonDetails() {
       rating: weightedRating(row.wins, row.losses, row.draws),
       points: row.points ?? "",
       kills: row.kills ?? "",
-      deaths: row.deaths ?? "",
-      differential: row.differential ?? "",
       title: titleSeasons.has(row.season_id) ? t(state.language, "values.yes") : "",
       source: sourceLink(row.source_urls),
     }));
@@ -4116,8 +4127,7 @@ function renderPersonDetails() {
     pokemon: pokemonCell(row.pokemon),
     appearances: performanceDisplay(row, "appearances"),
     kills: performanceDisplay(row, "kills"),
-    deaths: performanceDisplay(row, "deaths"),
-    differential: performanceDisplay(row, "differential"),
+    kill_rate: performanceDisplay(row, "appearances") ? killRateDisplay(row) : "",
     seasons: row.seasons,
     season_list: row.season_list,
     teams: row.teams,
@@ -4163,9 +4173,9 @@ function renderPersonDetails() {
       }))
     : [];
 
-  renderTable("#person-timeline-table", timelineRows, ["season", "division", "team", "record", "win_pct", "rating", "points", "kills", "deaths", "differential", "title", "source"], ["season", "team", "source"]);
+  renderTable("#person-timeline-table", timelineRows, ["season", "division", "team", "record", "win_pct", "rating", "points", "kills", "title", "source"], ["season", "team", "source"]);
   renderTable("#person-season-table", detailRows, PERSON_SEASON_COLUMNS, ["season", "team", "source"]);
-  renderTable("#person-pokemon-table", pokemonRows, ["pokemon", "appearances", "kills", "deaths", "differential", "seasons", "season_list", "teams", "source"], ["pokemon", "source"]);
+  renderTable("#person-pokemon-table", pokemonRows, ["pokemon", "appearances", "kills", "kill_rate", "seasons", "season_list", "teams", "source"], ["pokemon", "source"]);
   renderTable("#person-video-table", personVideos, ["season", "video_type", "detected_week", "opponent", "title", "match_status", "confidence", "confidence_tier", "match_basis", "confidence_explanation", "published_at"], ["title"]);
   renderTable("#person-matchup-table", matchupRows, MATCHUP_COLUMNS, ["opponent"]);
 }
@@ -4186,9 +4196,7 @@ function personSummaryCards(story, allTime) {
     metricCard(t(state.language, "columns.matches"), value(allTime?.matches)),
     metricCard(`${t(state.language, "columns.record")} / ${t(state.language, "columns.win_pct")}`, value(recordAndWinPct)),
     metricCard(t(state.language, "columns.points"), value(displayNumber(allTime?.points))),
-    metricCard(t(state.language, "columns.kills"), value(displayNumber(allTime?.kills))),
-    metricCard(t(state.language, "columns.deaths"), value(displayNumber(allTime?.deaths))),
-    metricCard(t(state.language, "columns.differential"), value(displayNumber(allTime?.differential))),
+    metricCard(t(state.language, "columns.kills"), value(displayNumber(allTime?.kills)), columnHint("kills")),
     metricCard(t(state.language, "columns.best_rank"), value(allTime?.best_rank)),
     metricCard(t(state.language, "columns.best_season"), value(story.best_season)),
     metricCard(t(state.language, "columns.signature_pokemon"), value(story.signature_pokemon)),
@@ -4738,7 +4746,11 @@ function columnHeaderHtml(column) {
   if (!hint) {
     return escapeHtml(title);
   }
-  return `<span class="column-header-with-help">${escapeHtml(title)} <span class="column-help" title="${escapeAttr(hint)}" aria-label="${escapeAttr(hint)}">i</span></span>`;
+  return `<span class="column-header-with-help">${escapeHtml(title)} ${columnHelpHtml(hint)}</span>`;
+}
+
+function columnHelpHtml(hint) {
+  return `<span class="column-help" title="${escapeAttr(hint)}" aria-label="${escapeAttr(hint)}">i</span>`;
 }
 
 function appendHiddenSortColumns(columns, rows) {
@@ -4902,6 +4914,7 @@ const NUMERIC_COLUMNS = new Set([
   "best_rank",
   "appearances",
   "kills",
+  "kill_rate",
   "deaths",
   "differential",
   "championships",

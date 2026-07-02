@@ -243,7 +243,7 @@ def test_normalized_killlists_do_not_duplicate_same_source_assignments():
     assert s2_oktopaul_meistagrif["kills"] == "11"
 
 
-def test_s10_killlist_uses_playoff_table_with_deaths():
+def test_s10_killlist_uses_playoff_table_usage_column_as_appearances():
     output = normalize_all(Path("data"))
     rows = [
         row
@@ -257,8 +257,14 @@ def test_s10_killlist_uses_playoff_table_with_deaths():
     ramoth = next(row for row in rows if row["pokemon"] == "Ramoth" and row["trainer"] == "Minetube")
     assert ramoth["appearances"] == "2"
     assert ramoth["kills"] == "3"
-    assert ramoth["deaths"] == "2"
-    assert ramoth["differential"] == "1"
+    assert ramoth["deaths"] is None
+    assert ramoth["differential"] is None
+
+    maskagato = next(row for row in rows if row["pokemon"] == "Maskagato" and row["trainer"] == "Minetube")
+    assert maskagato["appearances"] == "11"
+    assert maskagato["kills"] == "9"
+    assert maskagato["deaths"] is None
+    assert maskagato["differential"] is None
 
 
 def test_s10_killlist_keeps_regular_season_rows_for_roster_context():

@@ -2764,8 +2764,9 @@ def _s10_killlist(season_id: str, table: dict[str, Any], division: str, playoff:
     for raw in table["rows"]:
         padded = raw + [""] * 60
         if playoff:
-            pokemon, trainer, kills, deaths, team = padded[2], padded[4], padded[23], padded[24], None
-            appearances = _filled_cell_count(padded[6:22])
+            pokemon, trainer, kills, team = padded[2], padded[4], padded[23], None
+            appearances = _number(padded[24]) or _filled_cell_count(padded[6:22])
+            deaths = None
         else:
             pokemon, trainer, kills, deaths, team = padded[3], padded[5], padded[21], None, padded[23]
             appearances = _filled_cell_count(padded[8:21])
