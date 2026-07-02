@@ -145,6 +145,40 @@ export const MATCH_HIGHLIGHT_COLUMNS = [
   "source",
 ];
 
+export const VIDEO_ARCHIVE_COLUMNS = [
+  "season",
+  "title",
+  "division",
+  "video_type",
+  "stage",
+  "detected_week",
+  "published_at",
+  "perspective_person",
+  "opponent",
+  "channel",
+  "match_status",
+  "confidence",
+  "confidence_tier",
+  "match_basis",
+  "confidence_explanation",
+  "match_id",
+  "view_count",
+  "views_trend_multiplier",
+  "views_expected",
+  "views_week_factor",
+  "views_trend_percentile",
+  "views_trend_z_score",
+  "views_trend_highlight_reasons",
+  "views_multiplier",
+  "views_percentile",
+  "views_z_score",
+  "video_highlight_reasons",
+  "like_count",
+  "comment_count",
+  "duration_seconds",
+  "stats_fetched_at",
+];
+
 export const COLUMN_PROFILE_KEYS = ["compact", "full"];
 
 const COMPACT_COLUMNS = new Set([

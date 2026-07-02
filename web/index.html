@@ -82,9 +82,18 @@
 
       <section class="toolbar">
         <label>
-          <span data-i18n="filters.dataMode">Datenbasis</span>
+          <span class="toolbar-label-with-help">
+            <span data-i18n="filters.dataMode">Datenbasis</span>
+            <span
+              class="column-help toolbar-help"
+              title="Die Gesamtübersicht enthält nur Liga 1/primäre Tabellen. Liga 2 wird getrennt geführt, weil ihre Ergebnisse im Gesamtkontext schwer vergleichbar sind."
+              aria-label="Die Gesamtübersicht enthält nur Liga 1/primäre Tabellen. Liga 2 wird getrennt geführt, weil ihre Ergebnisse im Gesamtkontext schwer vergleichbar sind."
+              data-i18n-title="filters.dataModeHint"
+              data-i18n-aria-label="filters.dataModeHint"
+            >i</span>
+          </span>
           <select id="data-mode-filter">
-            <option value="primary" data-i18n="dataModes.primary">Gesamtübersicht</option>
+            <option value="primary" data-i18n="dataModes.primary">Gesamtübersicht (ohne Liga 2)</option>
             <option value="all" data-i18n="dataModes.all">Gesamtübersicht + Liga 2</option>
             <option value="league2" data-i18n="dataModes.leagueTwo">Liga 2</option>
           </select>

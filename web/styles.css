@@ -411,6 +411,18 @@ label {
   text-transform: none;
 }
 
+.toolbar-label-with-help {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.toolbar-help {
+  flex: 0 0 auto;
+  transform: translateY(-1px);
+}
+
 select,
 input {
   width: 100%;
@@ -1349,9 +1361,10 @@ input:focus,
 }
 
 .table-wrap {
+  position: relative;
   max-width: 100%;
   min-width: 0;
-  overflow: auto;
+  overflow: hidden;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
@@ -1361,18 +1374,61 @@ input:focus,
 .table-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  padding: 8px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 4px 8px;
   border-bottom: 1px solid var(--line);
   background:
     linear-gradient(90deg, rgb(17 191 243 / 8%), transparent 52%),
     var(--surface-soft);
 }
 
+.table-action-group,
+.table-scroll-hint {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.table-scroll-hint {
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.2;
+}
+
+.table-scroll-hint[hidden] {
+  display: none;
+}
+
+.table-scroll-label {
+  white-space: nowrap;
+}
+
+.table-scroll-controls {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.table-scroll-button:disabled {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--surface-soft) 84%, var(--surface));
+  color: var(--muted);
+}
+
 .table-action {
   display: inline-flex;
   align-items: center;
-  min-height: 34px;
+  justify-content: center;
+  min-height: 28px;
   border: 1px solid var(--line);
   border-radius: 6px;
   background: var(--surface);
@@ -1381,8 +1437,16 @@ input:focus,
   font: inherit;
   font-size: 12px;
   font-weight: 850;
-  padding: 6px 10px;
+  line-height: 1.2;
+  padding: 3px 8px;
   text-decoration: none;
+}
+
+.table-action.table-scroll-button {
+  min-width: 76px;
+  min-height: 26px;
+  border-color: transparent;
+  padding: 3px 7px;
 }
 
 .table-action:hover,
@@ -1392,10 +1456,64 @@ input:focus,
   box-shadow: 0 0 0 3px rgb(255 122 26 / 14%);
 }
 
+.table-action:disabled {
+  cursor: default;
+  opacity: 0.48;
+  box-shadow: none;
+}
+
 .table-action.is-active {
   background: var(--accent-warm);
   border-color: var(--accent-warm);
   color: #17110b;
+}
+
+.table-host {
+  position: relative;
+  height: clamp(480px, 68vh, 880px);
+  min-height: 420px;
+  max-height: 1120px;
+  min-width: 0;
+  overflow: hidden;
+  resize: vertical;
+}
+
+.table-host::after {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 14px;
+  height: 14px;
+  border-right: 2px solid color-mix(in srgb, var(--muted) 48%, transparent);
+  border-bottom: 2px solid color-mix(in srgb, var(--muted) 48%, transparent);
+  content: "";
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.table-tabulator {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.table-host.is-native-table {
+  overflow: auto;
+}
+
+.table-wrap.is-short-table .table-host {
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  resize: none;
+}
+
+.table-wrap.is-short-table .table-host::after {
+  display: none;
+}
+
+.table-wrap.has-horizontal-overflow .table-host {
+  box-shadow: inset -28px 0 22px -24px color-mix(in srgb, var(--ink) 28%, transparent);
 }
 
 .table-select-filter {
@@ -2480,6 +2598,44 @@ tbody tr:hover {
   padding: 5px 7px;
 }
 
+.tabulator .table-sticky-identity-header,
+.tabulator .table-sticky-identity-cell {
+  position: sticky;
+  left: 0;
+  box-shadow: 1px 0 0 var(--line), 14px 0 18px -18px color-mix(in srgb, var(--ink) 36%, transparent);
+}
+
+.tabulator .table-sticky-identity-header {
+  z-index: 8;
+  background: var(--table-header);
+}
+
+.tabulator .tabulator-header .table-sticky-identity-header {
+  position: sticky;
+  left: 0;
+  z-index: 8;
+  background: var(--table-header);
+}
+
+.tabulator .table-sticky-identity-cell {
+  z-index: 3;
+  background: inherit;
+  font-weight: 800;
+}
+
+.tabulator .table-sticky-identity-cell[tabulator-field="title"] {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tabulator .table-sticky-identity-cell[tabulator-field="title"] a {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .tabulator .tabulator-row {
   background: var(--surface);
   border-bottom: 1px solid var(--cell-line);
@@ -2505,22 +2661,92 @@ tbody tr:hover {
 }
 
 .tabulator .tabulator-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  min-height: 40px;
+  padding: 5px 8px;
   border-top: 1px solid var(--line);
-  background: var(--surface-soft);
+  background: color-mix(in srgb, var(--surface-soft) 72%, var(--surface));
+}
+
+.tabulator .tabulator-footer-contents {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  min-width: 0;
+}
+
+.tabulator .tabulator-paginator {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 4px;
+  width: 100%;
 }
 
 .tabulator .tabulator-paginator label {
   display: inline;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
 }
 
-.tabulator .tabulator-page {
-  border-radius: 6px;
-  border-color: var(--line);
+.tabulator .tabulator-pages {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.tabulator .tabulator-page.active {
-  background: var(--header-soft);
-  color: #ffffff;
+.tabulator .tabulator-footer .tabulator-page-size {
+  min-height: 28px;
+  max-width: 158px;
+  border: 1px solid transparent;
+  border-color: transparent;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--surface) 82%, var(--surface-soft));
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 3px 7px;
+}
+
+.tabulator .tabulator-footer .tabulator-page {
+  min-height: 28px;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 850;
+  padding: 3px 7px;
+}
+
+.tabulator .tabulator-footer .tabulator-page.active {
+  background: color-mix(in srgb, var(--header-soft) 14%, var(--surface));
+  color: var(--accent-strong);
+  box-shadow: inset 0 -2px 0 var(--header-soft);
+}
+
+.tabulator .tabulator-footer .tabulator-page:not(:disabled):hover,
+.tabulator .tabulator-footer .tabulator-page:not(:disabled):focus-visible,
+.tabulator .tabulator-footer .tabulator-page-size:focus-visible {
+  border-color: color-mix(in srgb, var(--header-soft) 34%, transparent);
+  background: var(--surface);
+  color: var(--accent-strong);
+  box-shadow: none;
+}
+
+.tabulator .tabulator-footer .tabulator-page:disabled {
+  cursor: default;
+  opacity: 0.48;
+  box-shadow: none;
 }
 
 .muted {
@@ -3075,6 +3301,56 @@ tbody tr:hover {
 
   .toolbar-hint {
     display: none;
+  }
+
+  .table-actions {
+    flex-wrap: nowrap;
+    gap: 5px;
+  }
+
+  .table-action-group,
+  .table-scroll-hint {
+    flex-wrap: nowrap;
+  }
+
+  .table-scroll-label {
+    display: none;
+  }
+
+  .table-action.table-scroll-button {
+    min-width: 74px;
+    padding-inline: 6px;
+  }
+
+  .tabulator .tabulator-footer .tabulator-page[data-page="first"],
+  .tabulator .tabulator-footer .tabulator-page[data-page="last"] {
+    display: none;
+  }
+
+  .tabulator .tabulator-footer .tabulator-page-size {
+    max-width: 76px;
+  }
+
+  .tabulator .tabulator-footer .tabulator-page[data-page="prev"],
+  .tabulator .tabulator-footer .tabulator-page[data-page="next"] {
+    width: 28px;
+    min-width: 28px;
+    padding-inline: 0;
+    font-size: 0;
+  }
+
+  .tabulator .tabulator-footer .tabulator-page[data-page="prev"]::after {
+    content: "<";
+    font-size: 13px;
+  }
+
+  .tabulator .tabulator-footer .tabulator-page[data-page="next"]::after {
+    content: ">";
+    font-size: 13px;
+  }
+
+  .tabulator .tabulator-paginator {
+    gap: 3px;
   }
 
   .compact-filter-panel > summary {

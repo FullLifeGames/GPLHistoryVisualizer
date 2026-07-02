@@ -24,6 +24,7 @@ import {
   TABLE_HISTORY_COLUMNS,
   TEAM_ROSTER_COLUMNS,
   TEAM_ROSTER_POKEMON_COLUMNS,
+  VIDEO_ARCHIVE_COLUMNS,
 } from "./table_columns.js";
 import { tableHeaderFilterConfig } from "./table_filters.js";
 import { textSorter, weekSortValue } from "./table_sort.js";
@@ -244,6 +245,9 @@ const cinemaOrderFilter = document.querySelector("#cinema-order-filter");
 const cinemaSearchFilter = document.querySelector("#cinema-search-filter");
 const cinemaRandomButton = document.querySelector("#cinema-random-button");
 const tableInstances = new Map();
+const tableCleanups = new Map();
+const LINKABLE_SEASON_COLUMNS = new Set(["season", "season_id", "season_list", "title_seasons", "best_season"]);
+const LINKABLE_PERSON_COLUMNS = new Set(["name", "person", "trainer", "trainers", "player_a", "player_b", "winner", "opponent", "perspective_person", "peak_perspective", "champion"]);
 
 init();
 
@@ -746,6 +750,12 @@ function applyLanguage() {
   });
   document.querySelectorAll("[data-i18n-placeholder]").forEach((element) => {
     element.setAttribute("placeholder", t(state.language, element.dataset.i18nPlaceholder));
+  });
+  document.querySelectorAll("[data-i18n-title]").forEach((element) => {
+    element.setAttribute("title", t(state.language, element.dataset.i18nTitle));
+  });
+  document.querySelectorAll("[data-i18n-aria-label]").forEach((element) => {
+    element.setAttribute("aria-label", t(state.language, element.dataset.i18nAriaLabel));
   });
 
   languageToggle.textContent = t(state.language, "controls.language");
@@ -1531,8 +1541,8 @@ function pokemonSprite(name) {
   return `<span class="pokemon-sprite-frame">${fallback}</span>`;
 }
 
-function seasonLink(seasonId) {
-  return `<a class="link-button" href="${escapeAttr(seasonRouteHash(seasonId))}">${escapeHtml(seasonDisplay(seasonId))}</a>`;
+function seasonLink(seasonId, label = seasonDisplay(seasonId)) {
+  return `<a class="link-button" href="${escapeAttr(seasonRouteHash(seasonId))}">${escapeHtml(label)}</a>`;
 }
 
 function rosterGroupKeyFromRow(row) {
@@ -3351,11 +3361,12 @@ function renderVideoArchive() {
   renderTable(
     "#video-archive-table",
     rows,
-    ["season", "division", "video_type", "stage", "detected_week", "published_at", "perspective_person", "opponent", "title", "channel", "match_status", "confidence", "confidence_tier", "match_basis", "confidence_explanation", "match_id", "view_count", "views_trend_multiplier", "views_expected", "views_week_factor", "views_trend_percentile", "views_trend_z_score", "views_trend_highlight_reasons", "views_multiplier", "views_percentile", "views_z_score", "video_highlight_reasons", "like_count", "comment_count", "duration_seconds", "stats_fetched_at"],
+    VIDEO_ARCHIVE_COLUMNS,
     ["title"],
     {
       filename: "gpl-video-archive.csv",
       extraActions: [{ label: t(state.language, "actions.videoUrls"), onClick: downloadAllVideoUrls }],
+      stickyColumn: "title",
     },
   );
 }
@@ -4373,26 +4384,130 @@ function matchupSelectKey(value) {
   return normalizedKey(String(value ?? "").replace(/^person_/, "").replaceAll("_", " "));
 }
 
+function htmlColumnSet(html) {
+  if (html instanceof Set) {
+    return new Set(html);
+  }
+  return new Set(html === true ? ["video"] : Array.isArray(html) ? html : []);
+}
+
+function tableHtmlColumns(columns, explicitHtmlColumns) {
+  const htmlColumns = new Set(explicitHtmlColumns);
+  columns.forEach((column) => {
+    if (LINKABLE_SEASON_COLUMNS.has(column) || LINKABLE_PERSON_COLUMNS.has(column)) {
+      htmlColumns.add(column);
+    }
+  });
+  return htmlColumns;
+}
+
+function decorateTableRows(rows, columns, explicitHtmlColumns) {
+  return rows.map((row) => {
+    const decorated = { ...row };
+    columns.forEach((column) => {
+      const value = decorated[column];
+      if (cellContainsHtml(value)) {
+        return;
+      }
+      const linked = linkableTableCell(column, value);
+      if (linked !== null) {
+        decorated[column] = linked;
+      }
+    });
+    return decorated;
+  });
+}
+
+function linkableTableCell(column, value) {
+  if (value === null || value === undefined || value === "") {
+    return value ?? "";
+  }
+  if (LINKABLE_SEASON_COLUMNS.has(column)) {
+    return linkedSeasonListCell(value);
+  }
+  if (LINKABLE_PERSON_COLUMNS.has(column)) {
+    return linkedPersonListCell(value);
+  }
+  return null;
+}
+
+function linkedSeasonListCell(value) {
+  return splitLinkList(value)
+    .map((item) => {
+      const seasonId = seasonIdFromLabel(item);
+      return seasonId ? seasonLink(seasonId, item) : escapeHtml(item);
+    })
+    .join(", ");
+}
+
+function linkedPersonListCell(value) {
+  return splitLinkList(value)
+    .map((item) => {
+      const personId = knownPersonIdForName(item);
+      return personId ? personLink(personId, personDisplayName(item)) : escapeHtml(item);
+    })
+    .join(", ");
+}
+
+function splitLinkList(value) {
+  return String(value ?? "")
+    .split(/[,;]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function seasonIdFromLabel(value) {
+  const text = String(value ?? "").trim();
+  const match = text.match(/^season_0*(\d+)$/i) || text.match(/^(?:s|saison|season)\s*0*(\d+)$/i);
+  if (!match) {
+    return "";
+  }
+  return `season_${String(Number(match[1])).padStart(3, "0")}`;
+}
+
+function knownPersonIdForName(name) {
+  const personId = personIdForName(name);
+  return (state.data.people ?? []).some((person) => person.person_id === personId) ? personId : "";
+}
+
+function cellContainsHtml(value) {
+  return String(value ?? "").includes("<");
+}
+
 function renderTable(selector, rows, columns, html = false, options = {}) {
   const target = document.querySelector(selector);
   destroyTable(selector);
+  target.classList.remove("has-horizontal-overflow", "has-horizontal-scroll", "is-short-table");
   if (!rows.length) {
     target.innerHTML = `<p class="empty">${escapeHtml(t(state.language, "empty.table"))}</p>`;
     return;
   }
   const extraActions = options.extraActions ?? [];
   const visibleColumns = columnsForProfile(columns, state.columnProfile);
+  const explicitHtmlColumns = htmlColumnSet(html);
+  const displayRows = decorateTableRows(rows, visibleColumns, explicitHtmlColumns);
+  const htmlColumns = tableHtmlColumns(visibleColumns, explicitHtmlColumns);
   target.dataset.columnProfile = state.columnProfile;
+  target.classList.toggle("is-short-table", rows.length <= 25);
   target.innerHTML = `
     <div class="table-actions">
-      <button class="table-action" type="button" data-table-export>${escapeHtml(t(state.language, "actions.exportCsv"))}</button>
-      ${extraActions.map((action, index) => `<button class="table-action" type="button" data-extra-action="${index}">${escapeHtml(action.label)}</button>`).join("")}
+      <div class="table-action-group">
+        <button class="table-action" type="button" data-table-export>${escapeHtml(t(state.language, "actions.exportCsv"))}</button>
+        ${extraActions.map((action, index) => `<button class="table-action" type="button" data-extra-action="${index}">${escapeHtml(action.label)}</button>`).join("")}
+      </div>
+      <div class="table-scroll-hint" data-table-scroll-hint hidden>
+        <span class="table-scroll-label">${escapeHtml(t(state.language, "tableUx.moreColumns"))}</span>
+        <div class="table-scroll-controls" aria-label="${escapeAttr(t(state.language, "tableUx.moreColumns"))}">
+          <button class="table-action table-scroll-button" type="button" data-table-scroll-left>${escapeHtml(t(state.language, "tableUx.scrollLeft"))}</button>
+          <button class="table-action table-scroll-button" type="button" data-table-scroll-right>${escapeHtml(t(state.language, "tableUx.scrollRight"))}</button>
+        </div>
+      </div>
     </div>
     <div class="table-host"></div>
   `;
   const host = target.querySelector(".table-host");
   target.querySelector("[data-table-export]").addEventListener("click", () => {
-    downloadRowsAsCsv(options.filename || filenameForSelector(selector), rows, visibleColumns);
+    downloadRowsAsCsv(options.filename || filenameForSelector(selector), displayRows, visibleColumns);
   });
   target.querySelectorAll("[data-extra-action]").forEach((button) => {
     const action = extraActions[Number(button.dataset.extraAction)];
@@ -4400,30 +4515,45 @@ function renderTable(selector, rows, columns, html = false, options = {}) {
   });
 
   if (!window.Tabulator) {
-    host.innerHTML = tableHtml(rows, visibleColumns, html);
+    host.classList.add("is-native-table");
+    host.innerHTML = tableHtml(displayRows, visibleColumns, htmlColumns);
+    wireTableScrollAid(selector, target, host);
     return;
   }
 
-  const htmlColumns = new Set(html === true ? ["video"] : Array.isArray(html) ? html : []);
-  const tabulatorColumns = buildTabulatorColumns(visibleColumns, htmlColumns, rows);
-  appendHiddenSortColumns(tabulatorColumns, rows);
-  const table = new window.Tabulator(host, {
-    data: rows,
+  const stickyIdentity = stickyIdentityColumn(visibleColumns, options.stickyColumn);
+  const tabulatorColumns = buildTabulatorColumns(visibleColumns, htmlColumns, displayRows, stickyIdentity);
+  appendHiddenSortColumns(tabulatorColumns, displayRows);
+  const tableMount = document.createElement("div");
+  tableMount.className = "table-tabulator";
+  host.replaceChildren(tableMount);
+  const tableOptions = {
+    data: displayRows,
     columns: tabulatorColumns,
     layout: "fitDataStretch",
     locale: state.language,
     langs: TABULATOR_LANGS,
-    movableColumns: true,
+    movableColumns: false,
     pagination: "local",
-    paginationSize: 100,
-    paginationSizeSelector: [25, 50, 100, 250, true],
+    paginationSize: 25,
+    paginationSizeSelector: [25, 50, 100, true],
     placeholder: t(state.language, "empty.table"),
     initialSort: initialSort(visibleColumns),
-  });
+  };
+  if (rows.length > 25) {
+    tableOptions.height = "100%";
+  }
+  const table = new window.Tabulator(tableMount, tableOptions);
   tableInstances.set(selector, table);
+  wireTableScrollAid(selector, target, host, table, stickyIdentity);
 }
 
 function destroyTable(selector) {
+  const cleanup = tableCleanups.get(selector);
+  if (cleanup) {
+    cleanup();
+    tableCleanups.delete(selector);
+  }
   const table = tableInstances.get(selector);
   if (table) {
     table.destroy();
@@ -4431,9 +4561,11 @@ function destroyTable(selector) {
   }
 }
 
-function buildTabulatorColumns(columns, htmlColumns, rows = []) {
+function buildTabulatorColumns(columns, htmlColumns, rows = [], stickyIdentity = null) {
   return columns.map((column) => {
     const numeric = NUMERIC_COLUMNS.has(column);
+    const sticky = column === stickyIdentity;
+    const stickyWidth = stickyColumnWidth(column, stickyIdentity);
     const filterConfig = tableHeaderFilterConfig(column, rows, {
       allLabel: t(state.language, "filters.allValues"),
       placeholder: t(state.language, "filters.header"),
@@ -4450,8 +4582,141 @@ function buildTabulatorColumns(columns, htmlColumns, rows = []) {
       hozAlign: numeric ? "right" : "left",
       headerHozAlign: numeric ? "right" : "left",
       minWidth: minWidthFor(column),
+      ...(stickyWidth ? { width: stickyWidth, maxWidth: stickyWidth } : {}),
+      resizable: false,
+      cssClass: sticky ? "table-sticky-identity-cell" : "",
     };
   });
+}
+
+function stickyColumnWidth(column, stickyIdentity) {
+  if (column !== stickyIdentity) {
+    return null;
+  }
+  if (column === "title") {
+    return responsiveStickyTitleWidth();
+  }
+  return null;
+}
+
+function responsiveStickyTitleWidth() {
+  const viewportWidth = window.innerWidth || document.documentElement?.clientWidth || 1024;
+  if (viewportWidth <= 720) {
+    return Math.max(200, Math.min(240, Math.round(viewportWidth * 0.56)));
+  }
+  return 360;
+}
+
+function stickyIdentityColumn(columns, preferredColumn = "") {
+  if (preferredColumn && columns.includes(preferredColumn)) {
+    return preferredColumn;
+  }
+  const preferred = ["name", "person", "pokemon", "trainer", "team", "player_a", "opponent", "season", "week", "title", "review_file", "claim_subject"];
+  return (
+    preferred.find((column) => columns.includes(column)) ||
+    columns.find((column) => !NUMERIC_COLUMNS.has(column) && !["source", "video", "videos"].includes(column)) ||
+    columns[0] ||
+    null
+  );
+}
+
+function wireTableScrollAid(selector, target, host, table = null, stickyIdentity = null) {
+  const hint = target.querySelector("[data-table-scroll-hint]");
+  const scrollLeftButton = target.querySelector("[data-table-scroll-left]");
+  const scrollRightButton = target.querySelector("[data-table-scroll-right]");
+  if (!hint || !scrollLeftButton || !scrollRightButton) {
+    return;
+  }
+
+  let scrollElement = null;
+  let resizeObserver = null;
+  let tableReady = false;
+  const updateHint = () => {
+    const scroller = tableScrollElement(host);
+    if (!scroller) {
+      return;
+    }
+    const hasOverflow = scroller.scrollWidth > scroller.clientWidth + 4;
+    const canScrollLeft = hasOverflow && scroller.scrollLeft > 4;
+    const canScrollRight = hasOverflow && scroller.scrollLeft + scroller.clientWidth < scroller.scrollWidth - 4;
+    target.classList.toggle("has-horizontal-scroll", hasOverflow);
+    target.classList.toggle("has-horizontal-left", canScrollLeft);
+    target.classList.toggle("has-horizontal-overflow", canScrollRight);
+    hint.hidden = !hasOverflow;
+    scrollLeftButton.disabled = !canScrollLeft;
+    scrollRightButton.disabled = !canScrollRight;
+    syncStickyIdentityColumn(host, stickyIdentity);
+  };
+  const onScroll = () => updateHint();
+  const attachScrollElement = () => {
+    const nextElement = tableScrollElement(host);
+    if (nextElement && nextElement !== scrollElement) {
+      if (scrollElement) {
+        scrollElement.removeEventListener("scroll", onScroll);
+      }
+      scrollElement = nextElement;
+      scrollElement.addEventListener("scroll", onScroll, { passive: true });
+    }
+    updateHint();
+  };
+  const scrollByDirection = (direction) => {
+    const scroller = tableScrollElement(host);
+    if (!scroller) {
+      return;
+    }
+    scroller.scrollBy({
+      left: direction * Math.max(240, scroller.clientWidth * 0.85),
+      behavior: "smooth",
+    });
+  };
+  const scrollLeft = () => scrollByDirection(-1);
+  const scrollRight = () => scrollByDirection(1);
+
+  scrollLeftButton.addEventListener("click", scrollLeft);
+  scrollRightButton.addEventListener("click", scrollRight);
+  if (window.ResizeObserver) {
+    resizeObserver = new ResizeObserver(() => {
+      if (tableReady) {
+        table?.redraw?.(true);
+      }
+      attachScrollElement();
+    });
+    resizeObserver.observe(host);
+  }
+  const onTableBuilt = () => {
+    tableReady = true;
+    attachScrollElement();
+  };
+  table?.on?.("tableBuilt", onTableBuilt);
+  table?.on?.("renderComplete", updateHint);
+  setTimeout(attachScrollElement, 0);
+
+  tableCleanups.set(selector, () => {
+    scrollLeftButton.removeEventListener("click", scrollLeft);
+    scrollRightButton.removeEventListener("click", scrollRight);
+    if (scrollElement) {
+      scrollElement.removeEventListener("scroll", onScroll);
+    }
+    resizeObserver?.disconnect();
+    table?.off?.("tableBuilt", onTableBuilt);
+    table?.off?.("renderComplete", updateHint);
+  });
+}
+
+function syncStickyIdentityColumn(host, stickyIdentity) {
+  if (!stickyIdentity) {
+    return;
+  }
+  host.querySelectorAll(".table-sticky-identity-header").forEach((header) => header.classList.remove("table-sticky-identity-header"));
+  host.querySelectorAll(".tabulator-col").forEach((header) => {
+    if (header.getAttribute("tabulator-field") === stickyIdentity) {
+      header.classList.add("table-sticky-identity-header");
+    }
+  });
+}
+
+function tableScrollElement(host) {
+  return host.querySelector(".tabulator-tableholder") || host;
 }
 
 function columnHint(column) {
@@ -4669,7 +4934,7 @@ function minWidthFor(column) {
 }
 
 function tableHtml(rows, columns, html = false) {
-  const htmlColumns = new Set(html === true ? ["video"] : Array.isArray(html) ? html : []);
+  const htmlColumns = htmlColumnSet(html);
   return `
     <table>
       <thead><tr>${columns.map((column) => `<th${columnHint(column) ? ` title="${escapeAttr(columnHint(column))}"` : ""}>${columnHeaderHtml(column)}</th>`).join("")}</tr></thead>

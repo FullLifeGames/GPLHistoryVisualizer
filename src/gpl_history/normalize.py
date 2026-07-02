@@ -1137,10 +1137,14 @@ def _s10_third_place_match_from_tables(tables: list[dict[str, Any]]) -> dict[str
     for pair in _s10_final_pairs(tables):
         pair_keys = {_canonical_name(pair["player_a"]), _canonical_name(pair["player_b"])}
         if pair_keys == loser_keys:
+            winner = None
+            if pair_keys == {"present", "minetube"}:
+                winner = "PresentLP"
             return {
                 "player_a": pair["player_a"],
                 "player_b": pair["player_b"],
-                "winner": None,
+                "winner": winner,
+                "status": "sheet_extracted_with_user_correction" if winner else "sheet_extracted",
                 "source_urls": _source_urls_for_titles(tables, ["Ergebnisse"]),
             }
     return None
@@ -1944,7 +1948,7 @@ def _manual_playoff_matches(season_id: str, tables: list[dict[str, Any]], start_
                     player_b=third_place["player_b"],
                     winner=third_place["winner"],
                     source_url=third_place["source_urls"],
-                    status="sheet_extracted",
+                    status=third_place.get("status") or "sheet_extracted",
                 )
             )
         if final:

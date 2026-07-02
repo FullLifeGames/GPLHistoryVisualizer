@@ -72,6 +72,7 @@ export const TRANSLATIONS = {
       search: "Suche",
       searchPlaceholder: "Bene S4, RegiBang S4",
       searchHint: "Leerzeichen = UND, Komma = ODER",
+      dataModeHint: "Die Gesamtübersicht enthält nur Liga 1/primäre Tabellen. Liga 2 wird getrennt geführt, weil ihre Ergebnisse im Gesamtkontext schwer vergleichbar sind.",
       header: "Filtern",
       allValues: "Alle",
     },
@@ -290,9 +291,14 @@ export const TRANSLATIONS = {
       },
     },
     dataModes: {
-      primary: "Gesamtübersicht",
+      primary: "Gesamtübersicht (ohne Liga 2)",
       all: "Gesamtübersicht + Liga 2",
       leagueTwo: "Liga 2",
+    },
+    tableUx: {
+      moreColumns: "Weitere Spalten rechts",
+      scrollLeft: "Nach links",
+      scrollRight: "Nach rechts",
     },
     columnHints: {
       rating: "Bayes Rating: konservativer Beta(6,6)-Posterior. Remis zählen halb, kleine Samples bekommen einen Unsicherheitsabzug.",
@@ -347,6 +353,7 @@ export const TRANSLATIONS = {
     statuses: {
       raw_collected: "Rohdaten",
       sheet_extracted: "Sheet",
+      sheet_extracted_with_user_correction: "Sheet + Korrektur",
       sheet_or_video_extracted: "Sheet/Video",
       source_evidenced: "belegt",
       source_video_only: "nur Video",
@@ -670,6 +677,7 @@ export const TRANSLATIONS = {
       search: "Search",
       searchPlaceholder: "Bene S4, RegiBang S4",
       searchHint: "spaces = AND, comma = OR",
+      dataModeHint: "Overall contains only League 1/primary tables. League 2 is kept separate because its results are difficult to compare in the overall context.",
       header: "Filter",
       allValues: "All",
     },
@@ -842,9 +850,14 @@ export const TRANSLATIONS = {
       },
     },
     dataModes: {
-      primary: "Overall",
+      primary: "Overall (without League 2)",
       all: "Overall + League 2",
       leagueTwo: "League 2",
+    },
+    tableUx: {
+      moreColumns: "More columns to the right",
+      scrollLeft: "Scroll left",
+      scrollRight: "Scroll right",
     },
     columnHints: {
       rating: "Bayes rating: conservative Beta(6,6) posterior. Draws count half, small samples get an uncertainty penalty.",
@@ -945,6 +958,7 @@ export const TRANSLATIONS = {
     statuses: {
       raw_collected: "Raw",
       sheet_extracted: "Sheet",
+      sheet_extracted_with_user_correction: "Sheet + correction",
       sheet_or_video_extracted: "Sheet/Video",
       source_evidenced: "sourced",
       source_video_only: "video only",

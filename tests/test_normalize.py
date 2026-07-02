@@ -512,7 +512,10 @@ def test_s10_regular_matches_keep_results_sheet_spieltag_context():
     playoff_by_pair = {(_canonical_name(row["player_a"]), _canonical_name(row["player_b"])): row for row in playoff_rows}
     assert playoff_by_pair[("raizor", "minetube")]["week"] == "Halbfinale"
     assert playoff_by_pair[("present", "minetube")]["week"] == "Spiel um Platz 3"
-    assert playoff_by_pair[("present", "minetube")]["winner"] is None
+    assert playoff_by_pair[("present", "minetube")]["winner"] == "PresentLP"
+    assert playoff_by_pair[("present", "minetube")]["score_a"] in {None, ""}
+    assert playoff_by_pair[("present", "minetube")]["score_b"] in {None, ""}
+    assert playoff_by_pair[("present", "minetube")]["data_status"] == "sheet_extracted_with_user_correction"
 
 
 def test_s1_week_21_fnupagladi_prekani_manual_match_is_available_for_video_mapping():

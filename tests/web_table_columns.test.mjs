@@ -11,6 +11,7 @@ import {
   TABLE_HISTORY_COLUMNS,
   TEAM_ROSTER_COLUMNS,
   TEAM_ROSTER_POKEMON_COLUMNS,
+  VIDEO_ARCHIVE_COLUMNS,
   columnsForProfile,
 } from "../web/table_columns.js";
 
@@ -130,6 +131,7 @@ assert.deepEqual(columnsForProfile(ALL_TIME_COLUMNS, "full"), ALL_TIME_COLUMNS);
 
 const videoColumns = [
   "season",
+  "title",
   "division",
   "video_type",
   "stage",
@@ -137,7 +139,6 @@ const videoColumns = [
   "published_at",
   "perspective_person",
   "opponent",
-  "title",
   "channel",
   "match_status",
   "confidence",
@@ -146,8 +147,10 @@ const videoColumns = [
   "confidence_explanation",
   "match_id",
 ];
+assert.deepEqual(VIDEO_ARCHIVE_COLUMNS.slice(0, 8), ["season", "title", "division", "video_type", "stage", "detected_week", "published_at", "perspective_person"]);
 assert.deepEqual(columnsForProfile(videoColumns, "compact"), [
   "season",
+  "title",
   "division",
   "video_type",
   "stage",
@@ -155,7 +158,6 @@ assert.deepEqual(columnsForProfile(videoColumns, "compact"), [
   "published_at",
   "perspective_person",
   "opponent",
-  "title",
   "match_status",
 ]);
 assert.deepEqual(columnsForProfile(videoColumns, "sources"), videoColumns);
