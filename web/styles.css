@@ -3537,11 +3537,30 @@ tbody tr:hover {
   background: var(--surface);
 }
 
+.zeitreise-canvas {
+  position: relative;
+}
+
 .zeitreise-canvas svg {
   display: block;
   width: 100%;
   height: auto;
   overflow: visible;
+}
+
+/* The Elo lines are pre-rendered onto a canvas below the SVG overlay; the
+   overlay carries axis, markers, playhead, labels and the pointer surface. */
+.zeitreise-elo-screen {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.zeitreise-elo-overlay {
+  position: relative;
+  z-index: 1;
 }
 
 /* Series colour follows the entity, never its current rank. */
@@ -3571,6 +3590,22 @@ tbody tr:hover {
    ninth categorical hue. */
 .zeitreise-line.is-dashed {
   stroke-dasharray: 7 4;
+}
+
+/* A user-picked person: their line rides on top of the canvas layers while
+   everything else is dimmed (the canvas layer dims via globalAlpha). */
+.zeitreise-line.is-highlight {
+  stroke: var(--accent-strong);
+  stroke-width: 3;
+}
+
+.zeitreise-dot.is-highlight {
+  fill: var(--accent-strong);
+}
+
+.zeitreise-elo-overlay .is-dimmed .zeitreise-dot:not(.is-current),
+.zeitreise-elo-overlay .is-dimmed .zeitreise-label:not(.is-current) {
+  opacity: 0.35;
 }
 
 .zeitreise-swatch.is-dashed {
@@ -3669,6 +3704,12 @@ tbody tr:hover {
   color: var(--muted);
 }
 
+/* display:flex would beat the UA [hidden] rule — the highlight picker only
+   exists on the Elo track. */
+.zeitreise-speed[hidden] {
+  display: none;
+}
+
 .zeitreise-legend {
   display: flex;
   flex-wrap: wrap;
@@ -3681,6 +3722,28 @@ tbody tr:hover {
   align-items: center;
   gap: 6px;
   color: var(--ink);
+}
+
+/* On the Elo track the legend chips are buttons: a click hides that line. */
+.zeitreise-legend-item.is-toggle {
+  padding: 2px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.zeitreise-legend-item.is-toggle:hover {
+  background: var(--table-header);
+}
+
+.zeitreise-legend-item.is-off {
+  opacity: 0.45;
+}
+
+.zeitreise-legend-item.is-off span:last-child {
+  text-decoration: line-through;
 }
 
 .zeitreise-swatch {

@@ -33,6 +33,8 @@ const state = {
   lastCardsKey: null,
   mode: "all",
   modelMode: null,
+  highlightKey: null,
+  hiddenLeads: new Set(),
 };
 
 const dom = {};
@@ -47,6 +49,9 @@ function cacheDom() {
   dom.speed = document.querySelector("#zeitreise-speed");
   dom.mode = document.querySelector("#zeitreise-mode");
   dom.tableView = document.querySelector("#zeitreise-table-view-body");
+  dom.tableViewDetails = document.querySelector("#zeitreise-table-view");
+  dom.highlightSelect = document.querySelector("#zeitreise-highlight");
+  dom.highlightLabel = document.querySelector("#zeitreise-highlight-label");
   dom.stage = document.querySelector(".zeitreise-stage");
 }
 
@@ -68,11 +73,24 @@ export function renderZeitreise(context) {
   }
 
   bindControls();
+  populateHighlightSelect();
   dom.scrubber.max = String(state.model.timeline.ticks.length - 1);
   measure();
   invalidateRender();
   drawTrack();
   syncControls();
+}
+
+// The dropdown lists everyone on the current data slice; picking a person
+// emphasises their line (clicking a line in the chart does the same).
+function populateHighlightSelect() {
+  if (!dom.highlightSelect || !state.model?.nameByKey) return;
+  if (state.highlightKey && !state.model.tracks?.has(state.highlightKey)) state.highlightKey = null;
+  const options = [...state.model.nameByKey.entries()]
+    .sort((a, b) => String(a[1]).localeCompare(String(b[1]), "de"))
+    .map(([key, name]) => `<option value="${escapeHtml(key)}">${escapeHtml(name)}</option>`);
+  dom.highlightSelect.innerHTML = `<option value="">–</option>${options.join("")}`;
+  dom.highlightSelect.value = state.highlightKey ?? "";
 }
 
 // Language, theme, data or size changed: throw away everything cached.
@@ -255,15 +273,41 @@ function bindControls() {
     });
   });
 
+  dom.highlightSelect?.addEventListener("change", () => {
+    state.highlightKey = dom.highlightSelect.value || null;
+    if (state.track === "elo") drawTrack();
+  });
+
+  // Legend chips on the Elo track toggle their line: hidden leads fall back
+  // to the grey ghost rendering until they are clicked back on.
+  dom.legend.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-lead-key]");
+    if (!button) return;
+    const key = button.dataset.leadKey;
+    if (state.hiddenLeads.has(key)) state.hiddenLeads.delete(key);
+    else state.hiddenLeads.add(key);
+    state.eloScene = null;
+    drawTrack();
+  });
+
+  // The elo table view renders lazily; catch up when it is opened.
+  dom.tableViewDetails?.addEventListener("toggle", () => {
+    if (dom.tableViewDetails.open) drawTrack();
+  });
+
   dom.stage.addEventListener("keydown", onKeydown);
   dom.stage.setAttribute("tabindex", "0");
 
-  globalThis.addEventListener("resize", () => {
+  const rebuildIfVisible = () => {
     if (!state.model || !document.querySelector("#view-zeitreise")?.classList.contains("is-active")) return;
     measure();
     invalidateRender();
     drawTrack();
-  });
+  };
+  globalThis.addEventListener("resize", rebuildIfVisible);
+  // The line colours are baked into the canvas layers, so a theme switch has
+  // to re-rasterise the scene.
+  new MutationObserver(rebuildIfVisible).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 }
 
 function onKeydown(event) {
@@ -344,6 +388,7 @@ function syncControls() {
   const translate = state.context.translate;
   dom.play.textContent = state.playing ? "❚❚" : "▶";
   dom.play.setAttribute("aria-label", translate(state.playing ? "zeitreise.pause" : "zeitreise.play"));
+  if (dom.highlightLabel) dom.highlightLabel.hidden = state.track !== "elo";
   dom.scrubber.value = String(Math.round(state.tick));
   const tick = state.model.timeline.ticks[clampTick(Math.round(state.tick))];
   dom.position.textContent = state.track === "meta" ? seasonLabel(tick?.seasonId ?? "") : tickLabel(tick);
@@ -404,40 +449,6 @@ function leadClasses(position) {
   return `viz-series-${((position - 1) % 8) + 1}${position > 8 ? " is-dashed" : ""}`;
 }
 
-function svgRoot() {
-  const d3 = globalThis.d3;
-  dom.canvas.innerHTML = "";
-  return d3
-    .select(dom.canvas)
-    .append("svg")
-    .attr("viewBox", `0 0 ${state.width} ${HEIGHT}`)
-    .attr("preserveAspectRatio", "xMidYMid meet")
-    .attr("role", "img");
-}
-
-function drawSeasonBands(svg, x) {
-  const bands = svg.append("g");
-  state.model.timeline.seasons.forEach((season, index) => {
-    if (index % 2 === 1) return;
-    bands
-      .append("rect")
-      .attr("class", "zeitreise-band")
-      .attr("x", x(season.firstTick))
-      .attr("y", MARGIN.top)
-      .attr("width", Math.max(1, x(season.lastTick) - x(season.firstTick)))
-      .attr("height", HEIGHT - MARGIN.top - MARGIN.bottom);
-  });
-  state.model.timeline.seasons.forEach((season) => {
-    bands
-      .append("text")
-      .attr("class", "zeitreise-season-label")
-      .attr("x", (x(season.firstTick) + x(season.lastTick)) / 2)
-      .attr("y", HEIGHT - MARGIN.bottom + 16)
-      .attr("text-anchor", "middle")
-      .text(seasonLabel(season.seasonId));
-  });
-}
-
 function interpolatedRating(points, tick) {
   let previous = null;
   for (const point of points) {
@@ -454,66 +465,120 @@ function interpolatedRating(points, tick) {
 
 /* -------------------------------------------------------------- Elo track */
 
-// The 69 curve paths, bands, grid and axis never change during playback, so
-// they are built once and cached; every frame only moves the clip rectangle,
-// the playhead and the eight labels. Rebuilding everything per frame is what
-// made playback stutter.
+function cssVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+// The 69 curve paths never change during playback, so they are rasterised
+// once onto offscreen canvases (bands+grid on one layer, lines on another).
+// Every frame is then two drawImage blits plus a handful of SVG overlay
+// updates. The previous approach — SVG paths behind an animated clip
+// rectangle — forced the browser to re-render every path each frame, which
+// is what made playback stutter even with a cached scene.
 function eloScene() {
   const cached = state.eloScene;
-  if (cached && cached.width === state.width && dom.canvas.firstElementChild === cached.node) return cached;
+  if (cached && cached.width === state.width && dom.canvas.firstElementChild === cached.screen) return cached;
 
   const d3 = globalThis.d3;
   const model = state.model;
-  const svg = svgRoot();
+  const dpr = Math.min(2, globalThis.devicePixelRatio || 1);
 
   const x = d3.scaleLinear().domain([0, model.timeline.ticks.length - 1]).range([MARGIN.left, state.width - MARGIN.right]);
   const y = d3.scaleLinear().domain(model.eloDomain).nice().range([HEIGHT - MARGIN.bottom, MARGIN.top]);
 
-  drawSeasonBands(svg, x);
+  const layer = () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(state.width * dpr);
+    canvas.height = Math.round(HEIGHT * dpr);
+    const context = canvas.getContext("2d");
+    context.scale(dpr, dpr);
+    return [canvas, context];
+  };
 
-  svg
-    .append("g")
-    .attr("class", "zeitreise-grid")
-    .selectAll("line")
-    .data(y.ticks(5))
-    .join("line")
-    .attr("x1", MARGIN.left)
-    .attr("x2", state.width - MARGIN.right)
-    .attr("y1", (value) => y(value))
-    .attr("y2", (value) => y(value));
+  // Colours are resolved from the CSS custom properties once per scene build;
+  // a theme switch invalidates the scene (see bindControls).
+  const [bg, bgContext] = layer();
+  bgContext.fillStyle = cssVar("--viz-band");
+  model.timeline.seasons.forEach((season, index) => {
+    if (index % 2 === 1) return;
+    bgContext.fillRect(x(season.firstTick), MARGIN.top, Math.max(1, x(season.lastTick) - x(season.firstTick)), HEIGHT - MARGIN.top - MARGIN.bottom);
+  });
+  bgContext.strokeStyle = cssVar("--viz-grid");
+  bgContext.lineWidth = 1;
+  for (const value of y.ticks(5)) {
+    bgContext.beginPath();
+    bgContext.moveTo(MARGIN.left, y(value));
+    bgContext.lineTo(state.width - MARGIN.right, y(value));
+    bgContext.stroke();
+  }
+
+  const [lines, linesContext] = layer();
+  const canvasLine = d3.line().curve(d3.curveMonotoneX).x((point) => x(point[0])).y((point) => y(point[1])).context(linesContext);
+  linesContext.lineCap = "round";
+  linesContext.lineJoin = "round";
+  // Leads switched off via the legend fall back to the ghost rendering.
+  linesContext.strokeStyle = cssVar("--viz-ghost");
+  linesContext.lineWidth = 1;
+  for (const [key, points] of model.tracks) {
+    if (model.leadSlot.has(key) && !state.hiddenLeads.has(key)) continue;
+    linesContext.beginPath();
+    canvasLine(points);
+    linesContext.stroke();
+  }
+  linesContext.lineWidth = 2;
+  const leads = [...model.tracks.entries()].filter(([key]) => model.leadSlot.has(key));
+  for (const [key, points] of leads) {
+    if (state.hiddenLeads.has(key)) continue;
+    const position = model.leadSlot.get(key);
+    linesContext.strokeStyle = cssVar(`--viz-${((position - 1) % 8) + 1}`);
+    linesContext.setLineDash(position > 8 ? [7, 4] : []);
+    linesContext.beginPath();
+    canvasLine(points);
+    linesContext.stroke();
+  }
+  linesContext.setLineDash([]);
+
+  // Visible stack: the canvas sits below a slim SVG overlay that carries the
+  // axis, season labels, highlight markers, the highlighted line, playhead,
+  // dots, name labels and the hover/click surface.
+  dom.canvas.innerHTML = "";
+  const screen = document.createElement("canvas");
+  screen.className = "zeitreise-elo-screen";
+  screen.width = bg.width;
+  screen.height = bg.height;
+  dom.canvas.appendChild(screen);
+
+  const svg = d3
+    .select(dom.canvas)
+    .append("svg")
+    .attr("class", "zeitreise-elo-overlay")
+    .attr("viewBox", `0 0 ${state.width} ${HEIGHT}`)
+    .attr("preserveAspectRatio", "xMidYMid meet")
+    .attr("role", "img");
+
+  state.model.timeline.seasons.forEach((season) => {
+    svg
+      .append("text")
+      .attr("class", "zeitreise-season-label")
+      .attr("x", (x(season.firstTick) + x(season.lastTick)) / 2)
+      .attr("y", HEIGHT - MARGIN.bottom + 16)
+      .attr("text-anchor", "middle")
+      .text(seasonLabel(season.seasonId));
+  });
 
   svg.append("g").attr("class", "zeitreise-axis").attr("transform", `translate(${MARGIN.left},0)`).call(d3.axisLeft(y).ticks(5).tickSize(0)).call((group) => group.select(".domain").remove());
 
-  const line = d3.line().curve(d3.curveMonotoneX).x((point) => x(point[0])).y((point) => y(point[1]));
-
+  // Only the few markers and the single highlighted line live behind the clip
+  // now — animating it is cheap.
   const clipId = "zeitreise-elo-clip";
   const clip = svg.append("clipPath").attr("id", clipId).append("rect").attr("x", 0).attr("y", 0).attr("width", 0).attr("height", HEIGHT);
-
-  const plot = svg.append("g").attr("clip-path", `url(#${clipId})`);
-  const ghosts = [...model.tracks.entries()].filter(([key]) => !model.leadSlot.has(key));
-  plot
-    .append("g")
-    .selectAll("path")
-    .data(ghosts)
-    .join("path")
-    .attr("class", "zeitreise-line is-ghost")
-    .attr("d", ([, points]) => line(points));
-
-  const leads = [...model.tracks.entries()].filter(([key]) => model.leadSlot.has(key));
-  plot
-    .append("g")
-    .selectAll("path")
-    .data(leads)
-    .join("path")
-    .attr("class", ([key]) => `zeitreise-line ${leadClasses(model.leadSlot.get(key))}`)
-    .attr("d", ([, points]) => line(points));
+  const revealed = svg.append("g").attr("clip-path", `url(#${clipId})`);
 
   // Highlight matchdays get a permanent marker on the axis line; the clip
   // reveals them as the playhead passes, and they stay. Native <title> gives
   // the match and the reason on hover.
-  const markers = plot.append("g");
   for (const [tickIndex, rows] of model.highlights) {
-    const marker = markers
+    const marker = revealed
       .append("text")
       .attr("class", "zeitreise-highlight-marker")
       .attr("x", x(tickIndex))
@@ -524,18 +589,62 @@ function eloScene() {
     marker.append("title").text(rows.map((row) => `${row.player_a} ${row.score || ""} ${row.player_b} — ${row.highlight_reasons || ""}`).join("\n"));
   }
 
+  const highlightPath = revealed.append("path").attr("class", "zeitreise-line is-highlight");
+
   const playhead = svg.append("line").attr("class", "zeitreise-playhead").attr("y1", MARGIN.top).attr("y2", HEIGHT - MARGIN.bottom);
   const labelGroup = svg.append("g");
 
-  const scene = { node: dom.canvas.firstElementChild, width: state.width, x, y, clip, playhead, labelGroup, leads, lastIntTick: -1 };
-  bindEloHover(svg, scene);
+  const scene = {
+    screen,
+    screenContext: screen.getContext("2d"),
+    bg,
+    lines,
+    dpr,
+    width: state.width,
+    x,
+    y,
+    clip,
+    playhead,
+    labelGroup,
+    leads,
+    highlightPath,
+    svgLine: d3.line().curve(d3.curveMonotoneX).x((point) => x(point[0])).y((point) => y(point[1])),
+    highlightKey: undefined,
+    lastRevealPx: -1,
+    lastIntTick: -1,
+    tableTick: -1,
+    tableRendered: false,
+  };
+  bindEloPointer(svg, scene);
   state.eloScene = scene;
   return scene;
 }
 
+// The nearest line to a pointer position, within 18px and left of the
+// playhead — shared by the hover tooltip and click-to-highlight. Only the
+// drawn part of a line counts: a rating conceptually carries forward after a
+// person's last match, but matching that invisible extension would hijack
+// clicks meant for the visible line crossing underneath (the phantom sits at
+// the retired player's label height).
+function nearestLine(scene, pointerX, pointerY) {
+  const model = state.model;
+  const tick = Math.max(0, Math.min(model.timeline.ticks.length - 1, scene.x.invert(pointerX)));
+  if (tick > state.tick) return null;
+  let best = null;
+  for (const [key, points] of model.tracks) {
+    if (points[0][0] > tick || points[points.length - 1][0] < tick - 0.5) continue;
+    const rating = interpolatedRating(points, Math.min(tick, points[points.length - 1][0]));
+    if (rating === null) continue;
+    const distance = Math.abs(scene.y(rating) - pointerY);
+    if (!best || distance < best.distance) best = { key, rating, distance, tick };
+  }
+  return best && best.distance <= 18 ? best : null;
+}
+
 // Hovering names any line, including the grey ones: every person's rating at
-// the hovered matchday, nearest line wins.
-function bindEloHover(svg, scene) {
+// the hovered matchday, nearest line wins. Clicking a line highlights that
+// person (clicking them again clears it).
+function bindEloPointer(svg, scene) {
   const tooltip = document.createElement("div");
   tooltip.className = "zeitreise-tooltip";
   tooltip.hidden = true;
@@ -545,24 +654,12 @@ function bindEloHover(svg, scene) {
   const model = state.model;
   svg.on("pointermove", (event) => {
     const [pointerX, pointerY] = globalThis.d3.pointer(event);
-    const tick = Math.max(0, Math.min(model.timeline.ticks.length - 1, scene.x.invert(pointerX)));
-    if (tick > state.tick) {
+    const best = nearestLine(scene, pointerX, pointerY);
+    if (!best) {
       tooltip.hidden = true;
       return;
     }
-    let best = null;
-    for (const [key, points] of model.tracks) {
-      if (points[0][0] > tick) continue;
-      const rating = interpolatedRating(points, Math.min(tick, points[points.length - 1][0]));
-      if (rating === null) continue;
-      const distance = Math.abs(scene.y(rating) - pointerY);
-      if (!best || distance < best.distance) best = { key, rating, distance };
-    }
-    if (!best || best.distance > 18) {
-      tooltip.hidden = true;
-      return;
-    }
-    const tickIndex = clampTick(Math.round(tick));
+    const tickIndex = clampTick(Math.round(best.tick));
     tooltip.innerHTML = `<strong>${escapeHtml(model.nameByKey.get(best.key) ?? "")}</strong><dl><dt>${escapeHtml(tickLabel(model.timeline.ticks[tickIndex]))}</dt><dd>${Math.round(best.rating)}</dd></dl>`;
     tooltip.hidden = false;
     const stageBox = dom.stage.getBoundingClientRect();
@@ -573,6 +670,14 @@ function bindEloHover(svg, scene) {
   svg.on("pointerleave", () => {
     tooltip.hidden = true;
   });
+  svg.on("click", (event) => {
+    const [pointerX, pointerY] = globalThis.d3.pointer(event);
+    const best = nearestLine(scene, pointerX, pointerY);
+    if (!best) return;
+    state.highlightKey = best.key === state.highlightKey ? null : best.key;
+    if (dom.highlightSelect) dom.highlightSelect.value = state.highlightKey ?? "";
+    drawTrack();
+  });
 }
 
 function drawElo() {
@@ -580,13 +685,41 @@ function drawElo() {
   const scene = eloScene();
   const { x, y } = scene;
 
+  // Reveal the pre-rendered lines up to the playhead: two blits, no path work.
+  // While a person is highlighted the whole line layer is dimmed — their own
+  // line rides on top at full strength via the SVG overlay path.
+  const dimmed = Boolean(state.highlightKey);
+  const revealPx = Math.round(Math.max(0, x(state.tick)) * scene.dpr);
+  if (revealPx !== scene.lastRevealPx || dimmed !== scene.lastDimmed) {
+    scene.lastRevealPx = revealPx;
+    scene.lastDimmed = dimmed;
+    const context = scene.screenContext;
+    context.clearRect(0, 0, scene.screen.width, scene.screen.height);
+    context.drawImage(scene.bg, 0, 0);
+    context.globalAlpha = dimmed ? 0.3 : 1;
+    if (revealPx > 0) context.drawImage(scene.lines, 0, 0, revealPx, scene.lines.height, 0, 0, revealPx, scene.lines.height);
+    context.globalAlpha = 1;
+  }
+
   scene.clip.attr("width", Math.max(0, x(state.tick)));
   scene.playhead.attr("x1", x(state.tick)).attr("x2", x(state.tick));
+
+  if (scene.highlightKey !== state.highlightKey) {
+    scene.highlightKey = state.highlightKey;
+    const points = state.highlightKey ? model.tracks.get(state.highlightKey) : null;
+    scene.highlightPath.attr("d", points ? scene.svgLine(points) : null);
+  }
 
   // Direct labels are mandatory relief: three light-mode slots sit below 3:1.
   // Each label sits at the end of its own line, which is the playhead while the
   // person is still active and their final matchday once they have stopped.
-  const placed = scene.leads
+  // Leads hidden via the legend lose their label; a highlighted person gets a
+  // dot and label even when they are not (or no longer) a coloured lead.
+  const labelKeys = scene.leads.filter(([key]) => !state.hiddenLeads.has(key));
+  if (state.highlightKey && model.tracks.has(state.highlightKey) && !labelKeys.some(([key]) => key === state.highlightKey)) {
+    labelKeys.push([state.highlightKey, model.tracks.get(state.highlightKey)]);
+  }
+  const placed = labelKeys
     .filter(([, points]) => points[0][0] <= state.tick)
     .map(([key, points]) => {
       const end = Math.min(state.tick, points[points.length - 1][0]);
@@ -609,11 +742,19 @@ function drawElo() {
     entry.text = text;
   }
 
+  const isCurrent = (entry) => (entry.key === state.highlightKey ? " is-current" : "");
+  const dotClasses = (entry) =>
+    (model.leadSlot.has(entry.key) && !state.hiddenLeads.has(entry.key)
+      ? `zeitreise-dot ${leadClasses(model.leadSlot.get(entry.key))}`
+      : "zeitreise-dot is-highlight") + isCurrent(entry);
+
+  scene.labelGroup.classed("is-dimmed", dimmed);
+
   scene.labelGroup
     .selectAll("circle")
     .data(placed, (entry) => entry.key)
     .join("circle")
-    .attr("class", (entry) => `zeitreise-dot ${leadClasses(model.leadSlot.get(entry.key))}`)
+    .attr("class", dotClasses)
     .attr("cx", (entry) => x(entry.end))
     .attr("cy", (entry) => y(entry.rating))
     .attr("r", 4);
@@ -622,7 +763,7 @@ function drawElo() {
     .selectAll("text")
     .data(placed, (entry) => entry.key)
     .join("text")
-    .attr("class", "zeitreise-label")
+    .attr("class", (entry) => `zeitreise-label${isCurrent(entry)}`)
     .attr("x", (entry) => x(entry.end) + 10)
     .attr("y", (entry) => entry.labelY + 4)
     .text((entry) => entry.text);
@@ -630,9 +771,19 @@ function drawElo() {
   const intTick = clampTick(Math.round(state.tick));
   if (intTick !== scene.lastIntTick) {
     scene.lastIntTick = intTick;
-    renderLegend(scene.leads.map(([key]) => ({ position: model.leadSlot.get(key), label: model.nameByKey.get(key) })));
+    renderLegend(
+      scene.leads.map(([key]) => ({ key, position: model.leadSlot.get(key), label: model.nameByKey.get(key) })),
+      { toggleable: true },
+    );
     dom.note.textContent = state.context.translate("zeitreise.eloNote");
-    renderEloTableView(intTick);
+    scene.tableTick = intTick;
+    scene.tableRendered = false;
+  }
+  // Building the 69-row table per matchday is wasted work while the <details>
+  // is closed; the toggle listener re-runs drawTrack to catch up.
+  if (!scene.tableRendered && dom.tableViewDetails?.open) {
+    renderEloTableView(scene.tableTick);
+    scene.tableRendered = true;
   }
 }
 
@@ -1011,9 +1162,14 @@ function renderHighlightCards() {
     .join("");
 }
 
-function renderLegend(entries) {
+function renderLegend(entries, { toggleable = false } = {}) {
   dom.legend.innerHTML = entries
-    .map((entry) => `<span class="zeitreise-legend-item"><span class="zeitreise-swatch ${leadClasses(entry.position ?? entry.slot)}"></span><span>${escapeHtml(entry.label ?? "")}</span></span>`)
+    .map((entry) => {
+      const swatch = `<span class="zeitreise-swatch ${leadClasses(entry.position ?? entry.slot)}"></span><span>${escapeHtml(entry.label ?? "")}</span>`;
+      if (!toggleable) return `<span class="zeitreise-legend-item">${swatch}</span>`;
+      const off = state.hiddenLeads.has(entry.key);
+      return `<button type="button" class="zeitreise-legend-item is-toggle${off ? " is-off" : ""}" data-lead-key="${escapeAttr(entry.key)}" aria-pressed="${String(!off)}">${swatch}</button>`;
+    })
     .join("");
 }
 
