@@ -701,7 +701,7 @@ def test_s10_regular_table_uses_direct_comparison_for_first_place():
     assert rows["PresentLP"]["rank"] == "2"
 
 
-def test_playoff_rows_are_available_for_s7_and_s10_tables_and_plan():
+def test_playoff_rows_exist_for_s10_but_not_for_s7():
     output = normalize_all(Path("data"))
     s7_standings = [
         row for row in output.standings if row["season_id"] == "season_007" and row["division"] == "Playoffs"
@@ -716,9 +716,14 @@ def test_playoff_rows_are_available_for_s7_and_s10_tables_and_plan():
         if row["season_id"] == "season_010" and row["division"] == "Playoffs" and row["week"] == "Finale"
     ]
 
-    assert s7_standings and s7_standings[0]["player_name"] == "Nestfloh"
-    assert s7_matches and s7_matches[0]["winner"] == "Nestfloh"
-    assert s7_matches[0]["data_status"] == "source_evidenced"
+    # S7 had no playoffs (participant-confirmed): the title came from rank 1 of
+    # the final table and must not appear as synthesized playoff rows.
+    assert s7_standings == []
+    assert s7_matches == []
+    s7_champions = [row for row in output.champions if row["season_id"] == "season_007"]
+    assert s7_champions and s7_champions[0]["champion_name"] == "Nestfloh"
+    assert s7_champions[0]["evidence_type"] == "final_standings_rank_1"
+
     assert any(row["player_name"] == "Bene" and row["rank"] == "1" for row in s10_standings)
     assert s10_final and s10_final[0]["winner"] == "Bene"
     assert s10_final[0]["data_status"] == "sheet_extracted"

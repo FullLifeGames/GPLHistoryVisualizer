@@ -845,20 +845,12 @@ def _season_standings(season_id: str, tables: list[dict[str, Any]]) -> list[dict
         )
         return rows
     if season_id == "season_007":
-        rows = _standard_standings_from_tables(
+        # S7 had no playoffs (participant-confirmed): the title went to rank 1
+        # of the final table. Do not synthesize a playoff standings row —
+        # champions.csv already carries the title via final_standings_rank_1.
+        return _standard_standings_from_tables(
             season_id, _tables_by_title(tables, "Tabelle"), division="Regular Season", primary=True
         )
-        rows.append(
-            _manual_playoff_standing(
-                season_id,
-                rank="1",
-                person_name="Nestfloh",
-                team_name="Flutschige Zäpfchen",
-                source_url=_source_urls_for_titles(tables, ["Tabelle", "Spielplan [Mit Spoilern]"]),
-                notes_status="source_evidenced",
-            )
-        )
-        return rows
     if season_id == "season_008":
         rows = []
         rows.extend(_standard_standings_from_tables(season_id, _tables_by_title(tables, "Tabelle L1"), "Liga 1", True))
@@ -1911,19 +1903,9 @@ def _replace_match_players(row: dict[str, Any], replacements: dict[str, str]) ->
 
 
 def _manual_playoff_matches(season_id: str, tables: list[dict[str, Any]], start_counter: int) -> list[dict[str, Any]]:
-    if season_id == "season_007":
-        return [
-            _manual_match_row(
-                season_id,
-                start_counter,
-                week="Playoffs",
-                player_a="Nestfloh",
-                player_b=None,
-                winner="Nestfloh",
-                source_url=_source_urls_for_titles(tables, ["Tabelle", "Spielplan [Mit Spoilern]"]),
-                status="source_evidenced",
-            )
-        ]
+    # S7 deliberately has no entry here: the season had no playoffs
+    # (participant-confirmed), and the opponent-less title row this used to
+    # synthesize kept showing up as a playoff that never happened.
     if season_id == "season_010":
         final = _s10_championship_final_from_tables(tables)
         third_place = _s10_third_place_match_from_tables(tables)
