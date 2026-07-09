@@ -508,21 +508,31 @@ function cinemaBattleSegmentOrder(row) {
 }
 
 function cinemaWeekOrder(row) {
-  const text = normalizedStatsKey([row.week, row.stage, row.division, row.title].filter(Boolean).join(" "));
   const weekNumber =
-    cinemaWeekNumber(row.week) ??
-    cinemaWeekNumber(row.detected_week) ??
-    cinemaWeekNumber([row.title, row.video_title].filter(Boolean).join(" "));
+    weekNumberFromValue(row.week) ??
+    weekNumberFromValue(row.detected_week) ??
+    weekNumberFromValue([row.title, row.video_title].filter(Boolean).join(" "));
   if (weekNumber !== null) return weekNumber;
-  if (text.includes("vorrunde")) return 100;
-  if (text.includes("viertel")) return 110;
-  if (text.includes("halb")) return 120;
-  if (text.includes("platz 3")) return 130;
-  if (text.includes("final")) return 140;
-  return row.stage_group === "playoffs" ? 150 : 999;
+  const text = normalizedStatsKey([row.week, row.stage, row.division, row.title].filter(Boolean).join(" "));
+  return weekPhaseOrder(text, row.stage_group === "playoffs");
 }
 
-function cinemaWeekNumber(value) {
+// Ladder order matters: "viertelfinale" and "halbfinale" both contain "final".
+const WEEK_PHASE_ORDER = [
+  ["vorrunde", 100],
+  ["viertel", 110],
+  ["halb", 120],
+  ["platz 3", 130],
+  ["final", 140],
+];
+
+function weekPhaseOrder(text, isPlayoffs) {
+  const phase = WEEK_PHASE_ORDER.find(([needle]) => text.includes(needle));
+  if (phase) return phase[1];
+  return isPlayoffs ? 150 : 999;
+}
+
+function weekNumberFromValue(value) {
   const raw = String(value ?? "").trim();
   if (!raw) return null;
   const directWeek = raw.match(/^\d+$/);
@@ -620,7 +630,9 @@ export function weightedRating(wins, losses, draws, priorRate = BAYES_PRIOR_RATE
   return value === null ? "" : value.toFixed(1);
 }
 
-export function eloRatings(matches = [], normalizeKey = normalizedStatsKey, { initialRating = 1500, kFactor = 32 } = {}) {
+// `onMatch(row, ratings)` fires after each counted match with the live rating
+// map, so callers can record a rating history without re-deriving the walk.
+export function eloRatings(matches = [], normalizeKey = normalizedStatsKey, { initialRating = 1500, kFactor = 32, onMatch = null } = {}) {
   const ratings = new Map();
 
   const player = (name) => {
@@ -673,6 +685,8 @@ export function eloRatings(matches = [], normalizeKey = normalizedStatsKey, { in
         left.draws += 1;
         right.draws += 1;
       }
+
+      if (onMatch) onMatch(row, ratings);
     });
 
   return [...ratings.values()]
@@ -694,7 +708,7 @@ function expectedEloScore(left, right) {
   return 1 / (1 + 10 ** ((right - left) / 400));
 }
 
-function compareMatchChronology(a, b) {
+export function compareMatchChronology(a, b) {
   return (
     seasonNumber(a.season_id) - seasonNumber(b.season_id) ||
     matchWeekOrder(a) - matchWeekOrder(b) ||
@@ -703,14 +717,13 @@ function compareMatchChronology(a, b) {
   );
 }
 
-function matchWeekOrder(row) {
-  const text = String(row.week ?? "").toLowerCase();
-  const match = text.match(/(\d+)\.\s*spieltag/);
-  if (match) return Number(match[1]);
-  if (text.includes("viertel")) return 100;
-  if (text.includes("halb")) return 110;
-  if (text.includes("final")) return 120;
-  return row.stage === "playoffs" ? 150 : 999;
+// Chronological rank of a match within its season. Mirrors `_week_sort` in
+// src/gpl_history/aggregates.py; both must agree or the Elo column in
+// person_all_time.csv drifts from what the app computes at runtime.
+export function matchWeekOrder(row) {
+  const weekNumber = weekNumberFromValue(row.week);
+  if (weekNumber !== null) return weekNumber;
+  return weekPhaseOrder(normalizedStatsKey(row.week), row.stage === "playoffs");
 }
 
 export function formatSeasonList(seasonIds = []) {
@@ -1211,7 +1224,7 @@ function killlistOwnerKeys(row) {
   ]);
 }
 
-function normalizedStatsKey(value) {
+export function normalizedStatsKey(value) {
   const folded = String(value ?? "")
     .toLowerCase()
     .normalize("NFD")

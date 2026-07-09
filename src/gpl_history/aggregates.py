@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from .normalize import _display_name as _normalized_display_name
+from .normalize import _fold_text, _week_number
 from .normalize import _person_id as _normalized_person_id
 
 PERSON_ALL_TIME_FIELDS = [
@@ -564,7 +565,7 @@ def season_storyline_rows(
 
 def _elo_by_person(matches: list[dict[str, str]], initial_rating: float = 1500, k_factor: float = 32) -> dict[str, float]:
     ratings: dict[str, float] = defaultdict(lambda: initial_rating)
-    for row in sorted(matches, key=lambda item: (_season_sort(item.get("season_id") or ""), _week_sort(item.get("week") or ""), item.get("match_id") or "")):
+    for row in sorted(matches, key=_match_chronology):
         if row.get("data_status") in {"not_available", "source_video_only"}:
             continue
         left = row.get("player_a") or ""
@@ -708,14 +709,39 @@ def _season_sort(value: str | None) -> tuple[int, str]:
     return (int(match.group(1)) if match else 999, str(value or ""))
 
 
-def _week_sort(value: str | None) -> tuple[int, str]:
-    text = str(value or "")
-    match = re.search(r"([0-9]+)", text)
-    if match:
-        return (int(match.group(1)), text)
-    if "final" in text.lower() or "finale" in text.lower():
-        return (999, text)
-    return (900, text)
+def _match_chronology(row: dict[str, str]) -> tuple[tuple[int, str], int, str]:
+    return (
+        _season_sort(row.get("season_id") or ""),
+        _week_sort(row.get("week"), row.get("stage")),
+        row.get("match_id") or "",
+    )
+
+
+# Ladder order matters: "viertelfinale" and "halbfinale" both contain "final".
+_WEEK_PHASE_ORDER = (
+    ("vorrunde", 100),
+    ("viertel", 110),
+    ("halb", 120),
+    ("platz 3", 130),
+    ("final", 140),
+)
+
+
+def _week_sort(week: str | None, stage: str | None = None) -> int:
+    """Chronological rank of a match within its season.
+
+    Mirrors ``matchWeekOrder`` in ``web/stats.js``; both must agree or the
+    Elo column in ``person_all_time.csv`` drifts from the value the web app
+    computes at runtime.
+    """
+    number = _week_number(week)
+    if number is not None:
+        return number
+    folded = _fold_text(str(week or "").lower())
+    for needle, order in _WEEK_PHASE_ORDER:
+        if needle in folded:
+            return order
+    return 150 if stage == "playoffs" else 999
 
 
 def _season_label(value: str | None) -> str:

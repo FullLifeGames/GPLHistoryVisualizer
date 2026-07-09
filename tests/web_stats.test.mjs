@@ -12,6 +12,7 @@ import {
   filterSourceClaims,
   formatSeasonList,
   isAnalysisSourceVideo,
+  matchWeekOrder,
   mergeSeasonLists,
   matchupOverview,
   missingDataRows,
@@ -1029,6 +1030,26 @@ assert.equal(displayNumber(""), "");
 assert.equal(killDifferential("20", "8"), 12);
 assert.equal(killDifferential("20", ""), 20);
 assert.equal(formatSeasonList(["season_010", "season_001", "season_002"]), "S1, S2, S10");
+
+// Both matchday spellings must resolve to the same rank. Seasons 1-9 write
+// "7. Spieltag", season 10 writes "Spieltag 7".
+assert.equal(matchWeekOrder({ week: "1. Spieltag - Sonntag der 14.09.2014 [12:00 -17:00]", stage: "regular_season" }), 1);
+assert.equal(matchWeekOrder({ week: "18. Spieltag – Sonntag der 18.01.2015", stage: "regular_season" }), 18);
+assert.equal(matchWeekOrder({ week: "Spieltag 1", stage: "regular_season" }), 1);
+assert.equal(matchWeekOrder({ week: "Spieltag 13", stage: "regular_season" }), 13);
+
+// Playoff rounds rank after every matchday, in the order they are played.
+// "Spiel um Platz 3" is played the day before the final (season 6: Sat/Sun).
+assert.equal(matchWeekOrder({ week: "Playoffs - Vorrunde - Sonntag der 07.07.2019", stage: "playoffs" }), 100);
+assert.equal(matchWeekOrder({ week: "Playoffs - Viertelfinale - Sonntag der 14.07.2019", stage: "playoffs" }), 110);
+assert.equal(matchWeekOrder({ week: "Halbfinale", stage: "playoffs" }), 120);
+assert.equal(matchWeekOrder({ week: "Playoffs - Spiel um Platz 3 - Samstag der 27.07.2019", stage: "playoffs" }), 130);
+assert.equal(matchWeekOrder({ week: "Playoffs - Finale - Sonntag der 28.07.2019", stage: "playoffs" }), 140);
+assert.equal(matchWeekOrder({ week: "Playoffs", stage: "playoffs" }), 150);
+assert.equal(matchWeekOrder({ week: "", stage: "regular_season" }), 999);
+
+// A date in the week label must never be mistaken for a matchday number.
+assert.ok(matchWeekOrder({ week: "Playoffs - Vorrunde - Sonntag der 07.07.2019", stage: "playoffs" }) > 99);
 
 assert.deepEqual(
   eloRatings(

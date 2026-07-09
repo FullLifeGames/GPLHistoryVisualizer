@@ -1,7 +1,32 @@
 import csv
 from pathlib import Path
 
-from gpl_history.aggregates import build_and_write_aggregates, person_all_time_rows, pokemon_all_time_rows
+from gpl_history.aggregates import _week_sort, build_and_write_aggregates, person_all_time_rows, pokemon_all_time_rows
+
+
+def test_week_sort_ranks_both_matchday_spellings_and_playoff_rounds():
+    # Seasons 1-9 write "7. Spieltag", season 10 writes "Spieltag 7".
+    assert _week_sort("1. Spieltag - Sonntag der 14.09.2014 [12:00 -17:00]", "regular_season") == 1
+    assert _week_sort("18. Spieltag – Sonntag der 18.01.2015", "regular_season") == 18
+    assert _week_sort("Spieltag 1", "regular_season") == 1
+    assert _week_sort("Spieltag 13", "regular_season") == 13
+
+    # Playoff rounds rank after every matchday, in the order they are played.
+    assert _week_sort("Playoffs - Vorrunde - Sonntag der 07.07.2019", "playoffs") == 100
+    assert _week_sort("Playoffs - Viertelfinale - Sonntag der 14.07.2019", "playoffs") == 110
+    assert _week_sort("Halbfinale", "playoffs") == 120
+    assert _week_sort("Playoffs - Spiel um Platz 3 - Samstag der 27.07.2019", "playoffs") == 130
+    assert _week_sort("Playoffs - Finale - Sonntag der 28.07.2019", "playoffs") == 140
+    assert _week_sort("Playoffs", "playoffs") == 150
+    assert _week_sort("", "regular_season") == 999
+
+
+def test_week_sort_does_not_read_a_date_as_a_matchday_number():
+    # "07.07.2019" once made the Vorrunde sort as matchday 7, ahead of the
+    # regular season it follows.
+    assert _week_sort("Playoffs - Vorrunde - Sonntag der 07.07.2019", "playoffs") > 99
+    # "Spiel um Platz 3" must not be read as matchday 3.
+    assert _week_sort("Playoffs - Spiel um Platz 3 - Samstag der 27.07.2019", "playoffs") > 99
 
 
 def test_build_and_write_aggregates_writes_person_pokemon_matchup_roster_and_story_rows(tmp_path):
