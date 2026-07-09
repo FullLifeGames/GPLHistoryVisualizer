@@ -22,6 +22,23 @@
   --tooltip-line: #c9d8e8;
   --shadow: 0 20px 56px rgb(6 35 65 / 14%);
   --radius: 8px;
+
+  /* Categorical chart slots, fixed order, assigned by entity and never cycled.
+     Validated against the light surface: lightness band and chroma floor pass,
+     worst adjacent CVD deltaE 24.2. Slots 2, 3 and 7 fall below 3:1 contrast,
+     so charts using them ship direct labels and a table view. */
+  --viz-1: #2a78d6;
+  --viz-2: #1baf7a;
+  --viz-3: #eda100;
+  --viz-4: #008300;
+  --viz-5: #4a3aa7;
+  --viz-6: #e34948;
+  --viz-7: #e87ba4;
+  --viz-8: #eb6834;
+  --viz-ghost: #cddced;
+  --viz-grid: #e5eef6;
+  --viz-axis: #b6c8da;
+  --viz-band: #f4f8fc;
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -49,6 +66,23 @@
   --tooltip-ink: #07101b;
   --tooltip-line: #8aa9c8;
   --shadow: 0 22px 64px rgb(0 0 0 / 42%);
+
+  /* Same eight hues stepped for the dark surface, not an automatic flip.
+     All clear 3:1 there; worst adjacent CVD deltaE 10.3 sits in the floor
+     band, which is legal only alongside direct labels and the 2px gaps
+     between stacked bands. */
+  --viz-1: #3987e5;
+  --viz-2: #199e70;
+  --viz-3: #c98500;
+  --viz-4: #008300;
+  --viz-5: #9085e9;
+  --viz-6: #e66767;
+  --viz-7: #d55181;
+  --viz-8: #d95926;
+  --viz-ghost: #26405c;
+  --viz-grid: #1b2d44;
+  --viz-axis: #35506e;
+  --viz-band: #101d2e;
 }
 
 * {
@@ -3455,5 +3489,501 @@ tbody tr:hover {
 
   .cinema-nav-button--next {
     right: 8px;
+  }
+}
+
+/* ---------------------------------------------------------------- Zeitreise */
+
+.zeitreise {
+  display: grid;
+  gap: 16px;
+}
+
+.zeitreise-tracks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.zeitreise-track-button {
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--muted);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.zeitreise-track-button:hover {
+  border-color: var(--accent-strong);
+  color: var(--ink);
+}
+
+.zeitreise-track-button.is-active {
+  border-color: var(--accent-strong);
+  background: var(--table-header);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.zeitreise-stage {
+  position: relative;
+  min-height: 460px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.zeitreise-canvas svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* Series colour follows the entity, never its current rank. */
+.viz-series-1 { color: var(--viz-1); }
+.viz-series-2 { color: var(--viz-2); }
+.viz-series-3 { color: var(--viz-3); }
+.viz-series-4 { color: var(--viz-4); }
+.viz-series-5 { color: var(--viz-5); }
+.viz-series-6 { color: var(--viz-6); }
+.viz-series-7 { color: var(--viz-7); }
+.viz-series-8 { color: var(--viz-8); }
+
+.zeitreise-line {
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.zeitreise-line.is-ghost {
+  stroke: var(--viz-ghost);
+  stroke-width: 1;
+}
+
+/* Leads 9-12 reuse colours 1-4 with a dash: composite encoding instead of a
+   ninth categorical hue. */
+.zeitreise-line.is-dashed {
+  stroke-dasharray: 7 4;
+}
+
+.zeitreise-swatch.is-dashed {
+  background: repeating-linear-gradient(90deg, currentcolor 0 5px, transparent 5px 8px);
+}
+
+.zeitreise-band {
+  fill: var(--viz-band);
+}
+
+.zeitreise-grid line {
+  stroke: var(--viz-grid);
+  stroke-width: 1;
+}
+
+.zeitreise-axis text {
+  fill: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.zeitreise-axis line,
+.zeitreise-axis path {
+  stroke: var(--viz-axis);
+}
+
+.zeitreise-season-label {
+  fill: var(--muted);
+  font-size: 11px;
+}
+
+.zeitreise-playhead {
+  stroke: var(--accent-strong);
+  stroke-width: 1.5;
+}
+
+/* Labels wear ink, never the series colour: the dot beside them carries identity. */
+.zeitreise-label {
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  fill: var(--ink);
+}
+
+.zeitreise-dot {
+  fill: currentcolor;
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+
+.zeitreise-transport {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.zeitreise-play {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.zeitreise-play:hover {
+  border-color: var(--accent-strong);
+}
+
+.zeitreise-scrubber {
+  flex: 1 1 260px;
+  min-width: 200px;
+  accent-color: var(--accent-strong);
+}
+
+.zeitreise-position {
+  min-width: 15ch;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.zeitreise-speed {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.zeitreise-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font-size: 13px;
+}
+
+.zeitreise-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+}
+
+.zeitreise-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: currentcolor;
+}
+
+.zeitreise-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* Passed highlights accumulate below the stage instead of flashing over it:
+   the newest cards stay until the playhead passes the next one. */
+.zeitreise-highlights {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 8px;
+}
+
+.zeitreise-highlights:empty {
+  display: none;
+}
+
+.zeitreise-highlight-card {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent-warm);
+  border-radius: var(--radius);
+  background: var(--surface);
+  animation: zeitreise-pop 240ms ease-out;
+}
+
+.zeitreise-highlight-card h4 {
+  margin: 0 0 4px;
+  font-size: 14px;
+}
+
+.zeitreise-highlight-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.zeitreise-highlight-card .zeitreise-highlight-when {
+  margin-bottom: 2px;
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.zeitreise-highlight-card a {
+  color: var(--accent-strong);
+  font-size: 12px;
+}
+
+.zeitreise-highlight-marker {
+  fill: var(--accent-warm);
+  cursor: help;
+}
+
+@keyframes zeitreise-pop {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.zeitreise-standings {
+  position: relative;
+  display: grid;
+  gap: 0;
+}
+
+.zeitreise-row {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  grid-template-columns: 3ch 1fr repeat(5, 6ch);
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: var(--radius);
+  transition: transform 320ms ease;
+  will-change: transform;
+}
+
+.zeitreise-row:nth-child(even) {
+  background: var(--table-even);
+}
+
+/* The header sits outside the animated board, so it keeps normal flow. */
+/* No font-size here: the grid columns are in ch, which resolves against the
+   row's own font. A smaller head font would compute a narrower grid than the
+   data rows and the columns would drift apart. */
+.zeitreise-row.zeitreise-head {
+  position: static;
+  height: 28px;
+  color: var(--muted);
+  background: none;
+  transition: none;
+}
+
+.zeitreise-row.zeitreise-head span {
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.zeitreise-board-title {
+  padding: 2px 10px 10px;
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.zeitreise-board-title strong {
+  color: var(--accent-strong);
+}
+
+/* Leader rows glide like standings rows: cumulative totals reorder at season
+   boundaries. Only the head stays in normal flow. */
+.zeitreise-row.zeitreise-leader-row {
+  grid-template-columns: 3ch minmax(0, 1fr) minmax(80px, 220px) 7ch 7ch;
+}
+
+.zeitreise-row.zeitreise-leader-row.zeitreise-head {
+  position: static;
+  transition: none;
+}
+
+.zeitreise-row.zeitreise-leader-row .zeitreise-row-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* One measure, one hue: the bar encodes kills share, so every bar wears slot 1. */
+.zeitreise-leader-bar {
+  overflow: hidden;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--viz-grid);
+}
+
+/* Width is driven per frame by the race; a transition would trail behind. */
+.zeitreise-leader-bar span {
+  display: block;
+  height: 100%;
+  border-radius: 5px;
+  background: var(--viz-1);
+}
+
+.zeitreise-playoffs {
+  display: grid;
+  gap: 14px;
+  padding: 4px 10px;
+}
+
+.zeitreise-playoff-round h4 {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.zeitreise-playoff-match {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 3ch minmax(0, 1fr) 3ch;
+  align-items: center;
+  gap: 8px;
+  max-width: 560px;
+  padding: 4px 0;
+  font-size: 14px;
+}
+
+.zeitreise-playoff-side {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.zeitreise-playoff-side.is-winner {
+  font-weight: 700;
+}
+
+.zeitreise-playoff-score {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.zeitreise-playoff-crowning {
+  margin: 4px 10px 0;
+  font-size: 15px;
+}
+
+.zeitreise-row span {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.zeitreise-row > span:nth-child(n + 3) {
+  text-align: right;
+}
+
+.zeitreise-row .zeitreise-row-name {
+  font-variant-numeric: normal;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.zeitreise-row.is-champion {
+  background: var(--table-hover);
+}
+
+.zeitreise-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.zeitreise-tooltip {
+  position: absolute;
+  z-index: 5;
+  min-width: 160px;
+  padding: 8px 10px;
+  border: 1px solid var(--tooltip-line);
+  border-radius: var(--radius);
+  background: var(--tooltip-bg);
+  color: var(--tooltip-ink);
+  box-shadow: var(--shadow);
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.zeitreise-tooltip dl {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 10px;
+  margin: 4px 0 0;
+}
+
+.zeitreise-tooltip dt,
+.zeitreise-tooltip dd {
+  margin: 0;
+}
+
+.zeitreise-tooltip dd {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.zeitreise-table-view summary {
+  cursor: pointer;
+  color: var(--accent-strong);
+  font-size: 13px;
+}
+
+.zeitreise-table-view table {
+  width: 100%;
+  margin-top: 8px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.zeitreise-table-view th,
+.zeitreise-table-view td {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--cell-line);
+  text-align: left;
+}
+
+.zeitreise-table-view td:not(:first-child):not(:nth-child(2)),
+.zeitreise-table-view th:not(:first-child):not(:nth-child(2)) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zeitreise-row {
+    transition: none;
+  }
+
+  .zeitreise-highlight-card {
+    animation: none;
   }
 }

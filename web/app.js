@@ -71,6 +71,7 @@ import {
   winPercentage,
   weightedRating,
 } from "./stats.js";
+import { renderZeitreise } from "./zeitreise.js";
 
 const CORE_DATASETS = {
   seasons: "../data/normalized/seasons.csv",
@@ -119,6 +120,7 @@ const VIEW_DATASETS = {
   "battle-history": ["matchVideos"],
   "match-highlights": ["matchHighlights", "matchVideos"],
   "cinema": ["matchHighlights", "matchVideos", "videos"],
+  zeitreise: ["matchHighlights"],
   "team-rosters": ["pokemonDraftOverview", "teamPokemonUsage", "teamRosters", "rosterScores"],
   "roster-detail": ["pokemonDraftOverview", "teamPokemonUsage", "teamRosters", "rosterScores", "rosterMatchdays"],
   "video-archive": ["videos"],
@@ -264,6 +266,7 @@ const VIEW_RENDERERS = {
   "match-plan": renderMatchPlan,
   "video-archive": renderVideoArchive,
   cinema: renderCinema,
+  zeitreise: renderZeitreiseView,
   "team-rosters": renderTeamRosters,
   "roster-detail": renderRosterDetail,
   "person-details": renderPersonDetails,
@@ -696,7 +699,7 @@ function applyViewDataModeDefaults(viewName, previousView) {
 
 function setActiveView(viewName) {
   state.view = viewName;
-  document.querySelector(".toolbar")?.classList.toggle("is-cinema-hidden", viewName === "cinema");
+  document.querySelector(".toolbar")?.classList.toggle("is-cinema-hidden", viewName === "cinema" || viewName === "zeitreise");
   document.querySelectorAll(".tab").forEach((item) => {
     const activeGroup = viewGroupForView(viewName);
     const inActiveGroup = item.dataset.viewGroup === activeGroup;
@@ -3123,6 +3126,20 @@ function matchHighlightCard(row, rank) {
       ${highlightSourceActions(previewUrls)}
     </article>
   `;
+}
+
+// The Zeitreise spans every season by design, so it reads the unfiltered data
+// rather than going through filtered(): the toolbar is hidden for this view.
+function renderZeitreiseView() {
+  renderZeitreise({
+    matches: state.data.matches ?? [],
+    standings: state.data.standings ?? [],
+    champions: state.data.champions ?? [],
+    killlists: state.data.killlists ?? [],
+    highlights: state.data.matchHighlights ?? [],
+    translate: (key) => t(state.language, key),
+    pokemonIcon,
+  });
 }
 
 function renderCinema() {

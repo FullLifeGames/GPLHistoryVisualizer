@@ -70,6 +70,7 @@
         <button class="tab" data-view-group="seasons" data-view="match-plan" data-i18n="nav.matchPlan">Spielplan</button>
         <button class="tab" data-view-group="seasons" data-view="video-archive" data-i18n="nav.videoArchive">Video-Archiv</button>
         <button class="tab" data-view-group="seasons" data-view="cinema" data-i18n="nav.cinema">Kino-Modus</button>
+        <button class="tab" data-view-group="seasons" data-view="zeitreise" data-i18n="nav.zeitreise">Zeitreise</button>
         <button class="tab" data-view-group="data" data-view="data-coverage" data-i18n="nav.dataCoverage">Datenlage</button>
         <button class="tab" data-view-group="data" data-view="data-gaps" data-i18n="nav.dataGaps">Lückenübersicht</button>
         <button class="tab" data-view-group="data" data-view="roster-gaps" data-i18n="nav.rosterGaps">Kaderlücken</button>
@@ -269,6 +270,57 @@
         </details>
         <div id="cinema-screen" class="cinema-screen"></div>
         <div id="cinema-list" class="cinema-layout"></div>
+      </section>
+
+      <section id="view-zeitreise" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.zeitreiseTitle">Zeitreise</h2>
+          <p data-i18n="sections.zeitreiseDescription">Zwölf Jahre GPL als Ablauf: Elo-Verlauf, Tabellenkampf und Pokémon-Meta über dieselbe Zeitleiste.</p>
+        </div>
+        <div class="zeitreise">
+          <div class="zeitreise-tracks" role="tablist" aria-label="Spur">
+            <button class="zeitreise-track-button is-active" type="button" role="tab" aria-selected="true" data-zeitreise-track="elo" data-i18n="zeitreise.trackElo">Elo-Verlauf</button>
+            <button class="zeitreise-track-button" type="button" role="tab" aria-selected="false" data-zeitreise-track="table" data-i18n="zeitreise.trackTable">Season-Replay</button>
+            <button class="zeitreise-track-button" type="button" role="tab" aria-selected="false" data-zeitreise-track="meta" data-i18n="zeitreise.trackMeta">Killlist-Leader</button>
+          </div>
+
+          <div class="zeitreise-transport">
+            <button id="zeitreise-play" class="zeitreise-play" type="button" data-i18n-aria-label="zeitreise.play" aria-label="Abspielen">▶</button>
+            <input id="zeitreise-scrubber" class="zeitreise-scrubber" type="range" min="0" max="0" step="1" value="0" data-i18n-aria-label="zeitreise.scrubber" aria-label="Zeitleiste" />
+            <output id="zeitreise-position" class="zeitreise-position"></output>
+            <label class="zeitreise-speed">
+              <span data-i18n="filters.dataMode">Datenbasis</span>
+              <select id="zeitreise-mode">
+                <option value="all" selected data-i18n="dataModes.all">Gesamtübersicht + Liga 2</option>
+                <option value="primary" data-i18n="dataModes.primary">Gesamtübersicht (ohne Liga 2)</option>
+                <option value="league2" data-i18n="dataModes.leagueTwo">Liga 2</option>
+              </select>
+            </label>
+            <label class="zeitreise-speed">
+              <span data-i18n="zeitreise.speed">Tempo</span>
+              <select id="zeitreise-speed">
+                <option value="0.5">0,5×</option>
+                <option value="1" selected>1×</option>
+                <option value="2">2×</option>
+                <option value="4">4×</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="zeitreise-stage">
+            <div id="zeitreise-canvas" class="zeitreise-canvas"></div>
+          </div>
+
+          <div id="zeitreise-highlights" class="zeitreise-highlights" aria-live="polite"></div>
+
+          <div id="zeitreise-legend" class="zeitreise-legend"></div>
+          <p id="zeitreise-note" class="zeitreise-note"></p>
+
+          <details id="zeitreise-table-view" class="zeitreise-table-view">
+            <summary data-i18n="zeitreise.tableView">Werte als Tabelle</summary>
+            <div id="zeitreise-table-view-body"></div>
+          </details>
+        </div>
       </section>
 
       <section id="view-team-rosters" class="view">
@@ -502,6 +554,7 @@
 
     <script src="https://unpkg.com/tabulator-tables@6.4.0/dist/js/tabulator.min.js"></script>
     <script src="https://unpkg.com/@pkmn/img@0.3.4/build/index.min.js"></script>
+    <script src="https://unpkg.com/d3@7.9.0/dist/d3.min.js"></script>
     <script type="module" src="./app.js"></script>
   </body>
 </html>
