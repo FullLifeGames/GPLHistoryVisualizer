@@ -33,6 +33,7 @@ DATA_QUALITY_FIELDS = [
     "killlist_rows",
     "killlist_rows_missing_appearances",
     "unavailable_killlist_rows",
+    "killlist_kill_coverage",
     "video_rows",
     "matched_video_rows",
     "unmatched_game_video_rows",
@@ -180,7 +181,8 @@ def _data_quality_rows(normalized_dir: Path) -> list[dict[str, Any]]:
         unavailable_killlists = [row for row in season_killlists_all if row.get("data_status") == "not_available"]
         season_videos = videos.get(season_id, [])
         missing_categories = _missing_categories(season_standings, season_matches, season_champions, season_killlists)
-        review_flags = _review_flags(season_killlists, unavailable_killlists, season_videos)
+        kill_coverage = _killlist_kill_coverage(season_id, season_killlists, season_standings)
+        review_flags = _review_flags(season_killlists, unavailable_killlists, season_videos, kill_coverage)
         scores = _quality_scores(
             season_standings=season_standings,
             season_matches=season_matches,
@@ -205,6 +207,7 @@ def _data_quality_rows(normalized_dir: Path) -> list[dict[str, Any]]:
                 "killlist_rows": len(season_killlists),
                 "killlist_rows_missing_appearances": sum(1 for row in season_killlists if _missing_appearances(row)),
                 "unavailable_killlist_rows": len(unavailable_killlists),
+                "killlist_kill_coverage": "" if kill_coverage is None else kill_coverage,
                 "video_rows": len(season_videos),
                 "matched_video_rows": sum(1 for row in season_videos if row.get("match_status") == "matched"),
                 "unmatched_game_video_rows": sum(1 for row in season_videos if row.get("video_type") == "game" and row.get("match_status") == "unmatched"),
@@ -358,14 +361,83 @@ def _missing_categories(
     return missing
 
 
+# A season can list every killlist row it has and still cover a fraction of
+# the kills the final tables count: the row counts hide it (S1 lists rows for
+# only 2 of 11 players, S2 for none). killlist_kill_coverage is the honest
+# measure: canonical killlist kills / final-table kills, as a whole percent.
+# Values above 100 are possible where the canonical killlist counts more scope
+# than the tables (S10's canonical list includes the playoffs).
+_KILL_COVERAGE_LOW_THRESHOLD = 90
+
+
+def _killlist_kill_coverage(
+    season_id: str,
+    killlists: list[dict[str, str]],
+    standings: list[dict[str, str]],
+) -> int | None:
+    table_kills = 0
+    seen = False
+    for row in standings:
+        # Primary tables only: S9 lists every kill twice otherwise (the
+        # non-primary Overall Tag Team table repeats the Singles/Doubles ones).
+        if row.get("stage") != "final_table" or row.get("is_primary") != "true":
+            continue
+        value = _int_or_none(row.get("kills"))
+        if value is None:
+            continue
+        table_kills += value
+        seen = True
+    if not seen or table_kills <= 0:
+        return None
+
+    # Mirror canonicalKilllistRows in web/stats.js: prefer the Overall list;
+    # for S10 the cumulative Playoffs list plus the regular rows it does not
+    # repeat (players who missed the playoffs); otherwise every non-playoff
+    # list.
+    rows = [row for row in killlists if _has_value(row.get("kills"))]
+    overall = [row for row in rows if row.get("division") == "Overall"]
+    playoffs = [row for row in rows if row.get("division") == "Playoffs"]
+    if overall:
+        rows = overall
+    elif season_id == "season_010" and playoffs:
+        covered = {_killlist_coverage_key(row) for row in playoffs}
+        extras = [
+            row
+            for row in rows
+            if row.get("division") != "Playoffs" and _killlist_coverage_key(row) not in covered
+        ]
+        rows = [*playoffs, *extras]
+    else:
+        rows = [row for row in rows if row.get("division") != "Playoffs"]
+
+    killlist_kills = sum(value for value in (_int_or_none(row.get("kills")) for row in rows) if value is not None)
+    return round(100 * killlist_kills / table_kills)
+
+
+def _killlist_coverage_key(row: dict[str, str]) -> tuple[str, str]:
+    pokemon = (row.get("pokemon_normalized") or row.get("pokemon") or "").strip().lower()
+    owner = (row.get("trainer_normalized") or row.get("trainer") or row.get("team_name") or "").strip().lower()
+    return (pokemon, owner)
+
+
+def _int_or_none(value: Any) -> int | None:
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return None
+
+
 def _review_flags(
     killlists: list[dict[str, str]],
     unavailable_killlists: list[dict[str, str]],
     videos: list[dict[str, str]],
+    kill_coverage: int | None,
 ) -> list[str]:
     flags = []
     if any(_missing_appearances(row) for row in killlists):
         flags.append("missing_appearances")
+    if kill_coverage is not None and kill_coverage < _KILL_COVERAGE_LOW_THRESHOLD:
+        flags.append("killlist_coverage_low")
     if any(str(row.get("data_status") or "").startswith("partial_") for row in killlists):
         flags.append("partial_killlists")
     if unavailable_killlists:

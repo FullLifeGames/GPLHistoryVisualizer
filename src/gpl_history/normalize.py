@@ -112,6 +112,7 @@ NORMALIZED_FIELDS = {
         "score_a",
         "score_b",
         "winner",
+        "result_basis",
         "video_id",
         "video_title",
         "video_url",
@@ -174,6 +175,7 @@ NORMALIZED_FIELDS = {
         "killlist_rows",
         "killlist_rows_missing_appearances",
         "unavailable_killlist_rows",
+        "killlist_kill_coverage",
         "video_rows",
         "matched_video_rows",
         "unmatched_game_video_rows",
@@ -232,7 +234,7 @@ _KNOWN_HEADERS = {
 
 _MISSING_KILLLIST_SOURCES = {
     "season_003": {
-        "division": "Regular Season",
+        "division": "Liga 1",
         "trainer": "Bene",
         "team_name": "Unlimited Blade Works",
         "source_urls": "https://docs.google.com/spreadsheets/d/1d7DpiW3aMjnYWiY9KSpk9nSi-gnEUnSFVAK-zGpy59Q/edit#gid=0",
@@ -253,7 +255,7 @@ _MISSING_KILLLIST_SOURCES = {
 
 _OLD_PROJECT_KILL_SHEET_ID = "1JZpA-5XDldN2bjfvhvBPHYK-1AENETLnF1UxNEpWlNA"
 _OLD_PROJECT_KILL_COLUMNS = {
-    "season_003": ("s3", "Regular Season"),
+    "season_003": ("s3", "Liga 1"),
     "season_004": ("s4", "Regular Season"),
     "season_005": ("s5", "Liga 1"),
 }
@@ -264,6 +266,11 @@ _S2_L1_KILLLIST_SHEET_ID = "1FUsClf5qEny-BHY5Djp8rIwRJKBSJDvygJ8LBa62FEo"
 _S2_L2_SCHEDULE_SHEET_ID = "1Jc6mBqbU8wYKfz3WxfpxsWbj_6xaZB6OmoCRPGzGJLM"
 _S2_L2_STANDINGS_SHEET_ID = "1ACnJyxD1hx-mbOcZXoJ5BjXDOwUF1TYmfgkqtJgFRXk"
 _S2_L2_KILLLIST_SHEET_ID = "1odsNRAZStW1GzmpXwmg27dqjOlch7w8syZOZ5Z2OQRg"
+
+_S3_L1_SCHEDULE_SHEET_ID = "15MPuuKWiOBeqO8JbrOYulUHFDzWbid6_pYZLHiWVzrk"
+_S3_L2_SCHEDULE_SHEET_ID = "16r_khFZJxguj1o1wSrDQO4vlJhSDhIdN8AbUJQbnDq0"
+_S3_L1_STANDINGS_SHEET_ID = "13ggv8-k1WCcrrjlwXb-ZoSwhODIQlG_NVffp3TGKOgI"
+_S3_L2_STANDINGS_SHEET_ID = "1_UuLy0LRQbXfL31crTDpStLx_CzYOo8-baJKZIywl9Q"
 
 _S4_L1_SCHEDULE_SHEET_ID = "1u8AORkPkqIxR4GblUqU5faeTfuuKGjKrllUxnnUdRz0"
 _S4_L2_SCHEDULE_SHEET_ID = "1NKXigWOr5wX73nBCnJrqO0_OprQy7Q5ncRmxnsQencI"
@@ -408,6 +415,9 @@ _ALIAS_CANONICAL = {
     "fanmade tim": "fanmadeletsplay",
     "fanmadeletsplay": "fanmadeletsplay",
     "fanmade lets play": "fanmadeletsplay",
+    "scarlet": "scarlet",
+    "scarletsft": "scarlet",
+    "blacklink1996": "blacklink",
 }
 
 _PREFERRED_DISPLAY = {
@@ -438,6 +448,10 @@ _PREFERRED_DISPLAY = {
     "zant": "Zant",
     "raizor": "Raizor",
     "regibang": "RegiBang",
+    "scarlet": "Scarlet",
+    "glebber": "Glebber",
+    "pentaplayer": "PentaPlayer",
+    "pokebree": "PokéBree",
     "shiro": "Shiro",
     "silva": "Silva",
     "stratocopter tv": "Stratocopter TV",
@@ -779,7 +793,9 @@ def _adapt_season(season_id: str, tables: list[dict[str, Any]], videos: list[dic
     out = NormalizedOutput([], [], [], [], [], [], [], [], [], [], [])
 
     out.standings.extend(_season_standings(season_id, tables))
+    _apply_standing_differential_corrections(season_id, out.standings)
     out.matches.extend(_season_matches(season_id, tables, videos))
+    _apply_s10_matchday13_reconstruction(season_id, out.standings, out.matches)
     out.person_stints.extend(_season_person_stints(season_id, out.standings, out.matches))
     out.teams.extend(_teams_from_standings(out.standings))
     out.teams.extend(_teams_from_person_stints(out.person_stints))
@@ -790,14 +806,121 @@ def _adapt_season(season_id: str, tables: list[dict[str, Any]], videos: list[dic
     return out
 
 
+def _apply_s10_matchday13_reconstruction(
+    season_id: str,
+    standings: list[dict[str, Any]],
+    matches: list[dict[str, Any]],
+) -> None:
+    """Fold Spieltag 13 into the S10 final table.
+
+    The official sheet stops counting after Spieltag 12, but Spieltag 13 was
+    played and its results are fully sourced (participant-confirmed,
+    2026-07-09). Kills/deaths follow the league's score convention (matches
+    run to elimination: the winner takes 6 kills and 6-score deaths; a 0:0
+    row implies no battle and only moves wins/losses/points). Ranks are
+    re-sorted by points but keep the official order as tiebreak, preserving
+    decisions like the Minetube/PresentLP direct comparison.
+
+    Playoff seeding derived from the official table is built before this step
+    and intentionally keeps the Spieltag-12 state.
+    """
+    if season_id != "season_010":
+        return
+    table = {
+        _canonical_name(row.get("player_name")): row
+        for row in standings
+        if row.get("stage") == "final_table" and row.get("division") == "Regular Season"
+    }
+    if not table:
+        return
+
+    changed = False
+    for match in matches:
+        if match.get("stage") != "regular_season" or _week_number(match.get("week")) != 13:
+            continue
+        winner_key = _canonical_name(match.get("winner"))
+        if not winner_key:
+            continue
+        player_keys = [_canonical_name(match.get("player_a")), _canonical_name(match.get("player_b"))]
+        if winner_key not in player_keys:
+            continue
+        loser_key = player_keys[1] if winner_key == player_keys[0] else player_keys[0]
+        winner_row = table.get(winner_key)
+        loser_row = table.get(loser_key)
+        if not winner_row or not loser_row:
+            continue
+        score = max(_int_value(match.get("score_a")), _int_value(match.get("score_b")))
+        _bump_standing(winner_row, wins=1, points=3, kills=6 if score else 0, deaths=6 - score if score else 0, differential=score)
+        _bump_standing(loser_row, losses=1, kills=6 - score if score else 0, deaths=6 if score else 0, differential=-score)
+        for row in (winner_row, loser_row):
+            row["data_status"] = "sheet_extracted_with_user_correction"
+        changed = True
+
+    if not changed:
+        return
+    ranked = sorted(table.values(), key=lambda row: (-_int_value(row.get("points")), _int_value(row.get("rank"))))
+    for rank, row in enumerate(ranked, start=1):
+        row["rank"] = str(rank)
+
+
+def _int_value(value: Any) -> int:
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return 0
+
+
+def _bump_standing(row: dict[str, Any], **deltas: int) -> None:
+    for field, delta in deltas.items():
+        row[field] = str(_int_value(row.get(field)) + delta)
+
+
+# Three final-table rows contradict themselves (kills - deaths != differential
+# column) and the per-match scores arbitrate: summing score_a - score_b over a
+# player's matches reproduces kills - deaths exactly for these rows, so the
+# differential column carried the typo. The remaining conflicts stay untouched
+# because the match scores support neither number: S3 SurskitTV (scores back
+# the differential column, so kills OR deaths is off by one) and S4 Dauni /
+# S5 BraveBird (scores contradict both candidates).
+_STANDING_DIFFERENTIAL_CORRECTIONS = {
+    ("season_004", "Liga 2", "scoutley"): "-43",
+    ("season_005", "Liga 1", "bene"): "42",
+    ("season_005", "Liga 2", "crowdcontroller"): "-2",
+}
+
+
+def _apply_standing_differential_corrections(season_id: str, rows: list[dict[str, Any]]) -> None:
+    for row in rows:
+        if row.get("stage") != "final_table":
+            continue
+        key = (season_id, row.get("division"), _canonical_name(row.get("player_name")))
+        corrected = _STANDING_DIFFERENTIAL_CORRECTIONS.get(key)
+        if corrected is None or row.get("differential") == corrected:
+            continue
+        row["differential"] = corrected
+        row["data_status"] = "sheet_extracted_with_user_correction"
+
+
 def _season_standings(season_id: str, tables: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    if season_id in {"season_001", "season_003"}:
+    if season_id == "season_001":
         return _standard_standings_from_tables(
             season_id,
             [table for table in tables if _has_standings_header(table["rows"])],
             division="Regular Season",
             primary=True,
         )
+    if season_id == "season_003":
+        # S3 ran two leagues; both final tables are sourced (Liga 2 table was
+        # provided by Bene, 2026-07-09).
+        rows = _standard_standings_from_tables(
+            season_id, _tables_by_sheet_id(tables, _S3_L1_STANDINGS_SHEET_ID), "Liga 1", True
+        )
+        rows.extend(
+            _standard_standings_from_tables(
+                season_id, _tables_by_sheet_id(tables, _S3_L2_STANDINGS_SHEET_ID), "Liga 2", True
+            )
+        )
+        return rows
     if season_id == "season_002":
         rows = []
         rows.extend(
@@ -1428,7 +1551,7 @@ def _special_person_stints(season_id: str, standings: list[dict[str, Any]], matc
             ),
         ]
     if season_id == "season_003":
-        standing = _standing_for_team(standings, "Unlimited Blade Works*¹", "Regular Season")
+        standing = _standing_for_team(standings, "Unlimited Blade Works*¹", "Liga 1")
         source_urls = _join_source_urls(standing.get("source_urls") if standing else None, _source_urls_from_matches(matches, "season_003", {"LucarioLP", "Bene"}))
         return [
             _person_stint_from_matches(
@@ -1436,7 +1559,7 @@ def _special_person_stints(season_id: str, standings: list[dict[str, Any]], matc
                 matches,
                 person_name="LucarioLP",
                 team_name="Unlimited Blade Works*¹",
-                division="Regular Season",
+                division="Liga 1",
                 start_week=1,
                 end_week=10,
                 rank=standing.get("rank") if standing else None,
@@ -1448,7 +1571,7 @@ def _special_person_stints(season_id: str, standings: list[dict[str, Any]], matc
                 matches,
                 person_name="Bene",
                 team_name="Unlimited Blade Works*¹",
-                division="Regular Season",
+                division="Liga 1",
                 start_week=11,
                 end_week=26,
                 rank=standing.get("rank") if standing else None,
@@ -1745,7 +1868,6 @@ def _season_extra_teams(season_id: str, tables: list[dict[str, Any]]) -> list[di
 def _season_matches(season_id: str, tables: list[dict[str, Any]], videos: list[dict[str, Any]]) -> list[dict[str, Any]]:
     table_specs = {
         "season_001": [("schedule_header", None, "Regular Season")],
-        "season_003": [("title", "Spielplan", "Regular Season")],
         "season_006": [("title", "Spielplan - Sun Con.", "Sun Conference"), ("title", "Spielplan - Moon Con.", "Moon Conference")],
         "season_007": [("title", "Spielplan [Mit Spoilern]", "Regular Season")],
         "season_008": [("title", "Spielplan L1", "Liga 1"), ("title", "Spielplan L2", "Liga 2")],
@@ -1759,6 +1881,11 @@ def _season_matches(season_id: str, tables: list[dict[str, Any]], videos: list[d
         selected_specs = [
             (_tables_by_sheet_id(tables, _S2_L1_SCHEDULE_SHEET_ID), "Regular Season"),
             (_tables_by_sheet_id(tables, _S2_L2_SCHEDULE_SHEET_ID), "Liga 2"),
+        ]
+    elif season_id == "season_003":
+        selected_specs = [
+            (_tables_by_sheet_id(tables, _S3_L1_SCHEDULE_SHEET_ID, "Spielplan"), "Liga 1"),
+            (_tables_by_sheet_id(tables, _S3_L2_SCHEDULE_SHEET_ID, "Spielplan"), "Liga 2"),
         ]
     elif season_id == "season_004":
         selected_specs = [
@@ -1795,6 +1922,8 @@ def _season_matches(season_id: str, tables: list[dict[str, Any]], videos: list[d
     rows.extend(_manual_playoff_matches(season_id, tables, start_counter=len(rows) + 1))
     rows = _dedupe_matches(rows)
     rows = _apply_controller_overrides(season_id, rows)
+    rows = _apply_winner_corrections(season_id, rows)
+    rows = _apply_result_basis(season_id, rows)
     rows.extend(_video_matches(season_id, videos, start_counter=len(rows) + 1))
     return rows
 
@@ -1816,6 +1945,81 @@ def _apply_controller_overrides(season_id: str, rows: list[dict[str, Any]]) -> l
             _apply_s5_controller_override(row, week)
         elif season_id == "season_009":
             _apply_s9_controller_override(row, week)
+    return rows
+
+
+# Bene (participant) confirmed on 2026-07-09 that both winner-less S10 matches
+# were 0:0 wins: Domji beat Blocki on Spieltag 4 and Blocki beat Snomnie on
+# Spieltag 12. The official final table already counts both wins.
+_S10_WINNER_CORRECTIONS = {
+    (4, frozenset({"domji", "blocki"})): "domji",
+    (12, frozenset({"blocki", "snomnie"})): "blocki",
+}
+
+# Bene (participant, 2026-07-09): Morbolth forfeited his remaining matches
+# from Spieltag 15 on (probably including the uncaptured Spieltage 21/22).
+# The official table counts them as losses — his row reads 4-17-1 — so the
+# opponent takes the win; the 0:0 score stays because nothing was played.
+_S1_FORFEIT_WEEKS = frozenset(range(15, 21))
+
+
+def _apply_winner_corrections(season_id: str, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    if season_id not in {"season_001", "season_010"}:
+        return rows
+    for row in rows:
+        if row.get("winner") or row.get("data_status") in {"source_video_only", "not_available"}:
+            continue
+        week = _week_number(row.get("week"))
+        players = {
+            _canonical_name(row.get(f"player_{side}")): row.get(f"player_{side}")
+            for side in ("a", "b")
+        }
+        players.pop(None, None)
+        if len(players) != 2:
+            continue
+        if season_id == "season_001":
+            if week not in _S1_FORFEIT_WEEKS or "morbolth" not in players:
+                continue
+            row["winner"] = next(name for key, name in players.items() if key != "morbolth")
+            row["result_basis"] = "forfeit"
+            row["data_status"] = "sheet_extracted_with_user_correction"
+            continue
+        winner_key = _S10_WINNER_CORRECTIONS.get((week, frozenset(players)))
+        if not winner_key:
+            continue
+        row["winner"] = players[winner_key]
+        row["data_status"] = "sheet_extracted_with_user_correction"
+    return rows
+
+
+def _apply_result_basis(season_id: str, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Make special result semantics explicit instead of encoding them in gaps.
+
+    - ``two_sided_score``: early rows carry both sides' surviving Pokémon
+      instead of the usual "winner's survivors : 0" convention.
+    - ``draw``: winner-less rows covered by the official draw counts (all
+      seasons except the S1 cases below).
+    - ``forfeit``: set by _apply_winner_corrections (S1 Morbolth, ST 15-20).
+    - ``unresolved``: winner-less rows no official table confirms as draws
+      (the manually sourced S1 Spieltage 21/22); reconstructions skip these.
+    """
+    for row in rows:
+        if row.get("result_basis") or row.get("data_status") in {"source_video_only", "not_available"}:
+            continue
+        if not (row.get("player_a") or row.get("team_a")) or not (row.get("player_b") or row.get("team_b")):
+            continue
+        if row.get("winner"):
+            try:
+                two_sided = float(row.get("score_a")) > 0 and float(row.get("score_b")) > 0
+            except (TypeError, ValueError):
+                two_sided = False
+            if two_sided:
+                row["result_basis"] = "two_sided_score"
+            continue
+        if season_id == "season_001":
+            row["result_basis"] = "draw" if _week_number(row.get("week")) == 5 else "unresolved"
+        else:
+            row["result_basis"] = "draw"
     return rows
 
 
@@ -2231,7 +2435,8 @@ def _season_champions(
         return [_champion_placeholder(season_id, "No overall rank-1 standings row found.")]
 
     if season_id in {"season_002", "season_003", "season_004"}:
-        first = _first_ranked(standings, division="Regular Season")
+        main_division = "Liga 1" if season_id == "season_003" else "Regular Season"
+        first = _first_ranked(standings, division=main_division)
         if first:
             return [_champion_from_standing(season_id, first, "Rank 1 in the main final standings, using the user-provided season rule.")]
         return [_champion_placeholder(season_id, "No main-league rank-1 final standings row found.")]
@@ -2886,7 +3091,7 @@ def _season_label(playlist: dict[str, Any]) -> str | None:
 def _season_note(season_id: str) -> str | None:
     notes = {
         "season_001": "Nocturne changed controller from PokemonFakten to FanmadeLetsPlay for the Rückrunde; the public killlist source only covers rows through Spieltag 7, so Season 1 kill data is marked partial.",
-        "season_003": "Two schedule sheets are present; only one final standings sheet is publicly available in the PresentLP source set.",
+        "season_003": "Both league schedules and both final tables are sourced; the Liga 2 final table was provided by Bene (2026-07-09). The public killlist source only covers Liga 1.",
         "season_006": "Season sheet includes Sun/Moon conferences plus playoff rows; champion is taken from the sourced playoff final.",
         "season_007": "Available sources contain regular-season data but no playoff bracket/final winner.",
         "season_010": "Playoff final is reconstructed from the Ergebnisse and Playoffs Kader sheets; Season 10 killlists use the Playoffs Killliste table as the canonical final killlist.",

@@ -843,6 +843,123 @@ def test_s2_liga2_killlist_from_video_description_is_not_mixed_into_regular_seas
     assert not any(row["division"] == "Regular Season" and row["source_urls"] and "1odsNRAZ" in row["source_urls"] for row in rows)
 
 
+def test_alias_variants_collapse_to_one_display_name():
+    assert _display_name("glebber") == "Glebber"
+    assert _display_name("Pentaplayer") == "PentaPlayer"
+    assert _display_name("PokeBree") == "PokéBree"
+    assert _display_name("ScarletSFT") == "Scarlet"
+    assert _display_name("BlackLink1996") == "BlackLink"
+
+    output = normalize_all(Path("data"))
+    names = {n for row in output.matches for n in (row["player_a"], row["player_b"], row["winner"]) if n}
+    names |= {row["player_name"] for row in output.standings if row["player_name"]}
+    variants = {n for n in names if _canonical_name(n) in {"glebber", "pentaplayer", "pokebree"}}
+    assert variants == {"Glebber", "PentaPlayer", "PokéBree"}
+
+
+def test_season_3_splits_into_liga_1_and_liga_2():
+    output = normalize_all(Path("data"))
+
+    schedule_matches = [
+        row
+        for row in output.matches
+        if row["season_id"] == "season_003" and row["data_status"] != "source_video_only"
+    ]
+    assert Counter(row["division"] for row in schedule_matches) == {"Liga 1": 182, "Liga 2": 182}
+
+    standings = [row for row in output.standings if row["season_id"] == "season_003"]
+    assert Counter(row["division"] for row in standings) == {"Liga 1": 14, "Liga 2": 14}
+
+    liga1_rank1 = next(row for row in standings if row["division"] == "Liga 1" and row["rank"] == "1")
+    assert liga1_rank1["player_name"] == "PresentLP"
+    liga2_rank1 = next(row for row in standings if row["division"] == "Liga 2" and row["rank"] == "1")
+    assert liga2_rank1["player_name"] == "LightGaming"
+    assert liga2_rank1["team_name"] == "Departed Fairies"
+    # The Liga 2 sheet counts 26 matchdays for every team, like the schedule.
+    liga2_games = {
+        int(row["wins"]) + int(row["losses"]) + int(row["draws"])
+        for row in standings
+        if row["division"] == "Liga 2"
+    }
+    assert liga2_games == {26}
+
+
+def test_s10_winner_less_matches_resolved_by_participant_confirmation():
+    output = normalize_all(Path("data"))
+    s10 = [row for row in output.matches if row["season_id"] == "season_010"]
+
+    st4 = next(row for row in s10 if row["week"] == "Spieltag 4" and {row["player_a"], row["player_b"]} == {"Domji", "Blocki"})
+    assert st4["winner"] == "Domji"
+    assert st4["data_status"] == "sheet_extracted_with_user_correction"
+
+    st12 = next(row for row in s10 if row["week"] == "Spieltag 12" and {row["player_a"], row["player_b"]} == {"Blocki", "Snomnie"})
+    assert st12["winner"] == "Blocki"
+    assert st12["data_status"] == "sheet_extracted_with_user_correction"
+
+    remaining = [row for row in s10 if not row["winner"] and row["data_status"] not in {"source_video_only", "not_available"}]
+    assert remaining == []
+
+
+def test_result_basis_classifies_special_results():
+    output = normalize_all(Path("data"))
+
+    basis = Counter(row["result_basis"] for row in output.matches if row.get("result_basis"))
+    assert basis == {"draw": 12, "two_sided_score": 7, "forfeit": 6, "unresolved": 2}
+
+    forfeits = [row for row in output.matches if row.get("result_basis") == "forfeit"]
+    assert all(row["season_id"] == "season_001" for row in forfeits)
+    assert all("Morbolth" in (row["player_a"], row["player_b"]) for row in forfeits)
+    assert all(row["winner"] and row["winner"] != "Morbolth" for row in forfeits)
+    assert all(row["data_status"] == "sheet_extracted_with_user_correction" for row in forfeits)
+
+    unresolved = [row for row in output.matches if row.get("result_basis") == "unresolved"]
+    assert {row["week"][:12] for row in unresolved} == {"21. Spieltag", "22. Spieltag"}
+    assert all(not row["winner"] for row in unresolved)
+
+
+def test_s10_final_table_includes_reconstructed_spieltag_13():
+    output = normalize_all(Path("data"))
+    rows = {
+        row["player_name"]: row
+        for row in output.standings
+        if row["season_id"] == "season_010" and row["division"] == "Regular Season" and row["stage"] == "final_table"
+    }
+    assert len(rows) == 14
+    # Every player carries the 13th matchday now.
+    assert all(int(r["wins"]) + int(r["losses"]) + int(r["draws"]) == 13 for r in rows.values())
+    # The official direct-comparison tiebreak for first place survives the re-rank.
+    assert rows["Minetube"]["rank"] == "1"
+    assert rows["PresentLP"]["rank"] == "2"
+    # Kills follow the elimination convention, keeping the table self-consistent.
+    assert all(int(r["kills"]) - int(r["deaths"]) == int(r["differential"]) for r in rows.values())
+    assert all(r["data_status"] == "sheet_extracted_with_user_correction" for r in rows.values())
+
+
+def test_final_table_differentials_match_kills_minus_deaths():
+    output = normalize_all(Path("data"))
+    # These rows contradict themselves in the source sheet and the match scores
+    # arbitrate for neither candidate (see _STANDING_DIFFERENTIAL_CORRECTIONS):
+    # they stay flagged instead of silently corrected.
+    known_conflicts = {
+        ("season_003", "Liga 1", "SurskitTV"),
+        ("season_004", "Liga 2", "Dauni"),
+        ("season_005", "Liga 2", "BraveBird"),
+    }
+    seen_conflicts = set()
+    for row in output.standings:
+        if row["stage"] != "final_table":
+            continue
+        try:
+            delta = int(row["kills"]) - int(row["deaths"])
+            differential = int(row["differential"])
+        except (TypeError, ValueError):
+            continue
+        key = (row["season_id"], row["division"], row["player_name"])
+        if delta != differential:
+            seen_conflicts.add(key)
+    assert seen_conflicts == known_conflicts
+
+
 def test_mid_season_team_controller_changes_are_kept_as_person_stints():
     output = normalize_all(Path("data"))
     stints = output.person_stints
@@ -879,7 +996,7 @@ def test_mid_season_team_controller_changes_are_kept_as_person_stints():
     assert s3_week_11["player_a"] == "Bene"
 
     s5_week_6 = next(row for row in output.matches if row["match_id"] == "season_005_schedule_0121")
-    assert s5_week_6["player_a"] == "glebber"
+    assert s5_week_6["player_a"] == "Glebber"
     assert s5_week_6["player_b"] == "Parsifani"
     assert s5_week_6["winner"] == "Parsifani"
     assert s5_week_6["data_status"] == "sheet_extracted"

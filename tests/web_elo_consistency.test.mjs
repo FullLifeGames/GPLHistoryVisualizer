@@ -10,30 +10,21 @@ import { readNormalizedCsv } from "./helpers/csv.mjs";
 // languages disagreed on how to rank matchdays and playoff rounds, and 25 of
 // 69 people carried different ratings depending on which side you asked.
 
-// person_all_time.csv carries canonical display names ("PokéBree") while
-// matches.csv carries whatever the source sheet used ("PokeBree"), so the two
-// sides only line up on a diacritic-free key.
-const comparisonKey = (value) =>
-  String(value ?? "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-
 const matches = readNormalizedCsv("matches.csv");
 const personAllTime = readNormalizedCsv("person_all_time.csv");
 
 assert.ok(personAllTime.length > 0, "person_all_time.csv is empty");
 
-const computed = new Map(eloRatings(matches).map((row) => [comparisonKey(row.name), row.elo]));
+// Since the alias canonicalization pass, matches.csv and person_all_time.csv
+// carry the same preferred display name ("PokéBree") — compare names exactly.
+const computed = new Map(eloRatings(matches).map((row) => [row.name, row.elo]));
 
 const mismatches = [];
 let compared = 0;
 for (const person of personAllTime) {
   if (!person.elo) continue;
   compared += 1;
-  const actual = computed.get(comparisonKey(person.person_name));
+  const actual = computed.get(person.person_name);
   if (actual === undefined) {
     mismatches.push(`${person.person_name}: missing from eloRatings()`);
   } else if (actual !== person.elo) {

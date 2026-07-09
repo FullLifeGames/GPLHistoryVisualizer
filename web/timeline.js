@@ -113,6 +113,11 @@ function emptyStandingRow(key, name) {
 }
 
 function applyMatchToStandings(table, row) {
+  // `unresolved` marks the winner-less rows no official table confirms as
+  // draws (the manually sourced S1 Spieltage 21/22). They stay out of the
+  // reconstruction entirely, like the uncaptured matchdays around them.
+  if (row.result_basis === "unresolved") return;
+
   const [leftKey, rightKey] = participantKeys(row);
   if (!leftKey || !rightKey || leftKey === rightKey) return;
 
@@ -124,11 +129,9 @@ function applyMatchToStandings(table, row) {
   left.matches += 1;
   right.matches += 1;
 
-  // An empty `winner` is read as a draw, matching the 0.5 score eloRatings
-  // assigns. The data cannot tell a true draw from an uncaptured result: in
-  // seasons 4-6 the winner-less matches line up exactly with the official draw
-  // counts, in seasons 1, 3 and 10 they do not. reconcileStandings surfaces the
-  // difference instead of hiding it.
+  // Since result_basis landed, every remaining winner-less row is an official
+  // draw (the counts line up season by season); forfeits carry the opponent
+  // as winner and count like the official tables count them.
   const winner = normalizedStatsKey(row.winner);
   if (winner === leftKey) {
     left.wins += 1;
@@ -162,46 +165,12 @@ function rankedRows(table) {
     .map((row, index) => ({ ...row, rank: index + 1 }));
 }
 
-// Season 3 labels every match "Regular Season" although two leagues played:
-// only Liga 1 has an official table (14 players), and Lauris and Shiro also
-// covered Liga 2 slots, which merged into one 34-row table. When the official
-// table names a member list for a division, matches are kept only if both
-// participants belong to it. Unknown names whose every opponent is a member
-// are treated as members too — that keeps mid-season controller swaps (like
-// LucarioLP handing the slot to Bene) inside the table.
-function divisionMemberFilter(matches, members) {
-  if (!members?.size) return matches;
-
-  const opponentsByPlayer = new Map();
-  for (const row of matches) {
-    const [left, right] = participantKeys(row);
-    if (!opponentsByPlayer.has(left)) opponentsByPlayer.set(left, []);
-    if (!opponentsByPlayer.has(right)) opponentsByPlayer.set(right, []);
-    opponentsByPlayer.get(left).push(right);
-    opponentsByPlayer.get(right).push(left);
-  }
-
-  const inTable = new Set(members);
-  for (const [player, opponents] of opponentsByPlayer) {
-    if (inTable.has(player)) continue;
-    if (opponents.length && opponents.every((opponent) => members.has(opponent))) inTable.add(player);
-  }
-
-  return matches.filter((row) => participantKeys(row).every((key) => inTable.has(key)));
-}
-
 // Cumulative table per (season, division) after every tick of that season.
-export function standingsHistory(timeline, standingsRows = []) {
-  const membership = new Map();
-  for (const row of standingsRows) {
-    if (row.stage !== "final_table") continue;
-    const seasonId = row.season_id || "";
-    const division = row.division || "";
-    if (!membership.has(seasonId)) membership.set(seasonId, new Map());
-    if (!membership.get(seasonId).has(division)) membership.get(seasonId).set(division, new Set());
-    membership.get(seasonId).get(division).add(normalizedStatsKey(row.player_name));
-  }
-
+// Every match counts toward its own division's table: names without an
+// official standings row (mid-season controller swaps like LucarioLP, or
+// cross-league guests like Lauris covering a Liga-2 slot in S3) get their own
+// person rows, and reconcileStandings marks them as unofficial.
+export function standingsHistory(timeline) {
   const result = new Map();
 
   for (const season of timeline.seasons) {
@@ -210,15 +179,11 @@ export function standingsHistory(timeline, standingsRows = []) {
     const perDivision = new Map();
 
     for (const division of divisions) {
-      const members = membership.get(season.seasonId)?.get(division);
-      const divisionMatches = seasonTicks.flatMap((tick) => tick.matches.filter((row) => (row.division || "") === division));
-      const allowed = new Set(divisionMemberFilter(divisionMatches, members));
-
       const table = new Map();
       const frames = [];
       for (const tick of seasonTicks) {
         for (const row of tick.matches) {
-          if ((row.division || "") !== division || !allowed.has(row)) continue;
+          if ((row.division || "") !== division) continue;
           applyMatchToStandings(table, row);
         }
         frames.push(rankedRows(table));

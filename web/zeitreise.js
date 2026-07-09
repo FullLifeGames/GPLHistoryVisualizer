@@ -100,7 +100,7 @@ function buildModel(context) {
   if (!timeline.ticks.length) return { timeline };
 
   const elo = eloHistory(matches, timeline);
-  const tables = standingsHistory(timeline, context.standings ?? []);
+  const tables = standingsHistory(timeline);
 
   // Leads are fixed for the whole playback: colour must follow the person, not
   // whoever happens to top the chart at the current tick.
@@ -189,14 +189,29 @@ function groupHighlights(rows, timeline) {
 }
 
 // One table per season: the division that carries the most players.
+// The replay board shows one division per season: the main league first.
+// Size alone would pick the wrong board — S3's Liga 2 table carries more
+// person rows than Liga 1 because every mid-season controller gets a row.
+const DIVISION_BOARD_PRIORITY = new Map([
+  ["Liga 1", 0],
+  ["Regular Season", 0],
+  ["Tag Team", 0],
+  ["Sun Conference", 1],
+  ["Moon Conference", 1],
+  ["Liga 2", 2],
+]);
+
 function pickDivisions(timeline, tables) {
   const chosen = new Map();
   for (const season of timeline.seasons) {
     let best = null;
     for (const [division, frames] of tables.get(season.seasonId)) {
       if (division === "Playoffs") continue;
+      const priority = DIVISION_BOARD_PRIORITY.get(division) ?? 1;
       const size = frames[frames.length - 1]?.length ?? 0;
-      if (!best || size > best.size) best = { division, size };
+      if (!best || priority < best.priority || (priority === best.priority && size > best.size)) {
+        best = { division, priority, size };
+      }
     }
     if (best) chosen.set(season.seasonId, best.division);
   }

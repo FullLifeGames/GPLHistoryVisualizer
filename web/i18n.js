@@ -379,6 +379,8 @@ export const TRANSLATIONS = {
       flags: {
         missing_appearances: "fehlende Einsätze",
         unavailable_killlists: "offene Killlisten",
+        partial_killlists: "unvollständige Killlisten",
+        killlist_coverage_low: "Killlisten decken die Kills nur teilweise",
         unmatched_game_videos: "nicht zugeordnete Kampf-Videos",
         low_confidence_videos: "Video-Zuordnung prüfen",
       },
@@ -524,6 +526,7 @@ export const TRANSLATIONS = {
       matches: "Matches",
       standings: "Tabellen",
       killlists: "Killlisten",
+      killlist_coverage: "Killlisten-Abdeckung",
       unavailable_killlists: "Offene Killlisten",
       champions: "Titel",
       playoff_matches: "Playoff-Kämpfe",
@@ -1040,6 +1043,8 @@ export const TRANSLATIONS = {
       flags: {
         missing_appearances: "missing appearances",
         unavailable_killlists: "open killlists",
+        partial_killlists: "partial killlists",
+        killlist_coverage_low: "killlists cover only part of the kills",
         unmatched_game_videos: "unmatched game videos",
         low_confidence_videos: "review video matches",
       },
@@ -1185,6 +1190,7 @@ export const TRANSLATIONS = {
       matches: "Matches",
       standings: "Standings",
       killlists: "Killlists",
+      killlist_coverage: "Killlist Coverage",
       unavailable_killlists: "Open Killlists",
       champions: "Titles",
       playoff_matches: "Playoff Battles",

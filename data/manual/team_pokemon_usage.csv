@@ -1,150 +1,150 @@
 season_id,division,team_name,team_name_normalized,person_name,person_name_normalized,pokemon,pokemon_normalized,slot,source_file,source_urls,data_status
-season_003,Regular Season,Coldlauncher,coldlauncher,FanmadeLetsPlay,fanmadeletsplay,Mega-Turtok,mega turtok,56,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Coldlauncher,coldlauncher,FanmadeLetsPlay,fanmadeletsplay,Fiaro,fiaro,57,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Coldlauncher,coldlauncher,FanmadeLetsPlay,fanmadeletsplay,Clavion,clavion,58,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Coldlauncher,coldlauncher,FanmadeLetsPlay,fanmadeletsplay,Latias,latias,59,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Coldlauncher,coldlauncher,FanmadeLetsPlay,fanmadeletsplay,Rabigator,rabigator,60,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Coldlauncher,coldlauncher,FanmadeLetsPlay,fanmadeletsplay,Shaymin,shaymin,61,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Coldlauncher,coldlauncher,FanmadeLetsPlay,fanmadeletsplay,Magneton,magneton,62,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Coldlauncher,coldlauncher,FanmadeLetsPlay,fanmadeletsplay,Ambidiffel,ambidiffel,63,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Coldlauncher,coldlauncher,FanmadeLetsPlay,fanmadeletsplay,Traunmagil,traunmagil,64,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Coldlauncher,coldlauncher,FanmadeLetsPlay,fanmadeletsplay,Miltank,miltank,65,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Coldlauncher,coldlauncher,FanmadeLetsPlay,fanmadeletsplay,Hariyama,hariyama,66,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Crinchilla,crinchilla,CaptainCrinch,captaincrinch,Mega-Scherox,mega scherox,56,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Crinchilla,crinchilla,CaptainCrinch,captaincrinch,Azumarill,azumarill,57,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Crinchilla,crinchilla,CaptainCrinch,captaincrinch,Kyurem-Schwarz,kyurem schwarz,58,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Crinchilla,crinchilla,CaptainCrinch,captaincrinch,Cresselia,cresselia,59,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Crinchilla,crinchilla,CaptainCrinch,captaincrinch,Mamutel,mamutel,60,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Crinchilla,crinchilla,CaptainCrinch,captaincrinch,Viscogon,viscogon,61,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Crinchilla,crinchilla,CaptainCrinch,captaincrinch,Blitza,blitza,62,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Crinchilla,crinchilla,CaptainCrinch,captaincrinch,Chillabell,chillabell,63,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Crinchilla,crinchilla,CaptainCrinch,captaincrinch,Smogmog,smogmog,64,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Crinchilla,crinchilla,CaptainCrinch,captaincrinch,Karadonis,karadonis,66,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Enteigeddon*³ **¹,enteigeddon 3 1,Lauris,lauris,Mega-Diancie,mega diancie,45,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Enteigeddon*³ **¹,enteigeddon 3 1,Lauris,lauris,Hoopa,hoopa,46,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Enteigeddon*³ **¹,enteigeddon 3 1,Lauris,lauris,Celebi,celebi,47,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Enteigeddon*³ **¹,enteigeddon 3 1,Lauris,lauris,Rotom-Hitze,rotom hitze,48,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Enteigeddon*³ **¹,enteigeddon 3 1,Lauris,lauris,Grypheldis,grypheldis,49,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Enteigeddon*³ **¹,enteigeddon 3 1,Lauris,lauris,Lucario,lucario,50,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Enteigeddon*³ **¹,enteigeddon 3 1,Lauris,lauris,Laschoking,laschoking,51,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Enteigeddon*³ **¹,enteigeddon 3 1,Lauris,lauris,Libelldra,libelldra,52,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Enteigeddon*³ **¹,enteigeddon 3 1,Lauris,lauris,Strepoli,strepoli,53,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Enteigeddon*³ **¹,enteigeddon 3 1,Lauris,lauris,Keifel,keifel,54,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Enteigeddon*³ **¹,enteigeddon 3 1,Lauris,lauris,Voluminas,voluminas,55,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Glorious Emperors,glorious emperors,RegiBang,regibang,Mega-Bibor,mega bibor,12,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Glorious Emperors,glorious emperors,RegiBang,regibang,Knakrack,knakrack,13,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Glorious Emperors,glorious emperors,RegiBang,regibang,Pixi,pixi,14,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Glorious Emperors,glorious emperors,RegiBang,regibang,Voltolos-T,voltolos t,15,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Glorious Emperors,glorious emperors,RegiBang,regibang,Impoleon,impoleon,16,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Glorious Emperors,glorious emperors,RegiBang,regibang,Garados,garados,17,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Glorious Emperors,glorious emperors,RegiBang,regibang,Hutsassa,hutsassa,18,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Glorious Emperors,glorious emperors,RegiBang,regibang,Flambirex,flambirex,19,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Glorious Emperors,glorious emperors,RegiBang,regibang,Rossana,rossana,20,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Glorious Emperors,glorious emperors,RegiBang,regibang,Xatu,xatu,21,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Glorious Emperors,glorious emperors,RegiBang,regibang,Lanturn,lanturn,22,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Krebuknackis,krebuknackis,PokeBazi,pokebazi,Mega-Aerodactyl,mega aerodactyl,45,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Krebuknackis,krebuknackis,PokeBazi,pokebazi,Scherox,scherox,46,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Krebuknackis,krebuknackis,PokeBazi,pokebazi,Manaphy,manaphy,47,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Krebuknackis,krebuknackis,PokeBazi,pokebazi,Jirachi,jirachi,48,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Krebuknackis,krebuknackis,PokeBazi,pokebazi,Nidoqueen,nidoqueen,49,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Krebuknackis,krebuknackis,PokeBazi,pokebazi,Meloetta,meloetta,51,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Krebuknackis,krebuknackis,PokeBazi,pokebazi,Rotom-Schneide,rotom schneide,52,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Krebuknackis,krebuknackis,PokeBazi,pokebazi,Panpyro,panpyro,54,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Little Littleos,little littleos,Art'n'Gaming,art n gaming,Mega-Bisaflor,mega bisaflor,23,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Little Littleos,little littleos,Art'n'Gaming,art n gaming,Feelinara,feelinara,24,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Little Littleos,little littleos,Art'n'Gaming,art n gaming,Terrakium,terrakium,25,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Little Littleos,little littleos,Art'n'Gaming,art n gaming,Elezard,elezard,26,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Little Littleos,little littleos,Art'n'Gaming,art n gaming,Donphan,donphan,27,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Little Littleos,little littleos,Art'n'Gaming,art n gaming,Porygon2,porygon2,28,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Little Littleos,little littleos,Art'n'Gaming,art n gaming,Farbeagle,farbeagle,29,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Little Littleos,little littleos,Art'n'Gaming,art n gaming,Meditalis,meditalis,30,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Little Littleos,little littleos,Art'n'Gaming,art n gaming,Pyroleo,pyroleo,31,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Little Littleos,little littleos,Art'n'Gaming,art n gaming,Ditto,ditto,32,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Little Littleos,little littleos,Art'n'Gaming,art n gaming,Schwalboss,schwalboss,33,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Munich Magbys*²,munich magbys 2,Shiro,shiro,Mega-Altaria,mega altaria,67,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Munich Magbys*²,munich magbys 2,Shiro,shiro,Demeteros-I,demeteros i,68,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Munich Magbys*²,munich magbys 2,Shiro,shiro,Serpiroyal,serpiroyal,69,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Munich Magbys*²,munich magbys 2,Shiro,shiro,Arkani,arkani,70,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Munich Magbys*²,munich magbys 2,Shiro,shiro,Duokles,duokles,71,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Munich Magbys*²,munich magbys 2,Shiro,shiro,Krebutack,krebutack,72,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Munich Magbys*²,munich magbys 2,Shiro,shiro,Kicklee,kicklee,73,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Munich Magbys*²,munich magbys 2,Shiro,shiro,Shardrago,shardrago,74,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Munich Magbys*²,munich magbys 2,Shiro,shiro,Klikdiklak,klikdiklak,75,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Munich Magbys*²,munich magbys 2,Shiro,shiro,Aeropteryx,aeropteryx,76,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Munich Magbys*²,munich magbys 2,Shiro,shiro,Tauros,tauros,77,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Persian Carpets,persian carpets,Parsifani,parsifani,Mega-Glurak X,mega glurak x,34,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Persian Carpets,persian carpets,Parsifani,parsifani,Demeteros-T,demeteros t,35,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Persian Carpets,persian carpets,Parsifani,parsifani,Gengar,gengar,36,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Persian Carpets,persian carpets,Parsifani,parsifani,Tobutz,tobutz,37,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Persian Carpets,persian carpets,Parsifani,parsifani,Impergator,impergator,38,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Persian Carpets,persian carpets,Parsifani,parsifani,Florges,florges,39,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Persian Carpets,persian carpets,Parsifani,parsifani,Digdri,digdri,40,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Persian Carpets,persian carpets,Parsifani,parsifani,Bronzong,bronzong,41,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Persian Carpets,persian carpets,Parsifani,parsifani,Tengulist,tengulist,42,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Persian Carpets,persian carpets,Parsifani,parsifani,Morlord,morlord,43,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Persian Carpets,persian carpets,Parsifani,parsifani,Skuntank,skuntank,44,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Petalburg Panchams,petalburg panchams,Oktopaul,oktopaul,Mega-Metagross,mega metagross,23,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Petalburg Panchams,petalburg panchams,Oktopaul,oktopaul,Keldeo,keldeo,24,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Petalburg Panchams,petalburg panchams,Oktopaul,oktopaul,Voltolos-I,voltolos i,25,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Petalburg Panchams,petalburg panchams,Oktopaul,oktopaul,Panferno,panferno,26,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Petalburg Panchams,petalburg panchams,Oktopaul,oktopaul,Aquana,aquana,27,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Petalburg Panchams,petalburg panchams,Oktopaul,oktopaul,Relaxo,relaxo,28,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Petalburg Panchams,petalburg panchams,Oktopaul,oktopaul,Togetic,togetic,29,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Petalburg Panchams,petalburg panchams,Oktopaul,oktopaul,Sniebel,sniebel,30,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Petalburg Panchams,petalburg panchams,Oktopaul,oktopaul,Vesprit,vesprit,32,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Petalburg Panchams,petalburg panchams,Oktopaul,oktopaul,Magbrant,magbrant,33,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Prekani,prekani,PresentLP,present,Mega-Absol,mega absol,1,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Prekani,prekani,PresentLP,present,Latios,latios,2,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Prekani,prekani,PresentLP,present,Boreos-T,boreos t,3,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Prekani,prekani,PresentLP,present,Panzaeron,panzaeron,4,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Prekani,prekani,PresentLP,present,Nidoking,nidoking,5,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Prekani,prekani,PresentLP,present,Nachtara,nachtara,6,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Prekani,prekani,PresentLP,present,Gastrodon,gastrodon,7,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Prekani,prekani,PresentLP,present,Fermicula,fermicula,8,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Prekani,prekani,PresentLP,present,Elevoltek,elevoltek,9,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Prekani,prekani,PresentLP,present,Admurai,admurai,10,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Prekani,prekani,PresentLP,present,Regirock,regirock,11,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Surstars,surstars,SurskitTV,surskittv,Mega-Schlapor,mega schlapor,1,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Surstars,surstars,SurskitTV,surskittv,Snibunna,snibunna,2,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Surstars,surstars,SurskitTV,surskittv,Lahmus,lahmus,3,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Surstars,surstars,SurskitTV,surskittv,Iksbat,iksbat,4,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Surstars,surstars,SurskitTV,surskittv,Skelabra,skelabra,5,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Surstars,surstars,SurskitTV,surskittv,Guardevoir,guardevoir,6,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Surstars,surstars,SurskitTV,surskittv,Bisaflor,bisaflor,7,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Surstars,surstars,SurskitTV,surskittv,Zapplarang,zapplarang,8,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Surstars,surstars,SurskitTV,surskittv,Sandamer,sandamer,10,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Surstars,surstars,SurskitTV,surskittv,Rizeros,rizeros,11,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Triyolotree,triyolotree,Minetube,minetube,Mega-Voltenso,mega voltenso,67,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Triyolotree,triyolotree,Minetube,minetube,Starmie,starmie,68,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Triyolotree,triyolotree,Minetube,minetube,Victini,victini,69,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Triyolotree,triyolotree,Minetube,minetube,Trikephalo,trikephalo,70,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Triyolotree,triyolotree,Minetube,minetube,Kobalium,kobalium,71,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Triyolotree,triyolotree,Minetube,minetube,Skorgla,skorgla,72,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Triyolotree,triyolotree,Minetube,minetube,Tangoloss,tangoloss,73,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Triyolotree,triyolotree,Minetube,minetube,Dartignis,dartignis,74,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Triyolotree,triyolotree,Minetube,minetube,Thanathora,thanathora,75,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Triyolotree,triyolotree,Minetube,minetube,Stahlos,stahlos,76,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Triyolotree,triyolotree,Minetube,minetube,Ohrdoch,ohrdoch,77,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Unbound Zoroarks,unbound zoroarks,Raizor,raizor,Mega-Knakrack,mega knakrack,12,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Unbound Zoroarks,unbound zoroarks,Raizor,raizor,Stalobor,stalobor,13,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Unbound Zoroarks,unbound zoroarks,Raizor,raizor,Hippoterus,hippoterus,14,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Unbound Zoroarks,unbound zoroarks,Raizor,raizor,Entei,entei,15,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Unbound Zoroarks,unbound zoroarks,Raizor,raizor,Hoopa,hoopa,16,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Unbound Zoroarks,unbound zoroarks,Raizor,raizor,Boreos-I,boreos i,17,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Unbound Zoroarks,unbound zoroarks,Raizor,raizor,Viridium,viridium,18,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Unbound Zoroarks,unbound zoroarks,Raizor,raizor,Washakwil,washakwil,19,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Unbound Zoroarks,unbound zoroarks,Raizor,raizor,Lapras,lapras,21,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Unbound Zoroarks,unbound zoroarks,Raizor,raizor,Pantimos,pantimos,22,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Unlimited Blade Works*¹,unlimited blade works 1,Bene,bene,Mega-Latias,mega latias,34,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Unlimited Blade Works*¹,unlimited blade works 1,Bene,bene,Heatran,heatran,35,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Unlimited Blade Works*¹,unlimited blade works 1,Bene,bene,Caesurio,caesurio,36,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Unlimited Blade Works*¹,unlimited blade works 1,Bene,bene,Zapdos,zapdos,37,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Unlimited Blade Works*¹,unlimited blade works 1,Bene,bene,Suicune,suicune,38,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Unlimited Blade Works*¹,unlimited blade works 1,Bene,bene,Toxiquak,toxiquak,39,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Unlimited Blade Works*¹,unlimited blade works 1,Bene,bene,Krawumms,krawumms,40,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Unlimited Blade Works*¹,unlimited blade works 1,Bene,bene,Rihornior,rihornior,41,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Unlimited Blade Works*¹,unlimited blade works 1,Bene,bene,Bojelin,bojelin,42,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
-season_003,Regular Season,Unlimited Blade Works*¹,unlimited blade works 1,Bene,bene,Piepi,piepi,44,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Coldlauncher,coldlauncher,FanmadeLetsPlay,fanmadeletsplay,Mega-Turtok,mega turtok,56,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Coldlauncher,coldlauncher,FanmadeLetsPlay,fanmadeletsplay,Fiaro,fiaro,57,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Coldlauncher,coldlauncher,FanmadeLetsPlay,fanmadeletsplay,Clavion,clavion,58,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Coldlauncher,coldlauncher,FanmadeLetsPlay,fanmadeletsplay,Latias,latias,59,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Coldlauncher,coldlauncher,FanmadeLetsPlay,fanmadeletsplay,Rabigator,rabigator,60,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Coldlauncher,coldlauncher,FanmadeLetsPlay,fanmadeletsplay,Shaymin,shaymin,61,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Coldlauncher,coldlauncher,FanmadeLetsPlay,fanmadeletsplay,Magneton,magneton,62,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Coldlauncher,coldlauncher,FanmadeLetsPlay,fanmadeletsplay,Ambidiffel,ambidiffel,63,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Coldlauncher,coldlauncher,FanmadeLetsPlay,fanmadeletsplay,Traunmagil,traunmagil,64,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Coldlauncher,coldlauncher,FanmadeLetsPlay,fanmadeletsplay,Miltank,miltank,65,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Coldlauncher,coldlauncher,FanmadeLetsPlay,fanmadeletsplay,Hariyama,hariyama,66,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Crinchilla,crinchilla,CaptainCrinch,captaincrinch,Mega-Scherox,mega scherox,56,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Crinchilla,crinchilla,CaptainCrinch,captaincrinch,Azumarill,azumarill,57,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Crinchilla,crinchilla,CaptainCrinch,captaincrinch,Kyurem-Schwarz,kyurem schwarz,58,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Crinchilla,crinchilla,CaptainCrinch,captaincrinch,Cresselia,cresselia,59,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Crinchilla,crinchilla,CaptainCrinch,captaincrinch,Mamutel,mamutel,60,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Crinchilla,crinchilla,CaptainCrinch,captaincrinch,Viscogon,viscogon,61,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Crinchilla,crinchilla,CaptainCrinch,captaincrinch,Blitza,blitza,62,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Crinchilla,crinchilla,CaptainCrinch,captaincrinch,Chillabell,chillabell,63,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Crinchilla,crinchilla,CaptainCrinch,captaincrinch,Smogmog,smogmog,64,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Crinchilla,crinchilla,CaptainCrinch,captaincrinch,Karadonis,karadonis,66,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Enteigeddon*³ **¹,enteigeddon 3 1,Lauris,lauris,Mega-Diancie,mega diancie,45,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Enteigeddon*³ **¹,enteigeddon 3 1,Lauris,lauris,Hoopa,hoopa,46,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Enteigeddon*³ **¹,enteigeddon 3 1,Lauris,lauris,Celebi,celebi,47,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Enteigeddon*³ **¹,enteigeddon 3 1,Lauris,lauris,Rotom-Hitze,rotom hitze,48,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Enteigeddon*³ **¹,enteigeddon 3 1,Lauris,lauris,Grypheldis,grypheldis,49,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Enteigeddon*³ **¹,enteigeddon 3 1,Lauris,lauris,Lucario,lucario,50,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Enteigeddon*³ **¹,enteigeddon 3 1,Lauris,lauris,Laschoking,laschoking,51,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Enteigeddon*³ **¹,enteigeddon 3 1,Lauris,lauris,Libelldra,libelldra,52,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Enteigeddon*³ **¹,enteigeddon 3 1,Lauris,lauris,Strepoli,strepoli,53,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Enteigeddon*³ **¹,enteigeddon 3 1,Lauris,lauris,Keifel,keifel,54,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Enteigeddon*³ **¹,enteigeddon 3 1,Lauris,lauris,Voluminas,voluminas,55,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Glorious Emperors,glorious emperors,RegiBang,regibang,Mega-Bibor,mega bibor,12,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Glorious Emperors,glorious emperors,RegiBang,regibang,Knakrack,knakrack,13,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Glorious Emperors,glorious emperors,RegiBang,regibang,Pixi,pixi,14,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Glorious Emperors,glorious emperors,RegiBang,regibang,Voltolos-T,voltolos t,15,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Glorious Emperors,glorious emperors,RegiBang,regibang,Impoleon,impoleon,16,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Glorious Emperors,glorious emperors,RegiBang,regibang,Garados,garados,17,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Glorious Emperors,glorious emperors,RegiBang,regibang,Hutsassa,hutsassa,18,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Glorious Emperors,glorious emperors,RegiBang,regibang,Flambirex,flambirex,19,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Glorious Emperors,glorious emperors,RegiBang,regibang,Rossana,rossana,20,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Glorious Emperors,glorious emperors,RegiBang,regibang,Xatu,xatu,21,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Glorious Emperors,glorious emperors,RegiBang,regibang,Lanturn,lanturn,22,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Krebuknackis,krebuknackis,PokeBazi,pokebazi,Mega-Aerodactyl,mega aerodactyl,45,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Krebuknackis,krebuknackis,PokeBazi,pokebazi,Scherox,scherox,46,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Krebuknackis,krebuknackis,PokeBazi,pokebazi,Manaphy,manaphy,47,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Krebuknackis,krebuknackis,PokeBazi,pokebazi,Jirachi,jirachi,48,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Krebuknackis,krebuknackis,PokeBazi,pokebazi,Nidoqueen,nidoqueen,49,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Krebuknackis,krebuknackis,PokeBazi,pokebazi,Meloetta,meloetta,51,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Krebuknackis,krebuknackis,PokeBazi,pokebazi,Rotom-Schneide,rotom schneide,52,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Krebuknackis,krebuknackis,PokeBazi,pokebazi,Panpyro,panpyro,54,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Little Littleos,little littleos,Art'n'Gaming,art n gaming,Mega-Bisaflor,mega bisaflor,23,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Little Littleos,little littleos,Art'n'Gaming,art n gaming,Feelinara,feelinara,24,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Little Littleos,little littleos,Art'n'Gaming,art n gaming,Terrakium,terrakium,25,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Little Littleos,little littleos,Art'n'Gaming,art n gaming,Elezard,elezard,26,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Little Littleos,little littleos,Art'n'Gaming,art n gaming,Donphan,donphan,27,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Little Littleos,little littleos,Art'n'Gaming,art n gaming,Porygon2,porygon2,28,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Little Littleos,little littleos,Art'n'Gaming,art n gaming,Farbeagle,farbeagle,29,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Little Littleos,little littleos,Art'n'Gaming,art n gaming,Meditalis,meditalis,30,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Little Littleos,little littleos,Art'n'Gaming,art n gaming,Pyroleo,pyroleo,31,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Little Littleos,little littleos,Art'n'Gaming,art n gaming,Ditto,ditto,32,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Little Littleos,little littleos,Art'n'Gaming,art n gaming,Schwalboss,schwalboss,33,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Munich Magbys*²,munich magbys 2,Shiro,shiro,Mega-Altaria,mega altaria,67,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Munich Magbys*²,munich magbys 2,Shiro,shiro,Demeteros-I,demeteros i,68,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Munich Magbys*²,munich magbys 2,Shiro,shiro,Serpiroyal,serpiroyal,69,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Munich Magbys*²,munich magbys 2,Shiro,shiro,Arkani,arkani,70,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Munich Magbys*²,munich magbys 2,Shiro,shiro,Duokles,duokles,71,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Munich Magbys*²,munich magbys 2,Shiro,shiro,Krebutack,krebutack,72,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Munich Magbys*²,munich magbys 2,Shiro,shiro,Kicklee,kicklee,73,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Munich Magbys*²,munich magbys 2,Shiro,shiro,Shardrago,shardrago,74,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Munich Magbys*²,munich magbys 2,Shiro,shiro,Klikdiklak,klikdiklak,75,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Munich Magbys*²,munich magbys 2,Shiro,shiro,Aeropteryx,aeropteryx,76,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Munich Magbys*²,munich magbys 2,Shiro,shiro,Tauros,tauros,77,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Persian Carpets,persian carpets,Parsifani,parsifani,Mega-Glurak X,mega glurak x,34,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Persian Carpets,persian carpets,Parsifani,parsifani,Demeteros-T,demeteros t,35,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Persian Carpets,persian carpets,Parsifani,parsifani,Gengar,gengar,36,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Persian Carpets,persian carpets,Parsifani,parsifani,Tobutz,tobutz,37,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Persian Carpets,persian carpets,Parsifani,parsifani,Impergator,impergator,38,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Persian Carpets,persian carpets,Parsifani,parsifani,Florges,florges,39,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Persian Carpets,persian carpets,Parsifani,parsifani,Digdri,digdri,40,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Persian Carpets,persian carpets,Parsifani,parsifani,Bronzong,bronzong,41,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Persian Carpets,persian carpets,Parsifani,parsifani,Tengulist,tengulist,42,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Persian Carpets,persian carpets,Parsifani,parsifani,Morlord,morlord,43,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Persian Carpets,persian carpets,Parsifani,parsifani,Skuntank,skuntank,44,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Petalburg Panchams,petalburg panchams,Oktopaul,oktopaul,Mega-Metagross,mega metagross,23,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Petalburg Panchams,petalburg panchams,Oktopaul,oktopaul,Keldeo,keldeo,24,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Petalburg Panchams,petalburg panchams,Oktopaul,oktopaul,Voltolos-I,voltolos i,25,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Petalburg Panchams,petalburg panchams,Oktopaul,oktopaul,Panferno,panferno,26,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Petalburg Panchams,petalburg panchams,Oktopaul,oktopaul,Aquana,aquana,27,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Petalburg Panchams,petalburg panchams,Oktopaul,oktopaul,Relaxo,relaxo,28,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Petalburg Panchams,petalburg panchams,Oktopaul,oktopaul,Togetic,togetic,29,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Petalburg Panchams,petalburg panchams,Oktopaul,oktopaul,Sniebel,sniebel,30,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Petalburg Panchams,petalburg panchams,Oktopaul,oktopaul,Vesprit,vesprit,32,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Petalburg Panchams,petalburg panchams,Oktopaul,oktopaul,Magbrant,magbrant,33,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Prekani,prekani,PresentLP,present,Mega-Absol,mega absol,1,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Prekani,prekani,PresentLP,present,Latios,latios,2,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Prekani,prekani,PresentLP,present,Boreos-T,boreos t,3,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Prekani,prekani,PresentLP,present,Panzaeron,panzaeron,4,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Prekani,prekani,PresentLP,present,Nidoking,nidoking,5,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Prekani,prekani,PresentLP,present,Nachtara,nachtara,6,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Prekani,prekani,PresentLP,present,Gastrodon,gastrodon,7,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Prekani,prekani,PresentLP,present,Fermicula,fermicula,8,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Prekani,prekani,PresentLP,present,Elevoltek,elevoltek,9,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Prekani,prekani,PresentLP,present,Admurai,admurai,10,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Prekani,prekani,PresentLP,present,Regirock,regirock,11,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Surstars,surstars,SurskitTV,surskittv,Mega-Schlapor,mega schlapor,1,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Surstars,surstars,SurskitTV,surskittv,Snibunna,snibunna,2,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Surstars,surstars,SurskitTV,surskittv,Lahmus,lahmus,3,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Surstars,surstars,SurskitTV,surskittv,Iksbat,iksbat,4,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Surstars,surstars,SurskitTV,surskittv,Skelabra,skelabra,5,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Surstars,surstars,SurskitTV,surskittv,Guardevoir,guardevoir,6,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Surstars,surstars,SurskitTV,surskittv,Bisaflor,bisaflor,7,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Surstars,surstars,SurskitTV,surskittv,Zapplarang,zapplarang,8,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Surstars,surstars,SurskitTV,surskittv,Sandamer,sandamer,10,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Surstars,surstars,SurskitTV,surskittv,Rizeros,rizeros,11,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Triyolotree,triyolotree,Minetube,minetube,Mega-Voltenso,mega voltenso,67,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Triyolotree,triyolotree,Minetube,minetube,Starmie,starmie,68,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Triyolotree,triyolotree,Minetube,minetube,Victini,victini,69,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Triyolotree,triyolotree,Minetube,minetube,Trikephalo,trikephalo,70,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Triyolotree,triyolotree,Minetube,minetube,Kobalium,kobalium,71,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Triyolotree,triyolotree,Minetube,minetube,Skorgla,skorgla,72,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Triyolotree,triyolotree,Minetube,minetube,Tangoloss,tangoloss,73,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Triyolotree,triyolotree,Minetube,minetube,Dartignis,dartignis,74,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Triyolotree,triyolotree,Minetube,minetube,Thanathora,thanathora,75,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Triyolotree,triyolotree,Minetube,minetube,Stahlos,stahlos,76,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Triyolotree,triyolotree,Minetube,minetube,Ohrdoch,ohrdoch,77,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Unbound Zoroarks,unbound zoroarks,Raizor,raizor,Mega-Knakrack,mega knakrack,12,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Unbound Zoroarks,unbound zoroarks,Raizor,raizor,Stalobor,stalobor,13,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Unbound Zoroarks,unbound zoroarks,Raizor,raizor,Hippoterus,hippoterus,14,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Unbound Zoroarks,unbound zoroarks,Raizor,raizor,Entei,entei,15,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Unbound Zoroarks,unbound zoroarks,Raizor,raizor,Hoopa,hoopa,16,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Unbound Zoroarks,unbound zoroarks,Raizor,raizor,Boreos-I,boreos i,17,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Unbound Zoroarks,unbound zoroarks,Raizor,raizor,Viridium,viridium,18,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Unbound Zoroarks,unbound zoroarks,Raizor,raizor,Washakwil,washakwil,19,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Unbound Zoroarks,unbound zoroarks,Raizor,raizor,Lapras,lapras,21,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Unbound Zoroarks,unbound zoroarks,Raizor,raizor,Pantimos,pantimos,22,output/team-graphics/s3/GPL Teams Spieltag 14 (1).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Unlimited Blade Works*¹,unlimited blade works 1,Bene,bene,Mega-Latias,mega latias,34,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Unlimited Blade Works*¹,unlimited blade works 1,Bene,bene,Heatran,heatran,35,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Unlimited Blade Works*¹,unlimited blade works 1,Bene,bene,Caesurio,caesurio,36,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Unlimited Blade Works*¹,unlimited blade works 1,Bene,bene,Zapdos,zapdos,37,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Unlimited Blade Works*¹,unlimited blade works 1,Bene,bene,Suicune,suicune,38,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Unlimited Blade Works*¹,unlimited blade works 1,Bene,bene,Toxiquak,toxiquak,39,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Unlimited Blade Works*¹,unlimited blade works 1,Bene,bene,Krawumms,krawumms,40,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Unlimited Blade Works*¹,unlimited blade works 1,Bene,bene,Rihornior,rihornior,41,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Unlimited Blade Works*¹,unlimited blade works 1,Bene,bene,Bojelin,bojelin,42,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
+season_003,Liga 1,Unlimited Blade Works*¹,unlimited blade works 1,Bene,bene,Piepi,piepi,44,output/team-graphics/s3/GPL Teams Spieltag 14 (2).jpg,data/manual/team_pokemon_usage.csv,manual_override
 season_004,Regular Season,Enteikutierung,enteikutierung,Lauris,lauris,Pixi,pixi,1,output/team-graphics/s4/Enteikutierung - Lauris Enteitainment.png,data/manual/team_pokemon_usage.csv,manual_override
 season_004,Regular Season,Enteikutierung,enteikutierung,Lauris,lauris,Panzaeron,panzaeron,2,output/team-graphics/s4/Enteikutierung - Lauris Enteitainment.png,data/manual/team_pokemon_usage.csv,manual_override
 season_004,Regular Season,Enteikutierung,enteikutierung,Lauris,lauris,Mega-Glurak X,mega glurak x,3,output/team-graphics/s4/Enteikutierung - Lauris Enteitainment.png,data/manual/team_pokemon_usage.csv,manual_override

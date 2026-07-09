@@ -117,5 +117,20 @@
     "rows": 425,
     "columns": 43,
     "fetch_method": "google_visualization_api"
+  },
+  {
+    "sheet_id": "1_UuLy0LRQbXfL31crTDpStLx_CzYOo8-baJKZIywl9Q",
+    "workbook_title": "GPL Season 3 Liga 2 Tabelle",
+    "gid": "832761930",
+    "title": "Tabellenblatt1",
+    "index": 0,
+    "source_url": "https://docs.google.com/spreadsheets/d/1_UuLy0LRQbXfL31crTDpStLx_CzYOo8-baJKZIywl9Q/edit?gid=832761930#gid=832761930",
+    "raw_path": "data/raw/season_003/sheets/1_uuly0lrqbxfl31crtdpstlx_czyoo8_bajkziywl9q_tabellenblatt1_832761930.csv",
+    "status": "available",
+    "status_code": 200,
+    "error": null,
+    "rows": 45,
+    "columns": 10,
+    "fetch_method": "sheets_api"
   }
 ]

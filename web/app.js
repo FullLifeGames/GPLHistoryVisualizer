@@ -1354,6 +1354,11 @@ function coverageStatusDisplay(status) {
   return status ? t(state.language, `coverage.status.${status}`) : "";
 }
 
+function killlistCoverageDisplay(value) {
+  const text = String(value ?? "").trim();
+  return text === "" ? "" : `${text} %`;
+}
+
 function reviewFlagsDisplay(value) {
   return String(value ?? "")
     .split(";")
@@ -3454,6 +3459,7 @@ function renderDataCoverage() {
       playoff_matches: row.playoff_match_rows ?? "",
       champions: row.champion_rows ?? row.champions,
       killlists: row.killlist_rows ?? row.killlists,
+      killlist_coverage: killlistCoverageDisplay(row.killlist_kill_coverage),
       missing_appearances: row.killlist_rows_missing_appearances ?? "",
       unavailable_killlists: row.unavailable_killlist_rows ?? row.unavailable_killlists,
       videos: row.video_rows ?? row.videos,
@@ -3467,7 +3473,7 @@ function renderDataCoverage() {
   renderTable(
     "#coverage-table",
     rows,
-    ["season", "status", "quality_score", "tables_score", "matches_score", "killlists_score", "videos_score", "priority_gaps", "standings", "matches", "playoff_matches", "champions", "killlists", "missing_appearances", "unavailable_killlists", "videos", "matched_videos", "unmatched_game_videos", "low_confidence_videos", "missing_data", "review_flags", "source"],
+    ["season", "status", "quality_score", "tables_score", "matches_score", "killlists_score", "videos_score", "priority_gaps", "standings", "matches", "playoff_matches", "champions", "killlists", "killlist_coverage", "missing_appearances", "unavailable_killlists", "videos", "matched_videos", "unmatched_game_videos", "low_confidence_videos", "missing_data", "review_flags", "source"],
     ["season", "source"],
   );
 

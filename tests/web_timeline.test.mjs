@@ -187,15 +187,18 @@ for (const row of realFinal) {
   assert.equal(String(Math.round(realLastFrame.get(row.key))), row.elo, `final Elo frame differs for ${row.name}`);
 }
 
-// These five (season, division) tables reconstruct exactly from the match rows.
+// These six (season, division) tables reconstruct exactly from the match rows.
+// Season 10 joined the list once Spieltag 13 was folded into the official
+// table and the two winner-less matches got their confirmed winners.
 // If a change breaks one of them, the cumulative standings logic regressed.
-const realTables = standingsHistory(realTimeline, realStandings);
+const realTables = standingsHistory(realTimeline);
 for (const [seasonId, division] of [
   ["season_004", "Liga 2"],
   ["season_006", "Sun Conference"],
   ["season_007", "Regular Season"],
   ["season_008", "Liga 1"],
   ["season_008", "Liga 2"],
+  ["season_010", "Regular Season"],
 ]) {
   const frames = realTables.get(seasonId).get(division);
   const reconciledRows = reconcileStandings(frames[frames.length - 1], realStandings, { seasonId, division });
@@ -207,26 +210,54 @@ for (const [seasonId, division] of [
   }
 }
 
-// Season 10 plays a 13th matchday that the official table does not count, so
-// every player shows exactly one extra match rather than a scattered gap.
-const season10Frames = realTables.get("season_010").get("Regular Season");
-const season10 = reconcileStandings(season10Frames[season10Frames.length - 1], realStandings, {
-  seasonId: "season_010",
+// Season 1: Morbolth's forfeits (Spieltage 15-20) carry the opponent as
+// winner, so his reconstructed record matches the official points exactly;
+// the uniform -2 match gap is the uncaptured Spieltage 21/22, whose two
+// manually sourced rows are `unresolved` and stay out of the table.
+const realSeason1Frames = realTables.get("season_001").get("Regular Season");
+const realSeason1 = reconcileStandings(realSeason1Frames[realSeason1Frames.length - 1], realStandings, {
+  seasonId: "season_001",
   division: "Regular Season",
-}).filter((row) => row.official);
-assert.equal(season10.length, 14);
-assert.deepEqual([...new Set(season10.map((row) => row.matchesDelta))], [1]);
+});
+const morbolth = realSeason1.find((row) => row.key === "morbolth");
+assert.equal(morbolth.losses, 15);
+assert.equal(morbolth.draws, 1);
+assert.equal(morbolth.pointsDelta, 0);
+assert.equal(morbolth.matchesDelta, -2);
 
-// Season 3 merges two leagues under one "Regular Season" label; the member
-// filter must recover Liga 1: the 14 official players plus LucarioLP (who led
-// Bene's slot early on), and Lauris capped at his 26 Liga-1 games instead of
-// carrying his 13 Liga-2 guest matches into the table.
-const season3Frames = realTables.get("season_003").get("Regular Season");
-const season3 = season3Frames[season3Frames.length - 1];
+// Season 3's two leagues carry their own division labels since the split.
+// Liga 1 holds the 14 official players plus LucarioLP (who led Bene's slot
+// early on); Lauris keeps his 26 Liga-1 games while his 13 Liga-2 guest
+// matches stay in the Liga-2 table. His +1 points drift is the documented
+// 3-strikes deduction in the official table.
+const season3Frames = realTables.get("season_003").get("Liga 1");
+const season3 = reconcileStandings(season3Frames[season3Frames.length - 1], realStandings, {
+  seasonId: "season_003",
+  division: "Liga 1",
+});
 assert.equal(season3.length, 15);
 assert.equal(season3.find((row) => row.key === "lauris").matches, 26);
+assert.equal(season3.find((row) => row.key === "lauris").pointsDelta, 1);
 assert.ok(season3.some((row) => row.key === "lucariolp"));
+assert.equal(season3.find((row) => row.key === "lucariolp").official, null);
 assert.equal(season3[0].name, "PresentLP");
+
+// Liga 2's official table is team-based with six mid-season controller
+// switches, so only full-season players reproduce their official rows —
+// LightGaming does so exactly and wins the league. Slot predecessors (WolvX,
+// KilluaSan, ...) and Liga-1 guests (Lauris, Shiro) appear as unofficial
+// person rows instead of vanishing.
+const season3L2Frames = realTables.get("season_003").get("Liga 2");
+const season3L2 = reconcileStandings(season3L2Frames[season3L2Frames.length - 1], realStandings, {
+  seasonId: "season_003",
+  division: "Liga 2",
+});
+assert.equal(season3L2.length, 21);
+assert.equal(season3L2[0].name, "LightGaming");
+assert.equal(season3L2[0].pointsDelta, 0);
+assert.equal(season3L2[0].matchesDelta, 0);
+assert.equal(season3L2.find((row) => row.key === "lauris").official, null);
+assert.equal(season3L2.find((row) => row.key === "lauris").matches, 13);
 
 // Ties break on differential like the official tables: S7 ends with Nestfloh
 // and Dauni both at 11-2/33 points, and Nestfloh takes rank 1 on +30.

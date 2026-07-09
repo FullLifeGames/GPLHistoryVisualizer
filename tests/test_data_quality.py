@@ -2,6 +2,7 @@ import csv
 from pathlib import Path
 
 from gpl_history.data_quality import (
+    _killlist_kill_coverage,
     check_generated_artifacts,
     generate_data_quality,
 )
@@ -147,6 +148,7 @@ def test_generate_data_quality_writes_source_claims_and_quality_rows(tmp_path):
             "killlist_rows": "1",
             "killlist_rows_missing_appearances": "1",
             "unavailable_killlist_rows": "1",
+            "killlist_kill_coverage": "",
             "video_rows": "2",
             "matched_video_rows": "1",
             "unmatched_game_video_rows": "1",
@@ -164,6 +166,39 @@ def test_generate_data_quality_writes_source_claims_and_quality_rows(tmp_path):
             "source_urls": "https://sheet.test/deleted;https://sheet.test/killlist;https://sheet.test/playoffs;https://sheet.test/table;https://youtube.test/playlist;https://youtube.test/watch?v=matched-low;https://youtube.test/watch?v=unmatched",
         }
     ]
+
+
+def test_killlist_kill_coverage_measures_kills_not_rows():
+    standings = [
+        {"stage": "final_table", "is_primary": "true", "kills": "100"},
+        {"stage": "final_table", "is_primary": "true", "kills": "100"},
+        # S9-style duplicate: the non-primary overall table repeats the kills.
+        {"stage": "final_table", "is_primary": "false", "kills": "200"},
+        {"stage": "playoffs", "is_primary": "true", "kills": "50"},
+    ]
+
+    killlists = [
+        {"division": "Liga 1", "kills": "91", "pokemon": "A", "trainer": "x"},
+        {"division": "Playoffs", "kills": "9", "pokemon": "B", "trainer": "y"},
+    ]
+    # Playoff lists stay out of the ratio outside season 10.
+    assert _killlist_kill_coverage("season_006", killlists, standings) == 46
+
+    # Season 10 counts the cumulative playoff list plus the regular rows it
+    # does not repeat.
+    s10_killlists = [
+        {"division": "Playoffs", "kills": "60", "pokemon": "A", "trainer": "x"},
+        {"division": "Regular Season", "kills": "40", "pokemon": "A", "trainer": "x"},
+        {"division": "Regular Season", "kills": "40", "pokemon": "B", "trainer": "y"},
+    ]
+    assert _killlist_kill_coverage("season_010", s10_killlists, standings) == 50
+
+    # An Overall list wins whenever present.
+    overall = [{"division": "Overall", "kills": "200", "pokemon": "A", "trainer": "x"}]
+    assert _killlist_kill_coverage("season_009", overall, standings) == 100
+
+    assert _killlist_kill_coverage("season_001", [], standings) == 0
+    assert _killlist_kill_coverage("season_001", [], []) is None
 
 
 def test_check_generated_artifacts_reports_drift(tmp_path):
