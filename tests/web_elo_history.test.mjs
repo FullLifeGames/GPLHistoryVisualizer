@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { eloChronology } from "../web/elo_history.js";
+import { eloChronology, upsetRows } from "../web/elo_history.js";
 
 const fixture = [
   { season_id: "season_001", match_id: "m1", week: "1", stage: "Regular Season", player_a: "Anna", player_b: "Ben", winner: "Anna", data_status: "available" },
@@ -40,3 +40,29 @@ const chronoSkipped = eloChronology(withSkipped);
 assert.equal(chronoSkipped.perMatch.has("m9"), false);
 assert.equal(chronoSkipped.perMatch.has("m10"), false);
 assert.deepEqual(chronoSkipped.order, ["m1", "m2", "m3"]);
+
+// --- upsetRows ---
+// Anna beats Ben twice (m1, m2), then Ben wins m3 as the underdog.
+const upsets = upsetRows(fixture, chrono);
+assert.equal(upsets[0].match_id, "m3"); // the only underdog win ranks first
+assert.ok(upsets[0].win_prob_winner < 0.5);
+assert.equal(upsets[0].winner_name, "Ben");
+assert.equal(upsets[0].loser_name, "Anna");
+assert.ok(upsets[0].elo_pre_winner < upsets[0].elo_pre_loser);
+assert.equal(upsets.length, 3);
+assert.ok(upsets[0].upset_score > upsets[1].upset_score);
+
+// draws and special results are excluded
+const withDraw = fixture.concat([
+  { season_id: "season_001", match_id: "m4", week: "4", stage: "Regular Season", player_a: "Anna", player_b: "Ben", winner: "", result_basis: "draw", data_status: "available" },
+  { season_id: "season_001", match_id: "m5", week: "5", stage: "Regular Season", player_a: "Anna", player_b: "Ben", winner: "Anna", result_basis: "forfeit", data_status: "available" },
+]);
+const chronoWithDraw = eloChronology(withDraw);
+const upsetsWithDraw = upsetRows(withDraw, chronoWithDraw);
+assert.ok(!upsetsWithDraw.some((row) => row.match_id === "m4"));
+assert.ok(!upsetsWithDraw.some((row) => row.match_id === "m5"));
+
+// view z-scores join by match id when highlights are provided
+const highlighted = upsetRows(fixture, chrono, [{ match_id: "m3", views_z_score_peak: "3.2" }]);
+assert.equal(highlighted[0].views_z_score, "3.2");
+assert.equal(highlighted[1].views_z_score, "");

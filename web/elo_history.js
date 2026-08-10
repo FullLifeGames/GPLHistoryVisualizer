@@ -47,3 +47,43 @@ export function eloChronology(matches = [], normalizeKey = normalizedStatsKey) {
 
   return { perMatch, perPerson, order, finalRows };
 }
+
+// Ranks decided matches by how improbable the winner's victory was under the
+// pregame Elo. Forfeits stay out: the league counted them as wins, but nobody
+// beat the odds in a match that was never played. Draws have no winner to rank.
+export function upsetRows(matches = [], chronology, highlightRows = [], normalizeKey = normalizedStatsKey) {
+  const zByMatch = new Map(
+    highlightRows.map((row) => [String(row.match_id || ""), row.views_z_score_peak ?? ""]),
+  );
+  const rows = [];
+  for (const row of matches) {
+    if (["forfeit", "unresolved", "draw"].includes(row.result_basis || "")) continue;
+    const entry = chronology.perMatch.get(String(row.match_id || ""));
+    const winnerKey = normalizeKey(row.winner);
+    if (!entry || !winnerKey || (winnerKey !== entry.aKey && winnerKey !== entry.bKey)) continue;
+    const winnerIsA = winnerKey === entry.aKey;
+    const winProb = winnerIsA ? entry.winProbA : 1 - entry.winProbA;
+    rows.push({
+      match_id: String(row.match_id || ""),
+      season_id: row.season_id || "",
+      division: row.division || "",
+      stage: row.stage || "",
+      week: row.week || "",
+      winner_name: winnerIsA ? entry.aName : entry.bName,
+      winner_key: winnerKey,
+      loser_name: winnerIsA ? entry.bName : entry.aName,
+      loser_key: winnerIsA ? entry.bKey : entry.aKey,
+      elo_pre_winner: winnerIsA ? entry.eloPreA : entry.eloPreB,
+      elo_pre_loser: winnerIsA ? entry.eloPreB : entry.eloPreA,
+      win_prob_winner: winProb,
+      upset_score: 1 - winProb,
+      score: [row.score_a, row.score_b].filter((value) => value !== undefined && value !== "").join(":"),
+      video_url: row.video_url || "",
+      views_z_score: zByMatch.get(String(row.match_id || "")) ?? "",
+      source_urls: row.source_urls || "",
+    });
+  }
+  return rows.sort(
+    (a, b) => b.upset_score - a.upset_score || String(a.match_id).localeCompare(String(b.match_id)),
+  );
+}
