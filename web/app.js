@@ -498,17 +498,13 @@ function bindControls() {
     if (recordTabButton) {
       event.preventDefault();
       state.recordBookTab = recordTabButton.dataset.recordTab;
+      if (state.recordBookTab === "records") state.recordKey = null;
       renderRecordBook();
     }
     const recordKeyButton = event.target.closest("[data-record-key]");
     if (recordKeyButton) {
       event.preventDefault();
       state.recordKey = recordKeyButton.dataset.recordKey;
-      renderRecordBook();
-    }
-    if (event.target.closest("[data-record-back]")) {
-      event.preventDefault();
-      state.recordKey = null;
       renderRecordBook();
     }
     const streakTypeButton = event.target.closest("[data-streak-type]");
@@ -768,9 +764,14 @@ function applyViewDataModeDefaults(viewName, previousView) {
   dataModeFilter.value = state.dataMode;
 }
 
+// Views whose content cannot honor the global toolbar filters: cinema and
+// zeitreise manage their own controls; record book and hall of fame render
+// pipeline-computed career aggregates that no client-side slice can recompute.
+const TOOLBAR_HIDDEN_VIEWS = new Set(["cinema", "zeitreise", "record-book", "hall-of-fame"]);
+
 function setActiveView(viewName) {
   state.view = viewName;
-  document.querySelector(".toolbar")?.classList.toggle("is-cinema-hidden", viewName === "cinema" || viewName === "zeitreise");
+  document.querySelector(".toolbar")?.classList.toggle("is-cinema-hidden", TOOLBAR_HIDDEN_VIEWS.has(viewName));
   document.querySelectorAll(".tab").forEach((item) => {
     const activeGroup = viewGroupForView(viewName);
     const inActiveGroup = item.dataset.viewGroup === activeGroup;
@@ -3737,7 +3738,9 @@ function renderAwards() {
   if (!cards) return;
   renderAwardLegend();
   const allRows = state.data.awards ?? [];
-  const rows = awardsBySeason(allRows, state.season).filter((row) => rowMatchesSearch(row));
+  const rows = awardsBySeason(allRows, state.season).filter(
+    (row) => applyDataMode(row) && divisionMatches(row, state.division) && rowMatchesSearch(row),
+  );
 
   if (state.season === "all") {
     cards.innerHTML = allTimeAwardCards(rows);
