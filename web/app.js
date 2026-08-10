@@ -139,6 +139,9 @@ const VIEW_DATASETS = {
   "roster-detail": ["pokemonDraftOverview", "teamPokemonUsage", "teamRosters", "rosterScores", "rosterMatchdays"],
   "video-archive": ["videos"],
   "upset-index": ["matchHighlights", "matchVideos"],
+  rivalries: ["matchupSummary", "matchHighlights", "matchVideos"],
+  "rivalry-detail": ["matchupSummary", "matchHighlights", "matchVideos"],
+  oracle: ["matchVideos"],
   "record-book": ["streaks", "recordsProgression", "matchVideos", "rosterMatchdays"],
   "awards": ["awards", "personAllTime"],
   "hall-of-fame": ["personAllTime", "matchVideos", "awards"],
@@ -225,11 +228,18 @@ const state = {
   personFocus: null,
   pokemonFocus: null,
   rosterFocus: null,
+  rivalryFocus: null,
   draftPickedStatus: "all",
   draftTierFilter: "all",
   rosterCardLimit: 24,
   matchHighlightCardLimit: 8,
   upsetCardLimit: 8,
+  rivalryCardLimit: 8,
+  oracle: {
+    aKey: "",
+    bKey: "",
+    includeStints: false,
+  },
   recordBookTab: "records",
   recordKey: null,
   streakType: "all",
@@ -292,6 +302,9 @@ const VIEW_RENDERERS = {
   "match-plan": renderMatchPlan,
   "video-archive": renderVideoArchive,
   "upset-index": renderUpsetIndex,
+  rivalries: renderRivalries,
+  "rivalry-detail": renderRivalryDetail,
+  oracle: renderOracle,
   "record-book": renderRecordBook,
   "awards": renderAwards,
   "hall-of-fame": renderHallOfFame,
@@ -677,6 +690,7 @@ function applyRouteFromHash() {
     state.personFocus = resolvePersonFocus(route.personKey);
     state.pokemonFocus = null;
     state.rosterFocus = null;
+    state.rivalryFocus = null;
     state.season = "all";
     state.autoSeasonDefault = false;
     state.division = "all";
@@ -688,6 +702,7 @@ function applyRouteFromHash() {
     state.personFocus = null;
     state.pokemonFocus = null;
     state.rosterFocus = null;
+    state.rivalryFocus = null;
     state.season = route.seasonId;
     state.autoSeasonDefault = false;
     state.division = "all";
@@ -699,6 +714,7 @@ function applyRouteFromHash() {
     state.personFocus = null;
     state.pokemonFocus = resolvePokemonFocus(route.pokemonKey);
     state.rosterFocus = null;
+    state.rivalryFocus = null;
     state.season = "all";
     state.autoSeasonDefault = false;
     state.division = "all";
@@ -710,6 +726,19 @@ function applyRouteFromHash() {
     state.personFocus = null;
     state.pokemonFocus = null;
     state.rosterFocus = { key: route.rosterKey };
+    state.rivalryFocus = null;
+    state.season = "all";
+    state.autoSeasonDefault = false;
+    state.division = "all";
+    state.search = "";
+    seasonFilter.value = state.season;
+    divisionFilter.value = state.division;
+    searchFilter.value = "";
+  } else if (route.rivalryKey) {
+    state.personFocus = null;
+    state.pokemonFocus = null;
+    state.rosterFocus = null;
+    state.rivalryFocus = { aKey: route.rivalryKey.aKey, bKey: route.rivalryKey.bKey };
     state.season = "all";
     state.autoSeasonDefault = false;
     state.division = "all";
@@ -721,6 +750,7 @@ function applyRouteFromHash() {
     state.personFocus = null;
     state.pokemonFocus = null;
     state.rosterFocus = null;
+    state.rivalryFocus = null;
     if (previousGroup !== currentGroup) {
       state.search = "";
       searchFilter.value = "";
@@ -765,9 +795,10 @@ function applyViewDataModeDefaults(viewName, previousView) {
 }
 
 // Views whose content cannot honor the global toolbar filters: cinema and
-// zeitreise manage their own controls; record book and hall of fame render
-// pipeline-computed career aggregates that no client-side slice can recompute.
-const TOOLBAR_HIDDEN_VIEWS = new Set(["cinema", "zeitreise", "record-book", "hall-of-fame"]);
+// zeitreise manage their own controls; record book, hall of fame, rivalries,
+// and the oracle render career-scope data over the full archive that no
+// client-side slice can recompute.
+const TOOLBAR_HIDDEN_VIEWS = new Set(["cinema", "zeitreise", "record-book", "hall-of-fame", "rivalries", "rivalry-detail", "oracle"]);
 
 function setActiveView(viewName) {
   state.view = viewName;
@@ -5303,6 +5334,12 @@ function renderMatchup() {
     ${matches.length ? `<div class="table-wrap">${tableHtml(matchRows, matchColumns, ["player_a", "player_b", "videos", "source"])}</div>` : `<p class="empty">${escapeHtml(t(state.language, "matchup.empty"))}</p>`}
   `;
 }
+
+function renderRivalries() {}
+
+function renderRivalryDetail() {}
+
+function renderOracle() {}
 
 function aggregateMatchupRows(selectedKey) {
   const rows = state.data.matchupSummary ?? [];

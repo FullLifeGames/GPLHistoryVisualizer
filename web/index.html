@@ -66,6 +66,8 @@
         <button class="tab" data-view-group="pokemon" data-view="pokemon-drafts" data-i18n="nav.pokemonDrafts">Pokémon-Drafts</button>
         <button class="tab" data-view-group="people" data-view="team-rosters" data-i18n="nav.teamRosters">Kaderübersichten</button>
         <button class="tab" data-view-group="duels" data-view="matchup" data-i18n="nav.matchup">Matchup-Check</button>
+        <button class="tab" data-view-group="duels" data-view="rivalries" data-i18n="nav.rivalries">Rivalitäten</button>
+        <button class="tab" data-view-group="duels" data-view="oracle" data-i18n="nav.oracle">Orakel</button>
         <button class="tab" data-view-group="seasons" data-view="battle-history" data-i18n="nav.battleHistory">Spielbaum</button>
         <button class="tab" data-view-group="seasons" data-view="match-highlights" data-i18n="nav.matchHighlights">Highlightkämpfe</button>
         <button class="tab" data-view-group="seasons" data-view="season-detail" data-i18n="nav.seasonDetail">Saisonakte</button>
@@ -657,6 +659,62 @@
           <button type="submit" data-i18n="matchup.check">Prüfen</button>
         </form>
         <div id="matchup-result" class="result-box"></div>
+      </section>
+
+      <section id="view-rivalries" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.rivalriesTitle">Rivalitäten</h2>
+          <p data-i18n="sections.rivalriesDescription">Die meistgespielten, engsten und meistgesehenen Duelle der GPL-Geschichte. Rangfolge berechnet, nicht offiziell.</p>
+        </div>
+        <details class="score-explainer">
+          <summary data-i18n="rivalries.scoreFormulaTitle">Wie wird der Rivalitäts-Score berechnet?</summary>
+          <p data-i18n="rivalries.scoreFormula">Score = Duelle × (0,2 + Ausgeglichenheit) × (1 + log10(1 + Videoaufrufe)). Ausgeglichenheit = 1 − |Siege A − Siege B| / Duelle. Nur Paarungen mit mindestens 3 Duellen.</p>
+        </details>
+        <div id="rivalry-cards" class="hof-grid"></div>
+        <div id="rivalry-show-more"></div>
+        <div id="rivalry-table" class="table-host"></div>
+      </section>
+
+      <section id="view-rivalry-detail" class="view">
+        <div class="section-head">
+          <h2 id="rivalry-detail-title"></h2>
+          <p class="muted" data-i18n="rivalries.detailNote">Datenbasis: gesamtes Archiv. Elo-Werte aus der Client-Chronologie (K=32, Start 1500), keine offizielle Wertung.</p>
+        </div>
+        <div id="rivalry-summary" class="summary-grid"></div>
+        <div id="rivalry-gap-block">
+          <h3 data-i18n="rivalries.eloGapTitle">Elo-Abstand über die Duelle</h3>
+          <div id="rivalry-gap-chart"></div>
+          <p id="rivalry-gap-hint" class="muted"></p>
+        </div>
+        <div id="rivalry-most-watched"></div>
+        <h3 data-i18n="rivalries.meetingsTitle">Alle Duelle</h3>
+        <div id="rivalry-meetings"></div>
+      </section>
+
+      <section id="view-oracle" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.oracleTitle">Orakel der GPL</h2>
+          <p data-i18n="sections.oracleDescription">Wie viele Duelle liegen zwischen zwei Personen? Kürzeste Kette über tatsächlich gespielte Kämpfe.</p>
+        </div>
+        <form id="oracle-form" class="matchup-form">
+          <label>
+            <span data-i18n="matchup.firstName">Erster Name</span>
+            <select id="oracle-a"></select>
+          </label>
+          <label>
+            <span data-i18n="matchup.secondName">Zweiter Name</span>
+            <select id="oracle-b"></select>
+          </label>
+          <label class="oracle-toggle">
+            <input type="checkbox" id="oracle-include-stints" />
+            <span data-i18n="oracle.includeStints">Auch gemeinsame Saisons zählen</span>
+          </label>
+          <button type="submit" data-i18n="oracle.search">Verbinden</button>
+        </form>
+        <div id="oracle-result" class="result-box"></div>
+        <h3 data-i18n="oracle.leaderboardTitle">Vernetzungs-Rangliste</h3>
+        <p class="muted" data-i18n="oracle.leaderboardNote">Anzahl verschiedener Gegner über die gesamte Archiv-Historie (ohne Forfeits und ungeklärte Kämpfe).</p>
+        <div id="oracle-leaderboard" class="table-host"></div>
       </section>
     </main>
 
