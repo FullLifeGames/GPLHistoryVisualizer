@@ -8,9 +8,17 @@ function seasonRows(rows, seasonId) {
   return (rows ?? []).filter((row) => row.season_id === seasonId);
 }
 
+// Top league first: viewers land on the championship race, not Liga 2.
+function divisionRank(division) {
+  const folded = division.toLowerCase();
+  if (folded.includes("regular")) return 0;
+  if (folded.includes("liga 1")) return 1;
+  return 2;
+}
+
 export function titleRaceDivisions(rows, seasonId) {
-  return [...new Set(seasonRows(rows, seasonId).map((row) => row.division || ""))].sort((a, b) =>
-    a.localeCompare(b, "de"),
+  return [...new Set(seasonRows(rows, seasonId).map((row) => row.division || ""))].sort(
+    (a, b) => divisionRank(a) - divisionRank(b) || a.localeCompare(b, "de"),
   );
 }
 

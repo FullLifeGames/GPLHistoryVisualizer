@@ -200,6 +200,23 @@
           <h2 data-i18n="sections.tableHistoryTitle">Tabellenverlauf</h2>
           <p data-i18n="sections.tableHistoryDescription">Tabellenstände je Saison mit Quellenstatus pro Zeile.</p>
         </div>
+        <div class="title-race-head">
+          <h3 data-i18n="titleRace.title">Titelrennen</h3>
+          <span class="simulation-badge" data-i18n="titleRace.simBadge">Simulation</span>
+        </div>
+        <p class="muted" id="title-race-note"></p>
+        <div class="audience-controls title-race-controls">
+          <label for="title-race-division"><span data-i18n="titleRace.division">Liga</span>
+            <select id="title-race-division"></select>
+          </label>
+        </div>
+        <div id="title-race-chart"></div>
+        <div id="title-race-legend" class="audience-legend"></div>
+        <div class="title-race-head" id="title-race-playoffs-head" hidden>
+          <h3 data-i18n="titleRace.playoffsTitle">Playoff-Chancen</h3>
+          <span class="simulation-badge" data-i18n="titleRace.simBadge">Simulation</span>
+        </div>
+        <div id="title-race-playoffs-chart"></div>
         <div id="table-history-table" class="table-wrap"></div>
       </section>
 

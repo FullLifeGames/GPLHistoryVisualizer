@@ -34,6 +34,7 @@ assert.equal(lazyDatasets.includes("matchupSummary"), true);
 assert.equal(lazyDatasets.includes("rosterScores"), true);
 assert.equal(lazyDatasets.includes("rosterMatchdays"), true);
 assert.equal(lazyDatasets.includes("seasonStorylines"), true);
+assert.equal(lazyDatasets.includes("titleOdds"), true);
 
 assert.equal(appJs.includes("const VIEW_DATASETS"), true);
 assert.match(appJs, /"all-time": \["personAllTime"\]/);
@@ -50,6 +51,7 @@ assert.match(appJs, /oracle: \["matchVideos"\]/);
 assert.match(appJs, /games: \[\]/);
 assert.match(appJs, /"audience-history": \["videos", "matchHighlights", "matchVideos"\]/);
 assert.match(appJs, /zeitstrahl: \["videos", "recordsProgression", "matchVideos"\]/);
+assert.match(appJs, /"table-history": \["titleOdds"\]/);
 assert.match(appJs, /game: \["teamRosters", "rosterMatchdays", "videos", "matchupSummary", "matchVideos", "personAllTime", "pokemonDraftInstances"\]/);
 assert.equal(appJs.includes("loadCoreDatasets("), true);
 assert.equal(appJs.includes("ensureDatasetsForView("), true);

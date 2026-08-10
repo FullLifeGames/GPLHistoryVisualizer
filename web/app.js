@@ -46,6 +46,7 @@ import {
   timelineEvents,
   timelineSliderModel,
 } from "./timeline_events.js";
+import { titleRaceDivisions, titleRaceSeries } from "./title_race.js";
 import { awardsBySeason, finderFilterRows, hofInductees, spoonRows, streakTableRows } from "./records.js";
 import { rivalryMeetings, rivalryPairs } from "./rivalries.js";
 import { dominanceRows, winChainGraph, winChainPath } from "./oracle.js";
@@ -155,6 +156,7 @@ const LAZY_DATASETS = {
   recordsProgression: { url: "../data/normalized/records_progression.csv", optional: true },
   awards: { url: "../data/normalized/awards.csv", optional: true },
   seasonStorylines: { url: "../data/normalized/season_storylines.csv", optional: true },
+  titleOdds: { url: "../data/normalized/title_odds.csv", optional: true },
 };
 
 const DATASETS = { ...CORE_DATASETS, ...LAZY_DATASETS };
@@ -164,7 +166,7 @@ const VIEW_DATASETS = {
   killlists: ["pokemonDraftOverview", "pokemonAllTime"],
   "pokemon-drafts": ["pokemonDraftOverview", "pokemonDraftInstances"],
   "pokemon-detail": ["pokemonDraftOverview", "pokemonDraftInstances"],
-  "table-history": [],
+  "table-history": ["titleOdds"],
   "match-plan": ["matchVideos"],
   "battle-history": ["matchVideos"],
   "match-highlights": ["matchHighlights", "matchVideos"],
@@ -302,6 +304,9 @@ const state = {
   },
   zeitstrahl: {
     date: "",
+  },
+  titleRace: {
+    division: "",
   },
   rosterVariantSelection: {},
   autoSeasonDefault: false,
@@ -2907,7 +2912,116 @@ function renderPokemonFocus() {
   `;
 }
 
+function titleRacePercent(value) {
+  return `${Math.round(value * 100)} %`;
+}
+
+function titleRaceChartConfig(entries, probabilityField, tooltipKey, extra = {}) {
+  return {
+    series: entries.map((entry, index) => ({
+      className: `viz-series-${(index % 12) + 1} title-race-line`,
+      points: entry.points,
+      name: entry.name,
+    })),
+    height: extra.height ?? 280,
+    yDomain: [0, 1.02],
+    formatX: (value) => (Number.isInteger(value) ? String(value) : ""),
+    formatY: titleRacePercent,
+    tooltip: (source) =>
+      formatMessage(t(state.language, tooltipKey), {
+        name: source.person_name,
+        week: source.week,
+        value: titleRacePercent(Number.parseFloat(source[probabilityField])),
+      }),
+    fallbackText: t(state.language, "titleRace.empty"),
+    ...extra,
+  };
+}
+
+// Charts installed by charts.js keep a ResizeObserver that redraws into the
+// container; clearing via replaceChildren alone lets the old chart reappear.
+function clearChartHost(host) {
+  if (typeof host.__chartCleanup === "function") host.__chartCleanup();
+  host.__chartCleanup = null;
+  host.replaceChildren();
+}
+
+function renderTitleRace() {
+  const note = document.querySelector("#title-race-note");
+  const chart = document.querySelector("#title-race-chart");
+  const legend = document.querySelector("#title-race-legend");
+  const controls = document.querySelector(".title-race-controls");
+  const playoffHead = document.querySelector("#title-race-playoffs-head");
+  const playoffChart = document.querySelector("#title-race-playoffs-chart");
+  if (!chart) return;
+  playoffHead.hidden = true;
+  clearChartHost(playoffChart);
+  legend.innerHTML = "";
+
+  const rows = state.data.titleOdds ?? [];
+  if (state.season === "all") {
+    controls.hidden = true;
+    clearChartHost(chart);
+    note.textContent = t(state.language, "titleRace.chooseSeason");
+    return;
+  }
+  const divisions = titleRaceDivisions(rows, state.season);
+  if (!divisions.length) {
+    controls.hidden = true;
+    clearChartHost(chart);
+    note.textContent = t(state.language, "titleRace.empty");
+    return;
+  }
+  controls.hidden = divisions.length < 2;
+  if (!divisions.includes(state.titleRace.division)) state.titleRace.division = divisions[0];
+  const select = document.querySelector("#title-race-division");
+  select.innerHTML = divisions
+    .map(
+      (division) =>
+        `<option value="${escapeAttr(division)}"${division === state.titleRace.division ? " selected" : ""}>${escapeHtml(divisionDisplay(division, "regular_season"))}</option>`,
+    )
+    .join("");
+  select.onchange = () => {
+    state.titleRace.division = select.value;
+    renderTitleRace();
+  };
+
+  const race = titleRaceSeries(rows, { seasonId: state.season, division: state.titleRace.division });
+  let noteText = formatMessage(t(state.language, "titleRace.note"), { sims: race.sims, seed: race.seed });
+  if (race.decidedWeek !== null) {
+    noteText += ` ${formatMessage(t(state.language, "titleRace.decidedNote"), { name: race.decidedName, week: race.decidedWeek })}`;
+  }
+  note.textContent = noteText;
+
+  const markers = [];
+  if (race.decidedWeek !== null) {
+    markers.push({
+      x: race.decidedWeek,
+      y: 0.95,
+      label: t(state.language, "titleRace.decided"),
+      labelAt: "top",
+      className: "title-race-decided",
+    });
+  }
+  lineChart(chart, titleRaceChartConfig(race.series, "p_first", "titleRace.tooltip", { markers }));
+  legend.innerHTML = race.series
+    .map(
+      (entry, index) =>
+        `<span class="audience-legend-chip"><span class="audience-legend-swatch viz-series-${(index % 12) + 1}"></span>${personLink(personIdForName(entry.name), entry.name)} · ${titleRacePercent(entry.final)}</span>`,
+    )
+    .join("");
+
+  if (race.playoffSeries) {
+    playoffHead.hidden = false;
+    lineChart(
+      playoffChart,
+      titleRaceChartConfig(race.playoffSeries, "p_playoffs", "titleRace.playoffTooltip", { height: 220, fallbackText: "" }),
+    );
+  }
+}
+
 function renderTableHistory() {
+  renderTitleRace();
   const rows = filtered(state.data.standings ?? []).map((row) => ({
     season: seasonLink(row.season_id),
     division: divisionDisplay(row.division, row.stage),

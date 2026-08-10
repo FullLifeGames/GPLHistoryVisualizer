@@ -5170,3 +5170,39 @@ p.game-status.game-bad {
     grid-column: 2;
   }
 }
+
+/* Titelrennen (simulation) */
+.title-race-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.title-race-head[hidden] {
+  display: none;
+}
+
+.simulation-badge {
+  border: 1px dashed var(--muted);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  padding: 2px 10px;
+  text-transform: uppercase;
+}
+
+.title-race-controls {
+  margin-bottom: 6px;
+}
+
+.chart-line.title-race-line {
+  stroke-dasharray: 6 4;
+}
+
+.chart-marker.title-race-decided circle {
+  fill: none;
+  stroke: var(--muted);
+  stroke-dasharray: 3 3;
+}
