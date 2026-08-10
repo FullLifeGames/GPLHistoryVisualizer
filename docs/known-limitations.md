@@ -66,6 +66,10 @@ The `missing_killlist_appearances` review queue (S2–S6) has no matchday-level 
 
 Aggregated tables expose both a season count and a season list where the data spans multiple seasons. Person detail pages keep one canonical Pokemon/kills table; the top story cards surface the strongest highlights without duplicating the same Pokemon rows as a second table.
 
+## Elo-Derived Views (Upset-Index, Karriere-Kurve, Elo-Kontoauszug)
+
+These views compute Elo (K=32, start 1500) from the match chronology at runtime; the numbers match the `elo` column in `person_all_time.csv` by construction (enforced by `tests/web_elo_consistency.test.mjs`). They inherit the Zeitreise result semantics below: forfeit wins count like the league counted them, winner-less rows score 0.5, `unresolved` rows stay out. Pregame win probabilities and the upset ranking are computed, not sourced claims; each row still links its match video and source URLs. The season filter narrows which matches are displayed, but ratings always accumulate over the full chronology of the selected data basis.
+
 ## Zeitreise View
 
 The Zeitreise view replays the archive over a single timeline of 192 ticks: one per matchday, plus a trailing tick for each playoff round. Only seasons 6 and 10 played playoffs. Season 7's `stage=playoffs` row records a title, not a match — it has a winner but no opponent — and is therefore excluded, along with the 514 `video_source` rows that carry a video id but no players.
