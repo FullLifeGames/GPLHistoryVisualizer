@@ -30,6 +30,14 @@ export function storyFrameForWeek(weeks, week) {
 
 const DECIDED_THRESHOLD = 0.95;
 
+// The retro award keys that make good narration beats, in telling order.
+const AWARD_BEAT_KEYS = ["best_newcomer", "giant_slayer", "upset_of_season", "kill_leader", "mvp", "holzloeffel"];
+
+function seasonNumber(seasonId) {
+  const match = /(\d+)/.exec(String(seasonId ?? ""));
+  return match ? Number(match[1]) : null;
+}
+
 export function seasonStoryBeats({
   seasonId,
   division,
@@ -39,7 +47,8 @@ export function seasonStoryBeats({
   highlights = [],
   titleOdds = [],
   playoffMatches = [],
-  topHighlights = 3,
+  awards = [],
+  topHighlights = 5,
 } = {}) {
   const beats = [];
   const divisionMatches = matches.filter(
@@ -47,20 +56,33 @@ export function seasonStoryBeats({
   );
   const players = new Set(divisionMatches.flatMap((row) => [row.player_a, row.player_b]).filter(Boolean));
 
+  const number = seasonNumber(seasonId);
+  const previousChampion =
+    number === null
+      ? null
+      : champions.find((row) => seasonNumber(row.season_id) === number - 1) ?? null;
+
   beats.push({
     kind: "intro",
     week: weeks[0] ?? 0,
     frameIndex: 0,
     playerCount: players.size,
+    matchCount: divisionMatches.length,
     matchdayCount: weeks.length,
+    defendingChampion: previousChampion?.champion_name ?? "",
     sourceUrls: divisionMatches[0]?.source_urls ?? "",
   });
 
-  // Race checkpoints at one and two thirds of the season keep the sticky
-  // table moving even in seasons without notable highlight matches.
-  for (const ratio of [1 / 3, 2 / 3]) {
-    if (weeks.length < 3) break;
-    const index = Math.max(1, Math.round(weeks.length * ratio) - 1);
+  // Race checkpoints at each quarter of the season keep the sticky table
+  // moving even in seasons without notable highlight matches. Short seasons
+  // collapse neighboring quarters onto the same matchday; emit each once.
+  const checkpointIndexes = new Set();
+  if (weeks.length >= 4) {
+    for (const ratio of [1 / 4, 1 / 2, 3 / 4]) {
+      checkpointIndexes.add(Math.max(1, Math.round(weeks.length * ratio) - 1));
+    }
+  }
+  for (const index of [...checkpointIndexes].sort((a, b) => a - b)) {
     beats.push({ kind: "race", week: weeks[index], frameIndex: index });
   }
 
@@ -121,6 +143,28 @@ export function seasonStoryBeats({
     });
   }
 
+  // Retro awards of this division (division-less awards count for every
+  // division of the season) come after the playoffs, before the champion.
+  const seasonAwards = awards.filter(
+    (row) =>
+      row.scope === "season" &&
+      row.season_id === seasonId &&
+      ((row.division || "") === division || !(row.division || "")) &&
+      AWARD_BEAT_KEYS.includes(row.award_key),
+  );
+  for (const row of seasonAwards.sort((a, b) => AWARD_BEAT_KEYS.indexOf(a.award_key) - AWARD_BEAT_KEYS.indexOf(b.award_key))) {
+    beats.push({
+      kind: "award",
+      week: AWARD_BEAT_KEYS.indexOf(row.award_key),
+      frameIndex: weeks.length ? weeks.length - 1 : 0,
+      awardKey: row.award_key,
+      name: row.person_name,
+      personId: row.person_id,
+      value: row.value,
+      sourceUrls: row.source_urls ?? "",
+    });
+  }
+
   const championRow = champions.find((row) => row.season_id === seasonId);
   beats.push({
     kind: "champion",
@@ -131,7 +175,7 @@ export function seasonStoryBeats({
     sourceUrls: championRow?.source_urls ?? "",
   });
 
-  const rank = { intro: 0, race: 1, highlight: 1, decided: 1, playoff: 2, champion: 3 };
+  const rank = { intro: 0, race: 1, highlight: 1, decided: 1, playoff: 2, award: 3, champion: 4 };
   beats.sort((a, b) => rank[a.kind] - rank[b.kind] || a.week - b.week);
   return beats;
 }

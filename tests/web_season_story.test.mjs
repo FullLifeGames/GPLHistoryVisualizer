@@ -73,11 +73,36 @@ test("beats start with intro and end with champion", () => {
   assert.equal(beats[beats.length - 1].name, "Alice");
 });
 
-test("intro counts players and matchdays", () => {
+test("intro counts players, matches, and matchdays", () => {
   const intro = seasonStoryBeats(BASE)[0];
   assert.equal(intro.playerCount, 2);
+  assert.equal(intro.matchCount, 4);
   assert.equal(intro.matchdayCount, 4);
   assert.equal(intro.frameIndex, 0);
+  assert.equal(intro.defendingChampion, "");
+});
+
+test("intro names the defending champion from the previous season", () => {
+  const champions = [
+    ...BASE.champions,
+    { season_id: "season_000", champion_name: "Zed", champion_team: "Team Z", source_urls: "u" },
+  ];
+  const intro = seasonStoryBeats({ ...BASE, champions })[0];
+  assert.equal(intro.defendingChampion, "Zed");
+});
+
+test("award beats appear for the division before the champion", () => {
+  const awards = [
+    { award_key: "mvp", scope: "season", season_id: "season_001", division: "Liga 1", person_id: "person_alice", person_name: "Alice", value: "91", source_urls: "u1" },
+    { award_key: "holzloeffel", scope: "season", season_id: "season_001", division: "Liga 1", person_id: "person_carol", person_name: "Carol", value: "3", source_urls: "u2" },
+    { award_key: "best_newcomer", scope: "season", season_id: "season_001", division: "", person_id: "person_bob", person_name: "Bob", value: "70", source_urls: "u3" },
+    { award_key: "mvp", scope: "season", season_id: "season_001", division: "Liga 2", person_id: "person_x", person_name: "Xavier", value: "80", source_urls: "u4" },
+  ];
+  const beats = seasonStoryBeats({ ...BASE, awards });
+  const awardBeats = beats.filter((beat) => beat.kind === "award");
+  assert.deepEqual(awardBeats.map((beat) => beat.awardKey), ["best_newcomer", "mvp", "holzloeffel"]);
+  const championIndex = beats.findIndex((beat) => beat.kind === "champion");
+  assert.ok(beats.findIndex((beat) => beat.awardKey === "holzloeffel") < championIndex);
 });
 
 test("highlight beats carry match info and land on their week frame", () => {

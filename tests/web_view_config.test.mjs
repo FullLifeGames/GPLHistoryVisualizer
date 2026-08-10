@@ -54,7 +54,7 @@ assert.equal(isValidView("oracle"), true);
 assert.equal(isValidView("rivalries"), true);
 assert.equal(isValidView("rivalry-detail"), true);
 const seasonsGroup = VIEW_GROUPS.find((group) => group.id === "seasons");
-assert.deepEqual(seasonsGroup.detailViews, ["season-story", "season-wrapped"]);
+assert.deepEqual(seasonsGroup.views, ["battle-history", "match-highlights", "season-detail", "season-story", "season-wrapped", "table-history", "match-plan", "zeitreise"]);
 assert.equal(viewGroupForView("season-story"), "seasons");
 assert.equal(viewGroupForView("season-wrapped"), "seasons");
 assert.equal(isValidView("season-story"), true);
@@ -73,7 +73,7 @@ assert.equal(isValidView("games"), true);
 assert.equal(isValidView("game"), true);
 
 assert.deepEqual(subviewsForGroup("pokemon"), ["killlists", "pokemon-drafts"]);
-assert.deepEqual(subviewsForGroup("seasons"), ["battle-history", "match-highlights", "season-detail", "table-history", "match-plan", "zeitreise"]);
+assert.deepEqual(subviewsForGroup("seasons"), ["battle-history", "match-highlights", "season-detail", "season-story", "season-wrapped", "table-history", "match-plan", "zeitreise"]);
 assert.deepEqual(subviewsForGroup("videos"), ["video-archive", "cinema", "audience-history", "zeitstrahl"]);
 assert.equal(viewGroupForView("audience-history"), "videos");
 assert.equal(isValidView("audience-history"), true);

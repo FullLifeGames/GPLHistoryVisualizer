@@ -211,7 +211,7 @@ const VIEW_DATASETS = {
   "review-workflow": ["reviewIndex", "missingKilllists", "missingKilllistAppearances", "lowConfidenceVideos", "ambiguousMatches"],
   "source-claims": ["sourceClaims"],
   "season-detail": ["videos", "sourceClaims", "seasonStorylines"],
-  "season-story": ["matchHighlights", "matchVideos", "titleOdds", "seasonStorylines"],
+  "season-story": ["matchHighlights", "matchVideos", "titleOdds", "seasonStorylines", "awards"],
   "season-wrapped": ["awards", "matchHighlights", "videos", "matchVideos", "personAllTime"],
 };
 
@@ -914,7 +914,7 @@ function applyViewDataModeDefaults(viewName, previousView) {
 // zeitreise manage their own controls; record book, hall of fame, rivalries,
 // and the oracle render career-scope data over the full archive that no
 // client-side slice can recompute; the games manage their own per-round state.
-const TOOLBAR_HIDDEN_VIEWS = new Set(["cinema", "zeitreise", "record-book", "hall-of-fame", "rivalries", "rivalry-detail", "oracle", "games", "game", "audience-history", "zeitstrahl", "season-story", "season-wrapped"]);
+const TOOLBAR_HIDDEN_VIEWS = new Set(["cinema", "zeitreise", "record-book", "hall-of-fame", "rivalries", "rivalry-detail", "oracle", "games", "game", "audience-history", "zeitstrahl"]);
 
 function setActiveView(viewName) {
   state.view = viewName;
@@ -5512,14 +5512,23 @@ function storyBeatHtml(beat, index, frames, weeks) {
   let body = "";
   let extra = "";
   if (beat.kind === "intro") {
-    body = formatMessage(t(lang, "seasonStory.intro"), { players: beat.playerCount, matchdays: beat.matchdayCount });
+    const defending = beat.defendingChampion
+      ? formatMessage(t(lang, "seasonStory.introDefending"), { name: beat.defendingChampion })
+      : "";
+    body = formatMessage(t(lang, "seasonStory.intro"), {
+      players: beat.playerCount,
+      matchdays: beat.matchdayCount,
+      matches: beat.matchCount,
+      defending,
+    });
   } else if (beat.kind === "race") {
     const frame = frames[Math.min(beat.frameIndex, frames.length - 1)] ?? [];
     const leader = frame[0];
     const chaser = frame[1];
     if (!leader) return "";
+    const gapPoints = chaser ? leader.points - chaser.points : 0;
     const gap = chaser
-      ? formatMessage(t(lang, "seasonStory.raceGap"), { chaser: chaser.name, points: leader.points - chaser.points })
+      ? formatMessage(t(lang, gapPoints > 0 ? "seasonStory.raceGap" : "seasonStory.raceGapTied"), { chaser: chaser.name, points: gapPoints })
       : "";
     body = formatMessage(t(lang, "seasonStory.race"), { week: beat.week, leader: leader.name, points: leader.points, gap });
   } else if (beat.kind === "highlight") {
@@ -5539,13 +5548,28 @@ function storyBeatHtml(beat, index, frames, weeks) {
     });
     const links = videoLinksForMatch(beat.matchId, { compact: true });
     if (links) extra = `<p class="story-links">${links}</p>`;
+  } else if (beat.kind === "award") {
+    body = formatMessage(t(lang, "seasonStory.award"), {
+      award: escapeHtml(awardName(beat.awardKey)),
+      name: personLink(personIdForName(beat.name), beat.name),
+      value: escapeHtml(String(beat.value ?? "")),
+    });
+    extra = `<p class="story-award-note">${escapeHtml(t(lang, "awards.computedNote"))}</p>`;
   } else if (beat.kind === "champion") {
     if (!beat.name) return "";
     body = formatMessage(t(lang, "seasonStory.champion"), { name: personLink(personIdForName(beat.name), beat.name), team: escapeHtml(beat.team) });
+    const finalFrame = frames[frames.length - 1] ?? [];
+    if (finalFrame.length >= 3) {
+      body += formatMessage(t(lang, "seasonStory.championPodium"), {
+        second: personLink(personIdForName(finalFrame[1].name), finalFrame[1].name),
+        third: personLink(personIdForName(finalFrame[2].name), finalFrame[2].name),
+      });
+    }
     extra = `<p class="story-links"><a class="link-button" href="${escapeAttr(wrappedRouteHash(state.season))}">${escapeHtml(t(lang, "seasonStory.toWrapped"))}</a></p>`;
   }
   const sources = beat.sourceUrls ? `<p class="story-sources">${sourceLinks(beat.sourceUrls)}</p>` : "";
-  const content = beat.kind === "champion" ? `<p class="story-text">${body}</p>` : `<p class="story-text">${escapeHtml(body)}</p>`;
+  const rawKinds = new Set(["champion", "award"]);
+  const content = rawKinds.has(beat.kind) ? `<p class="story-text">${body}</p>` : `<p class="story-text">${escapeHtml(body)}</p>`;
   return `<article class="story-beat story-beat-${beat.kind}" data-frame="${beat.frameIndex}" data-beat="${index}">${content}${extra}${sources}</article>`;
 }
 
@@ -5618,6 +5642,7 @@ function renderSeasonStory() {
     highlights: state.data.matchHighlights ?? [],
     titleOdds: state.data.titleOdds ?? [],
     playoffMatches: (state.data.matches ?? []).filter((row) => row.season_id === state.season && row.stage === "playoffs"),
+    awards: state.data.awards ?? [],
   });
 
   beatsHost.innerHTML = beats.map((beat, index) => storyBeatHtml(beat, index, frames, weeks)).join("");
