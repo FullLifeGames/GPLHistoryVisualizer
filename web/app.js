@@ -36,8 +36,8 @@ import {
 } from "./table_columns.js";
 import { eloChronology, eloLedgerRows, personEloSeries, upsetRows } from "./elo_history.js";
 import { buildSeries, lineChart, paddedDomain, stackedBarChart, stepChart } from "./charts.js";
-import { attentionStripPoints, monthlyChannelStacks, seasonMonthBands, stripSeasonIds } from "./audience.js";
-import { groupEventsByYear, onThisDayEvents, timelineEvents } from "./timeline_events.js";
+import { attentionStripPoints, engagementAnomalies, monthlyChannelStacks, seasonMonthBands, stripSeasonIds } from "./audience.js";
+import { groupEventsByYear, onThisDayEvents, seasonEndDates, timelineEvents } from "./timeline_events.js";
 import { awardsBySeason, finderFilterRows, hofInductees, spoonRows, streakTableRows } from "./records.js";
 import { rivalryMeetings, rivalryPairs } from "./rivalries.js";
 import { dominanceRows, winChainGraph, winChainPath } from "./oracle.js";
@@ -165,7 +165,7 @@ const VIEW_DATASETS = {
   "team-rosters": ["pokemonDraftOverview", "teamPokemonUsage", "teamRosters", "rosterScores"],
   "roster-detail": ["pokemonDraftOverview", "teamPokemonUsage", "teamRosters", "rosterScores", "rosterMatchdays"],
   "video-archive": ["videos"],
-  "audience-history": ["videos", "matchHighlights"],
+  "audience-history": ["videos", "matchHighlights", "matchVideos"],
   zeitstrahl: ["videos", "recordsProgression", "matchVideos"],
   "upset-index": ["matchHighlights", "matchVideos"],
   rivalries: ["matchupSummary", "matchHighlights", "matchVideos"],
@@ -4379,7 +4379,8 @@ function renderAudienceHistory() {
 
   metricSelect.value = state.audience.metric;
   metricSelect.onchange = () => {
-    state.audience.metric = metricSelect.value === "views" ? "views" : "uploads";
+    const picked = metricSelect.value;
+    state.audience.metric = ["views", "likes", "comments"].includes(picked) ? picked : "uploads";
     renderAudienceHistory();
   };
 
@@ -4390,14 +4391,19 @@ function renderAudienceHistory() {
   } else {
     const metric = state.audience.metric;
     const stacks = monthlyChannelStacks(videos, { metric, otherLabel: t(lang, "audience.otherChannels") });
-    const bands = seasonMonthBands(state.data.seasons ?? [], stacks.months, state.data.champions ?? []);
+    const bands = seasonMonthBands(
+      state.data.seasons ?? [],
+      stacks.months,
+      state.data.champions ?? [],
+      seasonEndDates(state.data.matchVideos ?? []),
+    );
     const monthLabel = (index) => {
       const month = stacks.months[index];
       if (!month) return "";
       const [year, mm] = month.split("-");
       return mm === "01" || index === 0 ? `${mm}/${year.slice(2)}` : "";
     };
-    const formatValue = metric === "views" ? compactCount : (value) => String(Math.round(value));
+    const formatValue = metric === "uploads" ? (value) => String(Math.round(value)) : compactCount;
     stackedBarChart(chartHost, {
       rows: stacks.rows,
       bands,
@@ -4423,6 +4429,12 @@ function renderAudienceHistory() {
       .join("");
   }
 
+  renderAudienceStrip(stripHost, seasonSelect);
+  renderAudienceAnomalies();
+}
+
+function renderAudienceStrip(stripHost, seasonSelect) {
+  const lang = state.language;
   const highlightRows = state.data.matchHighlights ?? [];
   const seasonIds = stripSeasonIds(highlightRows);
   if (!seasonIds.length) {
@@ -4461,6 +4473,46 @@ function renderAudienceHistory() {
     formatY: (value) => displayNumber(Math.round(value * 10) / 10),
     tooltip: (source) => `${source.weekLabel} · ${source.matchLabel} · z ${displayNumber(source.z)}`,
   });
+}
+
+function audienceRatePercent(rate) {
+  return `${(rate * 100).toFixed(2).replace(".", state.language === "de" ? "," : ".")}%`;
+}
+
+function audienceAnomalyItem(entry) {
+  const lang = state.language;
+  const factorText = `${entry.factor.toFixed(1).replace(".", lang === "de" ? "," : ".")}×`;
+  const rateText = formatMessage(t(lang, "audience.anomalyRate"), {
+    rate: audienceRatePercent(entry.rate),
+    median: audienceRatePercent(entry.channelMedianRate),
+  });
+  const title = entry.videoUrl
+    ? `<a href="${escapeAttr(entry.videoUrl)}" target="_blank" rel="noreferrer">${escapeHtml(entry.title)}</a>`
+    : escapeHtml(entry.title);
+  return `<li>
+    <span class="audience-anomaly-factor">${escapeHtml(factorText)}</span>
+    <span class="audience-anomaly-body">${title}<span class="audience-anomaly-meta">${escapeHtml(entry.channel)} · ${escapeHtml(rateText)}</span></span>
+  </li>`;
+}
+
+function renderAudienceAnomalies() {
+  const host = document.querySelector("#audience-anomalies");
+  if (!host) return;
+  const lang = state.language;
+  const { high, low } = engagementAnomalies(state.data.videos ?? []);
+  if (!high.length && !low.length) {
+    host.innerHTML = `<p class="muted">${escapeHtml(t(lang, "audience.empty"))}</p>`;
+    return;
+  }
+  host.innerHTML = `
+    <div class="audience-anomaly-column">
+      <h4 class="game-good">${escapeHtml(t(lang, "audience.anomaliesHigh"))}</h4>
+      <ul>${high.map((entry) => audienceAnomalyItem(entry)).join("")}</ul>
+    </div>
+    <div class="audience-anomaly-column">
+      <h4 class="game-bad">${escapeHtml(t(lang, "audience.anomaliesLow"))}</h4>
+      <ul>${low.map((entry) => audienceAnomalyItem(entry)).join("")}</ul>
+    </div>`;
 }
 
 const ZEITSTRAHL_ICONS = {

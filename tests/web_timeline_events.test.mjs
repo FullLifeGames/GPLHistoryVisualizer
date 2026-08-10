@@ -172,14 +172,64 @@ test("milestones pick the nth chronological upload", () => {
   ]);
 });
 
-test("groupEventsByYear lists newest years first with ascending events inside", () => {
+test("groupEventsByYear lists newest years first with newest events first inside", () => {
   const groups = groupEventsByYear(timelineEvents(SOURCES, { topVideosPerYear: 1, milestoneSteps: [1] }));
   assert.deepEqual(groups.map((group) => group.year), [2015, 2014]);
   for (const group of groups) {
     const dates = group.events.map((event) => event.date);
-    assert.deepEqual(dates, [...dates].sort());
+    assert.deepEqual(dates, [...dates].sort().reverse());
     assert.ok(group.events.every((event) => event.year === group.year));
   }
+});
+
+test("season end prefers the finale's original upload over the stale seasons.csv date", () => {
+  const sources = {
+    seasons: [
+      {
+        season_id: "season_010",
+        season_label: "Season 10",
+        start_date: "2025-10-04T16:00:00Z",
+        end_date: "2025-12-14T17:00:00Z", // stale: collected before the finale aired
+        source_urls: "",
+      },
+    ],
+    champions: [{ season_id: "season_010", champion_name: "Bene", champion_person_id: "person_bene", source_urls: "" }],
+    videos: [],
+    recordsProgression: [],
+    matchVideos: [
+      // An announcement video matched to the finale ten days early must not
+      // win: the battle perspectives' shared date is the most frequent one.
+      { match_id: "m_final", season_id: "season_010", week: "Finale", published_at: "2026-01-22T11:00:00Z", video_url: "" },
+      { match_id: "m_final", season_id: "season_010", week: "Finale", published_at: "2026-02-01T15:00:00Z", video_url: "" },
+      { match_id: "m_final", season_id: "season_010", week: "Finale", published_at: "2026-02-01T17:00:00Z", video_url: "" },
+      // Re-upload of the finale a month later must not shift the date either.
+      { match_id: "m_final", season_id: "season_010", week: "Finale", published_at: "2026-03-01T15:00:00Z", video_url: "" },
+      // Third-place match uploaded after the finale must not win.
+      { match_id: "m_p3", season_id: "season_010", week: "Spiel um Platz 3", published_at: "2026-02-02T15:00:00Z", video_url: "" },
+      { match_id: "m_hf", season_id: "season_010", week: "Halbfinale", published_at: "2026-01-18T15:00:00Z", video_url: "" },
+    ],
+  };
+  const ends = timelineEvents(sources, { milestoneSteps: [] }).filter((event) => event.type === "season-end");
+  assert.equal(ends.length, 1);
+  assert.equal(ends[0].date, "2026-02-01");
+  assert.equal(ends[0].champion, "Bene");
+});
+
+test("seasons without a finale week end with their last match's original upload", () => {
+  const sources = {
+    seasons: [
+      { season_id: "season_009", season_label: "Season 9", start_date: "2022-04-16T19:00:00Z", end_date: "2022-06-26T11:00:00Z", source_urls: "" },
+    ],
+    champions: [],
+    videos: [],
+    recordsProgression: [],
+    matchVideos: [
+      { match_id: "m1", season_id: "season_009", week: "14. Spieltag", published_at: "2022-07-27T15:00:00Z", video_url: "" },
+      { match_id: "m0", season_id: "season_009", week: "1. Spieltag", published_at: "2022-04-17T15:00:00Z", video_url: "" },
+    ],
+  };
+  const ends = timelineEvents(sources, { milestoneSteps: [] }).filter((event) => event.type === "season-end");
+  assert.equal(ends[0].date, "2022-07-27");
 });
 
 test("onThisDayEvents matches month-day in earlier years only", () => {

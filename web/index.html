@@ -300,6 +300,8 @@
             <select id="audience-metric">
               <option value="uploads" data-i18n="audience.metricUploads">Uploads pro Monat</option>
               <option value="views" data-i18n="audience.metricViews">Aufrufe pro Monat</option>
+              <option value="likes" data-i18n="audience.metricLikes">Likes pro Monat</option>
+              <option value="comments" data-i18n="audience.metricComments">Kommentare pro Monat</option>
             </select>
           </label>
         </div>
@@ -314,6 +316,11 @@
           </label>
         </div>
         <div id="audience-strip"></div>
+        <div class="audience-anomalies-head">
+          <h3 data-i18n="audience.anomaliesTitle">Interaktions-Anomalien</h3>
+          <p class="muted" data-i18n="audience.anomaliesNote">Interaktionsrate = (Likes + Kommentare) / Aufrufe, verglichen mit dem Median des jeweiligen Kanals (mind. 500 Aufrufe, mind. 5 Videos pro Kanal). Berechnet, nicht offiziell.</p>
+        </div>
+        <div id="audience-anomalies" class="audience-anomalies"></div>
       </section>
 
       <section id="view-zeitstrahl" class="view">

@@ -4959,6 +4959,72 @@ p.game-status.game-bad {
   opacity: 0.9;
 }
 
+.audience-anomalies-head {
+  text-align: center;
+  margin-top: 26px;
+}
+
+.audience-anomalies-head p {
+  margin: 4px auto 12px;
+  max-width: 640px;
+}
+
+.audience-anomalies {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  max-width: 1000px;
+  margin: 0 auto 20px;
+}
+
+.audience-anomaly-column h4 {
+  text-align: center;
+  margin: 0 0 8px;
+}
+
+.audience-anomaly-column ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.audience-anomaly-column li {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.audience-anomaly-factor {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-width: 44px;
+  text-align: right;
+}
+
+.audience-anomaly-body {
+  min-width: 0;
+}
+
+.audience-anomaly-meta {
+  display: block;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 720px) {
+  .audience-anomalies {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Zeitstrahl */
 .zeitstrahl-widget {
   margin: 0 auto 18px;

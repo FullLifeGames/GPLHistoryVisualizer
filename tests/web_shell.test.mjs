@@ -75,6 +75,10 @@ assert.equal(indexHtml.indexOf('data-view="cinema"') < indexHtml.indexOf('data-v
 assert.equal(appJs.includes('"audience-history": renderAudienceHistory'), true);
 assert.equal(stylesCss.includes(".audience-legend"), true);
 assert.equal(stylesCss.includes(".chart-bar"), true);
+assert.equal(indexHtml.includes('id="audience-anomalies"'), true);
+assert.equal(indexHtml.includes('data-i18n="audience.metricLikes"'), true);
+assert.equal(indexHtml.includes('data-i18n="audience.metricComments"'), true);
+assert.equal(stylesCss.includes(".audience-anomaly-column"), true);
 assert.equal(indexHtml.includes('data-view="zeitstrahl"'), true);
 assert.equal(indexHtml.includes('id="view-zeitstrahl"'), true);
 assert.equal(indexHtml.includes('id="zeitstrahl-today"'), true);

@@ -26,13 +26,19 @@ export function monthRangeKeys(firstKey, lastKey) {
   return keys;
 }
 
+const METRIC_FIELDS = { views: "view_count", likes: "like_count", comments: "comment_count" };
+
 export function monthlyChannelStacks(videoRows, { metric = "uploads", topChannels = 6, otherLabel = "Andere" } = {}) {
+  const field = METRIC_FIELDS[metric];
   const entries = [];
   for (const row of videoRows ?? []) {
     const month = monthKey(row.published_at);
     if (!month) continue;
-    const views = Number(row.view_count);
-    const value = metric === "views" ? (Number.isFinite(views) ? views : 0) : 1;
+    let value = 1;
+    if (field) {
+      const amount = Number(row[field]);
+      value = Number.isFinite(amount) && String(row[field] ?? "").trim() !== "" ? amount : 0;
+    }
     entries.push({ month, channel: row.channel_title || "?", value });
   }
   if (!entries.length) return { months: [], channels: [], rows: [] };
@@ -67,7 +73,7 @@ export function shortSeasonLabel(seasonId) {
   return match ? `S${Number(match[1])}` : "";
 }
 
-export function seasonMonthBands(seasonRows, months, championRows) {
+export function seasonMonthBands(seasonRows, months, championRows, endOverrides = {}) {
   if (!months?.length) return [];
   const firstOrdinal = monthOrdinal(months[0]);
   const lastIndex = months.length - 1;
@@ -75,7 +81,7 @@ export function seasonMonthBands(seasonRows, months, championRows) {
   const bands = [];
   for (const row of seasonRows ?? []) {
     const startKey = monthKey(row.start_date);
-    const endKey = monthKey(row.end_date);
+    const endKey = monthKey(endOverrides[row.season_id] ?? row.end_date);
     if (!startKey || !endKey) continue;
     const fromX = Math.max(monthOrdinal(startKey) - firstOrdinal - 0.5, -0.5);
     const toX = Math.min(monthOrdinal(endKey) - firstOrdinal + 0.5, lastIndex + 0.5);
@@ -135,6 +141,48 @@ export function attentionStripPoints(matchHighlightRows, seasonId) {
     matchLabel: point.matchLabel,
     videoUrls: point.videoUrls,
   }));
+}
+
+// Interaction anomalies: how strongly a video's engagement rate
+// ((likes + comments) / views) deviates from its own channel's median.
+// Channel-relative comparison keeps big and small channels comparable.
+export function engagementAnomalies(videoRows, { minViews = 500, minChannelVideos = 5, top = 8 } = {}) {
+  const entries = [];
+  for (const row of videoRows ?? []) {
+    const views = Number(row.view_count);
+    if (!Number.isFinite(views) || views < minViews) continue;
+    const likesRaw = String(row.like_count ?? "").trim();
+    const commentsRaw = String(row.comment_count ?? "").trim();
+    if (!likesRaw && !commentsRaw) continue;
+    const interactions = (likesRaw ? Number(likesRaw) || 0 : 0) + (commentsRaw ? Number(commentsRaw) || 0 : 0);
+    entries.push({
+      title: row.title || row.video_id,
+      videoUrl: row.video_url,
+      channel: row.channel_title || "?",
+      publishedAt: row.published_at,
+      views,
+      interactions,
+      rate: interactions / views,
+    });
+  }
+  const byChannel = new Map();
+  for (const entry of entries) {
+    if (!byChannel.has(entry.channel)) byChannel.set(entry.channel, []);
+    byChannel.get(entry.channel).push(entry);
+  }
+  const scored = [];
+  for (const list of byChannel.values()) {
+    if (list.length < minChannelVideos) continue;
+    const rates = list.map((entry) => entry.rate).sort((a, b) => a - b);
+    const mid = Math.floor(rates.length / 2);
+    const median = rates.length % 2 ? rates[mid] : (rates[mid - 1] + rates[mid]) / 2;
+    if (!(median > 0)) continue;
+    for (const entry of list) scored.push({ ...entry, channelMedianRate: median, factor: entry.rate / median });
+  }
+  scored.sort((a, b) => b.factor - a.factor || a.title.localeCompare(b.title, "de"));
+  const high = scored.slice(0, top);
+  const low = scored.slice(top).slice(-top).sort((a, b) => a.factor - b.factor || a.title.localeCompare(b.title, "de"));
+  return { high, low };
 }
 
 export function stripSeasonIds(matchHighlightRows) {

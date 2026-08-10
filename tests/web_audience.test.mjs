@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   attentionStripPoints,
+  engagementAnomalies,
   monthKey,
   monthRangeKeys,
   monthlyChannelStacks,
@@ -70,6 +71,55 @@ test("monthlyChannelStacks sums views and skips non-numeric view counts", () => 
   assert.equal(stacks.channels[0], "SurskitTV");
 });
 
+test("monthlyChannelStacks sums likes and comments as metrics", () => {
+  const rows = [
+    { published_at: "2020-01-05T10:00:00Z", channel_title: "A", view_count: "100", like_count: "10", comment_count: "2" },
+    { published_at: "2020-01-09T10:00:00Z", channel_title: "A", view_count: "100", like_count: "", comment_count: "3" },
+  ];
+  const likes = monthlyChannelStacks(rows, { metric: "likes", topChannels: 3, otherLabel: "Andere" });
+  assert.equal(likes.rows[0].total, 10); // empty like_count contributes 0
+  const comments = monthlyChannelStacks(rows, { metric: "comments", topChannels: 3, otherLabel: "Andere" });
+  assert.equal(comments.rows[0].total, 5);
+});
+
+const ANOMALY_ROWS = [
+  // Channel "Big" has 5 qualifying videos; median rate = 0.02.
+  { video_url: "https://youtu.be/b1", title: "B1", channel_title: "Big", published_at: "2020-01-01T10:00:00Z", view_count: "1000", like_count: "18", comment_count: "2" },
+  { video_url: "https://youtu.be/b2", title: "B2", channel_title: "Big", published_at: "2020-01-02T10:00:00Z", view_count: "1000", like_count: "19", comment_count: "1" },
+  { video_url: "https://youtu.be/b3", title: "B3", channel_title: "Big", published_at: "2020-01-03T10:00:00Z", view_count: "1000", like_count: "15", comment_count: "5" },
+  // Outlier high: rate 0.10 -> factor 5.
+  { video_url: "https://youtu.be/hot", title: "Hot", channel_title: "Big", published_at: "2020-01-04T10:00:00Z", view_count: "1000", like_count: "80", comment_count: "20" },
+  // Outlier low: rate 0.002 -> factor 0.1.
+  { video_url: "https://youtu.be/cold", title: "Cold", channel_title: "Big", published_at: "2020-01-05T10:00:00Z", view_count: "1000", like_count: "2", comment_count: "0" },
+  // Below the view floor -> ignored.
+  { video_url: "https://youtu.be/tiny", title: "Tiny", channel_title: "Big", published_at: "2020-01-06T10:00:00Z", view_count: "50", like_count: "40", comment_count: "9" },
+  // No stats fetched at all -> ignored.
+  { video_url: "https://youtu.be/nostats", title: "NoStats", channel_title: "Big", published_at: "2020-01-07T10:00:00Z", view_count: "1000", like_count: "", comment_count: "" },
+  // Channel with too few videos -> ignored entirely.
+  { video_url: "https://youtu.be/s1", title: "S1", channel_title: "Small", published_at: "2020-01-08T10:00:00Z", view_count: "1000", like_count: "500", comment_count: "0" },
+];
+
+test("engagementAnomalies compares each video to its channel median", () => {
+  const { high, low } = engagementAnomalies(ANOMALY_ROWS, { minViews: 500, minChannelVideos: 5, top: 2 });
+  assert.equal(high[0].title, "Hot");
+  assert.ok(Math.abs(high[0].factor - 5) < 0.01);
+  assert.equal(high[0].channel, "Big");
+  assert.ok(Math.abs(high[0].channelMedianRate - 0.02) < 0.001);
+  assert.ok(Math.abs(high[0].rate - 0.1) < 0.001);
+  assert.equal(low[0].title, "Cold");
+  assert.ok(Math.abs(low[0].factor - 0.1) < 0.01);
+  const titles = [...high, ...low].map((entry) => entry.title);
+  assert.ok(!titles.includes("Tiny"));
+  assert.ok(!titles.includes("NoStats"));
+  assert.ok(!titles.includes("S1"));
+});
+
+test("engagementAnomalies keeps high and low lists disjoint on small pools", () => {
+  const { high, low } = engagementAnomalies(ANOMALY_ROWS, { minViews: 500, minChannelVideos: 5, top: 10 });
+  const highTitles = new Set(high.map((entry) => entry.title));
+  assert.ok(low.every((entry) => !highTitles.has(entry.title)));
+});
+
 test("shortSeasonLabel compresses season ids", () => {
   assert.equal(shortSeasonLabel("season_001"), "S1");
   assert.equal(shortSeasonLabel("season_010"), "S10");
@@ -92,6 +142,12 @@ test("seasonMonthBands maps seasons to month-index bands with champion labels", 
   assert.equal(band.toX, 3.5);
   assert.equal(band.label, "S1 · 🏆 PresentLP");
   assert.equal(band.shortLabel, "S1");
+});
+
+test("seasonMonthBands honors season end overrides", () => {
+  const months = ["2014-09", "2014-10", "2014-11", "2014-12"];
+  const bands = seasonMonthBands(SEASON_ROWS, months, [], { season_001: "2014-10-20" });
+  assert.equal(bands[0].toX, 1.5); // override pulls the band end to October
 });
 
 test("seasonMonthBands clamps bands to the charted month range", () => {

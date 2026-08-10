@@ -18,16 +18,56 @@ function baseEvent(type, date, sourceUrls) {
   return { type, date, year: Number(date.slice(0, 4)), sourceUrls };
 }
 
+// Season end derived from match videos: the seasons.csv end_date is the last
+// playlist upload at collection time and can be stale (Season 10 ended with a
+// finale uploaded after collection). Per match the MOST FREQUENT upload date
+// counts, ties resolved to the earliest — this survives both a years-later
+// re-upload and an early announcement video matched to the same match (the
+// S10 finale has one "Ich bin im Finale!" video ten days before the battle
+// perspectives). The season end is the finale match's date where a "Finale"
+// week exists, else the last match's.
+export function seasonEndDates(matchVideoRows) {
+  const perMatch = new Map();
+  for (const row of matchVideoRows ?? []) {
+    const date = dateKey(row.published_at);
+    if (!row.match_id || !date) continue;
+    if (!perMatch.has(row.match_id)) {
+      perMatch.set(row.match_id, { dates: new Map(), seasonId: row.season_id, week: String(row.week ?? "") });
+    }
+    const entry = perMatch.get(row.match_id);
+    entry.dates.set(date, (entry.dates.get(date) || 0) + 1);
+  }
+  const lastMatch = {};
+  const finale = {};
+  for (const entry of perMatch.values()) {
+    if (!entry.seasonId) continue;
+    const top = Math.max(...entry.dates.values());
+    const date = [...entry.dates.entries()]
+      .filter(([, count]) => count === top)
+      .map(([key]) => key)
+      .sort()[0];
+    if (!lastMatch[entry.seasonId] || date > lastMatch[entry.seasonId]) lastMatch[entry.seasonId] = date;
+    const week = entry.week.toLowerCase();
+    if (week.includes("finale") && !week.includes("halbfinale")) {
+      if (!finale[entry.seasonId] || date > finale[entry.seasonId]) finale[entry.seasonId] = date;
+    }
+  }
+  const result = {};
+  for (const seasonId of Object.keys(lastMatch)) result[seasonId] = finale[seasonId] ?? lastMatch[seasonId];
+  return result;
+}
+
 export function timelineEvents(
   { seasons, champions, videos, recordsProgression, matchVideos } = {},
   { topVideosPerYear = 3, milestoneSteps = [1, 100, 250, 500, 1000, 2000] } = {},
 ) {
   const events = [];
 
+  const endOverrides = seasonEndDates(matchVideos);
   const championBySeason = new Map((champions ?? []).map((row) => [row.season_id, row]));
   for (const row of seasons ?? []) {
     const start = dateKey(row.start_date);
-    const end = dateKey(row.end_date);
+    const end = endOverrides[row.season_id] ?? dateKey(row.end_date);
     if (!start || !end) continue;
     const sources = splitUrls(row.source_urls).slice(0, 2);
     events.push({
@@ -126,7 +166,8 @@ export function groupEventsByYear(events) {
   }
   return [...byYear.entries()]
     .sort((a, b) => b[0] - a[0])
-    .map(([year, yearEvents]) => ({ year, events: yearEvents }));
+    // Newest first inside each year too, matching the year order.
+    .map(([year, yearEvents]) => ({ year, events: [...yearEvents].reverse() }));
 }
 
 export function onThisDayEvents(events, isoDate) {
