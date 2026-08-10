@@ -74,6 +74,9 @@
         <button class="tab" data-view-group="videos" data-view="video-archive" data-i18n="nav.videoArchive">Video-Archiv</button>
         <button class="tab" data-view-group="videos" data-view="cinema" data-i18n="nav.cinema">Kino-Modus</button>
         <button class="tab" data-view-group="records" data-view="upset-index" data-i18n="nav.upsetIndex">Upset-Index</button>
+        <button class="tab" data-view-group="records" data-view="record-book" data-i18n="nav.recordBook">Rekordbuch</button>
+        <button class="tab" data-view-group="records" data-view="awards" data-i18n="nav.awards">Auszeichnungen</button>
+        <button class="tab" data-view-group="records" data-view="hall-of-fame" data-i18n="nav.hallOfFame">Hall of Fame</button>
         <button class="tab" data-view-group="seasons" data-view="zeitreise" data-i18n="nav.zeitreise">Zeitreise</button>
         <button class="tab" data-view-group="data" data-view="data-coverage" data-i18n="nav.dataCoverage">Datenlage</button>
         <button class="tab" data-view-group="data" data-view="data-gaps" data-i18n="nav.dataGaps">Lückenübersicht</button>
@@ -410,12 +413,81 @@
         <div id="upset-table" class="table-wrap"></div>
       </section>
 
+      <section id="view-record-book" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.recordBookTitle">Rekordbuch</h2>
+          <p data-i18n="sections.recordBookDescription">Alle GPL-Rekorde mit ihrer kompletten Geschichte: Wer hielt den Rekord wann, und in welchem Kampf fiel er? Rekorde sind aus den normalisierten Daten berechnet.</p>
+        </div>
+        <nav class="tabs record-tabs" aria-label="Rekordbuch">
+          <button class="tab is-active" type="button" data-record-tab="records" data-i18n="recordBook.tabRecords">Rekorde</button>
+          <button class="tab" type="button" data-record-tab="finder" data-i18n="recordBook.tabFinder">Kampf-Finder</button>
+          <button class="tab" type="button" data-record-tab="streaks" data-i18n="recordBook.tabStreaks">Serien</button>
+        </nav>
+        <div id="record-book-records">
+          <div id="record-key-buttons" class="record-key-buttons"></div>
+          <div id="record-holder-card" class="summary-grid"></div>
+          <div id="record-progression-block" class="chart-block">
+            <h3 data-i18n="recordBook.progressionTitle">Rekordverlauf</h3>
+            <div id="record-progression-chart"></div>
+          </div>
+          <div id="record-progression-table" class="table-wrap"></div>
+        </div>
+        <div id="record-book-finder" hidden>
+          <form id="record-finder-form" class="finder-form">
+            <label><span data-i18n="filters.season">Saison</span><select id="record-finder-season"></select></label>
+            <label><span data-i18n="columns.division">Liga/Bereich</span><select id="record-finder-division"></select></label>
+            <label><span data-i18n="recordBook.finderParticipant">Trainer</span><input id="record-finder-participant" list="record-finder-people" autocomplete="off" /></label>
+            <label><span data-i18n="recordBook.finderOpponent">Gegner</span><input id="record-finder-opponent" list="record-finder-people" autocomplete="off" /></label>
+            <label><span data-i18n="recordBook.finderPokemon">Pokémon</span><input id="record-finder-pokemon" list="record-finder-pokemon-list" autocomplete="off" /></label>
+            <label class="finder-checkbox"><input id="record-finder-sweeps" type="checkbox" /><span data-i18n="recordBook.finderSweeps">Nur 6:0-Siege</span></label>
+            <datalist id="record-finder-people"></datalist>
+            <datalist id="record-finder-pokemon-list"></datalist>
+          </form>
+          <p id="record-finder-count" class="chart-note"></p>
+          <div id="record-finder-table" class="table-wrap"></div>
+        </div>
+        <div id="record-book-streaks" hidden>
+          <div id="streak-type-buttons" class="record-key-buttons"></div>
+          <div id="streak-table" class="table-wrap"></div>
+        </div>
+      </section>
+
+      <section id="view-awards" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.awardsTitle">Auszeichnungen</h2>
+          <p data-i18n="sections.awardsDescription">Rückwirkend berechnete Saison-Auszeichnungen — MVP, Kill-König, Newcomer, Upset der Saison und mehr. Berechnet, nicht offiziell; die Formel steht bei jeder Auszeichnung.</p>
+        </div>
+        <div id="award-cards" class="highlight-card-grid award-card-grid"></div>
+        <div id="award-table" class="table-wrap"></div>
+      </section>
+
+      <section id="view-hall-of-fame" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.hallOfFameTitle">Hall of Fame</h2>
+          <p data-i18n="sections.hallOfFameDescription">Die Größen der GPL nach veröffentlichten, berechneten Kriterien — und daneben die Holzlöffel-Chronik der letzten Plätze.</p>
+        </div>
+        <nav class="tabs record-tabs" aria-label="Hall of Fame">
+          <button class="tab is-active" type="button" data-hof-tab="hall" data-i18n="hof.tabHall">Ruhmeshalle</button>
+          <button class="tab" type="button" data-hof-tab="spoon" data-i18n="hof.tabSpoon">Holzlöffel</button>
+        </nav>
+        <div id="hof-hall">
+          <ul id="hof-criteria" class="hof-criteria"></ul>
+          <div id="hof-cards" class="hof-grid"></div>
+        </div>
+        <div id="hof-spoon" hidden>
+          <div id="spoon-summary" class="summary-grid"></div>
+          <div id="spoon-redemption" class="spoon-redemption"></div>
+          <div id="spoon-table" class="table-wrap"></div>
+        </div>
+      </section>
+
       <section id="view-person-details" class="view">
         <div class="section-head">
           <h2 data-i18n="sections.personDetailsTitle">Personendetails</h2>
           <p data-i18n="sections.personDetailsDescription">Personen, Teams, Tabellenstände und Titel über alle Saisons.</p>
         </div>
         <div id="person-focus" class="person-focus" hidden></div>
+        <div id="person-trophies" class="trophy-shelf" hidden></div>
         <div id="person-story-summary" class="summary-grid person-summary-grid"></div>
         <div id="person-elo-block" class="chart-block" hidden>
           <h3 data-i18n="personDetails.eloChartTitle">Karriere-Kurve (Elo)</h3>

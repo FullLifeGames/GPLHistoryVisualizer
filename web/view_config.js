@@ -35,7 +35,7 @@ export const VIEW_GROUPS = [
     id: "records",
     labelKey: "navGroups.records",
     defaultView: "upset-index",
-    views: ["upset-index"],
+    views: ["upset-index", "record-book", "awards", "hall-of-fame"],
   },
   {
     id: "data",

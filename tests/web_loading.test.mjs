@@ -43,7 +43,7 @@ assert.match(appJs, /matchup: \["matchVideos", "matchupSummary"\]/);
 assert.match(appJs, /"match-highlights": \["matchHighlights", "matchVideos"\]/);
 assert.match(appJs, /"team-rosters": \["pokemonDraftOverview", "teamPokemonUsage", "teamRosters", "rosterScores"\]/);
 assert.match(appJs, /"roster-detail": \["pokemonDraftOverview", "teamPokemonUsage", "teamRosters", "rosterScores", "rosterMatchdays"\]/);
-assert.match(appJs, /"person-details": \["personAllTime", "videos", "pokemonDraftOverview", "pokemonDraftInstances", "teamPokemonUsage", "teamRosters", "rosterScores"\]/);
+assert.match(appJs, /"person-details": \["personAllTime", "videos", "pokemonDraftOverview", "pokemonDraftInstances", "teamPokemonUsage", "teamRosters", "rosterScores", "awards"\]/);
 assert.match(appJs, /"season-detail": \["videos", "sourceClaims", "seasonStorylines"\]/);
 assert.equal(appJs.includes("loadCoreDatasets("), true);
 assert.equal(appJs.includes("ensureDatasetsForView("), true);

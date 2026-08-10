@@ -29,7 +29,8 @@ import {
   VIDEO_ARCHIVE_COLUMNS,
 } from "./table_columns.js";
 import { eloChronology, eloLedgerRows, personEloSeries, upsetRows } from "./elo_history.js";
-import { buildSeries, lineChart } from "./charts.js";
+import { buildSeries, lineChart, stepChart } from "./charts.js";
+import { awardsBySeason, finderFilterRows, hofInductees, spoonRows, streakTableRows } from "./records.js";
 import { tableHeaderFilterConfig } from "./table_filters.js";
 import { textSorter, weekSortValue } from "./table_sort.js";
 import {
@@ -110,6 +111,9 @@ const LAZY_DATASETS = {
   pokemonAllTime: { url: "../data/normalized/pokemon_all_time.csv", optional: true },
   matchupSummary: { url: "../data/normalized/matchup_summary.csv", optional: true },
   rosterScores: { url: "../data/normalized/roster_scores.csv", optional: true },
+  streaks: { url: "../data/normalized/streaks.csv", optional: true },
+  recordsProgression: { url: "../data/normalized/records_progression.csv", optional: true },
+  awards: { url: "../data/normalized/awards.csv", optional: true },
   seasonStorylines: { url: "../data/normalized/season_storylines.csv", optional: true },
 };
 
@@ -131,7 +135,10 @@ const VIEW_DATASETS = {
   "roster-detail": ["pokemonDraftOverview", "teamPokemonUsage", "teamRosters", "rosterScores", "rosterMatchdays"],
   "video-archive": ["videos"],
   "upset-index": ["matchHighlights", "matchVideos"],
-  "person-details": ["personAllTime", "videos", "pokemonDraftOverview", "pokemonDraftInstances", "teamPokemonUsage", "teamRosters", "rosterScores"],
+  "record-book": ["streaks", "recordsProgression", "matchVideos", "rosterMatchdays"],
+  "awards": ["awards", "personAllTime"],
+  "hall-of-fame": ["personAllTime", "matchVideos"],
+  "person-details": ["personAllTime", "videos", "pokemonDraftOverview", "pokemonDraftInstances", "teamPokemonUsage", "teamRosters", "rosterScores", "awards"],
   "data-coverage": ["dataQuality", "reviewIndex"],
   "data-gaps": ["dataQuality", "reviewIndex", "missingKilllists", "missingKilllistAppearances", "lowConfidenceVideos", "ambiguousMatches", "teamPokemonUsage", "teamRosters", "pokemonDraftOverview", "rosterScores", "matchVideos", "videos"],
   "roster-gaps": ["teamPokemonUsage", "teamRosters", "pokemonDraftOverview", "rosterScores"],
@@ -187,6 +194,9 @@ const DATASET_LABELS = {
   matchupSummary: "Aggregierte Matchups",
   rosterScores: "Aggregierte Kaderscores",
   seasonStorylines: "Saisonakten-Aggregate",
+  streaks: "Serien",
+  recordsProgression: "Rekordverlauf",
+  awards: "Auszeichnungen",
 };
 
 const POKEMON_USAGE_HINT_COLUMNS = new Set(["appearances", "kills", "kill_rate"]);
@@ -274,6 +284,9 @@ const VIEW_RENDERERS = {
   "match-plan": renderMatchPlan,
   "video-archive": renderVideoArchive,
   "upset-index": renderUpsetIndex,
+  "record-book": renderRecordBook,
+  "awards": renderAwards,
+  "hall-of-fame": renderHallOfFame,
   cinema: renderCinema,
   zeitreise: renderZeitreiseView,
   "team-rosters": renderTeamRosters,
@@ -3400,6 +3413,12 @@ function upsetTableRow(row, rank) {
     source: sourceCell(row.source_urls),
   };
 }
+
+function renderRecordBook() {}
+
+function renderAwards() {}
+
+function renderHallOfFame() {}
 
 // The Zeitreise spans every season by design, so it reads the unfiltered data
 // rather than going through filtered(): the toolbar is hidden for this view.

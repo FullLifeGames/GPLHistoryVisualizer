@@ -8,6 +8,9 @@ assert.deepEqual(
 
 assert.equal(defaultViewForGroup("records"), "upset-index");
 assert.equal(viewGroupForView("upset-index"), "records");
+assert.equal(viewGroupForView("record-book"), "records");
+assert.equal(viewGroupForView("awards"), "records");
+assert.equal(viewGroupForView("hall-of-fame"), "records");
 
 assert.equal(defaultViewForGroup("people"), "all-time");
 assert.equal(defaultViewForGroup("duels"), "matchup");
@@ -43,4 +46,4 @@ assert.deepEqual(subviewsForGroup("duels"), ["matchup"]);
 assert.deepEqual(subviewsForGroup("pokemon"), ["killlists", "pokemon-drafts"]);
 assert.deepEqual(subviewsForGroup("seasons"), ["battle-history", "match-highlights", "season-detail", "table-history", "match-plan", "zeitreise"]);
 assert.deepEqual(subviewsForGroup("videos"), ["video-archive", "cinema"]);
-assert.deepEqual(subviewsForGroup("records"), ["upset-index"]);
+assert.deepEqual(subviewsForGroup("records"), ["upset-index", "record-book", "awards", "hall-of-fame"]);
