@@ -4356,6 +4356,14 @@ tbody tr:hover {
   font-size: 0.78rem;
 }
 
+.rivalry-card p {
+  margin: 4px 0 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .record-overview-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));

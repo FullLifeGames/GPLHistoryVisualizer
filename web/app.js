@@ -7,7 +7,7 @@ import {
   normalizeTheme,
   t,
 } from "./i18n.js";
-import { parseRouteHash, personRouteHash, pokemonRouteHash, rosterRouteHash, seasonRouteHash, viewRouteHash } from "./router.js";
+import { parseRouteHash, personRouteHash, pokemonRouteHash, rivalryRouteHash, rosterRouteHash, seasonRouteHash, viewRouteHash } from "./router.js";
 import { pokemonAssetId } from "./pokemon_names.js";
 import { normalizeRosterGroupKey, rosterIdentityKey } from "./roster_keys.js";
 import { defaultViewForGroup, viewGroupForView } from "./view_config.js";
@@ -15,10 +15,12 @@ import {
   ALL_TIME_COLUMNS,
   AWARD_COLUMNS,
   columnsForProfile,
+  CONNECTEDNESS_COLUMNS,
   ELO_LEDGER_COLUMNS,
   MATCH_FINDER_COLUMNS,
   MATCH_HIGHLIGHT_COLUMNS,
   RECORD_HOLDER_COLUMNS,
+  RIVALRY_COLUMNS,
   STREAK_COLUMNS,
   MATCHUP_COLUMNS,
   normalizeColumnProfile,
@@ -33,8 +35,10 @@ import {
   VIDEO_ARCHIVE_COLUMNS,
 } from "./table_columns.js";
 import { eloChronology, eloLedgerRows, personEloSeries, upsetRows } from "./elo_history.js";
-import { buildSeries, lineChart, stepChart } from "./charts.js";
+import { buildSeries, lineChart, paddedDomain, stepChart } from "./charts.js";
 import { awardsBySeason, finderFilterRows, hofInductees, spoonRows, streakTableRows } from "./records.js";
+import { rivalryMeetings, rivalryPairs } from "./rivalries.js";
+import { connectednessRows, oracleGraph, oraclePath } from "./oracle.js";
 import { tableHeaderFilterConfig } from "./table_filters.js";
 import { textSorter, weekSortValue } from "./table_sort.js";
 import {
@@ -506,6 +510,11 @@ function bindControls() {
       event.preventDefault();
       state.upsetCardLimit += DEFAULT_UPSET_CARD_LIMIT;
       renderUpsetIndex();
+    }
+    if (event.target.closest("[data-show-more-rivalries]")) {
+      event.preventDefault();
+      state.rivalryCardLimit += DEFAULT_RIVALRY_CARD_LIMIT;
+      renderRivalries();
     }
     const recordTabButton = event.target.closest("[data-record-tab]");
     if (recordTabButton) {
@@ -3252,6 +3261,7 @@ function matchHighlightCard(row, rank) {
 }
 
 const DEFAULT_UPSET_CARD_LIMIT = 8;
+const DEFAULT_RIVALRY_CARD_LIMIT = 8;
 
 // The Elo walk must cover the full chronology of the current data basis, or
 // pregame ratings would reset whenever a season filter is active. Season,
@@ -5335,7 +5345,65 @@ function renderMatchup() {
   `;
 }
 
-function renderRivalries() {}
+function rivalryLink(aId, bId, label, className = "link-button") {
+  const a = canonicalPersonRouteKey(aId);
+  const b = canonicalPersonRouteKey(bId);
+  return `<a class="${escapeAttr(className)}" href="${escapeAttr(rivalryRouteHash(a, b))}">${escapeHtml(label)}</a>`;
+}
+
+function rivalryRecordDisplay(row) {
+  return `${row.wins_a}-${row.draws}-${row.wins_b}`;
+}
+
+function rivalryCard(row, rank) {
+  const title = `${row.a_name} vs ${row.b_name}`;
+  return `
+    <article class="hof-card rivalry-card">
+      <div class="highlight-card-head">
+        <span class="highlight-rank">#${escapeHtml(String(rank))}</span>
+        <span class="highlight-card-meta">${escapeHtml(t(state.language, "rivalries.meetings"))}: ${escapeHtml(String(row.matches))}</span>
+      </div>
+      <h3>${rivalryLink(row.a_id, row.b_id, title)}</h3>
+      <p class="rivalry-card-record"><span class="muted">${escapeHtml(t(state.language, "rivalries.record"))}</span> <strong>${escapeHtml(rivalryRecordDisplay(row))}</strong></p>
+      <p class="rivalry-card-score"><span class="muted">${escapeHtml(t(state.language, "columns.rivalry_score"))}</span> <strong>${escapeHtml(row.rivalry_score.toFixed(1))}</strong></p>
+    </article>
+  `;
+}
+
+function renderRivalries() {
+  const cards = document.querySelector("#rivalry-cards");
+  const showMore = document.querySelector("#rivalry-show-more");
+  if (!cards || !showMore) return;
+
+  const pairs = rivalryPairs(state.data.matchupSummary ?? [], state.data.matchHighlights ?? [], normalizedKey);
+  if (!pairs.length) {
+    cards.innerHTML = `<p class="empty">${escapeHtml(t(state.language, "rivalries.empty"))}</p>`;
+    showMore.replaceChildren();
+    destroyTable("#rivalry-table");
+    return;
+  }
+
+  const limit = state.rivalryCardLimit || DEFAULT_RIVALRY_CARD_LIMIT;
+  cards.innerHTML = pairs.slice(0, limit).map((row, index) => rivalryCard(row, index + 1)).join("");
+  showMore.innerHTML =
+    pairs.length > limit
+      ? `<button class="show-more-button" type="button" data-show-more-rivalries>${escapeHtml(t(state.language, "rivalries.showMore"))}</button>`
+      : "";
+
+  const tableRows = pairs.map((row, index) => ({
+    rank: index + 1,
+    pair: rivalryLink(row.a_id, row.b_id, `${row.a_name} vs ${row.b_name}`),
+    meetings: row.matches,
+    record: rivalryRecordDisplay(row),
+    closeness: row.closeness.toFixed(2),
+    view_total: row.view_total,
+    rivalry_score: row.rivalry_score.toFixed(1),
+    source: sourceCell(row.source_urls),
+  }));
+  renderTable("#rivalry-table", tableRows, columnsForProfile(RIVALRY_COLUMNS, state.columnProfile), ["pair", "source"], {
+    filename: "gpl-rivalries.csv",
+  });
+}
 
 function renderRivalryDetail() {}
 
@@ -5919,6 +5987,11 @@ const NUMERIC_COLUMNS = new Set([
   "win_prob_winner",
   "elo_delta",
   "elo_after",
+  "elo_gap",
+  "meetings",
+  "closeness",
+  "rivalry_score",
+  "opponents",
   "rating",
   "seasons",
   "divisions",

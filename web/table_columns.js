@@ -200,6 +200,24 @@ export const ELO_LEDGER_COLUMNS = [
   "source",
 ];
 
+export const RIVALRY_COLUMNS = [
+  "rank",
+  "pair",
+  "meetings",
+  "record",
+  "closeness",
+  "view_total",
+  "rivalry_score",
+  "source",
+];
+
+export const CONNECTEDNESS_COLUMNS = [
+  "rank",
+  "person",
+  "opponents",
+  "matches",
+];
+
 export const UPSET_COLUMNS = [
   "rank",
   "season",

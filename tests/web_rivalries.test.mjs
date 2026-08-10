@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { rivalryPairs } from "../web/rivalries.js";
+import { rivalryMeetings, rivalryPairs } from "../web/rivalries.js";
+import { eloChronology } from "../web/elo_history.js";
 
 const norm = (value) => String(value ?? "").trim().toLowerCase();
 
@@ -44,4 +45,41 @@ test("score ranks even pairs above one-sided pairs of similar size", () => {
 test("empty highlights degrade to zero views", () => {
   const rows = rivalryPairs(summary, [], norm);
   assert.equal(rows.find((row) => row.a_id === "person_a").view_total, 0);
+});
+
+const meetingMatches = [
+  { match_id: "m1", season_id: "season_001", week: "1. Spieltag", player_a: "Alba", player_b: "Bruno", score_a: "4", score_b: "0", winner: "Alba", division: "Liga 1", result_basis: "", source_urls: "s1" },
+  { match_id: "mx", season_id: "season_001", week: "2. Spieltag", player_a: "Alba", player_b: "Cora", score_a: "2", score_b: "0", winner: "Alba", division: "Liga 1", result_basis: "", source_urls: "sx" },
+  { match_id: "m2", season_id: "season_001", week: "3. Spieltag", player_a: "Bruno", player_b: "Alba", score_a: "2", score_b: "1", winner: "Bruno", division: "Liga 1", result_basis: "", source_urls: "s2" },
+  { match_id: "m3", season_id: "season_002", week: "1. Spieltag", player_a: "Alba", player_b: "Bruno", score_a: "1", score_b: "1", winner: "", division: "Liga 1", result_basis: "draw", source_urls: "s3" },
+  { match_id: "m4", season_id: "season_002", week: "2. Spieltag", player_a: "Alba", player_b: "Bruno", score_a: "0", score_b: "1", winner: "Bruno", division: "Liga 1", result_basis: "", source_urls: "s4", video_url: "https://v/4" },
+];
+
+test("rivalryMeetings orients scores to the pair, tracks streaks and biggest win", () => {
+  const chronology = eloChronology(meetingMatches, norm);
+  const { meetings, summary: pairSummary, gapPoints } = rivalryMeetings("alba", "bruno", chronology, meetingMatches, [], norm);
+  assert.equal(meetings.length, 4);
+  assert.equal(meetings.some((meeting) => meeting.match_id === "mx"), false);
+  const m2 = meetings.find((meeting) => meeting.match_id === "m2");
+  assert.equal(m2.score, "1:2"); // stored Bruno-first, oriented Alba-first
+  assert.equal(m2.winner, "b");
+  assert.equal(pairSummary.wins_a, 1);
+  assert.equal(pairSummary.wins_b, 2);
+  assert.equal(pairSummary.draws, 1);
+  assert.deepEqual({ side: pairSummary.streak.side, length: pairSummary.streak.length }, { side: "b", length: 1 }); // m3 draw broke Bruno's run
+  assert.equal(pairSummary.biggest.match_id, "m1"); // 4:0 margin
+  assert.equal(gapPoints[0].x, 1);
+  assert.equal(gapPoints[0].y, 0); // both start at 1500
+  assert.equal(pairSummary.mostWatched, null);
+});
+
+test("rivalryMeetings picks the most watched meeting from highlights", () => {
+  const chronology = eloChronology(meetingMatches, norm);
+  const pairHighlights = [
+    { match_id: "m1", view_total: "100" },
+    { match_id: "m4", view_total: "5000" },
+  ];
+  const { summary: pairSummary } = rivalryMeetings("alba", "bruno", chronology, meetingMatches, pairHighlights, norm);
+  assert.equal(pairSummary.mostWatched.match_id, "m4");
+  assert.equal(pairSummary.mostWatched.view_total, 5000);
 });
