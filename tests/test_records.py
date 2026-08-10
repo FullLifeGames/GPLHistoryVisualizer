@@ -1,5 +1,5 @@
 from gpl_history.aggregates import _elo_by_person
-from gpl_history.records import records_progression_rows, streak_rows
+from gpl_history.records import award_rows, records_progression_rows, streak_rows
 
 
 def _match(mid, week, a, b, winner, **extra):
@@ -135,3 +135,70 @@ def test_pokemon_and_person_kill_records_use_season_grain():
     assert [(r["holder_pokemon"], r["value"]) for r in poke_career] == [("Gengar", 10), ("Mew", 14)]
     seasons_played = [r for r in rows if r["record_key"] == "most_seasons_played"]
     assert seasons_played[-1]["value"] == 2 and seasons_played[-1]["holder_name"] == "Anna"
+
+
+def _standing(season, person, rank, wins, losses, kills, division="Liga 1", stage="final_table"):
+    return {
+        "season_id": season,
+        "division": division,
+        "stage": stage,
+        "is_primary": "true",
+        "rank": rank,
+        "person_id": "",
+        "player_name": person,
+        "wins": wins,
+        "losses": losses,
+        "draws": "0",
+        "kills": kills,
+        "deaths": "0",
+        "data_status": "available",
+        "source_urls": "u",
+    }
+
+
+def test_award_rows_mvp_kill_leader_and_spoon():
+    standings = [
+        _standing("season_001", "Anna", "1", "10", "2", "50"),
+        _standing("season_001", "Ben", "2", "8", "4", "60"),
+        _standing("season_001", "Cid", "3", "1", "11", "10"),
+    ]
+    rows = award_rows([], [], standings, [], [])
+    by_key = {row["award_key"]: row for row in rows}
+    assert by_key["mvp"]["person_name"] == "Anna" and by_key["mvp"]["formula"] == "weighted_rating_min5"
+    assert by_key["kill_leader"]["person_name"] == "Ben" and by_key["kill_leader"]["value"] == 60
+    assert by_key["holzloeffel"]["person_name"] == "Cid" and by_key["holzloeffel"]["division"] == "Liga 1"
+    assert all(row["scope"] == "season" for row in rows)
+
+
+def test_award_rows_redemption_and_champion():
+    standings = [_standing("season_001", "Cid", "3", "1", "11", "10")]
+    champions = [
+        {"season_id": "season_002", "champion_name": "Cid", "champion_person_id": "", "champion_team": "", "evidence_type": "sheet", "data_status": "source_evidenced", "notes": "", "source_urls": "c"}
+    ]
+    rows = award_rows([], [], standings, champions, [])
+    champion = [r for r in rows if r["award_key"] == "champion"]
+    assert len(champion) == 1 and champion[0]["person_name"] == "Cid" and champion[0]["season_id"] == "season_002"
+    redemption = [r for r in rows if r["award_key"] == "holzloeffel_redemption"]
+    assert len(redemption) == 1 and redemption[0]["value"] == "S1→S2" and redemption[0]["scope"] == "career"
+
+
+def test_award_rows_newcomer_upset_and_iron_man():
+    stints = [
+        {"season_id": "season_001", "person_id": "", "person_name": "Anna", "kills": "0", "matches": "10", "wins": "8", "losses": "2", "draws": "0", "data_status": "available", "source_urls": "s"},
+        {"season_id": "season_002", "person_id": "", "person_name": "Anna", "kills": "0", "matches": "10", "wins": "6", "losses": "4", "draws": "0", "data_status": "available", "source_urls": "s"},
+        {"season_id": "season_002", "person_id": "", "person_name": "Neo", "kills": "0", "matches": "8", "wins": "7", "losses": "1", "draws": "0", "data_status": "available", "source_urls": "s"},
+    ]
+    matches = [
+        _match("m1", "1", "Anna", "Ben", "Anna"),
+        _match("m2", "2", "Anna", "Ben", "Anna"),
+        _match("m3", "3", "Anna", "Ben", "Ben"),  # Ben beats the favorite => season upset + giant slayer
+    ]
+    rows = award_rows(matches, stints, [], [], [])
+    newcomers = [r for r in rows if r["award_key"] == "best_newcomer"]
+    assert [(r["season_id"], r["person_name"]) for r in newcomers if r["season_id"] == "season_002"] == [("season_002", "Neo")]
+    upset = [r for r in rows if r["award_key"] == "upset_of_season"]
+    assert upset and upset[0]["person_name"] == "Ben" and 0 < upset[0]["value"] < 50
+    slayer = [r for r in rows if r["award_key"] == "giant_slayer"]
+    assert slayer and slayer[0]["person_name"] == "Ben" and slayer[0]["value"] == 1531  # Anna's pregame Elo in m3
+    iron = [r for r in rows if r["award_key"] == "iron_man"]
+    assert iron and iron[0]["person_name"] == "Anna" and iron[0]["value"] == 2

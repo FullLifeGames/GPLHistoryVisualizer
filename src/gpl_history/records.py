@@ -16,14 +16,18 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Any
 
+import re
+
 from .aggregates import (
     _add_urls,
+    _bayes_rating_value,
     _elo_by_person,
     _join_urls,
     _match_chronology,
     _number,
     _person_id,
     _season_sort,
+    _weighted_rating,
 )
 
 STREAK_FIELDS = [
@@ -134,6 +138,277 @@ def _streak_row(
             "source_urls": _join_urls(sources),
         }
     ]
+
+
+AWARD_FIELDS = [
+    "award_key",
+    "scope",
+    "season_id",
+    "division",
+    "person_id",
+    "person_name",
+    "value",
+    "formula",
+    "source_urls",
+]
+
+_MIN_AWARD_MATCHES = 5
+
+
+def award_rows(
+    matches: list[dict[str, str]],
+    stints: list[dict[str, str]],
+    standings: list[dict[str, str]],
+    champions: list[dict[str, str]],
+    killlists: list[dict[str, str]],
+) -> list[dict[str, Any]]:
+    del killlists  # awards derive kill numbers from standings; killlists stay record-book territory
+    rows: list[dict[str, Any]] = []
+
+    for row in champions:
+        name = row.get("champion_name") or ""
+        if not name:
+            continue
+        rows.append(
+            _award("champion", "season", row.get("season_id") or "", "", row.get("champion_person_id") or _person_id(name), name, "", "sourced_title", row.get("source_urls") or "")
+        )
+
+    spoon_by_person: dict[str, list[str]] = defaultdict(list)
+    primary = [
+        row
+        for row in standings
+        if row.get("data_status") != "not_available" and (row.get("is_primary") or "true").lower() != "false"
+    ]
+    standings_by_season: dict[str, list[dict[str, str]]] = defaultdict(list)
+    for row in primary:
+        season_id = row.get("season_id") or ""
+        if season_id:
+            standings_by_season[season_id].append(row)
+
+    for season_id in sorted(standings_by_season, key=_season_sort):
+        season_rows = standings_by_season[season_id]
+
+        rated: list[tuple[float, str, str, dict[str, str]]] = []
+        for row in season_rows:
+            wins, losses, draws = _number(row.get("wins")), _number(row.get("losses")), _number(row.get("draws"))
+            if wins + losses + draws < _MIN_AWARD_MATCHES:
+                continue
+            value = _bayes_rating_value(wins, losses, draws)
+            if value is None:
+                continue
+            name = row.get("player_name") or row.get("person_name") or ""
+            rated.append((value, row.get("person_id") or _person_id(name), name, row))
+        if rated:
+            best = max(value for value, *_ in rated)
+            for value, person_id, name, row in sorted((r for r in rated if r[0] == best), key=lambda r: r[1]):
+                rows.append(
+                    _award("mvp", "season", season_id, row.get("division") or "", person_id, name, _weighted_rating(_number(row.get("wins")), _number(row.get("losses")), _number(row.get("draws"))), "weighted_rating_min5", row.get("source_urls") or "")
+                )
+
+        kills_by_row = [(_number(row.get("kills")), row) for row in season_rows if _number(row.get("kills")) > 0]
+        if kills_by_row:
+            best_kills = max(value for value, _ in kills_by_row)
+            for value, row in sorted((entry for entry in kills_by_row if entry[0] == best_kills), key=lambda entry: entry[1].get("person_id") or _person_id(entry[1].get("player_name"))):
+                name = row.get("player_name") or ""
+                rows.append(
+                    _award("kill_leader", "season", season_id, row.get("division") or "", row.get("person_id") or _person_id(name), name, _int_if_whole(value), "season_kills", row.get("source_urls") or "")
+                )
+
+        by_division: dict[str, list[dict[str, str]]] = defaultdict(list)
+        for row in season_rows:
+            by_division[row.get("division") or ""].append(row)
+        for division in sorted(by_division):
+            division_rows = [row for row in by_division[division] if (row.get("stage") or "") == "final_table"] or by_division[division]
+            ranked = [(_number(row.get("rank")), row) for row in division_rows if _number(row.get("rank")) > 0]
+            if not ranked:
+                continue
+            worst = max(rank for rank, _ in ranked)
+            for rank, row in sorted((entry for entry in ranked if entry[0] == worst), key=lambda entry: entry[1].get("person_id") or _person_id(entry[1].get("player_name"))):
+                name = row.get("player_name") or ""
+                person_id = row.get("person_id") or _person_id(name)
+                spoon_by_person[person_id].append(season_id)
+                rows.append(
+                    _award("holzloeffel", "season", season_id, division, person_id, name, _int_if_whole(rank), "last_place", row.get("source_urls") or "")
+                )
+
+    rows.extend(_newcomer_awards(stints))
+    rows.extend(_elo_awards(matches))
+    rows.extend(_iron_man_awards(stints))
+    rows.extend(_redemption_awards(spoon_by_person, champions))
+
+    def sort_key(row: dict[str, Any]) -> tuple:
+        return (
+            0 if row["scope"] == "season" else 1,
+            _season_sort(row.get("season_id") or ""),
+            row["award_key"],
+            row.get("person_id") or "",
+        )
+
+    return sorted(rows, key=sort_key)
+
+
+def _award(award_key: str, scope: str, season_id: str, division: str, person_id: str, person_name: str, value: Any, formula: str, source_urls: str) -> dict[str, Any]:
+    urls: set[str] = set()
+    _add_urls(urls, source_urls)
+    return {
+        "award_key": award_key,
+        "scope": scope,
+        "season_id": season_id,
+        "division": division,
+        "person_id": person_id,
+        "person_name": person_name,
+        "value": value,
+        "formula": formula,
+        "source_urls": _join_urls(urls),
+    }
+
+
+def _season_number_label(season_id: str) -> str:
+    match = re.search(r"([0-9]+)", str(season_id or ""))
+    return f"S{int(match.group(1))}" if match else str(season_id or "")
+
+
+def _newcomer_awards(stints: list[dict[str, str]]) -> list[dict[str, Any]]:
+    debut_season: dict[str, str] = {}
+    totals: dict[tuple[str, str], dict[str, Any]] = {}
+    for row in stints:
+        if row.get("data_status") == "not_available":
+            continue
+        name = row.get("person_name") or ""
+        person_id = row.get("person_id") or _person_id(name)
+        season_id = row.get("season_id") or ""
+        if not person_id or not season_id:
+            continue
+        if person_id not in debut_season or _season_sort(season_id) < _season_sort(debut_season[person_id]):
+            debut_season[person_id] = season_id
+        entry = totals.setdefault((person_id, season_id), {"name": name, "wins": 0.0, "losses": 0.0, "draws": 0.0, "sources": set()})
+        entry["wins"] += _number(row.get("wins"))
+        entry["losses"] += _number(row.get("losses"))
+        entry["draws"] += _number(row.get("draws"))
+        _add_urls(entry["sources"], row.get("source_urls"))
+
+    by_season: dict[str, list[tuple[float, str, dict[str, Any]]]] = defaultdict(list)
+    for (person_id, season_id), entry in totals.items():
+        if debut_season.get(person_id) != season_id:
+            continue
+        if entry["wins"] + entry["losses"] + entry["draws"] < _MIN_AWARD_MATCHES:
+            continue
+        value = _bayes_rating_value(entry["wins"], entry["losses"], entry["draws"])
+        if value is None:
+            continue
+        by_season[season_id].append((value, person_id, entry))
+
+    rows: list[dict[str, Any]] = []
+    for season_id in sorted(by_season, key=_season_sort):
+        best = max(value for value, *_ in by_season[season_id])
+        for value, person_id, entry in sorted((r for r in by_season[season_id] if r[0] == best), key=lambda r: r[1]):
+            rows.append(
+                _award("best_newcomer", "season", season_id, "", person_id, entry["name"], _weighted_rating(entry["wins"], entry["losses"], entry["draws"]), "weighted_rating_debut_min5", ";".join(sorted(entry["sources"])))
+            )
+    return rows
+
+
+def _elo_awards(matches: list[dict[str, str]]) -> list[dict[str, Any]]:
+    upsets: dict[str, dict[str, Any]] = {}
+    slayers: dict[str, dict[str, Any]] = {}
+
+    def on_match(row: dict[str, str], details: dict[str, Any]) -> None:
+        winner_key = _person_id(row.get("winner"))
+        if winner_key not in {details["left_key"], details["right_key"]}:
+            return
+        season_id = row.get("season_id") or ""
+        winner_is_left = winner_key == details["left_key"]
+        winner_name = (row.get("player_a") if winner_is_left else row.get("player_b")) or ""
+        winner_expected = details["left_expected"] if winner_is_left else 1 - details["left_expected"]
+        opponent_before = details["right_before"] if winner_is_left else details["left_before"]
+        context = {"division": row.get("division") or "", "sources": row.get("source_urls") or ""}
+        current_upset = upsets.get(season_id)
+        if current_upset is None or winner_expected < current_upset["expected"]:
+            upsets[season_id] = {"expected": winner_expected, "person_id": winner_key, "name": winner_name, **context}
+        current_slayer = slayers.get(season_id)
+        if current_slayer is None or opponent_before > current_slayer["opponent"]:
+            slayers[season_id] = {"opponent": opponent_before, "person_id": winner_key, "name": winner_name, **context}
+
+    _elo_by_person(matches, on_match=on_match)
+
+    rows: list[dict[str, Any]] = []
+    for season_id in sorted(upsets, key=_season_sort):
+        entry = upsets[season_id]
+        rows.append(
+            _award("upset_of_season", "season", season_id, entry["division"], entry["person_id"], entry["name"], round(entry["expected"] * 100), "min_pregame_win_chance", entry["sources"])
+        )
+    for season_id in sorted(slayers, key=_season_sort):
+        entry = slayers[season_id]
+        rows.append(
+            _award("giant_slayer", "season", season_id, entry["division"], entry["person_id"], entry["name"], round(entry["opponent"]), "beat_highest_rated", entry["sources"])
+        )
+    return rows
+
+
+def _iron_man_awards(stints: list[dict[str, str]]) -> list[dict[str, Any]]:
+    seasons_by_person: dict[str, set[int]] = defaultdict(set)
+    names: dict[str, str] = {}
+    sources: dict[str, set[str]] = defaultdict(set)
+    for row in stints:
+        if row.get("data_status") == "not_available":
+            continue
+        name = row.get("person_name") or ""
+        person_id = row.get("person_id") or _person_id(name)
+        match = re.search(r"([0-9]+)", row.get("season_id") or "")
+        if not person_id or not match:
+            continue
+        seasons_by_person[person_id].add(int(match.group(1)))
+        names.setdefault(person_id, name)
+        _add_urls(sources[person_id], row.get("source_urls"))
+
+    best_run: dict[str, int] = {}
+    for person_id, seasons in seasons_by_person.items():
+        run = best = 0
+        previous = None
+        for number in sorted(seasons):
+            run = run + 1 if previous is not None and number == previous + 1 else 1
+            best = max(best, run)
+            previous = number
+        best_run[person_id] = best
+
+    if not best_run:
+        return []
+    top = max(best_run.values())
+    return [
+        _award("iron_man", "career", "", "", person_id, names.get(person_id, ""), top, "consecutive_seasons", ";".join(sorted(sources[person_id])))
+        for person_id in sorted(best_run)
+        if best_run[person_id] == top
+    ]
+
+
+def _redemption_awards(spoon_by_person: dict[str, list[str]], champions: list[dict[str, str]]) -> list[dict[str, Any]]:
+    titles_by_person: dict[str, list[str]] = defaultdict(list)
+    names: dict[str, str] = {}
+    sources: dict[str, set[str]] = defaultdict(set)
+    for row in champions:
+        name = row.get("champion_name") or ""
+        person_id = row.get("champion_person_id") or _person_id(name)
+        if not person_id or not row.get("season_id"):
+            continue
+        titles_by_person[person_id].append(row.get("season_id") or "")
+        names.setdefault(person_id, name)
+        _add_urls(sources[person_id], row.get("source_urls"))
+
+    rows: list[dict[str, Any]] = []
+    for person_id in sorted(spoon_by_person):
+        spoons = sorted(spoon_by_person[person_id], key=_season_sort)
+        titles = sorted(titles_by_person.get(person_id, []), key=_season_sort)
+        arc = next(
+            ((spoon, title) for spoon in spoons for title in titles if _season_sort(title) > _season_sort(spoon)),
+            None,
+        )
+        if not arc:
+            continue
+        value = f"{_season_number_label(arc[0])}→{_season_number_label(arc[1])}"
+        rows.append(
+            _award("holzloeffel_redemption", "career", "", "", person_id, names.get(person_id, ""), value, "spoon_to_title", ";".join(sorted(sources[person_id])))
+        )
+    return rows
 
 
 class _Progression:
