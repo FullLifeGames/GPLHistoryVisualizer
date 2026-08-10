@@ -4696,6 +4696,21 @@ tbody tr:hover {
   font-weight: 700;
 }
 
+.game-teamsheet.is-picked {
+  outline: 2px solid var(--accent-strong, var(--viz-1));
+  outline-offset: -2px;
+}
+
+.game-riddle-hints {
+  max-width: 460px;
+  margin: 12px auto;
+  text-align: center;
+}
+
+.game-riddle-hints li {
+  margin: 6px 0;
+}
+
 .game-tipp-teamname {
   margin: 6px 0 0;
 }

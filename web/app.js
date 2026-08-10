@@ -47,12 +47,18 @@ import {
   kaderPuzzle,
   klickCandidates,
   nextKlickIndex,
+  personRiddleCandidates,
+  personRiddleHints,
+  personRiddleRound,
   pickIndex,
   pickTippRound,
   QUIZ_CATEGORIES,
   quizQuestion,
   seededRandom,
   shuffled,
+  STATS_DUEL_STATS,
+  statsDuelCandidates,
+  statsDuelRound,
   tippCandidates,
   updateDailyStreak,
 } from "./games.js";
@@ -162,7 +168,7 @@ const VIEW_DATASETS = {
   "rivalry-detail": ["matchupSummary", "matchHighlights", "matchVideos"],
   oracle: ["matchVideos"],
   games: [],
-  game: ["teamRosters", "rosterMatchdays", "videos", "matchupSummary", "matchVideos"],
+  game: ["teamRosters", "rosterMatchdays", "videos", "matchupSummary", "matchVideos", "personAllTime", "pokemonDraftInstances"],
   "record-book": ["streaks", "recordsProgression", "matchVideos", "rosterMatchdays"],
   "awards": ["awards", "personAllTime"],
   "hall-of-fame": ["personAllTime", "matchVideos", "awards"],
@@ -5356,12 +5362,14 @@ function rivalryCard(row, rank) {
 }
 
 // Each game gets a mascot sprite: Ditto guesses identities, Xatu sees the
-// future, Porygon2 lives in the video world, Alakazam knows everything.
+// future, Porygon2 lives in the video world, Alakazam knows everything,
+// Zoroark hides behind illusions.
 const GAME_HUB_CARDS = [
   { id: "kader-raten", i18nKey: "kader", icon: "Ditto" },
   { id: "tipp-spiel", i18nKey: "tipp", icon: "Xatu" },
   { id: "klick-duell", i18nKey: "klick", icon: "Porygon2" },
   { id: "quizshow", i18nKey: "quiz", icon: "Alakazam" },
+  { id: "wer-bin-ich", i18nKey: "werbinich", icon: "Zoroark" },
 ];
 
 const GAME_I18N_BY_ID = {
@@ -5369,6 +5377,7 @@ const GAME_I18N_BY_ID = {
   "tipp-spiel": "tipp",
   "klick-duell": "klick",
   quizshow: "quiz",
+  "wer-bin-ich": "werbinich",
 };
 
 // Every game round ends with this card: the outcome plus the source rows the
@@ -5621,14 +5630,14 @@ function renderTippSpiel(body) {
   }
   let session = state.games["tipp-spiel"];
   if (!session) {
-    session = { seed: String(Date.now() % 1000000), tally: { you: 0, elo: 0, rounds: 0 }, round: null };
+    session = { seed: String(Date.now() % 1000000), tally: { you: 0, elo: 0, rounds: 0, exact: 0 }, round: null };
     state.games["tipp-spiel"] = session;
   }
   const tally = session.tally;
   let round = session.round;
   if (!round || !candidates.some((row) => row.match_id === round.matchId)) {
     const rng = seededRandom(`tipp-${session.seed}-${tally.rounds}`);
-    round = { matchId: pickTippRound(candidates, rng).match_id, picked: "" };
+    round = { matchId: pickTippRound(candidates, rng).match_id, picked: "", scoreGuess: "" };
     session.round = round;
   }
   const match = candidates.find((row) => row.match_id === round.matchId);
@@ -5638,7 +5647,7 @@ function renderTippSpiel(body) {
   // Each side renders in the roster teamsheet look (background always
   // resolves, thanks to the pool fallback). The matchday six is shown when
   // the Spieltag lineup is recorded; otherwise the full season roster.
-  const teamPanel = (personName, slot) => {
+  const teamPanel = (personName, slot, { disabled = false, picked = false } = {}) => {
     const personKey = normalizedKey(personName);
     const seasonRows = (state.data.teamRosters || [])
       .filter((row) => row.season_id === match.season_id && row.pokemon && normalizedKey(row.person_name) === personKey)
@@ -5692,10 +5701,10 @@ function renderTippSpiel(body) {
       )
       .join("");
     return `
-      <section class="roster-teamsheet game-teamsheet" style="--roster-bg-image: url(${escapeAttr(background)});">
+      <section class="roster-teamsheet game-teamsheet${picked ? " is-picked" : ""}" style="--roster-bg-image: url(${escapeAttr(background)});">
         <header class="roster-teamsheet-head game-teamsheet-head">
           <div>
-            <button class="link-button game-tipp-name" type="button" data-tipp-pick="${slot}">${escapeHtml(personName)}</button>
+            <button class="link-button game-tipp-name" type="button" data-tipp-pick="${slot}" ${disabled ? "disabled" : ""}>${escapeHtml(personName)}</button>
             ${teamName ? `<p class="game-status game-tipp-teamname">${escapeHtml(teamName)}</p>` : ""}
           </div>
         </header>
@@ -5716,10 +5725,41 @@ function renderTippSpiel(body) {
     body.querySelectorAll("[data-tipp-pick]").forEach((button) => {
       button.addEventListener("click", () => {
         round.picked = button.dataset.tippPick;
+        renderGame();
+      });
+    });
+    return;
+  }
+  if (!round.scoreGuess) {
+    // Step 2: guess the exact result from the picked player's perspective.
+    // 99% of decided GPL matches end W:0 with W between 1 and 6.
+    const pickedName = round.picked === "a" ? match.player_a : match.player_b;
+    body.innerHTML = `
+      ${header}
+      <p>${escapeHtml(formatMessage(t(state.language, "games.tipp.scorePrompt"), { name: pickedName }))}</p>
+      <div class="game-tipp-choices">
+        ${[6, 5, 4, 3, 2, 1]
+          .map((win) => `<button class="link-button" type="button" data-tipp-score="${win}:0">${win}:0</button>`)
+          .join("")}
+      </div>
+      <div class="game-tipp-duel">
+        ${teamPanel(match.player_a, "a", { disabled: true, picked: round.picked === "a" })}
+        <span class="game-tipp-vs">vs.</span>
+        ${teamPanel(match.player_b, "b", { disabled: true, picked: round.picked === "b" })}
+      </div>`;
+    body.querySelectorAll("[data-tipp-score]").forEach((button) => {
+      button.addEventListener("click", () => {
+        round.scoreGuess = button.dataset.tippScore;
         const youRight = (round.picked === "a") === winnerIsA;
         const eloRight = eloPickA === winnerIsA;
+        const guessedWin = Number(round.scoreGuess.split(":")[0]);
+        const pickedScore = Number(round.picked === "a" ? match.score_a : match.score_b);
+        const otherScore = Number(round.picked === "a" ? match.score_b : match.score_a);
+        const exactRight = youRight && pickedScore === guessedWin && otherScore === 0;
+        round.exactRight = exactRight;
         tally.you += youRight ? 1 : 0;
         tally.elo += eloRight ? 1 : 0;
+        tally.exact += exactRight ? 1 : 0;
         tally.rounds += 1;
         renderGame();
       });
@@ -5737,12 +5777,13 @@ function renderTippSpiel(body) {
       title: youRight ? t(state.language, "games.correct") : t(state.language, "games.wrong"),
       bodyHtml: `
         <p>${escapeHtml(formatMessage(t(state.language, "games.tipp.result"), { score: `${match.score_a}:${match.score_b}`, name: match.winner }))}</p>
+        <p>${escapeHtml(formatMessage(t(state.language, "games.tipp.scoreGuessLine"), { score: round.scoreGuess }))}${round.exactRight ? ` · ${escapeHtml(t(state.language, "games.tipp.exactHit"))}` : ""}</p>
         <p>${escapeHtml(formatMessage(t(state.language, "games.tipp.eloSays"), { name: eloPickName, pct: eloPct }))}</p>
         <p>${escapeHtml(formatMessage(t(state.language, "games.tipp.youPicked"), { name: youPickName }))}</p>
         ${matchVideoLinks ? `<p>${matchVideoLinks}</p>` : ""}`,
       sourceUrls: match.source_urls,
     })}
-    <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.tipp.tallyYou"), { you: tally.you, rounds: tally.rounds }))} · ${escapeHtml(formatMessage(t(state.language, "games.tipp.tallyElo"), { elo: tally.elo, rounds: tally.rounds }))}</p>
+    <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.tipp.tallyYou"), { you: tally.you, rounds: tally.rounds }))} · ${escapeHtml(formatMessage(t(state.language, "games.tipp.tallyExact"), { exact: tally.exact }))} · ${escapeHtml(formatMessage(t(state.language, "games.tipp.tallyElo"), { elo: tally.elo, rounds: tally.rounds }))}</p>
     <button id="tipp-next" class="link-button" type="button">${escapeHtml(t(state.language, "games.next"))}</button>`;
   body.querySelector("#tipp-next")?.addEventListener("click", () => {
     session.round = null;
@@ -5754,24 +5795,47 @@ function renderTippSpiel(body) {
 // determinism needed here, unlike the daily Kader-Raten puzzle); score and
 // best streak are session-only and reset on reload.
 function renderKlickDuell(body) {
-  const candidates = klickCandidates(state.data.videos || []);
-  if (candidates.length < 2) {
-    body.innerHTML = `<p class="muted">${escapeHtml(t(state.language, "games.klick.empty"))}</p>`;
-    return;
-  }
   let session = state.games["klick-duell"];
-  if (!session) {
-    session = { best: 0, run: null };
+  if (!session || !session.modes) {
+    session = { mode: "videos", modes: { videos: { best: 0, run: null }, stats: { best: 0, run: null } } };
     state.games["klick-duell"] = session;
   }
-  let game = session.run;
+  const modeControls = `
+    <div class="game-form">
+      <label for="klick-mode">${escapeHtml(t(state.language, "games.klick.mode"))}</label>
+      <select id="klick-mode">
+        <option value="videos"${session.mode === "videos" ? " selected" : ""}>${escapeHtml(t(state.language, "games.klick.modes.videos"))}</option>
+        <option value="stats"${session.mode === "stats" ? " selected" : ""}>${escapeHtml(t(state.language, "games.klick.modes.stats"))}</option>
+      </select>
+    </div>`;
+  const bindMode = () => {
+    body.querySelector("#klick-mode")?.addEventListener("change", (event) => {
+      session.mode = event.target.value === "stats" ? "stats" : "videos";
+      renderGame();
+    });
+  };
+  if (session.mode === "stats") {
+    renderKlickStatsDuel(body, session.modes.stats, modeControls, bindMode);
+    return;
+  }
+  renderKlickVideoDuel(body, session.modes.videos, modeControls, bindMode);
+}
+
+function renderKlickVideoDuel(body, sub, modeControls, bindMode) {
+  const candidates = klickCandidates(state.data.videos || []);
+  if (candidates.length < 2) {
+    body.innerHTML = `${modeControls}<p class="muted">${escapeHtml(t(state.language, "games.klick.empty"))}</p>`;
+    bindMode();
+    return;
+  }
+  let game = sub.run;
   if (!game) {
     const rng = seededRandom(`klick-${dateSeedString()}-${Date.now() % 100000}`);
     const currentIndex = pickIndex(rng, candidates.length);
     game = { currentIndex, nextIndex: nextKlickIndex(candidates, currentIndex, rng), score: 0, revealed: false, over: false };
-    session.run = game;
+    sub.run = game;
   }
-  const best = { best: session.best };
+  const best = { best: sub.best };
   const current = candidates[game.currentIndex];
   const next = candidates[game.nextIndex];
   const card = (row, showCount) => `
@@ -5789,6 +5853,7 @@ function renderKlickDuell(body) {
     </article>`;
   if (game.over) {
     body.innerHTML = `
+      ${modeControls}
       ${gameRevealCard({
         title: formatMessage(t(state.language, "games.klick.gameOver"), { score: game.score }),
         bodyHtml: `<div class="game-klick-row">${card(current, true)}${card(next, true)}</div>`,
@@ -5796,13 +5861,15 @@ function renderKlickDuell(body) {
       })}
       <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.klick.best"), { best: best.best }))}</p>
       <button id="klick-restart" class="link-button" type="button">${escapeHtml(t(state.language, "games.klick.restart"))}</button>`;
+    bindMode();
     body.querySelector("#klick-restart")?.addEventListener("click", () => {
-      session.run = null;
+      sub.run = null;
       renderGame();
     });
     return;
   }
   body.innerHTML = `
+    ${modeControls}
     <p>${escapeHtml(t(state.language, "games.klick.prompt"))}</p>
     <div class="game-klick-row">
       ${card(current, true)}
@@ -5817,6 +5884,7 @@ function renderKlickDuell(body) {
           </div>`
     }
     <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.klick.score"), { score: game.score }))} · ${escapeHtml(formatMessage(t(state.language, "games.klick.best"), { best: best.best }))}</p>`;
+  bindMode();
   body.querySelectorAll("[data-klick]").forEach((button) => {
     button.addEventListener("click", () => {
       const guessHigher = button.dataset.klick === "higher";
@@ -5824,8 +5892,8 @@ function renderKlickDuell(body) {
       if (guessHigher === isHigher) {
         game.score += 1;
         game.revealed = true;
-        if (game.score > session.best) {
-          session.best = game.score;
+        if (game.score > sub.best) {
+          sub.best = game.score;
         }
       } else {
         game.over = true;
@@ -5840,6 +5908,89 @@ function renderKlickDuell(body) {
     game.nextIndex = nextKlickIndex(candidates, game.currentIndex, rng);
     game.revealed = false;
     if (game.nextIndex < 0) game.over = true;
+    renderGame();
+  });
+}
+
+// Stats duel mode: two careers, one random stat, click who has more.
+function renderKlickStatsDuel(body, sub, modeControls, bindMode) {
+  const candidates = statsDuelCandidates(state.data.personAllTime || []);
+  if (candidates.length < 2) {
+    body.innerHTML = `${modeControls}<p class="muted">${escapeHtml(t(state.language, "games.klick.empty"))}</p>`;
+    bindMode();
+    return;
+  }
+  let game = sub.run;
+  if (!game) {
+    game = { seed: String(Date.now() % 1000000), rounds: 0, round: null, score: 0, revealed: false, over: false };
+    sub.run = game;
+  }
+  if (!game.round) {
+    game.round = statsDuelRound(candidates, seededRandom(`stats-${game.seed}-${game.rounds}`));
+  }
+  if (!game.round) {
+    body.innerHTML = `${modeControls}<p class="muted">${escapeHtml(t(state.language, "games.klick.empty"))}</p>`;
+    bindMode();
+    return;
+  }
+  const { stat, a, b } = game.round;
+  const statLabel = t(state.language, `games.klick.stats.${stat}`);
+  const personCard = (row, side) => `
+    <button class="link-button game-quiz-option" type="button" data-stats-pick="${side}" ${game.revealed ? "disabled" : ""}>
+      ${escapeHtml(row.person_name)}${game.revealed ? ` — ${escapeHtml(displayNumber(Number(row[stat])))}` : ""}
+    </button>`;
+  if (game.over) {
+    body.innerHTML = `
+      ${modeControls}
+      ${gameRevealCard({
+        title: formatMessage(t(state.language, "games.klick.gameOver"), { score: game.score }),
+        bodyHtml: `
+          <p>${escapeHtml(formatMessage(t(state.language, "games.klick.statsPrompt"), { stat: statLabel }))}</p>
+          <p>${escapeHtml(a.person_name)}: ${escapeHtml(displayNumber(Number(a[stat])))} · ${escapeHtml(b.person_name)}: ${escapeHtml(displayNumber(Number(b[stat])))}</p>`,
+        sourceUrls: [a.source_urls, b.source_urls].filter(Boolean).join(";"),
+      })}
+      <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.klick.best"), { best: sub.best }))}</p>
+      <button id="klick-restart" class="link-button" type="button">${escapeHtml(t(state.language, "games.klick.restart"))}</button>`;
+    bindMode();
+    body.querySelector("#klick-restart")?.addEventListener("click", () => {
+      sub.run = null;
+      renderGame();
+    });
+    return;
+  }
+  body.innerHTML = `
+    ${modeControls}
+    <h4 class="game-quiz-question">${escapeHtml(formatMessage(t(state.language, "games.klick.statsPrompt"), { stat: statLabel }))}</h4>
+    <div class="game-quiz-options">
+      ${personCard(a, "a")}
+      ${personCard(b, "b")}
+    </div>
+    ${game.revealed ? `<button id="klick-stats-continue" class="link-button" type="button">${escapeHtml(t(state.language, "games.next"))}</button>` : ""}
+    <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.klick.score"), { score: game.score }))} · ${escapeHtml(formatMessage(t(state.language, "games.klick.best"), { best: sub.best }))}</p>`;
+  bindMode();
+  if (!game.revealed) {
+    body.querySelectorAll("[data-stats-pick]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const picked = button.dataset.statsPick === "a" ? a : b;
+        const other = picked === a ? b : a;
+        if (Number(picked[stat]) > Number(other[stat])) {
+          game.score += 1;
+          game.revealed = true;
+          if (game.score > sub.best) {
+            sub.best = game.score;
+          }
+        } else {
+          game.over = true;
+          game.revealed = true;
+        }
+        renderGame();
+      });
+    });
+  }
+  body.querySelector("#klick-stats-continue")?.addEventListener("click", () => {
+    game.rounds += 1;
+    game.round = null;
+    game.revealed = false;
     renderGame();
   });
 }
@@ -5871,6 +6022,7 @@ function renderQuizshow(body) {
     champions: state.data.champions || [],
     standings: state.data.standings || [],
     killlists: state.data.killlists || [],
+    drafts: state.data.pokemonDraftInstances || [],
     matchups: state.data.matchupSummary || [],
   };
   let game = state.games.quizshow;
@@ -5952,6 +6104,7 @@ function renderQuizshow(body) {
   body.innerHTML = `
     ${modeControls}
     <h4 class="game-quiz-question">${escapeHtml(questionText)}</h4>
+    ${question.category === "drafts" ? `<div class="game-sprite-row">${pokemonSprite(question.params.pokemon)}</div>` : ""}
     <div class="game-quiz-options">
       ${question.options
         .map(
@@ -6009,11 +6162,99 @@ function renderQuizshow(body) {
   });
 }
 
+// "Wer bin ich?": staged career riddle. Session-seeded rounds; each wrong
+// guess unlocks the next, more revealing hint until the pool runs dry.
+function renderWerBinIch(body) {
+  const candidates = personRiddleCandidates(state.data.personAllTime || []);
+  if (!candidates.length) {
+    body.innerHTML = `<p class="muted">${escapeHtml(t(state.language, "games.werbinich.empty"))}</p>`;
+    return;
+  }
+  let session = state.games["wer-bin-ich"];
+  if (!session) {
+    session = {
+      seed: String(Date.now() % 1000000),
+      round: 1,
+      solvedCount: 0,
+      playedCount: 0,
+      progress: { wrongGuesses: 0, guessedKeys: [], solved: false, failed: false },
+    };
+    state.games["wer-bin-ich"] = session;
+  }
+  const person = personRiddleRound(candidates, seededRandom(`riddle-${session.seed}-${session.round}`));
+  const progress = session.progress;
+  const finished = progress.solved || progress.failed;
+  const hints = personRiddleHints(person, state.data.personStints || [], normalizedKey);
+  const maxGuesses = hints.length;
+  const visibleHints = finished ? hints : hints.slice(0, Math.min(progress.wrongGuesses + 1, hints.length));
+  const options = candidates.map((row) => row.person_name).sort((a, b) => a.localeCompare(b));
+  const solutionCard = finished
+    ? gameRevealCard({
+        title: progress.solved
+          ? formatMessage(t(state.language, "games.werbinich.solved"), { n: progress.wrongGuesses + 1 })
+          : formatMessage(t(state.language, "games.werbinich.failed"), { name: person.person_name }),
+        bodyHtml: `<p>${personLink(person.person_id || canonicalPersonRouteKey(person.person_name), person.person_name)} · ${escapeHtml(
+          formatMessage(t(state.language, "games.werbinich.summary"), {
+            seasons: Number(person.seasons) || 0,
+            matches: Number(person.matches) || 0,
+            titles: Number(person.seasons_won) || 0,
+          }),
+        )}</p>`,
+        sourceUrls: person.source_urls,
+      })
+    : "";
+  body.innerHTML = `
+    <p>${escapeHtml(formatMessage(t(state.language, "games.werbinich.round"), { n: session.round }))} · ${escapeHtml(t(state.language, "games.werbinich.prompt"))}</p>
+    <ul class="game-hints game-riddle-hints">${visibleHints
+      .map((hint) => `<li>${escapeHtml(formatMessage(t(state.language, `games.werbinich.hints.${hint.id}`), hint.params))}</li>`)
+      .join("")}</ul>
+    ${
+      finished
+        ? `${solutionCard}
+          <button id="riddle-next" class="link-button" type="button">${escapeHtml(t(state.language, "games.werbinich.next"))}</button>`
+        : `<form id="riddle-form" class="game-form">
+            <select id="riddle-guess">
+              <option value="">${escapeHtml(t(state.language, "games.kader.placeholder"))}</option>
+              ${options.map((name) => `<option value="${escapeAttr(name)}">${escapeHtml(name)}</option>`).join("")}
+            </select>
+            <button class="link-button" type="submit">${escapeHtml(t(state.language, "games.kader.guess"))}</button>
+          </form>
+          <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.kader.tries"), { used: progress.wrongGuesses, max: maxGuesses }))}</p>`
+    }
+    <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.werbinich.tally"), { solved: session.solvedCount, played: session.playedCount }))}</p>`;
+  body.querySelector("#riddle-form")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const guess = body.querySelector("#riddle-guess")?.value || "";
+    if (!guess) return;
+    const guessKey = normalizedKey(guess);
+    if (progress.guessedKeys.includes(guessKey)) return;
+    progress.guessedKeys.push(guessKey);
+    if (guessKey === normalizedKey(person.person_name)) {
+      progress.solved = true;
+      session.playedCount += 1;
+      session.solvedCount += 1;
+    } else {
+      progress.wrongGuesses += 1;
+      if (progress.wrongGuesses >= maxGuesses) {
+        progress.failed = true;
+        session.playedCount += 1;
+      }
+    }
+    renderGame();
+  });
+  body.querySelector("#riddle-next")?.addEventListener("click", () => {
+    session.round += 1;
+    session.progress = { wrongGuesses: 0, guessedKeys: [], solved: false, failed: false };
+    renderGame();
+  });
+}
+
 const GAME_RENDERERS = {
   "kader-raten": renderKaderRaten,
   "tipp-spiel": renderTippSpiel,
   "klick-duell": renderKlickDuell,
   quizshow: renderQuizshow,
+  "wer-bin-ich": renderWerBinIch,
 };
 
 function renderRivalries() {

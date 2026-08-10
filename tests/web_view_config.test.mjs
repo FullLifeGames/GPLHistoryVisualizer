@@ -58,7 +58,7 @@ assert.ok(gamesGroup, "games group missing");
 assert.deepEqual(gamesGroup.views, ["games"]);
 assert.deepEqual(gamesGroup.detailViews, ["game"]);
 assert.equal(gamesGroup.defaultView, "games");
-assert.deepEqual(GAME_IDS, ["kader-raten", "tipp-spiel", "klick-duell", "quizshow"]);
+assert.deepEqual(GAME_IDS, ["kader-raten", "tipp-spiel", "klick-duell", "quizshow", "wer-bin-ich"]);
 assert.equal(defaultViewForGroup("games"), "games");
 assert.equal(viewGroupForView("games"), "games");
 assert.equal(viewGroupForView("game"), "games");

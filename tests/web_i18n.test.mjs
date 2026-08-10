@@ -84,6 +84,7 @@ assert.equal(t("de", "games.kader.title"), "Kader-Raten");
 assert.equal(t("de", "games.tipp.title"), "Tipp-Spiel");
 assert.equal(t("de", "games.klick.title"), "Klick-Duell");
 assert.equal(t("de", "games.quiz.title"), "GPL-Quizshow");
+assert.equal(t("de", "games.werbinich.title"), "Wer bin ich?");
 assert.equal(t("en", "games.play"), "Play");
 assert.equal(t("en", "sections.teamRostersTitle"), "Roster Overview");
 assert.equal(t("de", "empty.table"), "Für diese Ansicht gibt es noch keine belegten Zeilen.");
