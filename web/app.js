@@ -141,7 +141,7 @@ const VIEW_DATASETS = {
   "upset-index": ["matchHighlights", "matchVideos"],
   "record-book": ["streaks", "recordsProgression", "matchVideos", "rosterMatchdays"],
   "awards": ["awards", "personAllTime"],
-  "hall-of-fame": ["personAllTime", "matchVideos"],
+  "hall-of-fame": ["personAllTime", "matchVideos", "awards"],
   "person-details": ["personAllTime", "videos", "pokemonDraftOverview", "pokemonDraftInstances", "teamPokemonUsage", "teamRosters", "rosterScores", "awards"],
   "data-coverage": ["dataQuality", "reviewIndex"],
   "data-gaps": ["dataQuality", "reviewIndex", "missingKilllists", "missingKilllistAppearances", "lowConfidenceVideos", "ambiguousMatches", "teamPokemonUsage", "teamRosters", "pokemonDraftOverview", "rosterScores", "matchVideos", "videos"],
@@ -3793,7 +3793,126 @@ function seasonShortDisplay(seasonId) {
   return match ? `S${match[1]}` : String(seasonId || "");
 }
 
-function renderHallOfFame() {}
+const HOF_CRITERIA_KEYS = ["champion", "seasons", "kills", "peak_elo", "win_pct"];
+
+function renderHallOfFame() {
+  const hallPanel = document.querySelector("#hof-hall");
+  const spoonPanel = document.querySelector("#hof-spoon");
+  if (!hallPanel || !spoonPanel) return;
+  hallPanel.hidden = state.hofTab !== "hall";
+  spoonPanel.hidden = state.hofTab !== "spoon";
+  document.querySelectorAll("[data-hof-tab]").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.hofTab === state.hofTab);
+  });
+
+  if (state.hofTab === "hall") renderHofHall();
+  else renderHofSpoon();
+}
+
+function renderHofHall() {
+  const criteriaList = document.querySelector("#hof-criteria");
+  const cardsHost = document.querySelector("#hof-cards");
+  if (!criteriaList || !cardsHost) return;
+
+  criteriaList.innerHTML = [`<strong>${escapeHtml(t(state.language, "hof.criteriaTitle"))}</strong>`]
+    .concat(HOF_CRITERIA_KEYS.map((key) => `<li>${escapeHtml(t(state.language, `hof.criteria.${key}`))}</li>`))
+    .join("");
+
+  const chronology = cachedEloChronology();
+  const peaks = new Map();
+  for (const [key, person] of chronology.perPerson) {
+    if (Number.isFinite(person.peak.rating)) peaks.set(personComparableKey(key), Math.round(person.peak.rating));
+  }
+
+  const inductees = hofInductees(
+    {
+      personAllTime: state.data.personAllTime ?? [],
+      champions: state.data.champions ?? [],
+      killlists: state.data.killlists ?? [],
+      peaks,
+    },
+    normalizedKey,
+  );
+
+  cardsHost.innerHTML = inductees.length
+    ? inductees.map((entry) => hofCard(entry)).join("")
+    : `<p class="empty">${escapeHtml(t(state.language, "hof.empty"))}</p>`;
+}
+
+function hofCard(entry) {
+  const stats = entry.stats;
+  const record = `${stats.wins ?? 0}-${stats.losses ?? 0}-${stats.draws ?? 0}`;
+  const statLine = [
+    `${t(state.language, "columns.seasons")}: ${stats.seasons ?? ""}`,
+    `${record} (${stats.win_pct ?? ""})`,
+    entry.peak !== null ? `${t(state.language, "personDetails.eloPeak")} ${entry.peak}` : "",
+    `${t(state.language, "columns.kills")}: ${stats.kills ?? ""}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  return `
+    <article class="hof-card">
+      <h3>${entry.signaturePokemon ? pokemonIcon(entry.signaturePokemon, entry.signaturePokemon) : ""}${personLink(entry.personId, entry.name)}</h3>
+      <div class="hof-badges">
+        ${entry.criteria.map((key) => `<span class="trophy-chip" title="${escapeAttr(t(state.language, `hof.criteria.${key}`))}">${escapeHtml(hofCriterionIcon(key))}</span>`).join("")}
+        ${numberValue(stats.seasons_won) > 0 ? `<span class="trophy-chip is-title">🏆 ×${escapeHtml(String(stats.seasons_won))}</span>` : ""}
+      </div>
+      <p class="hof-stats">${escapeHtml(statLine)}</p>
+    </article>
+  `;
+}
+
+function hofCriterionIcon(key) {
+  return { champion: "🏆", seasons: "📅", kills: "⚔️", peak_elo: "📈", win_pct: "🎯" }[key] || "⭐";
+}
+
+function renderHofSpoon() {
+  const summary = document.querySelector("#spoon-summary");
+  const redemption = document.querySelector("#spoon-redemption");
+  if (!summary || !redemption) return;
+
+  const spoons = spoonRows(state.data.awards ?? []);
+  const counts = new Map();
+  for (const row of spoons) {
+    const key = row.person_id || normalizedKey(row.person_name);
+    if (!counts.has(key)) counts.set(key, { name: row.person_name, key, count: 0 });
+    counts.get(key).count += 1;
+  }
+  const topCollectors = [...counts.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)).slice(0, 4);
+  summary.innerHTML = topCollectors
+    .map((entry) => metricCard(`🥄 ${entry.name}`, entry.count, t(state.language, "hof.spoonCounts")))
+    .join("");
+
+  const arcs = (state.data.awards ?? []).filter((row) => row.award_key === "holzloeffel_redemption");
+  redemption.innerHTML = arcs.length
+    ? `<strong>${escapeHtml(t(state.language, "hof.redemptionTitle"))}</strong> ` +
+      arcs
+        .map((row) =>
+          t(state.language, "hof.redemptionLine")
+            .replace("{value}", row.value)
+            .replace("{name}", `<!--name-->`)
+            .replace("<!--name-->", personLink(row.person_id || normalizedKey(row.person_name), row.person_name)),
+        )
+        .join(" · ")
+    : "";
+
+  renderTable(
+    "#spoon-table",
+    spoons.map((row) => ({
+      _season_order: seasonOrder(row.season_id),
+      season: seasonLink(row.season_id),
+      award: `🥄 ${escapeHtml(awardName(row.award_key))}`,
+      division: row.division,
+      person: personLink(row.person_id || normalizedKey(row.person_name), row.person_name),
+      value: row.value,
+      formula: escapeHtml(awardFormula(row.formula)),
+      source: sourceCell(row.source_urls),
+    })),
+    AWARD_COLUMNS,
+    ["season", "award", "person", "formula", "source"],
+    { filename: "gpl-holzloeffel.csv" },
+  );
+}
 
 // The Zeitreise spans every season by design, so it reads the unfiltered data
 // rather than going through filtered(): the toolbar is hidden for this view.

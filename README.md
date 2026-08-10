@@ -11,6 +11,7 @@ Report data issues, missing videos, or UI problems through [GitHub Issues](https
 - Raw collected source data under `data/raw/`.
 - Static web app under `web/` with all-time table, killlists, Pokémon detail pages, table history, match plans, battle history, video archive, person details, data coverage, season detail, and matchup checker. Navigation groups: Spieler, Duelle, Pokémon, Saisons, Videos, Rekorde, Daten.
 - Elo-derived views computed client-side from the match chronology: an Upset-Index (matches ranked by the winner's pregame Elo win chance) and, on person detail pages, a career Elo curve with team stints plus a per-match Elo ledger.
+- A records-and-honors cluster in the Rekorde group: a Rekordbuch (record progressions with a match finder and streak tables), retroactively computed Auszeichnungen with a trophy shelf on person pages, and a Hall of Fame with the Holzlöffel chronicle. Backed by generated `streaks.csv`, `records_progression.csv`, and `awards.csv`.
 - Aggregated season-count tables also show an explicit season list, so counts can be checked against the exact seasons represented.
 - Markdown source report under `docs/gpl-history.md`.
 - Review queue CSVs under `data/review/` for missing killlists, missing appearances, and video matches that need human cleanup.
