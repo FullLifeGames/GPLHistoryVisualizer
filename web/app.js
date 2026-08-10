@@ -3291,6 +3291,19 @@ function cachedEloChronology() {
   return eloChronologyCache.value;
 }
 
+// Rivalry pages are career-scope with a hidden toolbar, so their chronology
+// always covers the full archive and must not depend on state.dataMode.
+let fullEloChronologyCache = null;
+
+function cachedFullEloChronology() {
+  const matches = state.data.matches ?? [];
+  if (fullEloChronologyCache && fullEloChronologyCache.source === matches) {
+    return fullEloChronologyCache.value;
+  }
+  fullEloChronologyCache = { source: matches, value: eloChronology(matches, normalizedKey) };
+  return fullEloChronologyCache.value;
+}
+
 function renderUpsetIndex() {
   const summary = document.querySelector("#upset-summary");
   const cards = document.querySelector("#upset-cards");
@@ -5405,7 +5418,116 @@ function renderRivalries() {
   });
 }
 
-function renderRivalryDetail() {}
+function renderRivalryDetail() {
+  const title = document.querySelector("#rivalry-detail-title");
+  const summaryGrid = document.querySelector("#rivalry-summary");
+  const gapBlock = document.querySelector("#rivalry-gap-block");
+  const gapChart = document.querySelector("#rivalry-gap-chart");
+  const gapHint = document.querySelector("#rivalry-gap-hint");
+  const mostWatchedEl = document.querySelector("#rivalry-most-watched");
+  const meetingsEl = document.querySelector("#rivalry-meetings");
+  if (!title || !summaryGrid || !meetingsEl) return;
+
+  const focus = state.rivalryFocus;
+  const chronology = focus ? cachedFullEloChronology() : null;
+  const aKey = chronology ? chronologyKeyForPerson(chronology, focus.aKey) : "";
+  const bKey = chronology ? chronologyKeyForPerson(chronology, focus.bKey) : "";
+  if (!aKey || !bKey || aKey === bKey) {
+    title.textContent = "";
+    summaryGrid.replaceChildren();
+    if (gapBlock) gapBlock.hidden = true;
+    mostWatchedEl?.replaceChildren();
+    meetingsEl.innerHTML = `<p class="empty">${escapeHtml(t(state.language, "rivalries.notFound"))}</p>`;
+    return;
+  }
+
+  const aName = chronology.perPerson.get(aKey)?.name || focus.aKey;
+  const bName = chronology.perPerson.get(bKey)?.name || focus.bKey;
+  const { meetings, summary, gapPoints } = rivalryMeetings(
+    aKey,
+    bKey,
+    chronology,
+    state.data.matches ?? [],
+    state.data.matchHighlights ?? [],
+    normalizedKey,
+  );
+  if (!meetings.length) {
+    title.innerHTML = `${personLink(focus.aKey, aName)} <span class="highlight-vs">vs</span> ${personLink(focus.bKey, bName)}`;
+    summaryGrid.replaceChildren();
+    if (gapBlock) gapBlock.hidden = true;
+    mostWatchedEl?.replaceChildren();
+    meetingsEl.innerHTML = `<p class="empty">${escapeHtml(t(state.language, "rivalries.notFound"))}</p>`;
+    return;
+  }
+
+  title.innerHTML = [
+    `${personLink(focus.aKey, aName)} <span class="highlight-vs">vs</span> ${personLink(focus.bKey, bName)}`,
+    matchupSelectButton(bKey, t(state.language, "rivalries.toMatchup"), "b", aKey),
+  ].join(" ");
+
+  const streakDisplay = summary.streak.side
+    ? `${summary.streak.side === "a" ? aName : bName} · ${summary.streak.length}`
+    : "–";
+  const biggestDisplay = summary.biggest
+    ? `${summary.biggest.winner === "a" ? aName : bName} ${summary.biggest.winner === "a" ? summary.biggest.score : summary.biggest.score.split(":").reverse().join(":")}, ${seasonShortDisplay(summary.biggest.season_id)}`
+    : "–";
+  summaryGrid.innerHTML = [
+    metricCard(t(state.language, "rivalries.meetings"), summary.matches),
+    metricCard(aName, summary.wins_a),
+    metricCard(bName, summary.wins_b),
+    metricCard(t(state.language, "values.draw"), summary.draws),
+    metricCard(t(state.language, "rivalries.currentStreak"), streakDisplay),
+    metricCard(t(state.language, "rivalries.biggestWin"), biggestDisplay),
+  ].join("");
+
+  const hasGapCurve = gapPoints.length >= 2;
+  if (gapBlock) gapBlock.hidden = !hasGapCurve;
+  if (hasGapCurve && gapChart) {
+    lineChart(gapChart, {
+      series: [{ id: "gap", points: gapPoints }],
+      yDomain: paddedDomain([...gapPoints.map((point) => point.y), 0]),
+      formatX: (value) => `#${Math.round(value)}`,
+      tooltip: (meeting) =>
+        meeting
+          ? `${seasonShortDisplay(meeting.season_id)} ${meeting.week} · ${Math.round(meeting.elo_gap)}`
+          : "",
+    });
+    if (gapHint) {
+      gapHint.textContent = t(state.language, "rivalries.eloGapHint").replace("{a}", aName).replace("{b}", bName);
+    }
+  }
+
+  if (mostWatchedEl) {
+    mostWatchedEl.innerHTML = summary.mostWatched
+      ? `
+        <article class="hof-card rivalry-card">
+          <h3>${escapeHtml(t(state.language, "rivalries.mostWatchedTitle"))}</h3>
+          <p><span class="muted">${escapeHtml(seasonShortDisplay(summary.mostWatched.season_id))}${summary.mostWatched.week ? ` · ${escapeHtml(summary.mostWatched.week)}` : ""}</span> <strong>${escapeHtml(summary.mostWatched.score)}</strong></p>
+          <p><span class="muted">${escapeHtml(t(state.language, "rivalries.views"))}</span> <strong>${escapeHtml(displayNumber(summary.mostWatched.view_total))}</strong></p>
+          <p>${videoLinksForMatch(summary.mostWatched.match_id, { compact: true })}</p>
+        </article>
+      `
+      : "";
+  }
+
+  const meetingRows = meetings.map((meeting) => ({
+    season: seasonLink(meeting.season_id),
+    week: meeting.week,
+    score: meeting.score,
+    winner:
+      meeting.winner === "draw"
+        ? t(state.language, "values.draw")
+        : personLink(meeting.winner === "a" ? focus.aKey : focus.bKey, meeting.winner === "a" ? aName : bName),
+    elo_gap: String(Math.round(meeting.elo_gap)),
+    videos:
+      videoLinksForMatch(meeting.match_id, { compact: true }) ||
+      (meeting.video_url
+        ? `<a href="${escapeAttr(meeting.video_url)}" target="_blank" rel="noreferrer">${escapeHtml(t(state.language, "values.video"))}</a>`
+        : ""),
+    source: sourceCell(meeting.source_urls),
+  }));
+  meetingsEl.innerHTML = `<div class="table-wrap">${tableHtml(meetingRows, ["season", "week", "score", "winner", "elo_gap", "videos", "source"], ["season", "winner", "videos", "source"])}</div>`;
+}
 
 function renderOracle() {}
 
