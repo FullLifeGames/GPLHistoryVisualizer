@@ -4512,6 +4512,47 @@ tbody tr:hover {
   color: var(--muted);
 }
 
+.game-sprite-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.game-kader-slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+  min-height: 56px;
+}
+
+.game-kader-hidden {
+  border: 1px dashed var(--muted);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 1.4rem;
+}
+
+.game-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 12px 0;
+  flex-wrap: wrap;
+}
+
+.game-hints {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.game-status {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 6px 0;
+}
+
 #view-rivalry-detail > h3,
 #view-rivalry-detail > #rivalry-gap-block > h3 {
   margin: 18px 0 10px;

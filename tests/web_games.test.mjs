@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  dailyKader,
   dateSeedString,
+  kaderHintValues,
+  kaderPools,
   pickIndex,
   seededRandom,
   shuffled,
@@ -54,4 +57,53 @@ test("updateDailyStreak increments on consecutive days and resets on gaps or los
   assert.deepEqual(updateDailyStreak(next, "2026-08-14", true), { streak: 1, best: 2, lastDate: "2026-08-14" });
   // A loss zeroes the streak and keeps the best.
   assert.deepEqual(updateDailyStreak(next, "2026-08-12", false), { streak: 0, best: 2, lastDate: "2026-08-12" });
+});
+
+const ROSTER_ROWS = [
+  { season_id: "season_009", division: "Singles", person_name: "Bene", team_name: "Wackel Backel", pokemon: "Glurak", slot: "1", source_urls: "https://sheet/a" },
+  { season_id: "season_009", division: "Singles", person_name: "Bene", team_name: "Wackel Backel", pokemon: "Bisaflor", slot: "2", source_urls: "https://sheet/a" },
+  { season_id: "season_009", division: "Singles", person_name: "Bene", team_name: "Wackel Backel", pokemon: "Turtok", slot: "3", source_urls: "https://sheet/b" },
+  { season_id: "season_009", division: "Singles", person_name: "Bene", team_name: "Wackel Backel", pokemon: "Relaxo", slot: "4", source_urls: "https://sheet/a" },
+  { season_id: "season_009", division: "Singles", person_name: "Bene", team_name: "Wackel Backel", pokemon: "Dragoran", slot: "5", source_urls: "" },
+  { season_id: "season_009", division: "Singles", person_name: "Bene", team_name: "Wackel Backel", pokemon: "Gengar", slot: "6", source_urls: "" },
+  // Duplicate pokemon from a second roster phase must dedupe.
+  { season_id: "season_009", division: "Singles", person_name: "Bene", team_name: "Wackel Backel", pokemon: "Glurak", slot: "1", source_urls: "" },
+  // Too-small roster is excluded.
+  { season_id: "season_009", division: "Singles", person_name: "Mini", team_name: "Minis", pokemon: "Pikachu", slot: "1", source_urls: "" },
+  // Rows without a pokemon or person are skipped.
+  { season_id: "season_009", division: "Singles", person_name: "", team_name: "", pokemon: "Ditto", slot: "1", source_urls: "" },
+];
+
+test("kaderPools groups, dedupes, and filters small rosters", () => {
+  const pools = kaderPools(ROSTER_ROWS, norm);
+  assert.equal(pools.length, 1);
+  const pool = pools[0];
+  assert.equal(pool.personName, "Bene");
+  assert.equal(pool.personKey, "bene");
+  assert.equal(pool.seasonId, "season_009");
+  assert.equal(pool.teamName, "Wackel Backel");
+  assert.deepEqual(pool.pokemon, ["Glurak", "Bisaflor", "Turtok", "Relaxo", "Dragoran", "Gengar"]);
+  assert.ok(pool.sourceUrls.includes("https://sheet/a"));
+  assert.ok(pool.sourceUrls.includes("https://sheet/b"));
+  assert.ok(pool.sampleRow);
+});
+
+test("dailyKader picks deterministically per date and permutes the reveal order", () => {
+  const pools = kaderPools(ROSTER_ROWS, norm);
+  const one = dailyKader(pools, "2026-08-10");
+  const two = dailyKader(pools, "2026-08-10");
+  assert.deepEqual(one, two);
+  assert.equal(one.pool.poolKey, pools[0].poolKey);
+  assert.deepEqual([...one.revealOrder].sort((a, b) => a - b), [0, 1, 2, 3, 4, 5]);
+  assert.equal(dailyKader([], "2026-08-10"), null);
+});
+
+test("kaderHintValues resolves division, final rank and season", () => {
+  const standings = [
+    { season_id: "season_009", division: "Singles", stage: "final_table", is_primary: "true", rank: "3", player_name: "Bene" },
+    { season_id: "season_009", division: "Singles", stage: "regular_season", is_primary: "true", rank: "5", player_name: "Bene" },
+  ];
+  const pool = kaderPools(ROSTER_ROWS, norm)[0];
+  assert.deepEqual(kaderHintValues(pool, standings, norm), { division: "Singles", rank: "3", seasonId: "season_009" });
+  assert.deepEqual(kaderHintValues(pool, [], norm), { division: "Singles", rank: "", seasonId: "season_009" });
 });

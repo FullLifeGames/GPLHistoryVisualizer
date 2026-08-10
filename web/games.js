@@ -56,3 +56,63 @@ export function updateDailyStreak(prev, dateString, solved) {
   const streak = state.lastDate === previousDateString(dateString) ? (state.streak || 0) + 1 : 1;
   return { streak, best: Math.max(state.best || 0, streak), lastDate: dateString };
 }
+
+// Kader-Raten: one deterministic daily puzzle. Pools are sorted by key so
+// the seeded pick is stable across visitors regardless of CSV row order.
+export function kaderPools(rosterRows = [], normalizeKey, minPokemon = 6) {
+  const byKey = new Map();
+  for (const row of rosterRows) {
+    const personKey = normalizeKey(row.person_name);
+    const pokemon = String(row.pokemon || "").trim();
+    if (!personKey || !pokemon || !row.season_id) continue;
+    const poolKey = `${row.season_id}__${row.division || ""}__${personKey}`;
+    let pool = byKey.get(poolKey);
+    if (!pool) {
+      pool = {
+        poolKey,
+        seasonId: row.season_id,
+        division: row.division || "",
+        personName: row.person_name,
+        personKey,
+        teamName: row.team_name || "",
+        pokemon: [],
+        pokemonKeys: new Set(),
+        sourceUrls: new Set(),
+        sampleRow: row,
+      };
+      byKey.set(poolKey, pool);
+    }
+    const pokemonKey = normalizeKey(pokemon);
+    if (!pool.pokemonKeys.has(pokemonKey)) {
+      pool.pokemonKeys.add(pokemonKey);
+      pool.pokemon.push(pokemon);
+    }
+    for (const url of String(row.source_urls || "").split(";")) {
+      if (url.trim()) pool.sourceUrls.add(url.trim());
+    }
+  }
+  return [...byKey.values()]
+    .filter((pool) => pool.pokemon.length >= minPokemon)
+    .map(({ pokemonKeys, sourceUrls, ...pool }) => ({ ...pool, sourceUrls: [...sourceUrls].join(";") }))
+    .sort((a, b) => a.poolKey.localeCompare(b.poolKey));
+}
+
+export function dailyKader(pools, dateString) {
+  if (!pools.length) return null;
+  const rng = seededRandom(`kader-${dateString}`);
+  const pool = pools[pickIndex(rng, pools.length)];
+  const revealOrder = shuffled(pool.pokemon.map((_, index) => index), rng);
+  return { pool, revealOrder };
+}
+
+export function kaderHintValues(pool, standingsRows = [], normalizeKey) {
+  const finalRow = standingsRows.find(
+    (row) =>
+      row.season_id === pool.seasonId &&
+      (row.division || "") === pool.division &&
+      String(row.is_primary) === "true" &&
+      row.stage === "final_table" &&
+      normalizeKey(row.player_name) === pool.personKey,
+  );
+  return { division: pool.division, rank: finalRow ? String(finalRow.rank ?? "") : "", seasonId: pool.seasonId };
+}
