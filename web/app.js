@@ -37,6 +37,7 @@ import {
 import { eloChronology, eloLedgerRows, personEloSeries, upsetRows } from "./elo_history.js";
 import { buildSeries, lineChart, paddedDomain, stackedBarChart, stepChart } from "./charts.js";
 import { attentionStripPoints, monthlyChannelStacks, seasonMonthBands, stripSeasonIds } from "./audience.js";
+import { groupEventsByYear, onThisDayEvents, timelineEvents } from "./timeline_events.js";
 import { awardsBySeason, finderFilterRows, hofInductees, spoonRows, streakTableRows } from "./records.js";
 import { rivalryMeetings, rivalryPairs } from "./rivalries.js";
 import { dominanceRows, winChainGraph, winChainPath } from "./oracle.js";
@@ -4462,9 +4463,129 @@ function renderAudienceHistory() {
   });
 }
 
+const ZEITSTRAHL_ICONS = {
+  "season-start": "🏁",
+  "season-end": "🏆",
+  "top-video": "📈",
+  record: "🏅",
+  milestone: "🎬",
+};
+
+function cachedTimelineEvents() {
+  const sources = {
+    seasons: state.data.seasons ?? [],
+    champions: state.data.champions ?? [],
+    videos: state.data.videos ?? [],
+    recordsProgression: state.data.recordsProgression ?? [],
+    matchVideos: state.data.matchVideos ?? [],
+  };
+  const memo = cachedTimelineEvents.memo;
+  if (memo && Object.keys(sources).every((key) => memo.sources[key] === sources[key])) return memo.events;
+  const events = timelineEvents(sources);
+  cachedTimelineEvents.memo = { sources, events };
+  return events;
+}
+
+function zeitstrahlVideoTitleLink(event) {
+  const title = escapeHtml(event.title ?? "");
+  if (!event.videoUrl) return title;
+  return `<a href="${escapeAttr(event.videoUrl)}" target="_blank" rel="noreferrer">${title}</a>`;
+}
+
+function zeitstrahlEventHtml(event) {
+  const lang = state.language;
+  if (event.type === "season-start") {
+    return formatMessage(t(lang, "zeitstrahl.seasonStart"), { season: escapeHtml(seasonDisplay(event.seasonId)) });
+  }
+  if (event.type === "season-end") {
+    const season = escapeHtml(seasonDisplay(event.seasonId));
+    if (event.champion) {
+      return formatMessage(t(lang, "zeitstrahl.seasonEndChampion"), {
+        season,
+        champion: personLink(event.championPersonId || event.champion, event.champion),
+      });
+    }
+    return formatMessage(t(lang, "zeitstrahl.seasonEnd"), { season });
+  }
+  if (event.type === "top-video") {
+    return formatMessage(t(lang, "zeitstrahl.topVideo"), {
+      year: event.year,
+      title: zeitstrahlVideoTitleLink(event),
+      views: displayNumber(event.viewCount),
+      channel: escapeHtml(event.channel ?? ""),
+    });
+  }
+  if (event.type === "record") {
+    const recordName = t(lang, `recordBook.records.${event.recordKey}`) || event.recordKey;
+    return formatMessage(t(lang, "zeitstrahl.record"), {
+      record: escapeHtml(recordName),
+      holder: personLink(event.holderPersonId || event.holderName, event.holderName),
+      value: escapeHtml(String(event.value ?? "")),
+    });
+  }
+  return formatMessage(t(lang, "zeitstrahl.milestone"), {
+    n: event.n,
+    title: zeitstrahlVideoTitleLink(event),
+    channel: escapeHtml(event.channel ?? ""),
+  });
+}
+
+function zeitstrahlDateDisplay(date) {
+  const [year, month, day] = String(date).split("-");
+  return state.language === "de" ? `${day}.${month}.${year}` : `${year}-${month}-${day}`;
+}
+
+function zeitstrahlEventRow(event) {
+  const sources = sourceLinks((event.sourceUrls ?? []).join(";"));
+  return `<div class="zeitstrahl-event">
+    <span class="zeitstrahl-event-icon" aria-hidden="true">${ZEITSTRAHL_ICONS[event.type] || "•"}</span>
+    <span class="zeitstrahl-event-date" title="${escapeAttr(t(state.language, "zeitstrahl.uploadDateNote"))}">${escapeHtml(zeitstrahlDateDisplay(event.date))}</span>
+    <span class="zeitstrahl-event-text">${zeitstrahlEventHtml(event)}${sources ? ` <span class="source-links">${sources}</span>` : ""}</span>
+  </div>`;
+}
+
+function renderZeitstrahlToday(events) {
+  const results = document.querySelector("#zeitstrahl-today-results");
+  const input = document.querySelector("#zeitstrahl-date");
+  if (!results || !input) return;
+  const lang = state.language;
+  if (!state.zeitstrahl.date) state.zeitstrahl.date = dateSeedString();
+  input.value = state.zeitstrahl.date;
+  input.onchange = () => {
+    state.zeitstrahl.date = input.value || dateSeedString();
+    renderZeitstrahlToday(cachedTimelineEvents());
+  };
+  const hits = onThisDayEvents(events, state.zeitstrahl.date);
+  if (!hits.length) {
+    results.innerHTML = `<p class="muted">${escapeHtml(t(lang, "zeitstrahl.noEvents"))}</p>`;
+    return;
+  }
+  results.innerHTML = hits
+    .map((event) => {
+      const agoText =
+        event.yearsAgo === 1 ? t(lang, "zeitstrahl.yearAgo") : formatMessage(t(lang, "zeitstrahl.yearsAgo"), { years: event.yearsAgo });
+      return `<p><strong>${escapeHtml(agoText)}</strong> – ${zeitstrahlEventHtml(event)}</p>`;
+    })
+    .join("");
+}
+
 function renderZeitstrahl() {
   const body = document.querySelector("#zeitstrahl-body");
-  if (body) body.replaceChildren();
+  if (!body) return;
+  const videos = state.data.videos ?? [];
+  if (!videos.length) {
+    document.querySelector("#zeitstrahl-today-results")?.replaceChildren();
+    body.innerHTML = `<p class="muted">${escapeHtml(t(state.language, "zeitstrahl.empty"))}</p>`;
+    return;
+  }
+  const events = cachedTimelineEvents();
+  renderZeitstrahlToday(events);
+  body.innerHTML = groupEventsByYear(events)
+    .map(
+      (group) =>
+        `<h3 class="zeitstrahl-year">${group.year}</h3>${group.events.map((event) => zeitstrahlEventRow(event)).join("")}`,
+    )
+    .join("");
 }
 
 function renderVideoArchive() {

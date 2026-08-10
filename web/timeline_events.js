@@ -92,7 +92,15 @@ export function timelineEvents(
     const existing = uploadsByMatch.get(row.match_id);
     if (!existing || date < existing.date) uploadsByMatch.set(row.match_id, { date, videoUrl: row.video_url });
   }
+  // Only genuine hand-offs make the timeline: a holder improving their own
+  // record (career counters do this constantly) is not a "record fall", and
+  // the very first row per key is just the archive's starting value.
+  const previousHolder = new Map();
   for (const row of recordsProgression ?? []) {
+    const holder = `${row.holder_person_id || row.holder_name || ""}__${row.holder_pokemon || ""}`;
+    const prev = previousHolder.get(row.record_key);
+    previousHolder.set(row.record_key, holder);
+    if (prev === undefined || prev === holder) continue;
     const resolved = uploadsByMatch.get(row.match_id);
     if (!resolved) continue;
     events.push({

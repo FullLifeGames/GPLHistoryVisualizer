@@ -33,6 +33,7 @@ const VIDEOS = [
 ];
 
 const PROGRESSION = [
+  // First row per key: archive starting value, not a hand-off -> dropped.
   {
     record_key: "highest_elo",
     holder_person_id: "person_daumenkino",
@@ -44,6 +45,45 @@ const PROGRESSION = [
     video_url: "",
     superseded: "1",
     source_urls: "https://example.com/elo",
+  },
+  // Same holder improving their own record -> dropped.
+  {
+    record_key: "highest_elo",
+    holder_person_id: "person_daumenkino",
+    holder_name: "DaumenkinoLP",
+    value: "1530",
+    season_id: "season_001",
+    week: "2. Spieltag",
+    match_id: "season_001_schedule_0001",
+    video_url: "",
+    superseded: "1",
+    source_urls: "https://example.com/elo",
+  },
+  // Genuine hand-off with a resolvable match id -> kept.
+  {
+    record_key: "highest_elo",
+    holder_person_id: "person_present",
+    holder_name: "PresentLP",
+    value: "1550",
+    season_id: "season_001",
+    week: "3. Spieltag",
+    match_id: "season_001_schedule_0001",
+    video_url: "",
+    superseded: "0",
+    source_urls: "https://example.com/elo2",
+  },
+  // Hand-off whose match id has no dated video -> dropped.
+  {
+    record_key: "most_career_kills",
+    holder_person_id: "person_a",
+    holder_name: "Founder",
+    value: "10",
+    season_id: "season_001",
+    week: "1. Spieltag",
+    match_id: "season_001_schedule_0001",
+    video_url: "",
+    superseded: "1",
+    source_urls: "",
   },
   {
     record_key: "most_career_kills",
@@ -112,14 +152,14 @@ test("top videos rank per calendar year and skip dateless rows", () => {
   assert.equal(tops[0].videoUrl, "https://youtu.be/v3");
 });
 
-test("record events resolve upload dates via the earliest match video", () => {
+test("record events keep only resolvable hand-offs, dated by the earliest match video", () => {
   const events = timelineEvents(SOURCES, { milestoneSteps: [] });
   const records = events.filter((event) => event.type === "record");
-  assert.equal(records.length, 1); // the unresolvable match id is dropped
+  assert.equal(records.length, 1); // firsts, self-improvements, and unresolvable rows are dropped
   assert.equal(records[0].date, "2014-09-14");
   assert.equal(records[0].recordKey, "highest_elo");
-  assert.equal(records[0].holderName, "DaumenkinoLP");
-  assert.equal(records[0].value, "1516");
+  assert.equal(records[0].holderName, "PresentLP");
+  assert.equal(records[0].value, "1550");
   assert.equal(records[0].videoUrl, "https://youtu.be/early");
 });
 
