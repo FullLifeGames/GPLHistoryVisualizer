@@ -5430,30 +5430,41 @@ function renderRivalryDetail() {
   const hasGapCurve = gapPoints.length >= 2;
   if (gapBlock) gapBlock.hidden = !hasGapCurve;
   if (hasGapCurve && gapChart) {
-    const upsetMarkers = gapPoints
-      .filter((point) => point.source.against_odds)
-      .map((point) => ({
-        x: point.x,
-        y: point.y,
-        label: "⚡",
-        className: "rivalry-upset-marker",
-        title: `${seasonShortDisplay(point.source.season_id)} ${point.source.week} · ${t(state.language, "columns.win_prob_winner")}: ${meetingExpectationText(point.source)} · ${meetingOutcomeText(point.source)}`,
-      }));
+    // Every meeting gets a node in the winner's fixed color; the ⚡ label
+    // stays reserved for outcomes that contradicted the Elo expectation.
+    const winnerMarkers = gapPoints.map((point) => ({
+      x: point.x,
+      y: point.y,
+      label: point.source.against_odds ? "⚡" : "",
+      className: `rivalry-winner-${point.source.winner}${point.source.against_odds ? " rivalry-upset-marker" : ""}`,
+      title: `${seasonShortDisplay(point.source.season_id)} ${point.source.week} · ${t(state.language, "columns.expected")}: ${meetingExpectationText(point.source)} · ${t(state.language, "rivalries.actual")}: ${meetingOutcomeText(point.source)}`,
+    }));
     lineChart(gapChart, {
-      series: [{ id: "gap", points: gapPoints }],
+      series: [{ id: "gap", points: gapPoints, className: "rivalry-gap-line" }],
       yDomain: paddedDomain([...gapPoints.map((point) => point.y), 0]),
       formatX: (value) => `#${Math.round(value)}`,
-      markers: upsetMarkers,
+      markers: winnerMarkers,
       tooltip: (meeting) =>
         meeting
           ? `${seasonShortDisplay(meeting.season_id)} ${meeting.week} · ${t(state.language, "columns.elo_gap")}: ${Math.round(meeting.elo_gap)} · ${t(state.language, "columns.expected")}: ${meetingExpectationText(meeting)} · ${t(state.language, "rivalries.actual")}: ${meetingOutcomeText(meeting)}`
           : "",
     });
     if (gapHint) {
-      gapHint.textContent = [
-        t(state.language, "rivalries.eloGapHint").replace("{a}", aName).replace("{b}", bName),
-        t(state.language, "rivalries.upsetMarkerHint"),
-      ].join(" ");
+      const legendChips = [
+        `<span class="rivalry-legend-item"><span class="rivalry-legend-dot rivalry-winner-a"></span>${escapeHtml(aName)}</span>`,
+        `<span class="rivalry-legend-item"><span class="rivalry-legend-dot rivalry-winner-b"></span>${escapeHtml(bName)}</span>`,
+        summary.draws > 0
+          ? `<span class="rivalry-legend-item"><span class="rivalry-legend-dot rivalry-winner-draw"></span>${escapeHtml(t(state.language, "values.draw"))}</span>`
+          : "",
+      ]
+        .filter(Boolean)
+        .join(" ");
+      gapHint.innerHTML = `${legendChips} · ${escapeHtml(
+        [
+          t(state.language, "rivalries.eloGapHint").replace("{a}", aName).replace("{b}", bName),
+          t(state.language, "rivalries.upsetMarkerHint"),
+        ].join(" "),
+      )}`;
     }
   }
 

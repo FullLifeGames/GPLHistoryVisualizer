@@ -4186,8 +4186,45 @@ tbody tr:hover {
   font-weight: 600;
 }
 
-.chart-marker.rivalry-upset-marker circle {
-  fill: var(--viz-4);
+/* Rivalry gap chart: neutral line, winner-colored meeting nodes, and a
+   matching text legend under the chart. */
+.rivalry-gap-line {
+  color: var(--muted);
+}
+
+.chart-marker.rivalry-winner-a circle,
+.rivalry-legend-dot.rivalry-winner-a {
+  fill: var(--viz-1);
+  background: var(--viz-1);
+}
+
+.chart-marker.rivalry-winner-b circle,
+.rivalry-legend-dot.rivalry-winner-b {
+  fill: var(--viz-2);
+  background: var(--viz-2);
+}
+
+.chart-marker.rivalry-winner-draw circle,
+.rivalry-legend-dot.rivalry-winner-draw {
+  fill: var(--muted);
+  background: var(--muted);
+}
+
+.rivalry-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-right: 8px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.rivalry-legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid var(--surface);
 }
 
 /* Rekorde group: Rekordbuch, Auszeichnungen, Hall of Fame */
