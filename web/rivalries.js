@@ -59,6 +59,7 @@ export function rivalryMeetings(aKey, bKey, chronology, matches = [], highlightR
     const aIsLeft = entry.aKey === aKey;
     const source = matchById.get(matchId) || {};
     const winnerKey = normalizeKey(source.winner);
+    const winProbA = aIsLeft ? entry.winProbA : 1 - entry.winProbA;
     const scoreParts = [source.score_a, source.score_b].filter((value) => value !== undefined && value !== "");
     const score =
       scoreParts.length < 2
@@ -77,6 +78,9 @@ export function rivalryMeetings(aKey, bKey, chronology, matches = [], highlightR
       elo_pre_a: aIsLeft ? entry.eloPreA : entry.eloPreB,
       elo_pre_b: aIsLeft ? entry.eloPreB : entry.eloPreA,
       elo_gap: aIsLeft ? entry.eloPreA - entry.eloPreB : entry.eloPreB - entry.eloPreA,
+      win_prob_a: winProbA,
+      against_odds:
+        winnerKey === aKey ? winProbA < 0.5 : winnerKey === bKey ? winProbA > 0.5 : false,
       video_url: source.video_url || "",
       view_total: viewsByMatch.get(matchId) || 0,
       source_urls: source.source_urls || "",

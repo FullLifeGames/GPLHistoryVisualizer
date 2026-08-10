@@ -5415,20 +5415,45 @@ function renderRivalryDetail() {
     metricCard(t(state.language, "rivalries.biggestWin"), biggestDisplay),
   ].join("");
 
+  const meetingOutcomeText = (meeting) => {
+    if (meeting.winner === "draw") return t(state.language, "values.draw");
+    const winnerName = meeting.winner === "a" ? aName : bName;
+    const winnerScore = meeting.winner === "a" ? meeting.score : meeting.score.split(":").reverse().join(":");
+    return `${winnerName} ${winnerScore}`;
+  };
+  const meetingExpectationText = (meeting) => {
+    const favoriteIsA = meeting.win_prob_a >= 0.5;
+    const favoriteProb = favoriteIsA ? meeting.win_prob_a : 1 - meeting.win_prob_a;
+    return `${Math.round(favoriteProb * 100)} % ${favoriteIsA ? aName : bName}`;
+  };
+
   const hasGapCurve = gapPoints.length >= 2;
   if (gapBlock) gapBlock.hidden = !hasGapCurve;
   if (hasGapCurve && gapChart) {
+    const upsetMarkers = gapPoints
+      .filter((point) => point.source.against_odds)
+      .map((point) => ({
+        x: point.x,
+        y: point.y,
+        label: "⚡",
+        className: "rivalry-upset-marker",
+        title: `${seasonShortDisplay(point.source.season_id)} ${point.source.week} · ${t(state.language, "columns.win_prob_winner")}: ${meetingExpectationText(point.source)} · ${meetingOutcomeText(point.source)}`,
+      }));
     lineChart(gapChart, {
       series: [{ id: "gap", points: gapPoints }],
       yDomain: paddedDomain([...gapPoints.map((point) => point.y), 0]),
       formatX: (value) => `#${Math.round(value)}`,
+      markers: upsetMarkers,
       tooltip: (meeting) =>
         meeting
-          ? `${seasonShortDisplay(meeting.season_id)} ${meeting.week} · ${Math.round(meeting.elo_gap)}`
+          ? `${seasonShortDisplay(meeting.season_id)} ${meeting.week} · ${t(state.language, "columns.elo_gap")}: ${Math.round(meeting.elo_gap)} · ${t(state.language, "columns.expected")}: ${meetingExpectationText(meeting)} · ${t(state.language, "rivalries.actual")}: ${meetingOutcomeText(meeting)}`
           : "",
     });
     if (gapHint) {
-      gapHint.textContent = t(state.language, "rivalries.eloGapHint").replace("{a}", aName).replace("{b}", bName);
+      gapHint.textContent = [
+        t(state.language, "rivalries.eloGapHint").replace("{a}", aName).replace("{b}", bName),
+        t(state.language, "rivalries.upsetMarkerHint"),
+      ].join(" ");
     }
   }
 
@@ -5452,8 +5477,9 @@ function renderRivalryDetail() {
     winner:
       meeting.winner === "draw"
         ? t(state.language, "values.draw")
-        : personLink(meeting.winner === "a" ? focus.aKey : focus.bKey, meeting.winner === "a" ? aName : bName),
+        : `${personLink(meeting.winner === "a" ? focus.aKey : focus.bKey, meeting.winner === "a" ? aName : bName)}${meeting.against_odds ? " ⚡" : ""}`,
     elo_gap: String(Math.round(meeting.elo_gap)),
+    expected: meetingExpectationText(meeting),
     videos:
       videoLinksForMatch(meeting.match_id, { compact: true }) ||
       (meeting.video_url
@@ -5461,7 +5487,7 @@ function renderRivalryDetail() {
         : ""),
     source: sourceCell(meeting.source_urls),
   }));
-  meetingsEl.innerHTML = `<div class="table-wrap">${tableHtml(meetingRows, ["season", "week", "score", "winner", "elo_gap", "videos", "source"], ["season", "winner", "videos", "source"])}</div>`;
+  meetingsEl.innerHTML = `<div class="table-wrap">${tableHtml(meetingRows, ["season", "week", "elo_gap", "expected", "score", "winner", "videos", "source"], ["season", "winner", "videos", "source"])}</div>`;
 }
 
 let oracleGraphCache = null;
@@ -6133,6 +6159,7 @@ const NUMERIC_COLUMNS = new Set([
   "elo_delta",
   "elo_after",
   "elo_gap",
+  "expected",
   "meetings",
   "closeness",
   "rivalry_score",

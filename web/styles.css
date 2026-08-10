@@ -4186,6 +4186,10 @@ tbody tr:hover {
   font-weight: 600;
 }
 
+.chart-marker.rivalry-upset-marker circle {
+  fill: var(--viz-4);
+}
+
 /* Rekorde group: Rekordbuch, Auszeichnungen, Hall of Fame */
 .record-tabs {
   margin: 0 0 14px;

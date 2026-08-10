@@ -71,6 +71,11 @@ test("rivalryMeetings orients scores to the pair, tracks streaks and biggest win
   assert.equal(gapPoints[0].x, 1);
   assert.equal(gapPoints[0].y, 0); // both start at 1500
   assert.equal(pairSummary.mostWatched, null);
+  assert.equal(meetings[0].win_prob_a, 0.5); // both at 1500 before m1
+  assert.equal(meetings[0].against_odds, false); // 50:50 has no favorite to upset
+  const m4 = meetings.find((meeting) => meeting.match_id === "m4");
+  assert.ok(m4.win_prob_a > 0.5); // Alba ahead after 4:0 despite the m2 loss
+  assert.equal(m4.against_odds, true); // Bruno won as the Elo underdog
 });
 
 test("rivalryMeetings picks the most watched meeting from highlights", () => {
