@@ -89,6 +89,7 @@ const series = personEloSeries("anna", chrono, stints, champs);
 assert.equal(series.points.length, 3);
 assert.equal(series.bands.length, 1);
 assert.ok(series.bands[0].label.includes("Team A"));
+assert.equal(series.bands[0].shortLabel, "S1"); // fallback when the full label does not fit the band
 assert.equal(series.bands[0].fromSeq, 0);
 assert.equal(series.bands[0].toSeq, 2);
 assert.equal(series.markers.length, 1);

@@ -4097,6 +4097,7 @@ tbody tr:hover {
 
 .chart-grid line {
   stroke: var(--viz-grid);
+  shape-rendering: crispedges;
 }
 
 .chart-axis path,
@@ -4112,7 +4113,19 @@ tbody tr:hover {
 .chart-line {
   fill: none;
   stroke: currentColor;
-  stroke-width: 2.25;
+  stroke-width: 2;
+}
+
+.chart-label-layer {
+  pointer-events: none;
+}
+
+.chart-band-label,
+.chart-marker-label {
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 3px;
+  stroke-linejoin: round;
 }
 
 .chart-marker circle {

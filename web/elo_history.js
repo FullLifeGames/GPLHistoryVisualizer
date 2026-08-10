@@ -79,6 +79,7 @@ export function personEloSeries(personKey, chronology, stintRows = [], championR
     const team = teamBySeason.get(band.seasonId) || "";
     const season = seasonShortLabel(band.seasonId);
     band.label = team ? `${season} · ${team}` : season;
+    band.shortLabel = season;
   }
 
   const lastPointBySeason = new Map();

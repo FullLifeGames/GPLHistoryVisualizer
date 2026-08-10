@@ -88,7 +88,7 @@ function renderChart(container, config, kind) {
     const svg = d3
       .select(container)
       .append("svg")
-      .attr("class", `chart chart-${kind}`)
+      .attr("class", `chart chart-kind-${kind}`)
       .attr("width", width)
       .attr("height", height)
       .attr("viewBox", `0 0 ${width} ${height}`)
@@ -99,22 +99,13 @@ function renderChart(container, config, kind) {
       const fromX = Math.max(x(band.fromX), 0);
       const toX = Math.min(x(band.toX), innerWidth);
       if (!(toX > fromX)) continue;
-      const bandGroup = root.append("g").attr("class", "chart-band-group");
-      bandGroup
+      root
         .append("rect")
         .attr("class", `chart-band ${band.className || ""}`.trim())
         .attr("x", fromX)
         .attr("y", 0)
         .attr("width", toX - fromX)
         .attr("height", innerHeight);
-      if (band.label) {
-        bandGroup
-          .append("text")
-          .attr("class", "chart-band-label")
-          .attr("x", fromX + 4)
-          .attr("y", 12)
-          .text(band.label);
-      }
     }
 
     const yTicks = y.ticks(5);
@@ -154,10 +145,48 @@ function renderChart(container, config, kind) {
         .attr("class", `chart-marker ${marker.className || ""}`.trim())
         .attr("transform", `translate(${x(marker.x)},${y(marker.y)})`);
       markerGroup.append("circle").attr("r", 5);
-      if (marker.label) {
-        markerGroup.append("text").attr("class", "chart-marker-label").attr("x", 0).attr("y", -9).attr("text-anchor", "middle").text(marker.label);
-      }
       if (marker.title) markerGroup.append("title").text(marker.title);
+    }
+
+    // Labels live in their own top layer so the Elo line never strikes
+    // through the text; a surface-colored halo (CSS paint-order) keeps them
+    // readable over bands, grid, and line alike.
+    const labelLayer = root.append("g").attr("class", "chart-label-layer");
+    for (const band of config.bands || []) {
+      const fromX = Math.max(x(band.fromX), 0);
+      const toX = Math.min(x(band.toX), innerWidth);
+      if (!(toX > fromX) || !band.label) continue;
+      const available = toX - fromX - 8;
+      const text = labelLayer
+        .append("text")
+        .attr("class", "chart-band-label")
+        .attr("x", fromX + 4)
+        .attr("y", 14)
+        .text(band.label);
+      // Neighboring bands share one label row; a label wider than its own
+      // band bleeds into the next one, so degrade to the short form or drop.
+      if (text.node().getComputedTextLength() > available) {
+        text.text(band.shortLabel || "");
+        if (!band.shortLabel || text.node().getComputedTextLength() > available) {
+          text.remove();
+          continue;
+        }
+      }
+      text.append("title").text(band.label);
+    }
+    for (const marker of config.markers || []) {
+      if (!marker.label) continue;
+      const text = labelLayer
+        .append("text")
+        .attr("class", `chart-marker-label ${marker.className || ""}`.trim())
+        .attr("text-anchor", "middle")
+        .text(marker.label);
+      if (marker.labelAt === "top") {
+        const clampedX = Math.min(Math.max(x(marker.x), 50), innerWidth - 50);
+        text.attr("x", clampedX).attr("y", 32);
+      } else {
+        text.attr("x", x(marker.x)).attr("y", y(marker.y) - 9);
+      }
     }
 
     if (config.onHover || config.tooltip) {

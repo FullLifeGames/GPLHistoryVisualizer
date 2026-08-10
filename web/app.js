@@ -3310,12 +3310,13 @@ function renderPersonEloChart(focusKey) {
       y: peakPoint.rating,
       label: `${t(state.language, "personDetails.eloPeak")} ${Math.round(series.peak.rating)}`,
       className: "chart-marker-peak",
+      labelAt: "top",
     });
   }
 
   lineChart(container, {
     series: [{ id: "elo", points: built.points, className: "viz-series-1" }],
-    bands: series.bands.map((band) => ({ fromX: band.fromSeq, toX: band.toSeq, label: band.label })),
+    bands: series.bands.map((band) => ({ fromX: band.fromSeq, toX: band.toSeq, label: band.label, shortLabel: band.shortLabel })),
     markers,
     xDomain: built.xDomain,
     yDomain: built.yDomain,

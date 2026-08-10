@@ -17,7 +17,7 @@
     "setup:drive": "python -m pip install -e \".[drive-archive]\"",
     "cli": "node scripts/run-python-module.mjs gpl_history.cli",
     "drive": "node scripts/run-python-module.mjs gpl_history.drive_archive",
-    "serve": "python -m http.server 8000",
+    "serve": "python scripts/serve.py 8000",
     "collect": "node scripts/run-python-module.mjs gpl_history.cli collect --data-dir data",
     "collect:resume": "node scripts/run-python-module.mjs gpl_history.cli collect --data-dir data --resume",
     "fetch-external-sheets": "node scripts/run-python-module.mjs gpl_history.cli fetch-external-sheets --data-dir data",
