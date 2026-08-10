@@ -109,6 +109,11 @@ def main(argv: list[str] | None = None) -> int:
     team_graphics.add_argument("--data-dir", default="data")
     team_graphics.add_argument("--graphics-dir", default="output/team-graphics")
 
+    title_odds = subparsers.add_parser("title-odds", help="Simulate retro per-matchday title odds (seeded Monte-Carlo).")
+    title_odds.add_argument("--data-dir", default="data")
+    title_odds.add_argument("--sims", type=int, default=1000)
+    title_odds.add_argument("--seed", type=int, default=42)
+
     args = parser.parse_args(argv)
 
     if args.command == "collect":
@@ -144,6 +149,12 @@ def main(argv: list[str] | None = None) -> int:
         counts = build_and_write_aggregates(Path(args.data_dir))
         for name, count in counts.items():
             print(f"{name}: {count}")
+        return 0
+    if args.command == "title-odds":
+        from .title_odds import build_and_write_title_odds
+
+        count = build_and_write_title_odds(Path(args.data_dir), sims=args.sims, seed=args.seed)
+        print(f"title_odds: {count}")
         return 0
     if args.command == "report":
         generate_report(Path(args.data_dir), Path(args.out))

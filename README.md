@@ -109,6 +109,18 @@ Generate only the precomputed frontend aggregate CSVs:
 gpl-history aggregates --data-dir data
 ```
 
+Regenerate the retro Titelrennen probabilities (`data/normalized/title_odds.csv`, seeded Monte-Carlo — not part of `check-generated` because simulation is expensive; rerun after match data changes):
+
+```powershell
+gpl-history title-odds --data-dir data [--sims N --seed S]
+```
+
+Render shareable GPL Wrapped PNG cards into `web/assets/wrapped/` (optional dependency: `pip install .[wrapped]`; German-only, not drift-checked):
+
+```powershell
+gpl-history wrapped-cards --data-dir data --web-dir web
+```
+
 Validate normalized CSV files:
 
 ```powershell
