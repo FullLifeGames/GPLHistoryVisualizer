@@ -5647,7 +5647,7 @@ function renderTippSpiel(body) {
   // Each side renders in the roster teamsheet look (background always
   // resolves, thanks to the pool fallback). The matchday six is shown when
   // the Spieltag lineup is recorded; otherwise the full season roster.
-  const teamPanel = (personName, slot, { disabled = false, picked = false } = {}) => {
+  const teamPanel = (personName) => {
     const personKey = normalizedKey(personName);
     const seasonRows = (state.data.teamRosters || [])
       .filter((row) => row.season_id === match.season_id && row.pokemon && normalizedKey(row.person_name) === personKey)
@@ -5701,10 +5701,10 @@ function renderTippSpiel(body) {
       )
       .join("");
     return `
-      <section class="roster-teamsheet game-teamsheet${picked ? " is-picked" : ""}" style="--roster-bg-image: url(${escapeAttr(background)});">
+      <section class="roster-teamsheet game-teamsheet" style="--roster-bg-image: url(${escapeAttr(background)});">
         <header class="roster-teamsheet-head game-teamsheet-head">
           <div>
-            <button class="link-button game-tipp-name" type="button" data-tipp-pick="${slot}" ${disabled ? "disabled" : ""}>${escapeHtml(personName)}</button>
+            <strong class="game-tipp-name">${escapeHtml(personName)}</strong>
             ${teamName ? `<p class="game-status game-tipp-teamname">${escapeHtml(teamName)}</p>` : ""}
           </div>
         </header>
@@ -5712,50 +5712,32 @@ function renderTippSpiel(body) {
       </section>`;
   };
   const header = `<p>${escapeHtml(seasonShortDisplay(match.season_id))} · ${escapeHtml(match.week || "")} · ${escapeHtml(match.division || "")}</p>`;
-  if (!round.picked) {
-    body.innerHTML = `
-      ${header}
-      <p>${escapeHtml(t(state.language, "games.tipp.prompt"))}</p>
-      <div class="game-tipp-duel">
-        ${teamPanel(match.player_a, "a")}
-        <span class="game-tipp-vs">vs.</span>
-        ${teamPanel(match.player_b, "b")}
-      </div>
-      <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.tipp.tallyYou"), { you: tally.you, rounds: tally.rounds }))} · ${escapeHtml(formatMessage(t(state.language, "games.tipp.tallyElo"), { elo: tally.elo, rounds: tally.rounds }))}</p>`;
-    body.querySelectorAll("[data-tipp-pick]").forEach((button) => {
-      button.addEventListener("click", () => {
-        round.picked = button.dataset.tippPick;
-        renderGame();
-      });
-    });
-    return;
-  }
   if (!round.scoreGuess) {
-    // Step 2: guess the exact result from the picked player's perspective.
-    // 99% of decided GPL matches end W:0 with W between 1 and 6.
-    const pickedName = round.picked === "a" ? match.player_a : match.player_b;
+    // One click decides winner AND score: the results run from 6:0 to 0:6
+    // (left side = player A wins). 99% of decided GPL matches end W:0.
+    const scoreButton = (a, b) => `<button class="link-button" type="button" data-tipp-score="${a}:${b}">${a}:${b}</button>`;
     body.innerHTML = `
       ${header}
-      <p>${escapeHtml(formatMessage(t(state.language, "games.tipp.scorePrompt"), { name: pickedName }))}</p>
-      <div class="game-tipp-choices">
-        ${[6, 5, 4, 3, 2, 1]
-          .map((win) => `<button class="link-button" type="button" data-tipp-score="${win}:0">${win}:0</button>`)
-          .join("")}
+      <p>${escapeHtml(formatMessage(t(state.language, "games.tipp.scorePrompt"), { a: match.player_a, b: match.player_b }))}</p>
+      <div class="game-tipp-choices game-tipp-scores">
+        ${[6, 5, 4, 3, 2, 1].map((win) => scoreButton(win, 0)).join("")}
+        <span class="game-tipp-vs">·</span>
+        ${[1, 2, 3, 4, 5, 6].map((win) => scoreButton(0, win)).join("")}
       </div>
+      <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.tipp.tallyYou"), { you: tally.you, rounds: tally.rounds }))} · ${escapeHtml(formatMessage(t(state.language, "games.tipp.tallyExact"), { exact: tally.exact }))} · ${escapeHtml(formatMessage(t(state.language, "games.tipp.tallyElo"), { elo: tally.elo, rounds: tally.rounds }))}</p>
       <div class="game-tipp-duel">
-        ${teamPanel(match.player_a, "a", { disabled: true, picked: round.picked === "a" })}
+        ${teamPanel(match.player_a)}
         <span class="game-tipp-vs">vs.</span>
-        ${teamPanel(match.player_b, "b", { disabled: true, picked: round.picked === "b" })}
+        ${teamPanel(match.player_b)}
       </div>`;
     body.querySelectorAll("[data-tipp-score]").forEach((button) => {
       button.addEventListener("click", () => {
         round.scoreGuess = button.dataset.tippScore;
+        const [guessA, guessB] = round.scoreGuess.split(":").map(Number);
+        round.picked = guessA > guessB ? "a" : "b";
         const youRight = (round.picked === "a") === winnerIsA;
         const eloRight = eloPickA === winnerIsA;
-        const guessedWin = Number(round.scoreGuess.split(":")[0]);
-        const pickedScore = Number(round.picked === "a" ? match.score_a : match.score_b);
-        const otherScore = Number(round.picked === "a" ? match.score_b : match.score_a);
-        const exactRight = youRight && pickedScore === guessedWin && otherScore === 0;
+        const exactRight = Number(match.score_a) === guessA && Number(match.score_b) === guessB;
         round.exactRight = exactRight;
         tally.you += youRight ? 1 : 0;
         tally.elo += eloRight ? 1 : 0;

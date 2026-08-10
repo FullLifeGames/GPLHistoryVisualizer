@@ -195,6 +195,8 @@ export function personRiddleRound(candidates = [], rng) {
 }
 
 // Hints ordered least to most revealing; ids resolve to i18n templates.
+// Team lists are near-unique identifiers, so they come second to last —
+// only the name's first letter gives more away.
 export function personRiddleHints(row, stintsRows = [], normalizeKey) {
   const personKey = normalizeKey(row.person_name);
   const teams = [];
@@ -210,12 +212,12 @@ export function personRiddleHints(row, stintsRows = [], normalizeKey) {
   const hints = [
     { id: "activity", params: { seasons: Number(row.seasons) || 0, matches: Number(row.matches) || 0 } },
     { id: "kills", params: { kills: Number(row.kills) || 0, wins: Number(row.wins) || 0 } },
+    { id: "peak", params: { elo: Number(row.elo) || 0, rank: String(row.best_rank ?? "") } },
+    titles > 0 ? { id: "titles", params: { count: titles, seasons: row.title_seasons || "" } } : { id: "noTitles", params: {} },
   ];
   if (teams.length) {
     hints.push({ id: "teams", params: { teams: teams.join(", ") } });
   }
-  hints.push({ id: "peak", params: { elo: Number(row.elo) || 0, rank: String(row.best_rank ?? "") } });
-  hints.push(titles > 0 ? { id: "titles", params: { count: titles, seasons: row.title_seasons || "" } } : { id: "noTitles", params: {} });
   hints.push({ id: "initial", params: { letter: String(row.person_name || "?").slice(0, 1).toUpperCase() } });
   return hints;
 }

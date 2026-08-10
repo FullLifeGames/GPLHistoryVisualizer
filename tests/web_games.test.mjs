@@ -304,12 +304,13 @@ test("personRiddleHints builds staged hints from career data", () => {
     { person_name: "Andere", team_name: "Fremd" },
   ];
   const hints = personRiddleHints(ALL_TIME_ROWS[0], stints, norm);
-  assert.deepEqual(hints.map((hint) => hint.id), ["activity", "kills", "teams", "peak", "titles", "initial"]);
+  // Team lists identify a person almost uniquely, so they come second to last.
+  assert.deepEqual(hints.map((hint) => hint.id), ["activity", "kills", "peak", "titles", "teams", "initial"]);
   assert.deepEqual(hints[0].params, { seasons: 8, matches: 128 });
   assert.deepEqual(hints[1].params, { kills: 589, wins: 95 });
-  assert.equal(hints[2].params.teams, "Wackel Backel, Team Zwei");
-  assert.deepEqual(hints[3].params, { elo: 1762, rank: "1" });
-  assert.deepEqual(hints[4].params, { count: 4, seasons: "S4, S8" });
+  assert.deepEqual(hints[2].params, { elo: 1762, rank: "1" });
+  assert.deepEqual(hints[3].params, { count: 4, seasons: "S4, S8" });
+  assert.equal(hints[4].params.teams, "Wackel Backel, Team Zwei");
   assert.deepEqual(hints[5].params, { letter: "B" });
   // No teams on record -> the teams hint is skipped; no titles -> noTitles.
   const bare = personRiddleHints(ALL_TIME_ROWS[1], [], norm);

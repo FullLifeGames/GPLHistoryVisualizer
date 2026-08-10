@@ -4696,9 +4696,10 @@ tbody tr:hover {
   font-weight: 700;
 }
 
-.game-teamsheet.is-picked {
-  outline: 2px solid var(--accent-strong, var(--viz-1));
-  outline-offset: -2px;
+.game-tipp-scores {
+  max-width: 640px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .game-riddle-hints {
