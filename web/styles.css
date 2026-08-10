@@ -4177,3 +4177,134 @@ tbody tr:hover {
 .chart-marker-peak .chart-marker-label {
   font-weight: 600;
 }
+
+/* Rekorde group: Rekordbuch, Auszeichnungen, Hall of Fame */
+.record-tabs {
+  margin: 0 0 14px;
+}
+
+.record-key-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 14px;
+}
+
+.record-chip {
+  font-size: 0.82rem;
+  padding: 5px 10px;
+}
+
+.finder-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  align-items: end;
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-soft);
+}
+
+.finder-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.finder-form input,
+.finder-form select {
+  min-width: 140px;
+}
+
+.finder-form .finder-checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+
+.trophy-shelf {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin: 0 0 14px;
+}
+
+.trophy-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  font-size: 0.82rem;
+  cursor: default;
+}
+
+.trophy-chip.is-title {
+  border-color: var(--accent-strong);
+  background: color-mix(in srgb, var(--surface) 88%, var(--accent-strong));
+}
+
+.trophy-note {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.hof-criteria {
+  margin: 0 0 16px;
+  padding: 10px 14px 10px 30px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-soft);
+  font-size: 0.86rem;
+  color: var(--muted);
+}
+
+.hof-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 14px;
+}
+
+.hof-card {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft, none);
+}
+
+.hof-card h3 {
+  margin: 0 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hof-card .hof-stats {
+  margin: 8px 0 0;
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+
+.hof-card .hof-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.spoon-redemption {
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border-left: 3px solid var(--accent-warm);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--surface-soft);
+  font-size: 0.88rem;
+}

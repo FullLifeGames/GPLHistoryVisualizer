@@ -13,9 +13,13 @@ import { normalizeRosterGroupKey, rosterIdentityKey } from "./roster_keys.js";
 import { defaultViewForGroup, viewGroupForView } from "./view_config.js";
 import {
   ALL_TIME_COLUMNS,
+  AWARD_COLUMNS,
   columnsForProfile,
   ELO_LEDGER_COLUMNS,
+  MATCH_FINDER_COLUMNS,
   MATCH_HIGHLIGHT_COLUMNS,
+  RECORD_HOLDER_COLUMNS,
+  STREAK_COLUMNS,
   MATCHUP_COLUMNS,
   normalizeColumnProfile,
   PERSON_SEASON_COLUMNS,
@@ -226,6 +230,10 @@ const state = {
   rosterCardLimit: 24,
   matchHighlightCardLimit: 8,
   upsetCardLimit: 8,
+  recordBookTab: "records",
+  recordKey: "highest_elo",
+  streakType: "all",
+  hofTab: "hall",
   cinema: {
     season: "all",
     participant: "all",
@@ -382,6 +390,9 @@ function bindControls() {
 
   document.querySelectorAll(".tab").forEach((button) => {
     button.addEventListener("click", () => {
+      // In-view tab buttons (record book, hall of fame) share the .tab look
+      // but carry no data-view; only subnav tabs navigate.
+      if (!button.dataset.view) return;
       navigateToView(button.dataset.view);
     });
   });
@@ -482,6 +493,30 @@ function bindControls() {
       event.preventDefault();
       state.upsetCardLimit += DEFAULT_UPSET_CARD_LIMIT;
       renderUpsetIndex();
+    }
+    const recordTabButton = event.target.closest("[data-record-tab]");
+    if (recordTabButton) {
+      event.preventDefault();
+      state.recordBookTab = recordTabButton.dataset.recordTab;
+      renderRecordBook();
+    }
+    const recordKeyButton = event.target.closest("[data-record-key]");
+    if (recordKeyButton) {
+      event.preventDefault();
+      state.recordKey = recordKeyButton.dataset.recordKey;
+      renderRecordBook();
+    }
+    const streakTypeButton = event.target.closest("[data-streak-type]");
+    if (streakTypeButton) {
+      event.preventDefault();
+      state.streakType = streakTypeButton.dataset.streakType;
+      renderRecordBook();
+    }
+    const hofTabButton = event.target.closest("[data-hof-tab]");
+    if (hofTabButton) {
+      event.preventDefault();
+      state.hofTab = hofTabButton.dataset.hofTab;
+      renderHallOfFame();
     }
     const cinemaStepButton = event.target.closest("[data-cinema-step]");
     if (cinemaStepButton) {
@@ -3414,7 +3449,215 @@ function upsetTableRow(row, rank) {
   };
 }
 
-function renderRecordBook() {}
+const RECORD_KEYS = [
+  "highest_elo",
+  "longest_win_streak",
+  "longest_unbeaten",
+  "most_career_wins",
+  "most_career_matches",
+  "most_career_kills",
+  "most_season_kills_person",
+  "most_season_kills_pokemon",
+  "most_career_kills_pokemon",
+  "most_seasons_played",
+];
+
+const STREAK_TYPE_KEYS = ["all", "win", "unbeaten", "sweep", "loss"];
+
+function renderRecordBook() {
+  const panels = {
+    records: document.querySelector("#record-book-records"),
+    finder: document.querySelector("#record-book-finder"),
+    streaks: document.querySelector("#record-book-streaks"),
+  };
+  if (!panels.records) return;
+  for (const [tab, panel] of Object.entries(panels)) {
+    if (panel) panel.hidden = tab !== state.recordBookTab;
+  }
+  document.querySelectorAll("[data-record-tab]").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.recordTab === state.recordBookTab);
+  });
+
+  if (state.recordBookTab === "records") renderRecordTab();
+  if (state.recordBookTab === "finder") renderFinderTab();
+  if (state.recordBookTab === "streaks") renderStreaksTab();
+}
+
+function recordHolderLabel(row) {
+  if (row.holder_pokemon) return pokemonCell(row.holder_pokemon);
+  return personLink(row.holder_person_id || normalizedKey(row.holder_name), row.holder_name);
+}
+
+function renderRecordTab() {
+  const buttons = document.querySelector("#record-key-buttons");
+  const holderCard = document.querySelector("#record-holder-card");
+  const chartContainer = document.querySelector("#record-progression-chart");
+  if (!buttons || !holderCard || !chartContainer) return;
+
+  buttons.innerHTML = RECORD_KEYS.map(
+    (key) =>
+      `<button class="tab record-chip${key === state.recordKey ? " is-active" : ""}" type="button" data-record-key="${escapeAttr(key)}">${escapeHtml(t(state.language, `recordBook.records.${key}`))}</button>`,
+  ).join("");
+
+  const rows = (state.data.recordsProgression ?? []).filter((row) => row.record_key === state.recordKey);
+  const current = rows.find((row) => row.superseded === "0" || row.superseded === 0) || rows[rows.length - 1];
+
+  holderCard.innerHTML = current
+    ? [
+        metricCard(t(state.language, "recordBook.currentHolder"), current.holder_pokemon || current.holder_name),
+        metricCard(t(state.language, "columns.value"), displayNumber(current.value) || current.value),
+        metricCard(t(state.language, "recordBook.sinceLabel"), `${seasonDisplay(current.season_id)}${current.week ? ` · ${current.week}` : ""}`),
+        metricCard(t(state.language, "recordBook.handOffs"), rows.length),
+      ].join("")
+    : `<p class="empty">${escapeHtml(t(state.language, "hof.empty"))}</p>`;
+
+  stepChart(chartContainer, {
+    series: [
+      {
+        id: "record",
+        className: "viz-series-1",
+        points: rows.map((row, index) => ({ x: index, y: numberValue(row.value), source: row })),
+      },
+    ],
+    height: 240,
+    formatX: () => "",
+    formatY: (value) => String(Math.round(value)),
+    fallbackText: t(state.language, "recordBook.progressionTitle"),
+    tooltip: (row) => `${row.holder_pokemon || row.holder_name}: ${row.value} (${seasonDisplay(row.season_id)})`,
+  });
+
+  renderTable(
+    "#record-progression-table",
+    rows.map((row, index) => ({
+      _season_order: seasonOrder(row.season_id),
+      _week_order: weekOrder(row),
+      rank: index + 1,
+      holder: recordHolderLabel(row),
+      value: displayNumber(row.value) || row.value,
+      season: seasonLink(row.season_id),
+      week: row.week,
+      videos:
+        videoLinksForMatch(row.match_id, { compact: true }) ||
+        (row.video_url
+          ? `<a href="${escapeAttr(row.video_url)}" target="_blank" rel="noreferrer">${escapeHtml(t(state.language, "values.video"))}</a>`
+          : ""),
+      source: sourceCell(row.source_urls),
+    })),
+    RECORD_HOLDER_COLUMNS,
+    ["holder", "season", "videos", "source"],
+    { filename: `gpl-record-${state.recordKey}.csv` },
+  );
+}
+
+let finderBound = false;
+
+function finderCriteria() {
+  return {
+    season: document.querySelector("#record-finder-season")?.value || "all",
+    division: document.querySelector("#record-finder-division")?.value || "all",
+    participant: document.querySelector("#record-finder-participant")?.value || "",
+    opponent: document.querySelector("#record-finder-opponent")?.value || "",
+    pokemon: document.querySelector("#record-finder-pokemon")?.value || "",
+    sweepsOnly: Boolean(document.querySelector("#record-finder-sweeps")?.checked),
+  };
+}
+
+function renderFinderTab() {
+  const form = document.querySelector("#record-finder-form");
+  if (!form) return;
+
+  const seasonSelect = document.querySelector("#record-finder-season");
+  if (seasonSelect && !seasonSelect.options.length) {
+    const seasons = [...new Set((state.data.matches ?? []).map((row) => row.season_id).filter(Boolean))].sort(
+      (a, b) => seasonOrder(a) - seasonOrder(b),
+    );
+    seasonSelect.innerHTML = [`<option value="all">${escapeHtml(t(state.language, "filters.allSeasons"))}</option>`]
+      .concat(seasons.map((id) => `<option value="${escapeAttr(id)}">${escapeHtml(seasonDisplay(id))}</option>`))
+      .join("");
+    const divisionSelect = document.querySelector("#record-finder-division");
+    const divisions = [...new Set((state.data.matches ?? []).map((row) => row.division).filter(Boolean))].sort();
+    divisionSelect.innerHTML = [`<option value="all">${escapeHtml(t(state.language, "filters.allDivisions"))}</option>`]
+      .concat(divisions.map((name) => `<option value="${escapeAttr(name)}">${escapeHtml(name)}</option>`))
+      .join("");
+    const peopleList = document.querySelector("#record-finder-people");
+    peopleList.innerHTML = (state.data.people ?? [])
+      .map((row) => `<option value="${escapeAttr(row.person_name)}"></option>`)
+      .join("");
+  }
+  const pokemonList = document.querySelector("#record-finder-pokemon-list");
+  if (pokemonList && !pokemonList.options.length && (state.data.rosterMatchdays ?? []).length) {
+    const names = [...new Set((state.data.rosterMatchdays ?? []).map((row) => row.pokemon).filter(Boolean))].sort();
+    pokemonList.innerHTML = names.map((name) => `<option value="${escapeAttr(name)}"></option>`).join("");
+  }
+
+  if (!finderBound) {
+    finderBound = true;
+    form.addEventListener("input", () => renderFinderResults());
+    form.addEventListener("submit", (event) => event.preventDefault());
+  }
+  renderFinderResults();
+}
+
+function renderFinderResults() {
+  const countLine = document.querySelector("#record-finder-count");
+  if (!countLine) return;
+  const rows = finderFilterRows(state.data.matches ?? [], state.data.rosterMatchdays ?? [], finderCriteria(), normalizedKey);
+  countLine.textContent = t(state.language, "recordBook.finderCount").replace("{count}", String(rows.length));
+  renderTable(
+    "#record-finder-table",
+    rows.map((row) => ({
+      _season_order: seasonOrder(row.season_id),
+      _week_order: weekOrder(row),
+      season: seasonLink(row.season_id),
+      week: row.week,
+      division: divisionDisplay(row.division, row.stage),
+      stage: stageDisplay(row.stage),
+      player_a: personLink(normalizedKey(row.player_a), row.player_a),
+      player_b: personLink(normalizedKey(row.player_b), row.player_b),
+      score: [row.score_a, row.score_b].filter((value) => value !== undefined && value !== "").join(":"),
+      winner: row.winner,
+      videos:
+        videoLinksForMatch(row.match_id, { compact: true }) ||
+        (row.video_url
+          ? `<a href="${escapeAttr(row.video_url)}" target="_blank" rel="noreferrer">${escapeHtml(t(state.language, "values.video"))}</a>`
+          : ""),
+      source: sourceCell(row.source_urls),
+    })),
+    MATCH_FINDER_COLUMNS,
+    ["season", "player_a", "player_b", "videos", "source"],
+    { filename: "gpl-match-finder.csv" },
+  );
+}
+
+function renderStreaksTab() {
+  const buttons = document.querySelector("#streak-type-buttons");
+  if (!buttons) return;
+  buttons.innerHTML = STREAK_TYPE_KEYS.map((type) => {
+    const label = type === "all" ? t(state.language, "recordBook.allTypes") : t(state.language, `recordBook.streakTypes.${type}`);
+    return `<button class="tab record-chip${type === state.streakType ? " is-active" : ""}" type="button" data-streak-type="${escapeAttr(type)}">${escapeHtml(label)}</button>`;
+  }).join("");
+
+  const rows = streakTableRows(state.data.streaks ?? [], { streakType: state.streakType });
+  renderTable(
+    "#streak-table",
+    rows.map((row, index) => ({
+      _season_order: seasonOrder(row.start_season_id),
+      rank: index + 1,
+      person: personLink(row.person_id || normalizedKey(row.person_name), row.person_name),
+      streak_type: t(state.language, `recordBook.streakTypes.${row.streak_type}`),
+      length: row.length,
+      start_season: seasonLink(row.start_season_id),
+      start_week: row.start_week,
+      end_season: seasonLink(row.end_season_id),
+      end_week: row.end_week,
+      active: row.active === "1" || row.active === 1 ? t(state.language, "values.yes") : "",
+      source: sourceCell(row.source_urls),
+    })),
+    STREAK_COLUMNS,
+    ["person", "start_season", "end_season", "source"],
+    { filename: "gpl-streaks.csv" },
+  );
+}
 
 function renderAwards() {}
 

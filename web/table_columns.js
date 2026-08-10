@@ -142,6 +142,51 @@ export const MATCH_HIGHLIGHT_COLUMNS = [
   "source",
 ];
 
+export const RECORD_HOLDER_COLUMNS = [
+  "rank",
+  "holder",
+  "value",
+  "season",
+  "week",
+  "videos",
+  "source",
+];
+
+export const MATCH_FINDER_COLUMNS = [
+  "season",
+  "week",
+  "division",
+  "stage",
+  "player_a",
+  "player_b",
+  "score",
+  "winner",
+  "videos",
+  "source",
+];
+
+export const STREAK_COLUMNS = [
+  "person",
+  "streak_type",
+  "length",
+  "start_season",
+  "start_week",
+  "end_season",
+  "end_week",
+  "active",
+  "source",
+];
+
+export const AWARD_COLUMNS = [
+  "season",
+  "award",
+  "division",
+  "person",
+  "value",
+  "formula",
+  "source",
+];
+
 export const ELO_LEDGER_COLUMNS = [
   "season",
   "week",
