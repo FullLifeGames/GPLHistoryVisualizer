@@ -304,12 +304,25 @@
               <option value="comments" data-i18n="audience.metricComments">Kommentare pro Monat</option>
             </select>
           </label>
+          <label>
+            <span data-i18n="audience.groupBy">Aufschlüsselung</span>
+            <select id="audience-group">
+              <option value="channel" data-i18n="audience.groupChannel">Nach Kanal</option>
+              <option value="type" data-i18n="audience.groupType">Nach Kategorie</option>
+              <option value="season" data-i18n="audience.groupSeason">Nach Saison</option>
+              <option value="person" data-i18n="audience.groupPerson">Nach Sicht-Person</option>
+            </select>
+          </label>
+          <label>
+            <span data-i18n="audience.channelFilter">Kanal</span>
+            <select id="audience-channel"></select>
+          </label>
         </div>
         <div id="audience-chart"></div>
         <div id="audience-legend" class="audience-legend"></div>
         <div class="audience-strip-head">
           <h3 data-i18n="audience.stripTitle">Aufmerksamkeits-Streifen</h3>
-          <p class="muted" data-i18n="audience.stripNote">Wöchentliche View-Z-Scores der Highlightkämpfe einer Saison.</p>
+          <p class="muted" id="audience-strip-note">Wöchentliche View-Z-Scores der Highlightkämpfe einer Saison.</p>
           <label class="audience-strip-picker">
             <span data-i18n="filters.season">Saison</span>
             <select id="audience-strip-season"></select>
@@ -318,7 +331,7 @@
         <div id="audience-strip"></div>
         <div class="audience-anomalies-head">
           <h3 data-i18n="audience.anomaliesTitle">Interaktions-Anomalien</h3>
-          <p class="muted" data-i18n="audience.anomaliesNote">Interaktionsrate = (Likes + Kommentare) / Aufrufe, verglichen mit dem Median des jeweiligen Kanals (mind. 500 Aufrufe, mind. 5 Videos pro Kanal). Berechnet, nicht offiziell.</p>
+          <p class="muted" id="audience-anomalies-note">Interaktionsrate = (Likes + Kommentare) / Aufrufe, verglichen mit dem Median des jeweiligen Kanals (mind. 500 Aufrufe, mind. 5 Videos pro Kanal). Berechnet, nicht offiziell.</p>
         </div>
         <div id="audience-anomalies" class="audience-anomalies"></div>
       </section>

@@ -71,6 +71,22 @@ test("monthlyChannelStacks sums views and skips non-numeric view counts", () => 
   assert.equal(stacks.channels[0], "SurskitTV");
 });
 
+test("monthlyChannelStacks groups by alternative dimensions", () => {
+  const rows = [
+    { published_at: "2020-01-05T10:00:00Z", channel_title: "A", video_type: "game", detected_season_id: "season_007", perspective_person: "Alice", view_count: "10" },
+    { published_at: "2020-01-09T10:00:00Z", channel_title: "A", video_type: "draft_analysis", detected_season_id: "season_007", perspective_person: "", view_count: "20" },
+    { published_at: "2020-01-12T10:00:00Z", channel_title: "B", video_type: "game", detected_season_id: "", perspective_person: "Bob", view_count: "30" },
+  ];
+  const byType = monthlyChannelStacks(rows, { groupBy: "type", topChannels: 5, otherLabel: "Andere" });
+  assert.deepEqual([...byType.channels].sort(), ["draft_analysis", "game"]);
+  assert.equal(byType.rows[0].values[byType.channels.indexOf("game")], 2);
+  const bySeason = monthlyChannelStacks(rows, { groupBy: "season", topChannels: 5, otherLabel: "Andere" });
+  assert.ok(bySeason.channels.includes("season_007"));
+  assert.ok(bySeason.channels.includes("?")); // missing season stays visible as its own bucket
+  const byPerson = monthlyChannelStacks(rows, { groupBy: "person", topChannels: 5, otherLabel: "Andere" });
+  assert.deepEqual([...byPerson.channels].sort(), ["?", "Alice", "Bob"]);
+});
+
 test("monthlyChannelStacks sums likes and comments as metrics", () => {
   const rows = [
     { published_at: "2020-01-05T10:00:00Z", channel_title: "A", view_count: "100", like_count: "10", comment_count: "2" },
@@ -112,6 +128,34 @@ test("engagementAnomalies compares each video to its channel median", () => {
   assert.ok(!titles.includes("Tiny"));
   assert.ok(!titles.includes("NoStats"));
   assert.ok(!titles.includes("S1"));
+});
+
+test("engagementAnomalies supports views, likes, and comments metrics", () => {
+  const { high: viewHigh } = engagementAnomalies(ANOMALY_ROWS, { metric: "views", minViews: 500, minChannelVideos: 5, top: 1 });
+  // All qualifying "Big" videos have 1000 views -> factor 1 for everyone.
+  assert.ok(Math.abs(viewHigh[0].factor - 1) < 0.001);
+  assert.equal(viewHigh[0].rate, 1000);
+  const { high: likeHigh } = engagementAnomalies(ANOMALY_ROWS, { metric: "likes", minViews: 500, minChannelVideos: 5, top: 1 });
+  assert.equal(likeHigh[0].title, "Hot"); // 80/1000 vs median 0.018
+  const rows = [
+    ...ANOMALY_ROWS,
+    // like_count empty -> excluded from the likes metric but kept for comments
+    { video_url: "https://youtu.be/x", title: "X", channel_title: "Big", published_at: "2020-01-09T10:00:00Z", view_count: "1000", like_count: "", comment_count: "4" },
+  ];
+  const { high, low } = engagementAnomalies(rows, { metric: "likes", minViews: 500, minChannelVideos: 5, top: 10 });
+  assert.ok([...high, ...low].every((entry) => entry.title !== "X"));
+});
+
+test("attentionStripPoints reads engagement z-scores in engagement mode", () => {
+  const rows = [
+    { season_id: "s1", week: "1. Spieltag", player_a: "A", player_b: "B", score: "6 - 0", engagement_z_score_peak: "2.5", views_trend_z_score_peak: "9", views_z_score_peak: "9", video_urls: "" },
+    { season_id: "s1", week: "2. Spieltag", player_a: "C", player_b: "D", score: "6 - 0", engagement_z_score_peak: "", views_trend_z_score_peak: "1", views_z_score_peak: "1", video_urls: "" },
+  ];
+  const points = attentionStripPoints(rows, "s1", { mode: "engagement" });
+  assert.equal(points.length, 1); // the engagement-less row is dropped
+  assert.equal(points[0].z, 2.5);
+  const viewPoints = attentionStripPoints(rows, "s1");
+  assert.equal(viewPoints.length, 2); // default mode still uses view z-scores
 });
 
 test("engagementAnomalies keeps high and low lists disjoint on small pools", () => {

@@ -27,9 +27,11 @@ export function monthRangeKeys(firstKey, lastKey) {
 }
 
 const METRIC_FIELDS = { views: "view_count", likes: "like_count", comments: "comment_count" };
+const GROUP_FIELDS = { channel: "channel_title", type: "video_type", season: "detected_season_id", person: "perspective_person" };
 
-export function monthlyChannelStacks(videoRows, { metric = "uploads", topChannels = 6, otherLabel = "Andere" } = {}) {
+export function monthlyChannelStacks(videoRows, { metric = "uploads", topChannels = 6, otherLabel = "Andere", groupBy = "channel" } = {}) {
   const field = METRIC_FIELDS[metric];
+  const groupField = GROUP_FIELDS[groupBy] || GROUP_FIELDS.channel;
   const entries = [];
   for (const row of videoRows ?? []) {
     const month = monthKey(row.published_at);
@@ -39,7 +41,7 @@ export function monthlyChannelStacks(videoRows, { metric = "uploads", topChannel
       const amount = Number(row[field]);
       value = Number.isFinite(amount) && String(row[field] ?? "").trim() !== "" ? amount : 0;
     }
-    entries.push({ month, channel: row.channel_title || "?", value });
+    entries.push({ month, channel: row[groupField] || "?", value });
   }
   if (!entries.length) return { months: [], channels: [], rows: [] };
 
@@ -104,17 +106,23 @@ function weekNumber(week) {
   return match ? Number(match[1]) : Number.POSITIVE_INFINITY;
 }
 
-export function attentionStripPoints(matchHighlightRows, seasonId) {
+export function attentionStripPoints(matchHighlightRows, seasonId, { mode = "views" } = {}) {
   const points = [];
   for (const row of matchHighlightRows ?? []) {
     if (row.season_id !== seasonId) continue;
-    const trendRaw = String(row.views_trend_z_score_peak ?? "").trim();
-    const plainRaw = String(row.views_z_score_peak ?? "").trim();
-    const z = trendRaw !== "" && Number.isFinite(Number(trendRaw))
-      ? Number(trendRaw)
-      : plainRaw !== "" && Number.isFinite(Number(plainRaw))
-        ? Number(plainRaw)
-        : null;
+    let z = null;
+    if (mode === "engagement") {
+      const raw = String(row.engagement_z_score_peak ?? "").trim();
+      if (raw !== "" && Number.isFinite(Number(raw))) z = Number(raw);
+    } else {
+      const trendRaw = String(row.views_trend_z_score_peak ?? "").trim();
+      const plainRaw = String(row.views_z_score_peak ?? "").trim();
+      z = trendRaw !== "" && Number.isFinite(Number(trendRaw))
+        ? Number(trendRaw)
+        : plainRaw !== "" && Number.isFinite(Number(plainRaw))
+          ? Number(plainRaw)
+          : null;
+    }
     if (z === null) continue;
     points.push({
       // Playoff rounds ("Finale", "Spiel um Platz 3") carry no usable week
@@ -143,18 +151,31 @@ export function attentionStripPoints(matchHighlightRows, seasonId) {
   }));
 }
 
-// Interaction anomalies: how strongly a video's engagement rate
-// ((likes + comments) / views) deviates from its own channel's median.
+// Metric-relative anomalies: how strongly a video deviates from its own
+// channel's median on the compared quantity — combined interaction rate
+// ((likes + comments) / views), raw views, like rate, or comment rate.
 // Channel-relative comparison keeps big and small channels comparable.
-export function engagementAnomalies(videoRows, { minViews = 500, minChannelVideos = 5, top = 8 } = {}) {
+export function engagementAnomalies(videoRows, { metric = "interactions", minViews = 500, minChannelVideos = 5, top = 8 } = {}) {
   const entries = [];
   for (const row of videoRows ?? []) {
     const views = Number(row.view_count);
     if (!Number.isFinite(views) || views < minViews) continue;
     const likesRaw = String(row.like_count ?? "").trim();
     const commentsRaw = String(row.comment_count ?? "").trim();
-    if (!likesRaw && !commentsRaw) continue;
     const interactions = (likesRaw ? Number(likesRaw) || 0 : 0) + (commentsRaw ? Number(commentsRaw) || 0 : 0);
+    let rate;
+    if (metric === "views") {
+      rate = views;
+    } else if (metric === "likes") {
+      if (!likesRaw) continue;
+      rate = (Number(likesRaw) || 0) / views;
+    } else if (metric === "comments") {
+      if (!commentsRaw) continue;
+      rate = (Number(commentsRaw) || 0) / views;
+    } else {
+      if (!likesRaw && !commentsRaw) continue;
+      rate = interactions / views;
+    }
     entries.push({
       title: row.title || row.video_id,
       videoUrl: row.video_url,
@@ -162,7 +183,7 @@ export function engagementAnomalies(videoRows, { minViews = 500, minChannelVideo
       publishedAt: row.published_at,
       views,
       interactions,
-      rate: interactions / views,
+      rate,
     });
   }
   const byChannel = new Map();

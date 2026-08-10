@@ -288,6 +288,8 @@ const state = {
   },
   audience: {
     metric: "uploads",
+    groupBy: "channel",
+    channel: "all",
     stripSeason: "",
   },
   zeitstrahl: {
@@ -4377,20 +4379,60 @@ function renderAudienceHistory() {
   if (!chartHost || !legend || !stripHost || !seasonSelect || !metricSelect) return;
   const lang = state.language;
 
+  const groupSelect = document.querySelector("#audience-group");
+  const channelSelect = document.querySelector("#audience-channel");
   metricSelect.value = state.audience.metric;
   metricSelect.onchange = () => {
     const picked = metricSelect.value;
     state.audience.metric = ["views", "likes", "comments"].includes(picked) ? picked : "uploads";
     renderAudienceHistory();
   };
+  if (groupSelect) {
+    groupSelect.value = state.audience.groupBy;
+    groupSelect.onchange = () => {
+      const picked = groupSelect.value;
+      state.audience.groupBy = ["type", "season", "person"].includes(picked) ? picked : "channel";
+      renderAudienceHistory();
+    };
+  }
 
   const videos = state.data.videos ?? [];
-  if (!videos.length) {
+  if (channelSelect) {
+    const channelTotals = new Map();
+    for (const row of videos) {
+      const channel = row.channel_title || "?";
+      channelTotals.set(channel, (channelTotals.get(channel) || 0) + 1);
+    }
+    const channels = [...channelTotals.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "de")).map(([channel]) => channel);
+    if (state.audience.channel !== "all" && !channels.includes(state.audience.channel)) state.audience.channel = "all";
+    channelSelect.innerHTML = [
+      `<option value="all"${state.audience.channel === "all" ? " selected" : ""}>${escapeHtml(t(lang, "audience.allChannels"))}</option>`,
+      ...channels.map(
+        (channel) => `<option value="${escapeAttr(channel)}"${channel === state.audience.channel ? " selected" : ""}>${escapeHtml(channel)}</option>`,
+      ),
+    ].join("");
+    channelSelect.onchange = () => {
+      state.audience.channel = channelSelect.value;
+      renderAudienceHistory();
+    };
+  }
+
+  const filteredVideos = state.audience.channel === "all" ? videos : videos.filter((row) => (row.channel_title || "?") === state.audience.channel);
+  if (!filteredVideos.length) {
     chartHost.innerHTML = `<p class="muted">${escapeHtml(t(lang, "audience.empty"))}</p>`;
     legend.replaceChildren();
   } else {
     const metric = state.audience.metric;
-    const stacks = monthlyChannelStacks(videos, { metric, otherLabel: t(lang, "audience.otherChannels") });
+    const groupBy = state.audience.groupBy;
+    const otherLabel = t(lang, "audience.otherChannels");
+    const stacks = monthlyChannelStacks(filteredVideos, { metric, groupBy, otherLabel });
+    const displayGroup = (key) => {
+      if (key === otherLabel) return key;
+      if (key === "?") return t(lang, "audience.unassigned");
+      if (groupBy === "type") return videoTypeDisplay(key);
+      if (groupBy === "season") return seasonDisplay(key);
+      return key;
+    };
     const bands = seasonMonthBands(
       state.data.seasons ?? [],
       stacks.months,
@@ -4416,7 +4458,7 @@ function renderAudienceHistory() {
           .filter((entry) => entry.value > 0)
           .sort((a, b) => b.value - a.value)
           .slice(0, 3)
-          .map((entry) => `${entry.channel} ${formatValue(entry.value)}`);
+          .map((entry) => `${displayGroup(entry.channel)} ${formatValue(entry.value)}`);
         const total = `${t(lang, "audience.total")}: ${formatValue(row.total)}`;
         return [row.month, total, ...parts].join(" · ");
       },
@@ -4424,17 +4466,22 @@ function renderAudienceHistory() {
     legend.innerHTML = stacks.channels
       .map(
         (channel, index) =>
-          `<span class="audience-legend-chip"><span class="audience-legend-swatch viz-series-${(index % 8) + 1}"></span>${escapeHtml(channel)}</span>`,
+          `<span class="audience-legend-chip"><span class="audience-legend-swatch viz-series-${(index % 8) + 1}"></span>${escapeHtml(displayGroup(channel))}</span>`,
       )
       .join("");
   }
 
   renderAudienceStrip(stripHost, seasonSelect);
-  renderAudienceAnomalies();
+  renderAudienceAnomalies(filteredVideos);
 }
 
 function renderAudienceStrip(stripHost, seasonSelect) {
   const lang = state.language;
+  // Likes/comments compare engagement, uploads/views compare reach — the
+  // strip follows the picked metric with the matching z-score family.
+  const stripMode = ["likes", "comments"].includes(state.audience.metric) ? "engagement" : "views";
+  const note = document.querySelector("#audience-strip-note");
+  if (note) note.textContent = t(lang, `audience.stripNotes.${stripMode}`);
   const highlightRows = state.data.matchHighlights ?? [];
   const seasonIds = stripSeasonIds(highlightRows);
   if (!seasonIds.length) {
@@ -4455,7 +4502,7 @@ function renderAudienceStrip(stripHost, seasonSelect) {
     state.audience.stripSeason = seasonSelect.value;
     renderAudienceHistory();
   };
-  const points = attentionStripPoints(highlightRows, state.audience.stripSeason);
+  const points = attentionStripPoints(highlightRows, state.audience.stripSeason, { mode: stripMode });
   if (!points.length) {
     stripHost.innerHTML = `<p class="muted">${escapeHtml(t(lang, "audience.stripEmpty"))}</p>`;
     return;
@@ -4479,12 +4526,12 @@ function audienceRatePercent(rate) {
   return `${(rate * 100).toFixed(2).replace(".", state.language === "de" ? "," : ".")}%`;
 }
 
-function audienceAnomalyItem(entry) {
+function audienceAnomalyItem(entry, formatRate) {
   const lang = state.language;
   const factorText = `${entry.factor.toFixed(1).replace(".", lang === "de" ? "," : ".")}×`;
   const rateText = formatMessage(t(lang, "audience.anomalyRate"), {
-    rate: audienceRatePercent(entry.rate),
-    median: audienceRatePercent(entry.channelMedianRate),
+    rate: formatRate(entry.rate),
+    median: formatRate(entry.channelMedianRate),
   });
   const title = entry.videoUrl
     ? `<a href="${escapeAttr(entry.videoUrl)}" target="_blank" rel="noreferrer">${escapeHtml(entry.title)}</a>`
@@ -4495,23 +4542,30 @@ function audienceAnomalyItem(entry) {
   </li>`;
 }
 
-function renderAudienceAnomalies() {
+function renderAudienceAnomalies(videos) {
   const host = document.querySelector("#audience-anomalies");
   if (!host) return;
   const lang = state.language;
-  const { high, low } = engagementAnomalies(state.data.videos ?? []);
+  const metric = state.audience.metric;
+  const anomalyMetric = { views: "views", likes: "likes", comments: "comments" }[metric] || "interactions";
+  const note = document.querySelector("#audience-anomalies-note");
+  if (note) note.textContent = t(lang, `audience.anomaliesNotes.${metric}`);
+  const { high, low } = engagementAnomalies(videos ?? [], { metric: anomalyMetric });
   if (!high.length && !low.length) {
     host.innerHTML = `<p class="muted">${escapeHtml(t(lang, "audience.empty"))}</p>`;
     return;
   }
+  const formatRate = anomalyMetric === "views" ? (value) => displayNumber(Math.round(value)) : audienceRatePercent;
+  const highTitle = anomalyMetric === "views" ? t(lang, "audience.anomaliesHighViews") : t(lang, "audience.anomaliesHigh");
+  const lowTitle = anomalyMetric === "views" ? t(lang, "audience.anomaliesLowViews") : t(lang, "audience.anomaliesLow");
   host.innerHTML = `
     <div class="audience-anomaly-column">
-      <h4 class="game-good">${escapeHtml(t(lang, "audience.anomaliesHigh"))}</h4>
-      <ul>${high.map((entry) => audienceAnomalyItem(entry)).join("")}</ul>
+      <h4 class="game-good">${escapeHtml(highTitle)}</h4>
+      <ul>${high.map((entry) => audienceAnomalyItem(entry, formatRate)).join("")}</ul>
     </div>
     <div class="audience-anomaly-column">
-      <h4 class="game-bad">${escapeHtml(t(lang, "audience.anomaliesLow"))}</h4>
-      <ul>${low.map((entry) => audienceAnomalyItem(entry)).join("")}</ul>
+      <h4 class="game-bad">${escapeHtml(lowTitle)}</h4>
+      <ul>${low.map((entry) => audienceAnomalyItem(entry, formatRate)).join("")}</ul>
     </div>`;
 }
 
