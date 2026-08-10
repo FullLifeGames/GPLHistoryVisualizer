@@ -450,6 +450,18 @@ function bindControls() {
     renderMatchup();
   });
 
+  document.querySelector("#oracle-form")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    state.oracle.aKey = document.querySelector("#oracle-a")?.value || "";
+    state.oracle.bKey = document.querySelector("#oracle-b")?.value || "";
+    renderOracle();
+  });
+
+  document.querySelector("#oracle-include-stints")?.addEventListener("change", (event) => {
+    state.oracle.includeStints = Boolean(event.target.checked);
+    renderOracle();
+  });
+
   document.querySelectorAll("[data-draft-picked-status]").forEach((button) => {
     button.addEventListener("click", () => {
       state.draftPickedStatus = button.dataset.draftPickedStatus || "all";
@@ -5529,7 +5541,118 @@ function renderRivalryDetail() {
   meetingsEl.innerHTML = `<div class="table-wrap">${tableHtml(meetingRows, ["season", "week", "score", "winner", "elo_gap", "videos", "source"], ["season", "winner", "videos", "source"])}</div>`;
 }
 
-function renderOracle() {}
+let oracleGraphCache = null;
+
+function cachedOracleGraph() {
+  const matches = state.data.matches ?? [];
+  const stints = state.data.personStints ?? [];
+  const include = state.oracle.includeStints;
+  if (
+    oracleGraphCache &&
+    oracleGraphCache.matches === matches &&
+    oracleGraphCache.stints === stints &&
+    oracleGraphCache.include === include
+  ) {
+    return oracleGraphCache.value;
+  }
+  oracleGraphCache = {
+    matches,
+    stints,
+    include,
+    value: oracleGraph(matches, stints, { includeStints: include }, normalizedKey),
+  };
+  return oracleGraphCache.value;
+}
+
+function populateOracleOptions(graph) {
+  const selects = [document.querySelector("#oracle-a"), document.querySelector("#oracle-b")];
+  if (selects.some((select) => !select)) return;
+  const options = [...graph.nodes.entries()]
+    .map(([key, node]) => ({ key, name: node.name || key }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const optionHtml = [
+    `<option value="">${escapeHtml(t(state.language, "matchup.placeholder"))}</option>`,
+    ...options.map((option) => `<option value="${escapeAttr(option.key)}">${escapeHtml(option.name)}</option>`),
+  ].join("");
+  selects.forEach((select) => {
+    const previous = select.value;
+    select.innerHTML = optionHtml;
+    if (previous && graph.nodes.has(previous)) select.value = previous;
+  });
+}
+
+function oracleViaText(via) {
+  if (!via) return "";
+  if (via.type === "stint") {
+    return t(state.language, "oracle.viaStint")
+      .replace("{season}", seasonShortDisplay(via.seasonId))
+      .replace("{division}", via.division || "");
+  }
+  return t(state.language, "oracle.viaMatch")
+    .replace("{season}", seasonShortDisplay(via.seasonId))
+    .replace("{week}", via.week || "");
+}
+
+function oracleHopHtml(hop) {
+  const via = hop.via;
+  const videoHtml = via && via.type === "match"
+    ? videoLinksForMatch(via.matchId, { compact: true }) ||
+      (via.videoUrl
+        ? `<a href="${escapeAttr(via.videoUrl)}" target="_blank" rel="noreferrer">${escapeHtml(t(state.language, "values.video"))}</a>`
+        : "")
+    : "";
+  return `
+    <div class="oracle-hop">
+      <span class="oracle-hop-via">${escapeHtml(oracleViaText(via))}${videoHtml ? ` · ${videoHtml}` : ""}</span>
+    </div>
+    <span class="oracle-person">${personLink(hop.key, hop.name)}</span>
+  `;
+}
+
+function renderOracle() {
+  const result = document.querySelector("#oracle-result");
+  if (!result) return;
+  const graph = cachedOracleGraph();
+  populateOracleOptions(graph);
+
+  const { aKey, bKey } = state.oracle;
+  if (!aKey || !bKey) {
+    result.innerHTML = `<p class="muted">${escapeHtml(t(state.language, "oracle.pickTwo"))}</p>`;
+  } else if (aKey === bKey) {
+    result.innerHTML = `<p class="muted">${escapeHtml(t(state.language, "oracle.samePerson"))}</p>`;
+  } else {
+    const path = oraclePath(graph, aKey, bKey);
+    if (!path) {
+      result.innerHTML = `<p class="empty">${escapeHtml(t(state.language, "oracle.noPath"))}</p>`;
+    } else {
+      const aName = graph.nodes.get(aKey)?.name || aKey;
+      const bName = graph.nodes.get(bKey)?.name || bKey;
+      const usesStints = path.some((hop) => hop.via?.type === "stint");
+      const headline = t(state.language, usesStints ? "oracle.connectedStints" : "oracle.connected")
+        .replace("{a}", aName)
+        .replace("{b}", bName)
+        .replace("{n}", String(path.length - 1));
+      const chain = [
+        `<span class="oracle-person">${personLink(path[0].key, path[0].name)}</span>`,
+        ...path.slice(1).map((hop) => oracleHopHtml(hop)),
+      ].join("");
+      result.innerHTML = `
+        <p class="oracle-headline"><strong>${escapeHtml(headline)}</strong></p>
+        <div class="oracle-chain">${chain}</div>
+      `;
+    }
+  }
+
+  const leaderboard = connectednessRows(state.data.matches ?? [], normalizedKey).map((row, index) => ({
+    rank: index + 1,
+    person: personLink(row.key, row.name),
+    opponents: row.opponents,
+    matches: row.matches,
+  }));
+  renderTable("#oracle-leaderboard", leaderboard, CONNECTEDNESS_COLUMNS, ["person"], {
+    filename: "gpl-connectedness.csv",
+  });
+}
 
 function aggregateMatchupRows(selectedKey) {
   const rows = state.data.matchupSummary ?? [];
