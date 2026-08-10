@@ -3,8 +3,11 @@ import { defaultViewForGroup, subviewsForGroup, viewGroupForView, VIEW_GROUPS } 
 
 assert.deepEqual(
   VIEW_GROUPS.map((group) => group.id),
-  ["people", "duels", "pokemon", "seasons", "videos", "data"],
+  ["people", "duels", "pokemon", "seasons", "videos", "records", "data"],
 );
+
+assert.equal(defaultViewForGroup("records"), "upset-index");
+assert.equal(viewGroupForView("upset-index"), "records");
 
 assert.equal(defaultViewForGroup("people"), "all-time");
 assert.equal(defaultViewForGroup("duels"), "matchup");
@@ -40,3 +43,4 @@ assert.deepEqual(subviewsForGroup("duels"), ["matchup"]);
 assert.deepEqual(subviewsForGroup("pokemon"), ["killlists", "pokemon-drafts"]);
 assert.deepEqual(subviewsForGroup("seasons"), ["battle-history", "match-highlights", "season-detail", "table-history", "match-plan", "zeitreise"]);
 assert.deepEqual(subviewsForGroup("videos"), ["video-archive", "cinema"]);
+assert.deepEqual(subviewsForGroup("records"), ["upset-index"]);

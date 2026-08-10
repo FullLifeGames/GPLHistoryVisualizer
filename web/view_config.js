@@ -32,6 +32,12 @@ export const VIEW_GROUPS = [
     views: ["video-archive", "cinema"],
   },
   {
+    id: "records",
+    labelKey: "navGroups.records",
+    defaultView: "upset-index",
+    views: ["upset-index"],
+  },
+  {
     id: "data",
     labelKey: "navGroups.data",
     defaultView: "data-coverage",

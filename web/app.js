@@ -24,8 +24,10 @@ import {
   TABLE_HISTORY_COLUMNS,
   TEAM_ROSTER_COLUMNS,
   TEAM_ROSTER_POKEMON_COLUMNS,
+  UPSET_COLUMNS,
   VIDEO_ARCHIVE_COLUMNS,
 } from "./table_columns.js";
+import { eloChronology, upsetRows } from "./elo_history.js";
 import { tableHeaderFilterConfig } from "./table_filters.js";
 import { textSorter, weekSortValue } from "./table_sort.js";
 import {
@@ -124,6 +126,7 @@ const VIEW_DATASETS = {
   "team-rosters": ["pokemonDraftOverview", "teamPokemonUsage", "teamRosters", "rosterScores"],
   "roster-detail": ["pokemonDraftOverview", "teamPokemonUsage", "teamRosters", "rosterScores", "rosterMatchdays"],
   "video-archive": ["videos"],
+  "upset-index": ["matchHighlights", "matchVideos"],
   "person-details": ["personAllTime", "videos", "pokemonDraftOverview", "pokemonDraftInstances", "teamPokemonUsage", "teamRosters", "rosterScores"],
   "data-coverage": ["dataQuality", "reviewIndex"],
   "data-gaps": ["dataQuality", "reviewIndex", "missingKilllists", "missingKilllistAppearances", "lowConfidenceVideos", "ambiguousMatches", "teamPokemonUsage", "teamRosters", "pokemonDraftOverview", "rosterScores", "matchVideos", "videos"],
@@ -265,6 +268,7 @@ const VIEW_RENDERERS = {
   "table-history": renderTableHistory,
   "match-plan": renderMatchPlan,
   "video-archive": renderVideoArchive,
+  "upset-index": renderUpsetIndex,
   cinema: renderCinema,
   zeitreise: renderZeitreiseView,
   "team-rosters": renderTeamRosters,
@@ -3133,6 +3137,122 @@ function matchHighlightCard(row, rank) {
   `;
 }
 
+// The Elo walk must cover the full chronology of the current data basis, or
+// pregame ratings would reset whenever a season filter is active. Season,
+// division, and search narrow the displayed rows only.
+let eloChronologyCache = null;
+
+function cachedEloChronology() {
+  const matches = state.data.matches ?? [];
+  if (eloChronologyCache && eloChronologyCache.mode === state.dataMode && eloChronologyCache.source === matches) {
+    return eloChronologyCache.value;
+  }
+  const rows = matches.filter((row) => applyDataMode(row));
+  eloChronologyCache = { mode: state.dataMode, source: matches, value: eloChronology(rows, normalizedKey) };
+  return eloChronologyCache.value;
+}
+
+function renderUpsetIndex() {
+  const summary = document.querySelector("#upset-summary");
+  const cards = document.querySelector("#upset-cards");
+  if (!summary || !cards) return;
+
+  const chronology = cachedEloChronology();
+  const allRows = upsetRows(
+    (state.data.matches ?? []).filter((row) => applyDataMode(row)),
+    chronology,
+    state.data.matchHighlights ?? [],
+    normalizedKey,
+  );
+  const rows = allRows.filter((row) => {
+    const seasonOk = state.season === "all" || row.season_id === state.season;
+    return seasonOk && divisionMatches(row, state.division) && rowMatchesSearch(row);
+  });
+
+  const biggest = rows[0];
+  const underdogWins = new Map();
+  for (const row of rows) {
+    if (row.win_prob_winner < 0.35) {
+      underdogWins.set(row.winner_name, (underdogWins.get(row.winner_name) ?? 0) + 1);
+    }
+  }
+  const topUnderdog = [...underdogWins.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0];
+
+  summary.innerHTML = [
+    metricCard(t(state.language, "upsets.summaryRanked"), rows.length),
+    metricCard(t(state.language, "upsets.summaryUnder25"), rows.filter((row) => row.win_prob_winner < 0.25).length),
+    metricCard(t(state.language, "upsets.summaryBiggest"), biggest ? upsetProbDisplay(biggest.win_prob_winner) : "–"),
+    metricCard(t(state.language, "upsets.summaryTopUnderdog"), topUnderdog ? `${topUnderdog[0]} (${topUnderdog[1]})` : "–"),
+  ].join("");
+
+  cards.innerHTML = rows.length
+    ? rows.slice(0, 10).map((row, index) => upsetCard(row, index + 1)).join("")
+    : `<p class="empty">${escapeHtml(t(state.language, "upsets.empty"))}</p>`;
+
+  renderTable(
+    "#upset-table",
+    rows.map((row, index) => upsetTableRow(row, index + 1)),
+    UPSET_COLUMNS,
+    ["season", "winner", "loser", "videos", "source"],
+    { filename: "gpl-upset-index.csv" },
+  );
+}
+
+function upsetProbDisplay(value) {
+  return Number.isFinite(value) ? `${Math.round(value * 100)} %` : "";
+}
+
+function upsetCard(row, rank) {
+  const probLine = t(state.language, "upsets.probLine")
+    .replace("{name}", row.winner_name)
+    .replace("{prob}", String(Math.round(row.win_prob_winner * 100)));
+  const previewUrls = highlightPreviewUrls({ match_id: row.match_id, video_urls: row.video_url });
+  const meta = [divisionDisplay(row.division, row.stage)].filter(Boolean);
+  return `
+    <article class="highlight-card">
+      <div class="highlight-card-head">
+        <span class="highlight-rank">#${escapeHtml(String(rank))}</span>
+        <span class="highlight-card-meta">${escapeHtml(seasonDisplay(row.season_id))}${row.week ? ` · ${escapeHtml(row.week)}` : ""}${meta.length ? ` · ${escapeHtml(meta.join(" · "))}` : ""}</span>
+        <strong><small>${escapeHtml(t(state.language, "columns.win_prob_winner"))}</small>${escapeHtml(upsetProbDisplay(row.win_prob_winner))}</strong>
+      </div>
+      <h3 class="highlight-match-title">${personLink(row.winner_key, row.winner_name)}<span class="highlight-vs">vs</span>${personLink(row.loser_key, row.loser_name)}</h3>
+      ${highlightMediaPreview(previewUrls)}
+      <div class="highlight-card-stats">
+        <span>${escapeHtml(t(state.language, "columns.elo_pre_winner"))}<strong>${escapeHtml(String(Math.round(row.elo_pre_winner)))}</strong></span>
+        <span>${escapeHtml(t(state.language, "columns.elo_pre_loser"))}<strong>${escapeHtml(String(Math.round(row.elo_pre_loser)))}</strong></span>
+        <span>${escapeHtml(t(state.language, "columns.score"))}<strong>${escapeHtml(row.score)}</strong></span>
+        <span>${escapeHtml(t(state.language, "columns.views_z_score"))}<strong>${escapeHtml(String(displayNumber(row.views_z_score)))}</strong></span>
+      </div>
+      <p class="upset-prob-line">${escapeHtml(probLine)}</p>
+    </article>
+  `;
+}
+
+function upsetTableRow(row, rank) {
+  return {
+    _season_order: seasonOrder(row.season_id),
+    _week_order: weekOrder(row),
+    rank,
+    season: seasonLink(row.season_id),
+    division: divisionDisplay(row.division, row.stage),
+    stage: stageDisplay(row.stage),
+    week: row.week,
+    winner: personLink(row.winner_key, row.winner_name),
+    elo_pre_winner: String(Math.round(row.elo_pre_winner)),
+    loser: personLink(row.loser_key, row.loser_name),
+    elo_pre_loser: String(Math.round(row.elo_pre_loser)),
+    win_prob_winner: upsetProbDisplay(row.win_prob_winner),
+    score: row.score,
+    views_z_score: displayNumber(row.views_z_score),
+    videos:
+      videoLinksForMatch(row.match_id, { compact: true }) ||
+      (row.video_url
+        ? `<a href="${escapeAttr(row.video_url)}" target="_blank" rel="noreferrer">${escapeHtml(t(state.language, "values.video"))}</a>`
+        : ""),
+    source: sourceCell(row.source_urls),
+  };
+}
+
 // The Zeitreise spans every season by design, so it reads the unfiltered data
 // rather than going through filtered(): the toolbar is hidden for this view.
 function renderZeitreiseView() {
@@ -4995,6 +5115,9 @@ const NUMERIC_COLUMNS = new Set([
   "titles",
   "title_count",
   "elo",
+  "elo_pre_winner",
+  "elo_pre_loser",
+  "win_prob_winner",
   "rating",
   "seasons",
   "divisions",

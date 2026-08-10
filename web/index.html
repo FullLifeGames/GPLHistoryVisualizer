@@ -56,6 +56,7 @@
         <button class="nav-group-tab" type="button" data-view-group="pokemon" data-i18n="navGroups.pokemon">Pokémon</button>
         <button class="nav-group-tab" type="button" data-view-group="seasons" data-i18n="navGroups.seasons">Saisons & Kämpfe</button>
         <button class="nav-group-tab" type="button" data-view-group="videos" data-i18n="navGroups.videos">Videos</button>
+        <button class="nav-group-tab" type="button" data-view-group="records" data-i18n="navGroups.records">Rekorde</button>
         <button class="nav-group-tab" type="button" data-view-group="data" data-i18n="navGroups.data">Daten & Review</button>
       </nav>
 
@@ -72,6 +73,7 @@
         <button class="tab" data-view-group="seasons" data-view="match-plan" data-i18n="nav.matchPlan">Spielplan</button>
         <button class="tab" data-view-group="videos" data-view="video-archive" data-i18n="nav.videoArchive">Video-Archiv</button>
         <button class="tab" data-view-group="videos" data-view="cinema" data-i18n="nav.cinema">Kino-Modus</button>
+        <button class="tab" data-view-group="records" data-view="upset-index" data-i18n="nav.upsetIndex">Upset-Index</button>
         <button class="tab" data-view-group="seasons" data-view="zeitreise" data-i18n="nav.zeitreise">Zeitreise</button>
         <button class="tab" data-view-group="data" data-view="data-coverage" data-i18n="nav.dataCoverage">Datenlage</button>
         <button class="tab" data-view-group="data" data-view="data-gaps" data-i18n="nav.dataGaps">Lückenübersicht</button>
@@ -396,6 +398,16 @@
           <p data-i18n="sections.videoArchiveDescription">Öffentliche GPL-Videos aus Teilnehmerkanälen mit Best-effort-Zuordnung zu Spieltagen.</p>
         </div>
         <div id="video-archive-table" class="table-wrap"></div>
+      </section>
+
+      <section id="view-upset-index" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.upsetIndexTitle">Upset-Index</h2>
+          <p data-i18n="sections.upsetIndexDescription">Die größten Überraschungen der GPL-Geschichte, sortiert nach der Elo-Siegchance des Außenseiters vor dem Kampf. Elo ist aus der Kampfchronologie berechnet, keine offizielle Wertung.</p>
+        </div>
+        <div id="upset-summary" class="summary-grid"></div>
+        <div id="upset-cards" class="highlight-card-grid"></div>
+        <div id="upset-table" class="table-wrap"></div>
       </section>
 
       <section id="view-person-details" class="view">

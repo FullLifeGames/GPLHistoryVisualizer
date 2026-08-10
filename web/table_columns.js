@@ -142,6 +142,23 @@ export const MATCH_HIGHLIGHT_COLUMNS = [
   "source",
 ];
 
+export const UPSET_COLUMNS = [
+  "rank",
+  "season",
+  "division",
+  "stage",
+  "week",
+  "winner",
+  "elo_pre_winner",
+  "loser",
+  "elo_pre_loser",
+  "win_prob_winner",
+  "score",
+  "views_z_score",
+  "videos",
+  "source",
+];
+
 export const VIDEO_ARCHIVE_COLUMNS = [
   "season",
   "title",
