@@ -242,6 +242,12 @@ export const TRANSLATIONS = {
       tipp: {
         title: "Tipp-Spiel",
         description: "Tippe historische Matches und schlage die Elo-Prognose.",
+        prompt: "Wer gewinnt dieses Match?",
+        result: "Ergebnis: {score} – Sieger: {name}",
+        eloSays: "Elo-Prognose: {name} ({pct} %)",
+        youPicked: "Dein Tipp: {name}",
+        tally: "Du {you} : {elo} Elo · {rounds} Runden",
+        empty: "Keine tippbaren Matches geladen.",
       },
       klick: {
         title: "Klick-Duell",
@@ -1125,6 +1131,12 @@ export const TRANSLATIONS = {
       tipp: {
         title: "Prediction Game",
         description: "Predict historic matches and beat the Elo forecast.",
+        prompt: "Who wins this match?",
+        result: "Result: {score} – winner: {name}",
+        eloSays: "Elo forecast: {name} ({pct} %)",
+        youPicked: "Your pick: {name}",
+        tally: "You {you} : {elo} Elo · {rounds} rounds",
+        empty: "No predictable matches loaded.",
       },
       klick: {
         title: "Click Battle",

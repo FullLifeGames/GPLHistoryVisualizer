@@ -105,6 +105,25 @@ export function dailyKader(pools, dateString) {
   return { pool, revealOrder };
 }
 
+// Tipp-Spiel: forfeits and unresolved results are excluded the same way the
+// oracle skips them — there was no playable game to predict.
+const TIPP_SKIPPED_BASIS = /forfeit|unresolved/;
+
+export function tippCandidates(matches = [], normalizeKey) {
+  return matches.filter((row) => {
+    if (!row.player_a || !row.player_b) return false;
+    if (TIPP_SKIPPED_BASIS.test(String(row.result_basis || ""))) return false;
+    if (String(row.score_a ?? "") === "" || String(row.score_b ?? "") === "") return false;
+    const winnerKey = normalizeKey(row.winner);
+    return winnerKey === normalizeKey(row.player_a) || winnerKey === normalizeKey(row.player_b);
+  });
+}
+
+export function pickTippRound(candidates = [], rng) {
+  if (!candidates.length) return null;
+  return candidates[pickIndex(rng, candidates.length)];
+}
+
 export function kaderHintValues(pool, standingsRows = [], normalizeKey) {
   const finalRow = standingsRows.find(
     (row) =>

@@ -4553,6 +4553,18 @@ tbody tr:hover {
   margin: 6px 0;
 }
 
+.game-tipp-choices {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0;
+  flex-wrap: wrap;
+}
+
+.game-tipp-vs {
+  color: var(--muted);
+}
+
 #view-rivalry-detail > h3,
 #view-rivalry-detail > #rivalry-gap-block > h3 {
   margin: 18px 0 10px;

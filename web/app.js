@@ -39,7 +39,7 @@ import { buildSeries, lineChart, paddedDomain, stepChart } from "./charts.js";
 import { awardsBySeason, finderFilterRows, hofInductees, spoonRows, streakTableRows } from "./records.js";
 import { rivalryMeetings, rivalryPairs } from "./rivalries.js";
 import { dominanceRows, winChainGraph, winChainPath } from "./oracle.js";
-import { dailyKader, dateSeedString, kaderHintValues, kaderPools, pickIndex, seededRandom, shuffled, updateDailyStreak } from "./games.js";
+import { dailyKader, dateSeedString, kaderHintValues, kaderPools, pickIndex, pickTippRound, seededRandom, shuffled, tippCandidates, updateDailyStreak } from "./games.js";
 import { tableHeaderFilterConfig } from "./table_filters.js";
 import { textSorter, weekSortValue } from "./table_sort.js";
 import {
@@ -5479,8 +5479,101 @@ function renderKaderRaten(body) {
   });
 }
 
+let tippCandidatesCache = null;
+function cachedTippCandidates() {
+  const matches = state.data.matches || [];
+  if (!tippCandidatesCache || tippCandidatesCache.rows !== matches) {
+    tippCandidatesCache = { rows: matches, candidates: tippCandidates(matches, normalizedKey) };
+  }
+  return tippCandidatesCache.candidates;
+}
+
+// You vs. Elo: pick the winner of a hidden historic result, then the reveal
+// compares your pick with the Elo forecast from the full-archive chronology.
 function renderTippSpiel(body) {
-  body.innerHTML = `<p class="muted">${escapeHtml(t(state.language, "games.tipp.description"))}</p>`;
+  const chronology = cachedFullEloChronology();
+  const candidates = cachedTippCandidates().filter((row) => chronology.perMatch.has(row.match_id));
+  if (!candidates.length) {
+    body.innerHTML = `<p class="muted">${escapeHtml(t(state.language, "games.tipp.empty"))}</p>`;
+    return;
+  }
+  const tally = readGameJson("gpl-game-tipp-spiel-score", { you: 0, elo: 0, rounds: 0 });
+  let round = state.games["tipp-spiel"];
+  if (!round || !candidates.some((row) => row.match_id === round.matchId)) {
+    const rng = seededRandom(`tipp-${dateSeedString()}-${tally.rounds}`);
+    round = { matchId: pickTippRound(candidates, rng).match_id, picked: "" };
+    state.games["tipp-spiel"] = round;
+  }
+  const match = candidates.find((row) => row.match_id === round.matchId);
+  const entry = chronology.perMatch.get(match.match_id);
+  const winnerIsA = normalizedKey(match.winner) === normalizedKey(match.player_a);
+  const eloPickA = entry.winProbA >= 0.5;
+  const spriteRow = (personName) => {
+    const rows = (state.data.teamRosters || [])
+      .filter((row) => row.season_id === match.season_id && normalizedKey(row.person_name) === normalizedKey(personName))
+      .sort((a, b) => Number(a.slot || 0) - Number(b.slot || 0));
+    const seen = new Set();
+    const sprites = [];
+    for (const row of rows) {
+      const key = normalizedKey(row.pokemon);
+      if (!row.pokemon || seen.has(key)) continue;
+      seen.add(key);
+      sprites.push(pokemonSprite(row.pokemon));
+      if (sprites.length >= 6) break;
+    }
+    return sprites.length ? `<div class="game-sprite-row">${sprites.join("")}</div>` : "";
+  };
+  const header = `<p>${escapeHtml(seasonShortDisplay(match.season_id))} · ${escapeHtml(match.week || "")} · ${escapeHtml(match.division || "")}</p>`;
+  if (!round.picked) {
+    body.innerHTML = `
+      ${header}
+      <p>${escapeHtml(t(state.language, "games.tipp.prompt"))}</p>
+      <div class="game-tipp-choices">
+        <button class="link-button" type="button" data-tipp-pick="a">${escapeHtml(match.player_a)}</button>
+        <span class="game-tipp-vs">vs.</span>
+        <button class="link-button" type="button" data-tipp-pick="b">${escapeHtml(match.player_b)}</button>
+      </div>
+      ${spriteRow(match.player_a)}
+      ${spriteRow(match.player_b)}
+      <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.tipp.tally"), { you: tally.you, elo: tally.elo, rounds: tally.rounds }))}</p>`;
+    body.querySelectorAll("[data-tipp-pick]").forEach((button) => {
+      button.addEventListener("click", () => {
+        round.picked = button.dataset.tippPick;
+        const youRight = (round.picked === "a") === winnerIsA;
+        const eloRight = eloPickA === winnerIsA;
+        saveGameJson("gpl-game-tipp-spiel-score", {
+          you: tally.you + (youRight ? 1 : 0),
+          elo: tally.elo + (eloRight ? 1 : 0),
+          rounds: tally.rounds + 1,
+        });
+        renderGame();
+      });
+    });
+    return;
+  }
+  const youPickName = round.picked === "a" ? match.player_a : match.player_b;
+  const eloPickName = eloPickA ? match.player_a : match.player_b;
+  const eloPct = Math.round((eloPickA ? entry.winProbA : 1 - entry.winProbA) * 100);
+  const youRight = (round.picked === "a") === winnerIsA;
+  const newTally = readGameJson("gpl-game-tipp-spiel-score", tally);
+  const matchVideoLinks = videoLinksForMatch(match.match_id);
+  body.innerHTML = `
+    ${header}
+    ${gameRevealCard({
+      title: youRight ? t(state.language, "games.correct") : t(state.language, "games.wrong"),
+      bodyHtml: `
+        <p>${escapeHtml(formatMessage(t(state.language, "games.tipp.result"), { score: `${match.score_a}:${match.score_b}`, name: match.winner }))}</p>
+        <p>${escapeHtml(formatMessage(t(state.language, "games.tipp.eloSays"), { name: eloPickName, pct: eloPct }))}</p>
+        <p>${escapeHtml(formatMessage(t(state.language, "games.tipp.youPicked"), { name: youPickName }))}</p>
+        ${matchVideoLinks ? `<p>${matchVideoLinks}</p>` : ""}`,
+      sourceUrls: match.source_urls,
+    })}
+    <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.tipp.tally"), { you: newTally.you, elo: newTally.elo, rounds: newTally.rounds }))}</p>
+    <button id="tipp-next" class="link-button" type="button">${escapeHtml(t(state.language, "games.next"))}</button>`;
+  body.querySelector("#tipp-next")?.addEventListener("click", () => {
+    state.games["tipp-spiel"] = null;
+    renderGame();
+  });
 }
 
 function renderKlickDuell(body) {

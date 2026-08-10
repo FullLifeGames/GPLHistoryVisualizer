@@ -7,8 +7,10 @@ import {
   kaderHintValues,
   kaderPools,
   pickIndex,
+  pickTippRound,
   seededRandom,
   shuffled,
+  tippCandidates,
   updateDailyStreak,
 } from "../web/games.js";
 
@@ -106,4 +108,28 @@ test("kaderHintValues resolves division, final rank and season", () => {
   const pool = kaderPools(ROSTER_ROWS, norm)[0];
   assert.deepEqual(kaderHintValues(pool, standings, norm), { division: "Singles", rank: "3", seasonId: "season_009" });
   assert.deepEqual(kaderHintValues(pool, [], norm), { division: "Singles", rank: "", seasonId: "season_009" });
+});
+
+test("tippCandidates keeps only decided, scored, non-forfeit matches", () => {
+  const matches = [
+    { match_id: "m1", player_a: "A", player_b: "B", score_a: "4", score_b: "2", winner: "A", result_basis: "two_sided_score" },
+    // Forfeits and unresolved results are not guessable games.
+    { match_id: "m2", player_a: "A", player_b: "B", score_a: "6", score_b: "0", winner: "A", result_basis: "forfeit_win" },
+    { match_id: "m3", player_a: "A", player_b: "B", score_a: "", score_b: "", winner: "A", result_basis: "unresolved_conflict" },
+    // Draws have no winner to pick.
+    { match_id: "m4", player_a: "A", player_b: "B", score_a: "3", score_b: "3", winner: "", result_basis: "two_sided_score" },
+    // Missing scores make the reveal empty.
+    { match_id: "m5", player_a: "A", player_b: "B", score_a: "", score_b: "2", winner: "B", result_basis: "one_sided_score" },
+    { match_id: "m6", player_a: "A", player_b: "", score_a: "4", score_b: "2", winner: "A", result_basis: "two_sided_score" },
+  ];
+  const candidates = tippCandidates(matches, norm);
+  assert.deepEqual(candidates.map((row) => row.match_id), ["m1"]);
+});
+
+test("pickTippRound picks deterministically with a seeded rng", () => {
+  const candidates = [{ match_id: "m1" }, { match_id: "m2" }, { match_id: "m3" }];
+  const first = pickTippRound(candidates, seededRandom("round-1"));
+  assert.ok(candidates.includes(first));
+  assert.equal(pickTippRound(candidates, seededRandom("round-1")), first);
+  assert.equal(pickTippRound([], seededRandom("x")), null);
 });
