@@ -4565,6 +4565,36 @@ tbody tr:hover {
   color: var(--muted);
 }
 
+.game-klick-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin: 12px 0;
+  max-width: 720px;
+}
+
+.game-klick-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px;
+  background: var(--surface);
+}
+
+.game-klick-card h4 {
+  margin: 8px 0 4px;
+  font-size: 0.95rem;
+}
+
+.game-klick-thumb {
+  width: 100%;
+  border-radius: 8px;
+}
+
+.game-klick-count {
+  font-weight: 600;
+  margin: 4px 0 0;
+}
+
 #view-rivalry-detail > h3,
 #view-rivalry-detail > #rivalry-gap-block > h3 {
   margin: 18px 0 10px;

@@ -39,7 +39,20 @@ import { buildSeries, lineChart, paddedDomain, stepChart } from "./charts.js";
 import { awardsBySeason, finderFilterRows, hofInductees, spoonRows, streakTableRows } from "./records.js";
 import { rivalryMeetings, rivalryPairs } from "./rivalries.js";
 import { dominanceRows, winChainGraph, winChainPath } from "./oracle.js";
-import { dailyKader, dateSeedString, kaderHintValues, kaderPools, pickIndex, pickTippRound, seededRandom, shuffled, tippCandidates, updateDailyStreak } from "./games.js";
+import {
+  dailyKader,
+  dateSeedString,
+  kaderHintValues,
+  kaderPools,
+  klickCandidates,
+  nextKlickIndex,
+  pickIndex,
+  pickTippRound,
+  seededRandom,
+  shuffled,
+  tippCandidates,
+  updateDailyStreak,
+} from "./games.js";
 import { tableHeaderFilterConfig } from "./table_filters.js";
 import { textSorter, weekSortValue } from "./table_sort.js";
 import {
@@ -5576,8 +5589,92 @@ function renderTippSpiel(body) {
   });
 }
 
+// Higher/lower on video view counts. Session-seeded rounds (no cross-visitor
+// determinism needed here, unlike the daily Kader-Raten puzzle).
 function renderKlickDuell(body) {
-  body.innerHTML = `<p class="muted">${escapeHtml(t(state.language, "games.klick.description"))}</p>`;
+  const candidates = klickCandidates(state.data.videos || []);
+  if (candidates.length < 2) {
+    body.innerHTML = `<p class="muted">${escapeHtml(t(state.language, "games.klick.empty"))}</p>`;
+    return;
+  }
+  let game = state.games["klick-duell"];
+  if (!game) {
+    const rng = seededRandom(`klick-${dateSeedString()}-${Date.now() % 100000}`);
+    const currentIndex = pickIndex(rng, candidates.length);
+    game = { currentIndex, nextIndex: nextKlickIndex(candidates, currentIndex, rng), score: 0, revealed: false, over: false };
+    state.games["klick-duell"] = game;
+  }
+  const best = readGameJson("gpl-game-klick-duell-best", { best: 0 });
+  const current = candidates[game.currentIndex];
+  const next = candidates[game.nextIndex];
+  const card = (row, showCount) => `
+    <article class="game-klick-card">
+      <a href="https://www.youtube.com/watch?v=${escapeAttr(row.video_id)}" target="_blank" rel="noreferrer">
+        <img class="game-klick-thumb" src="https://i.ytimg.com/vi/${escapeAttr(row.video_id)}/mqdefault.jpg" alt="" loading="lazy" onerror="this.hidden=true" />
+      </a>
+      <h4>${escapeHtml(row.title)}</h4>
+      <p class="game-status">${escapeHtml(row.channel_title || "")}</p>
+      <p class="game-klick-count">${
+        showCount
+          ? escapeHtml(formatMessage(t(state.language, "games.klick.views"), { views: displayNumber(Number(row.view_count)) }))
+          : "???"
+      }</p>
+    </article>`;
+  if (game.over) {
+    body.innerHTML = `
+      ${gameRevealCard({
+        title: formatMessage(t(state.language, "games.klick.gameOver"), { score: game.score }),
+        bodyHtml: `<div class="game-klick-row">${card(current, true)}${card(next, true)}</div>`,
+        sourceUrls: next.source_urls,
+      })}
+      <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.klick.best"), { best: best.best }))}</p>
+      <button id="klick-restart" class="link-button" type="button">${escapeHtml(t(state.language, "games.klick.restart"))}</button>`;
+    body.querySelector("#klick-restart")?.addEventListener("click", () => {
+      state.games["klick-duell"] = null;
+      renderGame();
+    });
+    return;
+  }
+  body.innerHTML = `
+    <p>${escapeHtml(t(state.language, "games.klick.prompt"))}</p>
+    <div class="game-klick-row">
+      ${card(current, true)}
+      ${card(next, game.revealed)}
+    </div>
+    ${
+      game.revealed
+        ? `<button id="klick-continue" class="link-button" type="button">${escapeHtml(t(state.language, "games.next"))}</button>`
+        : `<div class="game-tipp-choices">
+            <button class="link-button" type="button" data-klick="higher">${escapeHtml(t(state.language, "games.klick.higher"))}</button>
+            <button class="link-button" type="button" data-klick="lower">${escapeHtml(t(state.language, "games.klick.lower"))}</button>
+          </div>`
+    }
+    <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.klick.score"), { score: game.score }))} · ${escapeHtml(formatMessage(t(state.language, "games.klick.best"), { best: best.best }))}</p>`;
+  body.querySelectorAll("[data-klick]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const guessHigher = button.dataset.klick === "higher";
+      const isHigher = Number(next.view_count) > Number(current.view_count);
+      if (guessHigher === isHigher) {
+        game.score += 1;
+        game.revealed = true;
+        if (game.score > best.best) {
+          saveGameJson("gpl-game-klick-duell-best", { best: game.score });
+        }
+      } else {
+        game.over = true;
+        game.revealed = true;
+      }
+      renderGame();
+    });
+  });
+  body.querySelector("#klick-continue")?.addEventListener("click", () => {
+    const rng = seededRandom(`klick-${dateSeedString()}-${game.score}-${game.nextIndex}`);
+    game.currentIndex = game.nextIndex;
+    game.nextIndex = nextKlickIndex(candidates, game.currentIndex, rng);
+    game.revealed = false;
+    if (game.nextIndex < 0) game.over = true;
+    renderGame();
+  });
 }
 
 function renderQuizshow(body) {

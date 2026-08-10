@@ -124,6 +124,21 @@ export function pickTippRound(candidates = [], rng) {
   return candidates[pickIndex(rng, candidates.length)];
 }
 
+// Klick-Duell: equal view counts have no right answer, so the next video
+// must differ in count — resolved purely so the pick stays testable.
+export function klickCandidates(videoRows = []) {
+  return videoRows.filter((row) => row.video_id && row.title && Number(row.view_count) > 0);
+}
+
+export function nextKlickIndex(candidates = [], currentIndex, rng) {
+  const currentCount = Number(candidates[currentIndex]?.view_count);
+  const valid = candidates
+    .map((row, index) => ({ row, index }))
+    .filter(({ row, index }) => index !== currentIndex && Number(row.view_count) !== currentCount);
+  if (!valid.length) return -1;
+  return valid[pickIndex(rng, valid.length)].index;
+}
+
 export function kaderHintValues(pool, standingsRows = [], normalizeKey) {
   const finalRow = standingsRows.find(
     (row) =>

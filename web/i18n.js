@@ -252,6 +252,15 @@ export const TRANSLATIONS = {
       klick: {
         title: "Klick-Duell",
         description: "Welches Video hat mehr Aufrufe? Höher oder tiefer.",
+        prompt: "Hat das rechte Video mehr oder weniger Aufrufe?",
+        higher: "Mehr Aufrufe",
+        lower: "Weniger Aufrufe",
+        views: "{views} Aufrufe",
+        score: "Serie: {score}",
+        best: "Rekord: {best}",
+        gameOver: "Vorbei! {score} richtige Antworten in Folge.",
+        restart: "Neue Runde",
+        empty: "Keine Videodaten geladen.",
       },
       quiz: {
         title: "GPL-Quizshow",
@@ -1141,6 +1150,15 @@ export const TRANSLATIONS = {
       klick: {
         title: "Click Battle",
         description: "Which video has more views? Higher or lower.",
+        prompt: "Does the right video have more or fewer views?",
+        higher: "More views",
+        lower: "Fewer views",
+        views: "{views} views",
+        score: "Streak: {score}",
+        best: "Best: {best}",
+        gameOver: "Game over! {score} correct in a row.",
+        restart: "New run",
+        empty: "No video data loaded.",
       },
       quiz: {
         title: "GPL Quiz Show",

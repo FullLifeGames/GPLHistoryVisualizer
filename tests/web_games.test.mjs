@@ -6,6 +6,8 @@ import {
   dateSeedString,
   kaderHintValues,
   kaderPools,
+  klickCandidates,
+  nextKlickIndex,
   pickIndex,
   pickTippRound,
   seededRandom,
@@ -132,4 +134,32 @@ test("pickTippRound picks deterministically with a seeded rng", () => {
   assert.ok(candidates.includes(first));
   assert.equal(pickTippRound(candidates, seededRandom("round-1")), first);
   assert.equal(pickTippRound([], seededRandom("x")), null);
+});
+
+test("klickCandidates requires id, title and a positive view count", () => {
+  const rows = [
+    { video_id: "v1", title: "A", view_count: "1000" },
+    { video_id: "v2", title: "B", view_count: "0" },
+    { video_id: "", title: "C", view_count: "500" },
+    { video_id: "v4", title: "", view_count: "500" },
+    { video_id: "v5", title: "E", view_count: "abc" },
+    { video_id: "v6", title: "F", view_count: "2000" },
+  ];
+  assert.deepEqual(klickCandidates(rows).map((row) => row.video_id), ["v1", "v6"]);
+});
+
+test("nextKlickIndex avoids the current video and equal view counts", () => {
+  const candidates = [
+    { video_id: "v1", view_count: "1000" },
+    { video_id: "v2", view_count: "1000" },
+    { video_id: "v3", view_count: "2000" },
+  ];
+  const rng = seededRandom("klick");
+  for (let i = 0; i < 20; i += 1) {
+    const next = nextKlickIndex(candidates, 0, rng);
+    assert.equal(next, 2, "only v3 has a different view count than v1");
+  }
+  // No valid opponent -> -1.
+  assert.equal(nextKlickIndex([{ view_count: "5" }, { view_count: "5" }], 0, seededRandom("x")), -1);
+  assert.equal(nextKlickIndex([], 0, seededRandom("x")), -1);
 });
