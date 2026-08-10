@@ -254,7 +254,6 @@ export const TRANSLATIONS = {
         youPicked: "Dein Tipp: {name}",
         tally: "Du {you} : {elo} Elo · {rounds} Runden",
         empty: "Keine tippbaren Matches geladen.",
-        noRoster: "Kein Kader überliefert",
       },
       klick: {
         title: "Klick-Duell",
@@ -1187,7 +1186,6 @@ export const TRANSLATIONS = {
         youPicked: "Your pick: {name}",
         tally: "You {you} : {elo} Elo · {rounds} rounds",
         empty: "No predictable matches loaded.",
-        noRoster: "No roster on record",
       },
       klick: {
         title: "Click Battle",

@@ -371,10 +371,15 @@ assert.equal(indexHtml.includes('data-game-id="quizshow"'), true);
 assert.match(appJs, /button\.dataset\.gameId[\s\S]*?gameRouteHash\(button\.dataset\.gameId\)/);
 assert.match(appJs, /item\.dataset\.gameId[\s\S]*?state\.gameFocus/);
 assert.equal(appJs.includes("game-card-icon"), true);
-// Quiz modes and side-by-side Tipp-Spiel team panels.
+// Quiz modes and side-by-side Tipp-Spiel teamsheets (reusing the roster
+// teamsheet look, which always resolves a background image).
 assert.equal(appJs.includes('id="quiz-mode"'), true);
-assert.equal(stylesCss.includes(".game-tipp-team"), true);
+assert.equal(stylesCss.includes(".game-teamsheet"), true);
 assert.equal(stylesCss.includes(".game-tipp-duel"), true);
+assert.equal(stylesCss.includes(".game-tipp-team {"), false);
+assert.match(appJs, /rosterBackgroundFor\(\{[^}]*season_id: match\.season_id/);
+// Matches where either player has no recorded roster never enter the pool.
+assert.equal(appJs.includes("cachedRosteredKeys"), true);
 // Only the daily Kader-Raten persists in localStorage; every other score is
 // session-only and resets on reload.
 assert.equal(appJs.includes("gpl-game-kader-raten-day"), true);

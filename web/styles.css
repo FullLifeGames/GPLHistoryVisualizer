@@ -4657,30 +4657,39 @@ tbody tr:hover {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   gap: 12px;
-  align-items: stretch;
+  align-items: start;
   margin: 12px auto;
-  max-width: 820px;
+  max-width: 980px;
 }
 
-.game-tipp-team {
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 14px;
-  background:
-    linear-gradient(180deg, rgb(255 255 255 / 55%), rgb(255 255 255 / 40%)),
-    var(--roster-bg-image, none);
-  background-position: center;
-  background-size: cover;
-  background-color: var(--surface);
+/* Compact variant of the roster teamsheet for the Tipp-Spiel duel: same
+   background/tile look, but no fixed sheet height and smaller tiles. */
+.game-teamsheet {
+  text-align: center;
 }
 
-[data-theme="dark"] .game-tipp-team {
-  background:
-    linear-gradient(180deg, rgb(7 17 31 / 68%), rgb(7 17 31 / 58%)),
-    var(--roster-bg-image, none);
-  background-position: center;
-  background-size: cover;
-  background-color: var(--surface);
+.game-teamsheet .roster-teamsheet-head {
+  justify-content: center;
+  padding: 10px 12px;
+}
+
+.game-teamsheet .roster-teamsheet-grid {
+  min-height: 0;
+  padding: 14px 10px;
+  gap: 8px;
+}
+
+.game-teamsheet .roster-teamsheet-row {
+  gap: 8px;
+}
+
+.game-teamsheet .roster-teamsheet-tile {
+  flex-basis: 104px;
+  padding: 8px 4px;
+}
+
+.game-teamsheet .roster-teamsheet-tile h4 {
+  font-size: 0.72rem;
 }
 
 .game-tipp-name {
@@ -4689,18 +4698,6 @@ tbody tr:hover {
 
 .game-tipp-teamname {
   margin: 6px 0 0;
-}
-
-.game-tipp-sprites {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  justify-items: center;
-  gap: 4px;
-  margin: 10px 0 0;
-}
-
-.game-tipp-noroster {
-  margin: 18px 0;
 }
 
 @media (max-width: 720px) {

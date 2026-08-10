@@ -162,7 +162,7 @@ const VIEW_DATASETS = {
   "rivalry-detail": ["matchupSummary", "matchHighlights", "matchVideos"],
   oracle: ["matchVideos"],
   games: [],
-  game: ["teamRosters", "videos", "matchupSummary", "matchVideos"],
+  game: ["teamRosters", "rosterMatchdays", "videos", "matchupSummary", "matchVideos"],
   "record-book": ["streaks", "recordsProgression", "matchVideos", "rosterMatchdays"],
   "awards": ["awards", "personAllTime"],
   "hall-of-fame": ["personAllTime", "matchVideos", "awards"],
@@ -5585,12 +5585,36 @@ function cachedTippCandidates() {
   return tippCandidatesCache.candidates;
 }
 
+// Set of "<season>__<personKey>" pairs with recorded roster Pokémon: matches
+// where either player has no roster never enter the Tipp-Spiel pool.
+let rosteredKeysCache = null;
+function cachedRosteredKeys() {
+  const rows = state.data.teamRosters || [];
+  if (!rosteredKeysCache || rosteredKeysCache.rows !== rows) {
+    const keys = new Set();
+    for (const row of rows) {
+      const personKey = normalizedKey(row.person_name);
+      if (row.season_id && personKey && row.pokemon) {
+        keys.add(`${row.season_id}__${personKey}`);
+      }
+    }
+    rosteredKeysCache = { rows, keys };
+  }
+  return rosteredKeysCache.keys;
+}
+
 // You vs. Elo: pick the winner of a hidden historic result, then the reveal
 // compares your pick with the Elo forecast from the full-archive chronology.
 // The running tally lives in session state only — a reload starts fresh.
 function renderTippSpiel(body) {
   const chronology = cachedFullEloChronology();
-  const candidates = cachedTippCandidates().filter((row) => chronology.perMatch.has(row.match_id));
+  const rosteredKeys = cachedRosteredKeys();
+  const candidates = cachedTippCandidates().filter(
+    (row) =>
+      chronology.perMatch.has(row.match_id) &&
+      rosteredKeys.has(`${row.season_id}__${normalizedKey(row.player_a)}`) &&
+      rosteredKeys.has(`${row.season_id}__${normalizedKey(row.player_b)}`),
+  );
   if (!candidates.length) {
     body.innerHTML = `<p class="muted">${escapeHtml(t(state.language, "games.tipp.empty"))}</p>`;
     return;
@@ -5611,35 +5635,72 @@ function renderTippSpiel(body) {
   const entry = chronology.perMatch.get(match.match_id);
   const winnerIsA = normalizedKey(match.winner) === normalizedKey(match.player_a);
   const eloPickA = entry.winProbA >= 0.5;
-  // Each side renders as a teamsheet-style panel over the season's roster
-  // background, so even a player without recorded Pokémon still shows a
-  // team graphic — the two panels always sit side by side.
+  // Each side renders in the roster teamsheet look (background always
+  // resolves, thanks to the pool fallback). The matchday six is shown when
+  // the Spieltag lineup is recorded; otherwise the full season roster.
   const teamPanel = (personName, slot) => {
-    const rows = (state.data.teamRosters || [])
-      .filter((row) => row.season_id === match.season_id && normalizedKey(row.person_name) === normalizedKey(personName))
+    const personKey = normalizedKey(personName);
+    const seasonRows = (state.data.teamRosters || [])
+      .filter((row) => row.season_id === match.season_id && row.pokemon && normalizedKey(row.person_name) === personKey)
       .sort((a, b) => Number(a.slot || 0) - Number(b.slot || 0));
+    const teamName = seasonRows.find((row) => row.team_name)?.team_name || "";
+    const weekTarget = weekSortValue(match.week);
+    const matchdayRows =
+      weekTarget === 999
+        ? []
+        : (state.data.rosterMatchdays || [])
+            .filter(
+              (row) =>
+                row.season_id === match.season_id &&
+                String(row.used) === "1" &&
+                row.pokemon &&
+                normalizedKey(row.person_name) === personKey &&
+                (!match.division || !row.division || row.division === match.division) &&
+                weekSortValue(row.week_label || row.week) === weekTarget,
+            )
+            .sort((a, b) => Number(a.slot || 0) - Number(b.slot || 0));
+    const sourceRows = matchdayRows.length ? matchdayRows : seasonRows;
     const seen = new Set();
-    const sprites = [];
-    let teamName = "";
-    for (const row of rows) {
-      if (!teamName && row.team_name) teamName = row.team_name;
+    const pokemonRows = [];
+    for (const row of sourceRows) {
       const key = normalizedKey(row.pokemon);
-      if (!row.pokemon || seen.has(key)) continue;
+      if (seen.has(key)) continue;
       seen.add(key);
-      sprites.push(`<span class="game-kader-slot">${pokemonSprite(row.pokemon)}</span>`);
-      if (sprites.length >= 6) break;
+      pokemonRows.push({ pokemon: row.pokemon, slot: row.slot });
     }
-    const background = ROSTER_BACKGROUND_BY_SEASON[match.season_id] || "";
+    const background = rosterBackgroundFor({
+      season_id: match.season_id,
+      division: match.division,
+      person: personName,
+      team: teamName,
+    });
+    const grid = rosterTeamSheetRows(pokemonRows)
+      .map(
+        (rowGroup) => `
+          <div class="roster-teamsheet-row roster-teamsheet-row-${rowGroup.length}">
+            ${rowGroup
+              .map(
+                ({ pokemon, rank }) => `
+                  <article class="roster-teamsheet-tile game-teamsheet-tile">
+                    <span class="roster-teamsheet-rank">#${escapeHtml(String(rank))}</span>
+                    ${pokemonSprite(pokemon.pokemon)}
+                    <h4>${escapeHtml(pokemon.pokemon)}</h4>
+                  </article>`,
+              )
+              .join("")}
+          </div>`,
+      )
+      .join("");
     return `
-      <div class="game-tipp-team" ${background ? `style="--roster-bg-image: url('${escapeAttr(background)}')"` : ""}>
-        <button class="link-button game-tipp-name" type="button" data-tipp-pick="${slot}">${escapeHtml(personName)}</button>
-        ${teamName ? `<p class="game-status game-tipp-teamname">${escapeHtml(teamName)}</p>` : ""}
-        ${
-          sprites.length
-            ? `<div class="game-sprite-row game-tipp-sprites">${sprites.join("")}</div>`
-            : `<p class="game-status game-tipp-noroster">${escapeHtml(t(state.language, "games.tipp.noRoster"))}</p>`
-        }
-      </div>`;
+      <section class="roster-teamsheet game-teamsheet" style="--roster-bg-image: url(${escapeAttr(background)});">
+        <header class="roster-teamsheet-head game-teamsheet-head">
+          <div>
+            <button class="link-button game-tipp-name" type="button" data-tipp-pick="${slot}">${escapeHtml(personName)}</button>
+            ${teamName ? `<p class="game-status game-tipp-teamname">${escapeHtml(teamName)}</p>` : ""}
+          </div>
+        </header>
+        <div class="roster-teamsheet-grid game-teamsheet-grid">${grid}</div>
+      </section>`;
   };
   const header = `<p>${escapeHtml(seasonShortDisplay(match.season_id))} · ${escapeHtml(match.week || "")} · ${escapeHtml(match.division || "")}</p>`;
   if (!round.picked) {
