@@ -165,6 +165,7 @@ const VIEW_DATASETS = {
   "roster-detail": ["pokemonDraftOverview", "teamPokemonUsage", "teamRosters", "rosterScores", "rosterMatchdays"],
   "video-archive": ["videos"],
   "audience-history": ["videos", "matchHighlights"],
+  zeitstrahl: ["videos", "recordsProgression", "matchVideos"],
   "upset-index": ["matchHighlights", "matchVideos"],
   rivalries: ["matchupSummary", "matchHighlights", "matchVideos"],
   "rivalry-detail": ["matchupSummary", "matchHighlights", "matchVideos"],
@@ -288,6 +289,9 @@ const state = {
     metric: "uploads",
     stripSeason: "",
   },
+  zeitstrahl: {
+    date: "",
+  },
   rosterVariantSelection: {},
   autoSeasonDefault: false,
   autoDataModeDefault: null,
@@ -333,6 +337,7 @@ const VIEW_RENDERERS = {
   "match-plan": renderMatchPlan,
   "video-archive": renderVideoArchive,
   "audience-history": renderAudienceHistory,
+  zeitstrahl: renderZeitstrahl,
   "upset-index": renderUpsetIndex,
   rivalries: renderRivalries,
   "rivalry-detail": renderRivalryDetail,
@@ -853,7 +858,7 @@ function applyViewDataModeDefaults(viewName, previousView) {
 // zeitreise manage their own controls; record book, hall of fame, rivalries,
 // and the oracle render career-scope data over the full archive that no
 // client-side slice can recompute; the games manage their own per-round state.
-const TOOLBAR_HIDDEN_VIEWS = new Set(["cinema", "zeitreise", "record-book", "hall-of-fame", "rivalries", "rivalry-detail", "oracle", "games", "game", "audience-history"]);
+const TOOLBAR_HIDDEN_VIEWS = new Set(["cinema", "zeitreise", "record-book", "hall-of-fame", "rivalries", "rivalry-detail", "oracle", "games", "game", "audience-history", "zeitstrahl"]);
 
 function setActiveView(viewName) {
   state.view = viewName;
@@ -4455,6 +4460,11 @@ function renderAudienceHistory() {
     formatY: (value) => displayNumber(Math.round(value * 10) / 10),
     tooltip: (source) => `${source.weekLabel} · ${source.matchLabel} · z ${displayNumber(source.z)}`,
   });
+}
+
+function renderZeitstrahl() {
+  const body = document.querySelector("#zeitstrahl-body");
+  if (body) body.replaceChildren();
 }
 
 function renderVideoArchive() {

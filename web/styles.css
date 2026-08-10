@@ -4958,3 +4958,84 @@ p.game-status.game-bad {
 .chart-bar {
   opacity: 0.9;
 }
+
+/* Zeitstrahl */
+.zeitstrahl-widget {
+  margin: 0 auto 18px;
+  max-width: 560px;
+  text-align: center;
+}
+
+.zeitstrahl-widget h3 {
+  margin: 0 0 10px;
+}
+
+.zeitstrahl-date-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+#zeitstrahl-today-results p {
+  margin: 6px 0;
+}
+
+.zeitstrahl-upload-note {
+  text-align: center;
+  margin: 0 0 18px;
+}
+
+#zeitstrahl-body {
+  margin: 0 auto;
+  max-width: 780px;
+}
+
+.zeitstrahl-year {
+  margin: 26px 0 10px;
+  font-size: 1.4rem;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 6px;
+}
+
+.zeitstrahl-event {
+  display: grid;
+  grid-template-columns: 34px 96px 1fr;
+  gap: 10px;
+  align-items: baseline;
+  padding: 8px 0 8px 10px;
+  border-left: 2px solid var(--line);
+}
+
+.zeitstrahl-event-icon {
+  font-size: 1.1rem;
+  line-height: 1.2;
+}
+
+.zeitstrahl-event-date {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+}
+
+.zeitstrahl-event-text {
+  min-width: 0;
+}
+
+.zeitstrahl-event-text .source-links {
+  margin-top: 2px;
+}
+
+@media (max-width: 560px) {
+  .zeitstrahl-event {
+    grid-template-columns: 28px 1fr;
+  }
+
+  .zeitstrahl-event-date {
+    grid-column: 2;
+  }
+
+  .zeitstrahl-event-text {
+    grid-column: 2;
+  }
+}

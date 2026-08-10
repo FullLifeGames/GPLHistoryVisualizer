@@ -49,6 +49,7 @@ assert.match(appJs, /"rivalry-detail": \["matchupSummary", "matchHighlights", "m
 assert.match(appJs, /oracle: \["matchVideos"\]/);
 assert.match(appJs, /games: \[\]/);
 assert.match(appJs, /"audience-history": \["videos", "matchHighlights"\]/);
+assert.match(appJs, /zeitstrahl: \["videos", "recordsProgression", "matchVideos"\]/);
 assert.match(appJs, /game: \["teamRosters", "rosterMatchdays", "videos", "matchupSummary", "matchVideos", "personAllTime", "pokemonDraftInstances"\]/);
 assert.equal(appJs.includes("loadCoreDatasets("), true);
 assert.equal(appJs.includes("ensureDatasetsForView("), true);

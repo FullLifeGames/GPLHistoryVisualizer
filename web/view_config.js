@@ -30,7 +30,7 @@ export const VIEW_GROUPS = [
     id: "videos",
     labelKey: "navGroups.videos",
     defaultView: "video-archive",
-    views: ["video-archive", "cinema", "audience-history"],
+    views: ["video-archive", "cinema", "audience-history", "zeitstrahl"],
   },
   {
     id: "records",

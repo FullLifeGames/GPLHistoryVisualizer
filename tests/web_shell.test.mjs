@@ -75,6 +75,17 @@ assert.equal(indexHtml.indexOf('data-view="cinema"') < indexHtml.indexOf('data-v
 assert.equal(appJs.includes('"audience-history": renderAudienceHistory'), true);
 assert.equal(stylesCss.includes(".audience-legend"), true);
 assert.equal(stylesCss.includes(".chart-bar"), true);
+assert.equal(indexHtml.includes('data-view="zeitstrahl"'), true);
+assert.equal(indexHtml.includes('id="view-zeitstrahl"'), true);
+assert.equal(indexHtml.includes('id="zeitstrahl-today"'), true);
+assert.equal(indexHtml.includes('id="zeitstrahl-date"'), true);
+assert.equal(indexHtml.includes('id="zeitstrahl-today-results"'), true);
+assert.equal(indexHtml.includes('id="zeitstrahl-body"'), true);
+assert.equal(indexHtml.indexOf('data-view="audience-history"') < indexHtml.indexOf('data-view="zeitstrahl"'), true);
+assert.equal(appJs.includes("zeitstrahl: renderZeitstrahl"), true);
+assert.match(appJs, /TOOLBAR_HIDDEN_VIEWS = new Set\(\[[^\]]*"zeitstrahl"/);
+assert.equal(stylesCss.includes(".zeitstrahl-event"), true);
+assert.equal(stylesCss.includes(".zeitstrahl-widget"), true);
 assert.match(appJs, /TOOLBAR_HIDDEN_VIEWS = new Set\(\[[^\]]*"audience-history"/);
 assert.equal(indexHtml.includes('data-i18n="highlightMatches.scoreFormulaTitle"'), true);
 assert.equal(indexHtml.includes('id="person-summary-section"'), false);

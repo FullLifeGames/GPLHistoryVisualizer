@@ -67,7 +67,9 @@ assert.equal(isValidView("game"), true);
 
 assert.deepEqual(subviewsForGroup("pokemon"), ["killlists", "pokemon-drafts"]);
 assert.deepEqual(subviewsForGroup("seasons"), ["battle-history", "match-highlights", "season-detail", "table-history", "match-plan", "zeitreise"]);
-assert.deepEqual(subviewsForGroup("videos"), ["video-archive", "cinema", "audience-history"]);
+assert.deepEqual(subviewsForGroup("videos"), ["video-archive", "cinema", "audience-history", "zeitstrahl"]);
 assert.equal(viewGroupForView("audience-history"), "videos");
 assert.equal(isValidView("audience-history"), true);
+assert.equal(viewGroupForView("zeitstrahl"), "videos");
+assert.equal(isValidView("zeitstrahl"), true);
 assert.deepEqual(subviewsForGroup("records"), ["upset-index", "record-book", "awards", "hall-of-fame"]);

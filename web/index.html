@@ -76,6 +76,7 @@
         <button class="tab" data-view-group="videos" data-view="video-archive" data-i18n="nav.videoArchive">Video-Archiv</button>
         <button class="tab" data-view-group="videos" data-view="cinema" data-i18n="nav.cinema">Kino-Modus</button>
         <button class="tab" data-view-group="videos" data-view="audience-history" data-i18n="nav.audienceHistory">Publikum</button>
+        <button class="tab" data-view-group="videos" data-view="zeitstrahl" data-i18n="nav.zeitstrahl">Zeitstrahl</button>
         <button class="tab" data-view-group="records" data-view="upset-index" data-i18n="nav.upsetIndex">Upset-Index</button>
         <button class="tab" data-view-group="records" data-view="record-book" data-i18n="nav.recordBook">Rekordbuch</button>
         <button class="tab" data-view-group="records" data-view="awards" data-i18n="nav.awards">Auszeichnungen</button>
@@ -313,6 +314,23 @@
           </label>
         </div>
         <div id="audience-strip"></div>
+      </section>
+
+      <section id="view-zeitstrahl" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.zeitstrahlTitle">Zeitstrahl</h2>
+          <p data-i18n="sections.zeitstrahlDescription">Die GPL-Geschichte als Kalender: Saisonstarts, Champions, Rekorde, Top-Videos und Meilensteine – datiert nach Video-Uploads.</p>
+        </div>
+        <div id="zeitstrahl-today" class="zeitstrahl-widget standalone-card">
+          <h3 data-i18n="zeitstrahl.todayTitle">Heute vor X Jahren</h3>
+          <label class="zeitstrahl-date-picker">
+            <span data-i18n="zeitstrahl.pickDate">Datum</span>
+            <input id="zeitstrahl-date" type="date" />
+          </label>
+          <div id="zeitstrahl-today-results"></div>
+        </div>
+        <p class="muted zeitstrahl-upload-note" data-i18n="zeitstrahl.uploadDateNote">Alle Zeitpunkte sind Upload-Daten der Videos, nicht Spieltermine.</p>
+        <div id="zeitstrahl-body"></div>
       </section>
 
       <section id="view-zeitreise" class="view">
