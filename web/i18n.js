@@ -167,6 +167,7 @@ export const TRANSLATIONS = {
       summaryBiggest: "Größtes Upset",
       summaryTopUnderdog: "Meiste Upset-Siege",
       empty: "Keine gewerteten Kämpfe im aktuellen Filter.",
+      showMore: "Mehr anzeigen",
     },
     personDetails: {
       focus: "Person",
@@ -860,6 +861,7 @@ export const TRANSLATIONS = {
       summaryBiggest: "Biggest upset",
       summaryTopUnderdog: "Most upset wins",
       empty: "No ranked matches in the current filter.",
+      showMore: "Show more",
     },
     personDetails: {
       focus: "Person",

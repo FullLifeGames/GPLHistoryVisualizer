@@ -116,7 +116,7 @@ export function eloLedgerRows(personKey, chronology, matches = [], normalizeKey 
       division: source.division || "",
       opponent_name: isA ? entry.bName : entry.aName,
       opponent_key: opponentKey,
-      score: [source.score_a, source.score_b].filter((value) => value !== undefined && value !== "").join(":"),
+      score: orientedScore(source, isA),
       result: winnerKey === personKey ? "win" : winnerKey === opponentKey ? "loss" : "draw",
       elo_delta: isA ? entry.deltaA : entry.deltaB,
       elo_after: isA ? entry.eloAfterA : entry.eloAfterB,
@@ -125,6 +125,15 @@ export function eloLedgerRows(personKey, chronology, matches = [], normalizeKey 
     });
   }
   return rows;
+}
+
+// Scores are stored in player_a:player_b order; views that reorder the
+// participants (winner-first, focused-person-first) must flip the score with
+// them or the display implies the wrong side won.
+function orientedScore(row, firstIsA) {
+  const parts = [row.score_a, row.score_b].filter((value) => value !== undefined && value !== "");
+  if (parts.length < 2) return parts.join(":");
+  return firstIsA ? `${row.score_a}:${row.score_b}` : `${row.score_b}:${row.score_a}`;
 }
 
 function seasonShortLabel(seasonId) {
@@ -161,7 +170,7 @@ export function upsetRows(matches = [], chronology, highlightRows = [], normaliz
       elo_pre_loser: winnerIsA ? entry.eloPreB : entry.eloPreA,
       win_prob_winner: winProb,
       upset_score: 1 - winProb,
-      score: [row.score_a, row.score_b].filter((value) => value !== undefined && value !== "").join(":"),
+      score: orientedScore(row, winnerIsA),
       video_url: row.video_url || "",
       views_z_score: zByMatch.get(String(row.match_id || "")) ?? "",
       source_urls: row.source_urls || "",

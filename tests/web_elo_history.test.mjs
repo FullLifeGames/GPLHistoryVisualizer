@@ -67,6 +67,19 @@ const highlighted = upsetRows(fixture, chrono, [{ match_id: "m3", views_z_score_
 assert.equal(highlighted[0].views_z_score, "3.2");
 assert.equal(highlighted[1].views_z_score, "");
 
+// the score is displayed winner-first, matching the winner-vs-loser layout
+const sideFixture = [
+  { season_id: "season_001", match_id: "s1", week: "1", stage: "Regular Season", player_a: "Carla", player_b: "Dana", winner: "Dana", score_a: "0", score_b: "4", data_status: "available" },
+  { season_id: "season_001", match_id: "s2", week: "2", stage: "Regular Season", player_a: "Dana", player_b: "Carla", winner: "Dana", score_a: "2", score_b: "0", data_status: "available" },
+];
+const sideChrono = eloChronology(sideFixture);
+const sideUpsets = upsetRows(sideFixture, sideChrono);
+const s1 = sideUpsets.find((row) => row.match_id === "s1");
+const s2 = sideUpsets.find((row) => row.match_id === "s2");
+assert.equal(s1.winner_name, "Dana");
+assert.equal(s1.score, "4:0"); // stored as 0:4 for player_a Carla, shown winner-first
+assert.equal(s2.score, "2:0"); // winner already was player_a, unchanged
+
 // --- personEloSeries ---
 const stints = [
   { season_id: "season_001", person_name: "Anna", team_name: "Team A", division: "Liga 1" },
@@ -106,3 +119,11 @@ const drawLedger = eloLedgerRows("anna", chronoWithDraw, withDraw);
 const drawRow = drawLedger.find((row) => row.match_id === "m4");
 assert.equal(drawRow.result, "draw");
 assert.ok(drawRow.elo_delta < 0); // Anna is rated higher, so the draw costs points
+
+// ledger scores read from the focused person's perspective
+const danaLedger = eloLedgerRows("dana", sideChrono, sideFixture);
+assert.equal(danaLedger[0].score, "4:0"); // Dana was player_b in s1 (0:4)
+assert.equal(danaLedger[1].score, "2:0"); // Dana was player_a in s2
+const carlaLedger = eloLedgerRows("carla", sideChrono, sideFixture);
+assert.equal(carlaLedger[0].score, "0:4");
+assert.equal(carlaLedger[1].score, "0:2");

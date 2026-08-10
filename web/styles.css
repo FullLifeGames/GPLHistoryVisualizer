@@ -4077,7 +4077,7 @@ tbody tr:hover {
 
 .chart-host svg {
   display: block;
-  width: 100%;
+  max-width: 100%;
   height: auto;
 }
 
@@ -4092,7 +4092,7 @@ tbody tr:hover {
 
 .chart-band-label {
   fill: var(--muted);
-  font-size: 0.68rem;
+  font-size: 0.78rem;
 }
 
 .chart-grid line {
@@ -4106,7 +4106,7 @@ tbody tr:hover {
 
 .chart-axis text {
   fill: var(--muted);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
 }
 
 .chart-line {
@@ -4123,7 +4123,7 @@ tbody tr:hover {
 
 .chart-marker-label {
   fill: var(--ink);
-  font-size: 0.72rem;
+  font-size: 0.78rem;
 }
 
 .chart-focus {
@@ -4147,10 +4147,14 @@ tbody tr:hover {
 }
 
 .upset-prob-line {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.85rem;
-  font-style: italic;
+  margin: auto 14px 14px;
+  padding: 8px 12px;
+  border-left: 3px solid var(--accent-strong);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--surface-soft);
+  color: var(--ink);
+  font-size: 0.88rem;
+  font-weight: 600;
 }
 
 .chart-marker-peak circle {

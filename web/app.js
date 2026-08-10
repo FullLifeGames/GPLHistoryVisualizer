@@ -213,6 +213,7 @@ const state = {
   draftTierFilter: "all",
   rosterCardLimit: 24,
   matchHighlightCardLimit: 8,
+  upsetCardLimit: 8,
   cinema: {
     season: "all",
     participant: "all",
@@ -325,6 +326,7 @@ function bindControls() {
     state.division = "all";
     resetRosterCardLimit();
     resetMatchHighlightCardLimit();
+    resetUpsetCardLimit();
     divisionFilter.value = state.division;
     populateDivisionFilter();
     populateMatchupOptions();
@@ -374,6 +376,7 @@ function bindControls() {
     state.autoSeasonDefault = false;
     resetRosterCardLimit();
     resetMatchHighlightCardLimit();
+    resetUpsetCardLimit();
     populateMatchupOptions();
     populateCinemaControls();
     render();
@@ -383,6 +386,7 @@ function bindControls() {
     state.division = divisionFilter.value;
     resetRosterCardLimit();
     resetMatchHighlightCardLimit();
+    resetUpsetCardLimit();
     populateMatchupOptions();
     populateCinemaControls();
     render();
@@ -392,6 +396,7 @@ function bindControls() {
     state.search = searchFilter.value.trim().toLowerCase();
     resetRosterCardLimit();
     resetMatchHighlightCardLimit();
+    resetUpsetCardLimit();
     populateMatchupOptions();
     populateCinemaControls();
     render();
@@ -457,6 +462,11 @@ function bindControls() {
       event.preventDefault();
       state.matchHighlightCardLimit += defaultMatchHighlightCardLimit();
       renderMatchHighlights();
+    }
+    if (event.target.closest("[data-show-more-upsets]")) {
+      event.preventDefault();
+      state.upsetCardLimit += DEFAULT_UPSET_CARD_LIMIT;
+      renderUpsetIndex();
     }
     const cinemaStepButton = event.target.closest("[data-cinema-step]");
     if (cinemaStepButton) {
@@ -2532,6 +2542,10 @@ function resetMatchHighlightCardLimit() {
   state.matchHighlightCardLimit = defaultMatchHighlightCardLimit();
 }
 
+function resetUpsetCardLimit() {
+  state.upsetCardLimit = DEFAULT_UPSET_CARD_LIMIT;
+}
+
 function scoreFormulaCell(value, formula) {
   return `<span class="score-formula" title="${escapeAttr(formula)}">${escapeHtml(String(value))}</span>`;
 }
@@ -3139,10 +3153,25 @@ function matchHighlightCard(row, rank) {
   `;
 }
 
+const DEFAULT_UPSET_CARD_LIMIT = 8;
+
 // The Elo walk must cover the full chronology of the current data basis, or
 // pregame ratings would reset whenever a season filter is active. Season,
 // division, and search narrow the displayed rows only.
 let eloChronologyCache = null;
+
+// Person routes carry either the person_id form ("person_bene", used by
+// aggregate CSV links) or the normalized name ("bene"); the chronology is
+// keyed by normalized names only, so both forms must resolve to one key.
+function chronologyKeyForPerson(chronology, focusKey) {
+  if (!focusKey) return "";
+  if (chronology.perPerson.has(focusKey)) return focusKey;
+  const comparable = personComparableKey(focusKey);
+  for (const key of chronology.perPerson.keys()) {
+    if (personComparableKey(key) === comparable) return key;
+  }
+  return "";
+}
 
 function cachedEloChronology() {
   const matches = state.data.matches ?? [];
@@ -3187,9 +3216,17 @@ function renderUpsetIndex() {
     metricCard(t(state.language, "upsets.summaryTopUnderdog"), topUnderdog ? `${topUnderdog[0]} (${topUnderdog[1]})` : "–"),
   ].join("");
 
-  cards.innerHTML = rows.length
-    ? rows.slice(0, 10).map((row, index) => upsetCard(row, index + 1)).join("")
-    : `<p class="empty">${escapeHtml(t(state.language, "upsets.empty"))}</p>`;
+  if (!rows.length) {
+    cards.innerHTML = `<p class="empty">${escapeHtml(t(state.language, "upsets.empty"))}</p>`;
+  } else {
+    const limit = state.upsetCardLimit || DEFAULT_UPSET_CARD_LIMIT;
+    cards.innerHTML = [
+      rows.slice(0, limit).map((row, index) => upsetCard(row, index + 1)).join(""),
+      rows.length > limit
+        ? `<button class="show-more-button" type="button" data-show-more-upsets>${escapeHtml(t(state.language, "upsets.showMore"))}</button>`
+        : "",
+    ].join("");
+  }
 
   renderTable(
     "#upset-table",
@@ -3207,14 +3244,15 @@ function upsetProbDisplay(value) {
 function renderPersonEloLedger(focusKey) {
   const container = document.querySelector("#person-elo-ledger-table");
   if (!container) return;
-  if (!focusKey) {
+  const chronology = focusKey ? cachedEloChronology() : null;
+  const chronoKey = chronology ? chronologyKeyForPerson(chronology, focusKey) : "";
+  if (!chronoKey) {
     destroyTable("#person-elo-ledger-table");
     container.replaceChildren();
     return;
   }
 
-  const chronology = cachedEloChronology();
-  const rows = eloLedgerRows(focusKey, chronology, state.data.matches ?? [], normalizedKey).map((row) => {
+  const rows = eloLedgerRows(chronoKey, chronology, state.data.matches ?? [], normalizedKey).map((row) => {
     const delta = Math.round(row.elo_delta);
     return {
       _season_order: seasonOrder(row.season_id),
@@ -3247,8 +3285,9 @@ function renderPersonEloChart(focusKey) {
   if (!block || !container) return;
 
   const chronology = focusKey ? cachedEloChronology() : null;
-  const series = focusKey
-    ? personEloSeries(focusKey, chronology, state.data.personStints ?? [], state.data.champions ?? [], normalizedKey)
+  const chronoKey = chronology ? chronologyKeyForPerson(chronology, focusKey) : "";
+  const series = chronoKey
+    ? personEloSeries(chronoKey, chronology, state.data.personStints ?? [], state.data.champions ?? [], normalizedKey)
     : null;
   const hasCurve = Boolean(series && series.points.length >= 2);
   block.hidden = !hasCurve;
@@ -3286,7 +3325,7 @@ function renderPersonEloChart(focusKey) {
     tooltip: (point) => {
       const entry = chronology.perMatch.get(point.matchId);
       if (!entry) return String(Math.round(point.rating));
-      const isA = entry.aKey === focusKey;
+      const isA = entry.aKey === chronoKey;
       const opponent = isA ? entry.bName : entry.aName;
       const delta = isA ? entry.deltaA : entry.deltaB;
       const sign = delta >= 0 ? "+" : "";
@@ -3318,6 +3357,7 @@ function upsetCard(row, rank) {
         <span>${escapeHtml(t(state.language, "columns.views_z_score"))}<strong>${escapeHtml(String(displayNumber(row.views_z_score)))}</strong></span>
       </div>
       <p class="upset-prob-line">${escapeHtml(probLine)}</p>
+      ${highlightSourceActions(previewUrls)}
     </article>
   `;
 }

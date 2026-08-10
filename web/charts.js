@@ -54,11 +54,22 @@ function renderChart(container, config, kind) {
     return { redraw() {}, destroy() {} };
   }
 
+  let layoutRetries = 0;
   const draw = () => {
-    container.replaceChildren();
     container.classList.add("chart-host");
 
-    const width = Math.max(container.clientWidth || 0, 280);
+    // A draw at unmeasured width would bake a tiny viewBox that CSS then
+    // stretches into blurry, oversized text. Wait for layout instead.
+    const measured = container.getBoundingClientRect().width;
+    if (!measured && layoutRetries < 30) {
+      layoutRetries += 1;
+      requestAnimationFrame(draw);
+      return;
+    }
+    layoutRetries = 0;
+    container.replaceChildren();
+
+    const width = Math.max(Math.round(measured) || 0, 320);
     const height = config.height || DEFAULT_HEIGHT;
     const innerWidth = width - MARGIN.left - MARGIN.right;
     const innerHeight = height - MARGIN.top - MARGIN.bottom;
@@ -78,6 +89,8 @@ function renderChart(container, config, kind) {
       .select(container)
       .append("svg")
       .attr("class", `chart chart-${kind}`)
+      .attr("width", width)
+      .attr("height", height)
       .attr("viewBox", `0 0 ${width} ${height}`)
       .attr("role", "img");
     const root = svg.append("g").attr("transform", `translate(${MARGIN.left},${MARGIN.top})`);
