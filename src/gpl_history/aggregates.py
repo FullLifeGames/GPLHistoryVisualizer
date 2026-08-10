@@ -102,6 +102,8 @@ SEASON_STORYLINE_FIELDS = [
 
 
 def build_and_write_aggregates(data_dir: Path) -> dict[str, int]:
+    from .records import AWARD_FIELDS, RECORDS_PROGRESSION_FIELDS, STREAK_FIELDS
+
     normalized_dir = data_dir / "normalized"
     rows = build_aggregate_rows(normalized_dir)
     _write_csv(normalized_dir / "person_all_time.csv", PERSON_ALL_TIME_FIELDS, rows["person_all_time"])
@@ -109,15 +111,23 @@ def build_and_write_aggregates(data_dir: Path) -> dict[str, int]:
     _write_csv(normalized_dir / "matchup_summary.csv", MATCHUP_SUMMARY_FIELDS, rows["matchup_summary"])
     _write_csv(normalized_dir / "roster_scores.csv", ROSTER_SCORE_FIELDS, rows["roster_scores"])
     _write_csv(normalized_dir / "season_storylines.csv", SEASON_STORYLINE_FIELDS, rows["season_storylines"])
+    _write_csv(normalized_dir / "streaks.csv", STREAK_FIELDS, rows["streaks"])
+    _write_csv(normalized_dir / "records_progression.csv", RECORDS_PROGRESSION_FIELDS, rows["records_progression"])
+    _write_csv(normalized_dir / "awards.csv", AWARD_FIELDS, rows["awards"])
     return {key: len(value) for key, value in rows.items()}
 
 
 def build_aggregate_rows(normalized_dir: Path) -> dict[str, list[dict[str, Any]]]:
+    # Imported lazily: records.py depends on this module's helpers at import
+    # time, so a module-level import here would be a cycle.
+    from .records import award_rows, records_progression_rows, streak_rows
+
     people = _read_csv(normalized_dir / "people.csv")
     stints = _read_csv(normalized_dir / "person_stints.csv")
     champions = _read_csv(normalized_dir / "champions.csv")
     matches = _read_csv(normalized_dir / "matches.csv")
     killlists = _read_csv(normalized_dir / "pokemon_killlists.csv")
+    standings = _read_csv(normalized_dir / "standings.csv")
     rosters = _read_csv(normalized_dir / "team_rosters.csv")
     drafts = _read_csv(normalized_dir / "pokemon_draft_overview.csv")
     data_quality = _read_csv(normalized_dir / "data_quality.csv")
@@ -129,6 +139,9 @@ def build_aggregate_rows(normalized_dir: Path) -> dict[str, list[dict[str, Any]]
         "matchup_summary": matchup_summary_rows(matches),
         "roster_scores": roster_score_rows(rosters, drafts),
         "season_storylines": season_storyline_rows(champions, data_quality, killlists, videos),
+        "streaks": streak_rows(matches),
+        "records_progression": records_progression_rows(matches, stints, killlists),
+        "awards": award_rows(matches, stints, standings, champions, killlists),
     }
 
 

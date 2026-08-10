@@ -195,6 +195,9 @@ def test_build_and_write_aggregates_writes_person_pokemon_matchup_roster_and_sto
         "matchup_summary": 2,
         "roster_scores": 1,
         "season_storylines": 1,
+        "streaks": 0,
+        "records_progression": 15,
+        "awards": 4,
     }
     assert _read_csv(normalized / "person_all_time.csv")[0] == {
         "person_id": "person_bene",

@@ -1,5 +1,29 @@
-from gpl_history.aggregates import _elo_by_person
-from gpl_history.records import award_rows, records_progression_rows, streak_rows
+import csv
+from pathlib import Path
+
+from gpl_history.aggregates import _elo_by_person, build_and_write_aggregates
+from gpl_history.records import (
+    AWARD_FIELDS,
+    RECORDS_PROGRESSION_FIELDS,
+    STREAK_FIELDS,
+    award_rows,
+    records_progression_rows,
+    streak_rows,
+)
+
+
+def _write_csv(path: Path, rows: list[dict]) -> None:
+    fields = sorted({key for row in rows for key in row})
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def _read_header(path: Path) -> list[str]:
+    with path.open("r", encoding="utf-8-sig", newline="") as handle:
+        return next(csv.reader(handle))
 
 
 def _match(mid, week, a, b, winner, **extra):
@@ -202,3 +226,27 @@ def test_award_rows_newcomer_upset_and_iron_man():
     assert slayer and slayer[0]["person_name"] == "Ben" and slayer[0]["value"] == 1531  # Anna's pregame Elo in m3
     iron = [r for r in rows if r["award_key"] == "iron_man"]
     assert iron and iron[0]["person_name"] == "Anna" and iron[0]["value"] == 2
+
+
+def test_build_and_write_aggregates_includes_records_outputs(tmp_path):
+    normalized = tmp_path / "normalized"
+    _write_csv(normalized / "matches.csv", [
+        _match("m1", "1", "Anna", "Ben", "Anna", score_a="6", score_b="0"),
+        _match("m2", "2", "Anna", "Ben", "Anna", score_a="6", score_b="0"),
+        _match("m3", "3", "Anna", "Ben", "Anna", score_a="2", score_b="0"),
+    ])
+    _write_csv(normalized / "standings.csv", [_standing("season_001", "Anna", "1", "3", "0", "14")])
+    _write_csv(normalized / "person_stints.csv", [
+        {"season_id": "season_001", "person_id": "", "person_name": "Anna", "kills": "14", "matches": "3", "wins": "3", "losses": "0", "draws": "0", "data_status": "available", "source_urls": "s"},
+    ])
+    _write_csv(normalized / "people.csv", [{"person_id": "person_anna", "person_name": "Anna", "person_name_normalized": "anna", "aliases": "", "data_status": "x", "source_urls": ""}])
+    _write_csv(normalized / "champions.csv", [{"season_id": "season_001", "champion_name": "Anna", "champion_person_id": "", "champion_team": "", "evidence_type": "sheet", "data_status": "source_evidenced", "notes": "", "source_urls": "c"}])
+    _write_csv(normalized / "pokemon_killlists.csv", [{"season_id": "season_001", "division": "", "stage": "", "pokemon": "Gengar", "pokemon_normalized": "gengar", "trainer": "Anna", "trainer_normalized": "anna", "team_name": "", "appearances": "3", "kills": "9", "data_status": "available", "source_urls": "k"}])
+
+    counts = build_and_write_aggregates(tmp_path)
+    assert counts["streaks"] >= 1
+    assert counts["records_progression"] >= 3
+    assert counts["awards"] >= 2
+    assert _read_header(normalized / "streaks.csv") == STREAK_FIELDS
+    assert _read_header(normalized / "records_progression.csv") == RECORDS_PROGRESSION_FIELDS
+    assert _read_header(normalized / "awards.csv") == AWARD_FIELDS
