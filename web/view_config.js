@@ -3,8 +3,14 @@ export const VIEW_GROUPS = [
     id: "people",
     labelKey: "navGroups.people",
     defaultView: "all-time",
-    views: ["all-time", "team-rosters", "matchup"],
+    views: ["all-time", "team-rosters"],
     detailViews: ["person-details", "roster-detail"],
+  },
+  {
+    id: "duels",
+    labelKey: "navGroups.duels",
+    defaultView: "matchup",
+    views: ["matchup"],
   },
   {
     id: "pokemon",
@@ -17,7 +23,13 @@ export const VIEW_GROUPS = [
     id: "seasons",
     labelKey: "navGroups.seasons",
     defaultView: "battle-history",
-    views: ["battle-history", "match-highlights", "season-detail", "table-history", "match-plan", "video-archive", "cinema", "zeitreise"],
+    views: ["battle-history", "match-highlights", "season-detail", "table-history", "match-plan", "zeitreise"],
+  },
+  {
+    id: "videos",
+    labelKey: "navGroups.videos",
+    defaultView: "video-archive",
+    views: ["video-archive", "cinema"],
   },
   {
     id: "data",

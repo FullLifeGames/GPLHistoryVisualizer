@@ -59,8 +59,10 @@ export const TRANSLATIONS = {
     },
     navGroups: {
       people: "Personen",
+      duels: "Duelle",
       pokemon: "Pokémon",
       seasons: "Saisons & Kämpfe",
+      videos: "Videos",
       data: "Daten & Review",
     },
     filters: {
@@ -724,8 +726,10 @@ export const TRANSLATIONS = {
     },
     navGroups: {
       people: "People",
+      duels: "Head-to-Head",
       pokemon: "Pokémon",
       seasons: "Seasons & Battles",
+      videos: "Videos",
       data: "Data & Review",
     },
     filters: {
