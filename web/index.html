@@ -345,7 +345,10 @@
           <h3 data-i18n="zeitstrahl.todayTitle">Heute vor X Jahren</h3>
           <div class="zeitstrahl-date-picker">
             <span data-i18n="zeitstrahl.pickDate">Datum</span>
-            <input id="zeitstrahl-date-slider" type="range" min="0" max="365" step="1" value="0" data-i18n-aria-label="zeitstrahl.pickDate" aria-label="Datum" />
+            <div class="zeitstrahl-slider-wrap">
+              <input id="zeitstrahl-date-slider" type="range" min="0" max="365" step="1" value="0" data-i18n-aria-label="zeitstrahl.pickDate" aria-label="Datum" />
+              <div id="zeitstrahl-slider-scale" class="zeitstrahl-slider-scale" aria-hidden="true"></div>
+            </div>
             <output id="zeitstrahl-date-label" for="zeitstrahl-date-slider"></output>
           </div>
           <div id="zeitstrahl-today-results"></div>

@@ -5066,9 +5066,39 @@ p.game-status.game-bad {
   margin-bottom: 10px;
 }
 
-#zeitstrahl-date-slider {
+.zeitstrahl-slider-wrap {
   flex: 1;
   min-width: 0;
+  position: relative;
+}
+
+#zeitstrahl-date-slider {
+  display: block;
+  width: 100%;
+}
+
+.zeitstrahl-slider-scale {
+  position: relative;
+  height: 24px;
+  margin-top: 2px;
+}
+
+.zeitstrahl-tick {
+  position: absolute;
+  top: 0;
+  width: 2px;
+  height: 8px;
+  background: var(--accent-strong, currentColor);
+  opacity: 0.55;
+  border-radius: 1px;
+}
+
+.zeitstrahl-month {
+  position: absolute;
+  top: 10px;
+  font-size: 0.62rem;
+  color: var(--muted);
+  transform: translateX(-2px);
 }
 
 #zeitstrahl-date-label {

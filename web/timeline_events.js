@@ -193,6 +193,28 @@ export function dayIndexFromMonthDay(monthDay) {
   return Math.max(0, Math.min(365, index + day - 1));
 }
 
+// Day indices (0..365) that actually have anniversaries — the widget slider
+// snaps to these so it can never land on an empty day. beforeYear mirrors
+// onThisDayEvents: only events from earlier years count as anniversaries.
+export function eventDayIndices(events, beforeYear) {
+  const days = new Set();
+  for (const event of events ?? []) {
+    if (beforeYear != null && !(event.year < beforeYear)) continue;
+    days.add(dayIndexFromMonthDay(event.date.slice(5)));
+  }
+  return [...days].sort((a, b) => a - b);
+}
+
+export function nearestDayIndex(indices, value) {
+  const clamped = Math.max(0, Math.min(365, Math.trunc(Number(value) || 0)));
+  if (!indices?.length) return clamped;
+  let best = indices[0];
+  for (const index of indices) {
+    if (Math.abs(index - clamped) < Math.abs(best - clamped)) best = index;
+  }
+  return best;
+}
+
 export function onThisDayEvents(events, isoDate) {
   const date = dateKey(isoDate);
   if (!date) return [];

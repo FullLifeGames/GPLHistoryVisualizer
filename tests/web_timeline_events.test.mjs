@@ -1,6 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { dayIndexFromMonthDay, groupEventsByYear, monthDayFromDayIndex, onThisDayEvents, timelineEvents } from "../web/timeline_events.js";
+import {
+  dayIndexFromMonthDay,
+  eventDayIndices,
+  groupEventsByYear,
+  monthDayFromDayIndex,
+  nearestDayIndex,
+  onThisDayEvents,
+  timelineEvents,
+} from "../web/timeline_events.js";
 
 const SEASONS = [
   {
@@ -244,6 +252,27 @@ test("day index mapping round-trips across the leap-reference year", () => {
   for (const monthDay of ["02-29", "03-01", "06-15", "09-14"]) {
     assert.equal(monthDayFromDayIndex(dayIndexFromMonthDay(monthDay)), monthDay);
   }
+});
+
+test("eventDayIndices collects sorted unique anniversary days from earlier years", () => {
+  const events = [
+    { date: "2014-09-14", year: 2014 },
+    { date: "2015-09-14", year: 2015 }, // same month-day -> deduped
+    { date: "2015-01-05", year: 2015 },
+    { date: "2020-12-31", year: 2020 }, // not before 2020 -> excluded
+  ];
+  assert.deepEqual(eventDayIndices(events, 2020), [dayIndexFromMonthDay("01-05"), dayIndexFromMonthDay("09-14")]);
+  assert.equal(eventDayIndices(events, 2021).length, 3);
+  assert.deepEqual(eventDayIndices([], 2020), []);
+});
+
+test("nearestDayIndex snaps to the closest eventful day", () => {
+  const indices = [10, 100, 300];
+  assert.equal(nearestDayIndex(indices, 10), 10);
+  assert.equal(nearestDayIndex(indices, 54), 10); // ties resolve to the earlier day
+  assert.equal(nearestDayIndex(indices, 56), 100);
+  assert.equal(nearestDayIndex(indices, 999), 300);
+  assert.equal(nearestDayIndex([], 42), 42); // no events -> value passes through
 });
 
 test("onThisDayEvents matches month-day in earlier years only", () => {

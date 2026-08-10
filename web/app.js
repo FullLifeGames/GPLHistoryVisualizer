@@ -37,7 +37,16 @@ import {
 import { eloChronology, eloLedgerRows, personEloSeries, upsetRows } from "./elo_history.js";
 import { buildSeries, lineChart, paddedDomain, stackedBarChart, stepChart } from "./charts.js";
 import { attentionStripPoints, engagementAnomalies, monthlyChannelStacks, seasonMonthBands, stripSeasonIds } from "./audience.js";
-import { dayIndexFromMonthDay, groupEventsByYear, monthDayFromDayIndex, onThisDayEvents, seasonEndDates, timelineEvents } from "./timeline_events.js";
+import {
+  dayIndexFromMonthDay,
+  eventDayIndices,
+  groupEventsByYear,
+  monthDayFromDayIndex,
+  nearestDayIndex,
+  onThisDayEvents,
+  seasonEndDates,
+  timelineEvents,
+} from "./timeline_events.js";
 import { awardsBySeason, finderFilterRows, hofInductees, spoonRows, streakTableRows } from "./records.js";
 import { rivalryMeetings, rivalryPairs } from "./rivalries.js";
 import { dominanceRows, winChainGraph, winChainPath } from "./oracle.js";
@@ -4655,20 +4664,76 @@ function zeitstrahlEventRow(event) {
   </div>`;
 }
 
+const ZEITSTRAHL_MONTHS = {
+  de: ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"],
+  en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+};
+
+function zeitstrahlMonthDayLabel(monthDay) {
+  const [month, day] = String(monthDay).split("-");
+  return state.language === "de" ? `${day}.${month}.` : `${month}-${day}`;
+}
+
+function renderZeitstrahlScale(scale, events, currentYear) {
+  const lang = state.language;
+  const counts = new Map();
+  for (const event of events) {
+    if (!(event.year < currentYear)) continue;
+    const index = dayIndexFromMonthDay(event.date.slice(5));
+    counts.set(index, (counts.get(index) || 0) + 1);
+  }
+  const ticks = [...counts.entries()]
+    .map(([index, count]) => {
+      const monthDay = monthDayFromDayIndex(index);
+      const titleKey = count === 1 ? "zeitstrahl.tickTitleOne" : "zeitstrahl.tickTitle";
+      const title = formatMessage(t(lang, titleKey), { date: zeitstrahlMonthDayLabel(monthDay), count });
+      return `<span class="zeitstrahl-tick" style="left:${((index / 365) * 100).toFixed(2)}%" title="${escapeAttr(title)}"></span>`;
+    })
+    .join("");
+  const months = ZEITSTRAHL_MONTHS[lang === "de" ? "de" : "en"]
+    .map((name, month) => {
+      const index = dayIndexFromMonthDay(`${String(month + 1).padStart(2, "0")}-01`);
+      return `<span class="zeitstrahl-month" style="left:${((index / 365) * 100).toFixed(2)}%">${escapeHtml(name)}</span>`;
+    })
+    .join("");
+  scale.innerHTML = ticks + months;
+}
+
 function renderZeitstrahlToday(events) {
   const results = document.querySelector("#zeitstrahl-today-results");
   const slider = document.querySelector("#zeitstrahl-date-slider");
   const label = document.querySelector("#zeitstrahl-date-label");
+  const scale = document.querySelector("#zeitstrahl-slider-scale");
   if (!results || !slider || !label) return;
   const lang = state.language;
-  if (!state.zeitstrahl.monthDay) state.zeitstrahl.monthDay = dateSeedString().slice(5);
+  const currentYear = Number(dateSeedString().slice(0, 4));
+  const eventfulDays = eventDayIndices(events, currentYear);
+  if (!state.zeitstrahl.monthDay) {
+    // Default to today, snapped to the nearest day that has anniversaries.
+    state.zeitstrahl.monthDay = monthDayFromDayIndex(
+      nearestDayIndex(eventfulDays, dayIndexFromMonthDay(dateSeedString().slice(5))),
+    );
+  }
   slider.value = String(dayIndexFromMonthDay(state.zeitstrahl.monthDay));
   slider.oninput = () => {
-    state.zeitstrahl.monthDay = monthDayFromDayIndex(Number(slider.value));
-    renderZeitstrahlToday(events);
+    // Snap live so the readout never shows an empty day; the thumb itself
+    // only jumps on release (change) to keep dragging smooth.
+    state.zeitstrahl.monthDay = monthDayFromDayIndex(nearestDayIndex(eventfulDays, Number(slider.value)));
+    renderZeitstrahlWidgetReadout(events);
   };
-  const [month, day] = state.zeitstrahl.monthDay.split("-");
-  label.textContent = lang === "de" ? `${day}.${month}.` : `${month}-${day}`;
+  slider.onchange = () => {
+    slider.value = String(dayIndexFromMonthDay(state.zeitstrahl.monthDay));
+  };
+  if (scale) renderZeitstrahlScale(scale, events, currentYear);
+  renderZeitstrahlWidgetReadout(events);
+}
+
+function renderZeitstrahlWidgetReadout(events) {
+  const results = document.querySelector("#zeitstrahl-today-results");
+  const label = document.querySelector("#zeitstrahl-date-label");
+  if (!results || !label) return;
+  const lang = state.language;
+  label.textContent = zeitstrahlMonthDayLabel(state.zeitstrahl.monthDay);
   const hits = onThisDayEvents(events, `${dateSeedString().slice(0, 4)}-${state.zeitstrahl.monthDay}`);
   if (!hits.length) {
     results.innerHTML = `<p class="muted">${escapeHtml(t(lang, "zeitstrahl.noEvents"))}</p>`;
