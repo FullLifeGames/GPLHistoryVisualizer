@@ -7,10 +7,10 @@ import {
   normalizeTheme,
   t,
 } from "./i18n.js";
-import { parseRouteHash, personRouteHash, pokemonRouteHash, rivalryRouteHash, rosterRouteHash, seasonRouteHash, viewRouteHash } from "./router.js";
+import { gameRouteHash, parseRouteHash, personRouteHash, pokemonRouteHash, rivalryRouteHash, rosterRouteHash, seasonRouteHash, viewRouteHash } from "./router.js";
 import { pokemonAssetId } from "./pokemon_names.js";
 import { normalizeRosterGroupKey, rosterIdentityKey } from "./roster_keys.js";
-import { defaultViewForGroup, viewGroupForView } from "./view_config.js";
+import { GAME_IDS, defaultViewForGroup, viewGroupForView } from "./view_config.js";
 import {
   ALL_TIME_COLUMNS,
   AWARD_COLUMNS,
@@ -39,6 +39,7 @@ import { buildSeries, lineChart, paddedDomain, stepChart } from "./charts.js";
 import { awardsBySeason, finderFilterRows, hofInductees, spoonRows, streakTableRows } from "./records.js";
 import { rivalryMeetings, rivalryPairs } from "./rivalries.js";
 import { dominanceRows, winChainGraph, winChainPath } from "./oracle.js";
+import { dateSeedString, pickIndex, seededRandom, shuffled, updateDailyStreak } from "./games.js";
 import { tableHeaderFilterConfig } from "./table_filters.js";
 import { textSorter, weekSortValue } from "./table_sort.js";
 import {
@@ -144,6 +145,8 @@ const VIEW_DATASETS = {
   rivalries: ["matchupSummary", "matchHighlights", "matchVideos"],
   "rivalry-detail": ["matchupSummary", "matchHighlights", "matchVideos"],
   oracle: ["matchVideos"],
+  games: [],
+  game: ["teamRosters", "videos", "matchupSummary", "matchVideos"],
   "record-book": ["streaks", "recordsProgression", "matchVideos", "rosterMatchdays"],
   "awards": ["awards", "personAllTime"],
   "hall-of-fame": ["personAllTime", "matchVideos", "awards"],
@@ -231,6 +234,8 @@ const state = {
   pokemonFocus: null,
   rosterFocus: null,
   rivalryFocus: null,
+  gameFocus: null,
+  games: {},
   draftPickedStatus: "all",
   draftTierFilter: "all",
   rosterCardLimit: 24,
@@ -303,6 +308,8 @@ const VIEW_RENDERERS = {
   rivalries: renderRivalries,
   "rivalry-detail": renderRivalryDetail,
   oracle: renderOracle,
+  games: renderGames,
+  game: renderGame,
   "record-book": renderRecordBook,
   "awards": renderAwards,
   "hall-of-fame": renderHallOfFame,
@@ -687,6 +694,7 @@ function applyRouteFromHash() {
     state.pokemonFocus = null;
     state.rosterFocus = null;
     state.rivalryFocus = null;
+    state.gameFocus = null;
     state.season = "all";
     state.autoSeasonDefault = false;
     state.division = "all";
@@ -699,6 +707,7 @@ function applyRouteFromHash() {
     state.pokemonFocus = null;
     state.rosterFocus = null;
     state.rivalryFocus = null;
+    state.gameFocus = null;
     state.season = route.seasonId;
     state.autoSeasonDefault = false;
     state.division = "all";
@@ -711,6 +720,7 @@ function applyRouteFromHash() {
     state.pokemonFocus = resolvePokemonFocus(route.pokemonKey);
     state.rosterFocus = null;
     state.rivalryFocus = null;
+    state.gameFocus = null;
     state.season = "all";
     state.autoSeasonDefault = false;
     state.division = "all";
@@ -723,6 +733,7 @@ function applyRouteFromHash() {
     state.pokemonFocus = null;
     state.rosterFocus = { key: route.rosterKey };
     state.rivalryFocus = null;
+    state.gameFocus = null;
     state.season = "all";
     state.autoSeasonDefault = false;
     state.division = "all";
@@ -735,6 +746,20 @@ function applyRouteFromHash() {
     state.pokemonFocus = null;
     state.rosterFocus = null;
     state.rivalryFocus = { aKey: route.rivalryKey.aKey, bKey: route.rivalryKey.bKey };
+    state.gameFocus = null;
+    state.season = "all";
+    state.autoSeasonDefault = false;
+    state.division = "all";
+    state.search = "";
+    seasonFilter.value = state.season;
+    divisionFilter.value = state.division;
+    searchFilter.value = "";
+  } else if (route.gameKey) {
+    state.personFocus = null;
+    state.pokemonFocus = null;
+    state.rosterFocus = null;
+    state.rivalryFocus = null;
+    state.gameFocus = { key: route.gameKey };
     state.season = "all";
     state.autoSeasonDefault = false;
     state.division = "all";
@@ -747,6 +772,7 @@ function applyRouteFromHash() {
     state.pokemonFocus = null;
     state.rosterFocus = null;
     state.rivalryFocus = null;
+    state.gameFocus = null;
     if (previousGroup !== currentGroup) {
       state.search = "";
       searchFilter.value = "";
@@ -793,8 +819,8 @@ function applyViewDataModeDefaults(viewName, previousView) {
 // Views whose content cannot honor the global toolbar filters: cinema and
 // zeitreise manage their own controls; record book, hall of fame, rivalries,
 // and the oracle render career-scope data over the full archive that no
-// client-side slice can recompute.
-const TOOLBAR_HIDDEN_VIEWS = new Set(["cinema", "zeitreise", "record-book", "hall-of-fame", "rivalries", "rivalry-detail", "oracle"]);
+// client-side slice can recompute; the games manage their own per-round state.
+const TOOLBAR_HIDDEN_VIEWS = new Set(["cinema", "zeitreise", "record-book", "hall-of-fame", "rivalries", "rivalry-detail", "oracle", "games", "game"]);
 
 function setActiveView(viewName) {
   state.view = viewName;
@@ -923,6 +949,23 @@ function savePreference(key, value) {
     localStorage.setItem(key, value);
   } catch {
     // Preferences are optional; private browsing or file contexts may block storage.
+  }
+}
+
+function readGameJson(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function saveGameJson(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // Storage is optional; streaks just reset in private browsing.
   }
 }
 
@@ -5288,6 +5331,86 @@ function rivalryCard(row, rank) {
     </article>
   `;
 }
+
+const GAME_HUB_CARDS = [
+  { id: "kader-raten", i18nKey: "kader" },
+  { id: "tipp-spiel", i18nKey: "tipp" },
+  { id: "klick-duell", i18nKey: "klick" },
+  { id: "quizshow", i18nKey: "quiz" },
+];
+
+const GAME_I18N_BY_ID = {
+  "kader-raten": "kader",
+  "tipp-spiel": "tipp",
+  "klick-duell": "klick",
+  quizshow: "quiz",
+};
+
+// Every game round ends with this card: the outcome plus the source rows the
+// round was generated from, so no reveal ever shows an unsourced claim.
+function gameRevealCard({ title, bodyHtml, sourceUrls }) {
+  const sources = sourceUrls
+    ? `<p class="game-reveal-sources"><strong>${escapeHtml(t(state.language, "games.sourceTitle"))}:</strong> ${sourceLinks(sourceUrls)}</p>`
+    : "";
+  return `
+    <div class="game-reveal standalone-card">
+      <h4>${escapeHtml(title)}</h4>
+      ${bodyHtml}
+      ${sources}
+    </div>`;
+}
+
+function renderGames() {
+  const container = document.querySelector("#games-cards");
+  if (!container) return;
+  container.innerHTML = GAME_HUB_CARDS.map(
+    (card) => `
+      <article class="hof-card game-card">
+        <div class="highlight-card-head">
+          <h3>${escapeHtml(t(state.language, `games.${card.i18nKey}.title`))}</h3>
+        </div>
+        <p>${escapeHtml(t(state.language, `games.${card.i18nKey}.description`))}</p>
+        <p><a class="link-button" href="${escapeAttr(gameRouteHash(card.id))}">${escapeHtml(t(state.language, "games.play"))}</a></p>
+      </article>`,
+  ).join("");
+}
+
+function renderGame() {
+  const gameId = state.gameFocus?.key || "";
+  const renderer = GAME_RENDERERS[gameId];
+  const body = document.querySelector("#game-body");
+  if (!renderer || !body) {
+    navigateToView("games");
+    return;
+  }
+  const i18nKey = GAME_I18N_BY_ID[gameId];
+  document.querySelector("#game-title").textContent = t(state.language, `games.${i18nKey}.title`);
+  document.querySelector("#game-description").textContent = t(state.language, `games.${i18nKey}.description`);
+  renderer(body);
+}
+
+function renderKaderRaten(body) {
+  body.innerHTML = `<p class="muted">${escapeHtml(t(state.language, "games.kader.description"))}</p>`;
+}
+
+function renderTippSpiel(body) {
+  body.innerHTML = `<p class="muted">${escapeHtml(t(state.language, "games.tipp.description"))}</p>`;
+}
+
+function renderKlickDuell(body) {
+  body.innerHTML = `<p class="muted">${escapeHtml(t(state.language, "games.klick.description"))}</p>`;
+}
+
+function renderQuizshow(body) {
+  body.innerHTML = `<p class="muted">${escapeHtml(t(state.language, "games.quiz.description"))}</p>`;
+}
+
+const GAME_RENDERERS = {
+  "kader-raten": renderKaderRaten,
+  "tipp-spiel": renderTippSpiel,
+  "klick-duell": renderKlickDuell,
+  quizshow: renderQuizshow,
+};
 
 function renderRivalries() {
   const cards = document.querySelector("#rivalry-cards");

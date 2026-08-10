@@ -4498,6 +4498,20 @@ tbody tr:hover {
   margin: 16px 0;
 }
 
+.game-card p {
+  margin: 8px 0;
+}
+
+.game-reveal h4 {
+  margin: 0 0 8px;
+}
+
+.game-reveal-sources {
+  margin: 10px 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
 #view-rivalry-detail > h3,
 #view-rivalry-detail > #rivalry-gap-block > h3 {
   margin: 18px 0 10px;
