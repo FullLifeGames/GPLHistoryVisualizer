@@ -61,6 +61,7 @@ export const TRANSLATIONS = {
       recordBook: "Rekordbuch",
       awards: "Auszeichnungen",
       hallOfFame: "Hall of Fame",
+      games: "Spiele",
     },
     navGroups: {
       people: "Personen",
@@ -69,6 +70,7 @@ export const TRANSLATIONS = {
       seasons: "Saisons & Kämpfe",
       videos: "Videos",
       records: "Rekorde",
+      games: "Spiele",
       data: "Daten & Review",
     },
     filters: {
@@ -160,6 +162,8 @@ export const TRANSLATIONS = {
       rivalriesDescription: "Die meistgespielten, engsten und meistgesehenen Duelle der GPL-Geschichte. Rangfolge berechnet, nicht offiziell.",
       oracleTitle: "Orakel der GPL",
       oracleDescription: "Wer schlägt wen – auch über Ecken? Das Orakel findet die kürzeste Siegeskette: A schlug B, B schlug C – also transitiver Sieg über C.",
+      gamesTitle: "Spiele",
+      gamesDescription: "Vier kleine Spiele über die GPL-Geschichte. Alle Fragen und Auflösungen stammen aus den Archivdaten – jede Runde nennt ihre Quelle.",
     },
     matchup: {
       firstName: "Erste Auswahl",
@@ -211,6 +215,30 @@ export const TRANSLATIONS = {
       beat: "schlug",
       leaderboardTitle: "Dominanz-Rangliste",
       leaderboardNote: "Wie viele Spieler schlägt jemand direkt – und wie viele fallen über eine Siegeskette (transitiv)?",
+    },
+    games: {
+      backToHub: "← Zur Spiele-Übersicht",
+      play: "Spielen",
+      sourceTitle: "Quelle",
+      correct: "Richtig!",
+      wrong: "Falsch!",
+      next: "Nächste Runde",
+      kader: {
+        title: "Kader-Raten",
+        description: "Jeden Tag ein Kader – errate die Person hinter dem Team, Sprite für Sprite.",
+      },
+      tipp: {
+        title: "Tipp-Spiel",
+        description: "Tippe historische Matches und schlage die Elo-Prognose.",
+      },
+      klick: {
+        title: "Klick-Duell",
+        description: "Welches Video hat mehr Aufrufe? Höher oder tiefer.",
+      },
+      quiz: {
+        title: "GPL-Quizshow",
+        description: "Multiple Choice quer durch Champions, Tabellen, Killlisten und Duelle.",
+      },
     },
     upsets: {
       probLine: "Elo gab {name} nur {prob} %",
@@ -904,6 +932,7 @@ export const TRANSLATIONS = {
       recordBook: "Record Book",
       awards: "Awards",
       hallOfFame: "Hall of Fame",
+      games: "Games",
     },
     navGroups: {
       people: "People",
@@ -912,6 +941,7 @@ export const TRANSLATIONS = {
       seasons: "Seasons & Battles",
       videos: "Videos",
       records: "Records",
+      games: "Games",
       data: "Data & Review",
     },
     filters: {
@@ -1003,6 +1033,8 @@ export const TRANSLATIONS = {
       rivalriesDescription: "The most played, closest, and most watched head-to-heads in GPL history. Ranking computed, not official.",
       oracleTitle: "Oracle of the GPL",
       oracleDescription: "Who beats whom — even around corners? The oracle finds the shortest chain of wins: A beat B, B beat C — a transitive victory over C.",
+      gamesTitle: "Games",
+      gamesDescription: "Four small games about GPL history. Every question and reveal comes from the archive data – each round cites its source.",
     },
     matchup: {
       firstName: "First pick",
@@ -1054,6 +1086,30 @@ export const TRANSLATIONS = {
       beat: "beat",
       leaderboardTitle: "Dominance leaderboard",
       leaderboardNote: "How many players does someone beat directly — and how many fall to a chain of wins (transitively)?",
+    },
+    games: {
+      backToHub: "← Back to games",
+      play: "Play",
+      sourceTitle: "Source",
+      correct: "Correct!",
+      wrong: "Wrong!",
+      next: "Next round",
+      kader: {
+        title: "Roster Riddle",
+        description: "One roster per day – guess the person behind the team, sprite by sprite.",
+      },
+      tipp: {
+        title: "Prediction Game",
+        description: "Predict historic matches and beat the Elo forecast.",
+      },
+      klick: {
+        title: "Click Battle",
+        description: "Which video has more views? Higher or lower.",
+      },
+      quiz: {
+        title: "GPL Quiz Show",
+        description: "Multiple choice across champions, standings, kill lists and head-to-heads.",
+      },
     },
     upsets: {
       probLine: "Elo gave {name} only {prob} %",

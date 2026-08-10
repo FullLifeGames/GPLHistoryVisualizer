@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { parseRouteHash, personRouteHash, pokemonRouteHash, rivalryRouteHash, rosterRouteHash, seasonRouteHash, viewRouteHash } from "../web/router.js";
+import { gameRouteHash, parseRouteHash, personRouteHash, pokemonRouteHash, rivalryRouteHash, rosterRouteHash, seasonRouteHash, viewRouteHash } from "../web/router.js";
 
 assert.deepEqual(parseRouteHash(""), { view: "all-time", personKey: null });
 assert.deepEqual(parseRouteHash("#/killlists"), { view: "killlists", personKey: null });
@@ -33,6 +33,13 @@ assert.deepEqual(parseRouteHash("#/rivalitaet/broken"), { view: "rivalries", per
 assert.deepEqual(parseRouteHash("#/matchup"), { view: "rivalries", personKey: null });
 assert.equal(rivalryRouteHash("person_bene", "person_pokgalaxy"), "#/rivalitaet/person_bene__person_pokgalaxy");
 assert.equal(parseRouteHash(rivalryRouteHash("a b", "c d")).rivalryKey.aKey, "a b");
+
+assert.deepEqual(parseRouteHash("#/spiel/kader-raten"), { view: "game", personKey: null, gameKey: "kader-raten" });
+assert.deepEqual(parseRouteHash(gameRouteHash("quizshow")), { view: "game", personKey: null, gameKey: "quizshow" });
+// Unknown game ids land on the hub instead of a broken detail page.
+assert.deepEqual(parseRouteHash("#/spiel/poker"), { view: "games", personKey: null });
+assert.deepEqual(parseRouteHash("#/spiel"), { view: "games", personKey: null });
+assert.equal(gameRouteHash("tipp-spiel"), "#/spiel/tipp-spiel");
 
 assert.equal(viewRouteHash("all-time"), "#/all-time");
 assert.equal(viewRouteHash("pokemon-drafts"), "#/pokemon-drafts");

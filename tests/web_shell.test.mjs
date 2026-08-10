@@ -347,3 +347,10 @@ assert.match(stylesCss, /\.summary-card \.column-help,\s*\.metric \.column-help\
 assert.match(stylesCss, /\.app-tooltip\s*\{[\s\S]*?position:\s*fixed;[\s\S]*?z-index:\s*2000;[\s\S]*?background:\s*var\(--tooltip-bg\);[\s\S]*?color:\s*var\(--tooltip-ink\);/);
 assert.match(stylesCss, /\.app-tooltip\.is-visible\s*\{[\s\S]*?opacity:\s*1;/);
 assert.match(appJs, /numberValue\(b\.rating\)[\s\S]*?numberValue\(b\.elo\)/);
+
+assert.equal(indexHtml.includes('data-view-group="games"'), true);
+assert.equal(indexHtml.includes('data-view="games"'), true);
+assert.equal(indexHtml.includes('id="view-games"'), true);
+assert.equal(indexHtml.includes('id="view-game"'), true);
+assert.equal(indexHtml.includes('id="games-cards"'), true);
+assert.equal(indexHtml.includes('id="game-body"'), true);

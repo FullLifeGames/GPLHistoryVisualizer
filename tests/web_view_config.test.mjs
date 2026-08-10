@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
-import { defaultViewForGroup, isValidView, subviewsForGroup, viewGroupForView, VIEW_GROUPS } from "../web/view_config.js";
+import { defaultViewForGroup, GAME_IDS, isValidView, subviewsForGroup, viewGroupForView, VIEW_GROUPS } from "../web/view_config.js";
 
 assert.deepEqual(
   VIEW_GROUPS.map((group) => group.id),
-  ["people", "duels", "pokemon", "seasons", "videos", "records", "data"],
+  ["people", "duels", "pokemon", "seasons", "videos", "records", "games", "data"],
 );
 
 assert.equal(defaultViewForGroup("records"), "upset-index");
@@ -53,6 +53,18 @@ assert.equal(viewGroupForView("rivalry-detail"), "duels");
 assert.equal(isValidView("oracle"), true);
 assert.equal(isValidView("rivalries"), true);
 assert.equal(isValidView("rivalry-detail"), true);
+const gamesGroup = VIEW_GROUPS.find((group) => group.id === "games");
+assert.ok(gamesGroup, "games group missing");
+assert.deepEqual(gamesGroup.views, ["games"]);
+assert.deepEqual(gamesGroup.detailViews, ["game"]);
+assert.equal(gamesGroup.defaultView, "games");
+assert.deepEqual(GAME_IDS, ["kader-raten", "tipp-spiel", "klick-duell", "quizshow"]);
+assert.equal(defaultViewForGroup("games"), "games");
+assert.equal(viewGroupForView("games"), "games");
+assert.equal(viewGroupForView("game"), "games");
+assert.equal(isValidView("games"), true);
+assert.equal(isValidView("game"), true);
+
 assert.deepEqual(subviewsForGroup("pokemon"), ["killlists", "pokemon-drafts"]);
 assert.deepEqual(subviewsForGroup("seasons"), ["battle-history", "match-highlights", "season-detail", "table-history", "match-plan", "zeitreise"]);
 assert.deepEqual(subviewsForGroup("videos"), ["video-archive", "cinema"]);

@@ -39,6 +39,13 @@ export const VIEW_GROUPS = [
     views: ["upset-index", "record-book", "awards", "hall-of-fame"],
   },
   {
+    id: "games",
+    labelKey: "navGroups.games",
+    defaultView: "games",
+    views: ["games"],
+    detailViews: ["game"],
+  },
+  {
     id: "data",
     labelKey: "navGroups.data",
     defaultView: "data-coverage",
@@ -54,6 +61,8 @@ export const VIEW_GROUPS = [
     ],
   },
 ];
+
+export const GAME_IDS = ["kader-raten", "tipp-spiel", "klick-duell", "quizshow"];
 
 const DEFAULT_GROUP = VIEW_GROUPS[0].id;
 const GROUP_BY_VIEW = new Map(VIEW_GROUPS.flatMap((group) => [...group.views, ...(group.detailViews || [])].map((view) => [view, group.id])));

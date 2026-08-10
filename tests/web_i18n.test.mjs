@@ -75,6 +75,16 @@ assert.equal(t("de", "sections.videoArchiveDescription"), "Öffentliche GPL-Vide
 assert.equal(t("de", "sections.dataCoverageDescription"), "Saisonweise Abdeckung der normalisierten CSVs und bekannte Lücken.");
 assert.match(t("de", "sections.rivalriesDescription"), /Duelle der GPL-Geschichte/);
 assert.match(t("de", "sections.oracleDescription"), /Siegeskette/);
+assert.equal(t("de", "sections.gamesTitle"), "Spiele");
+assert.match(t("de", "sections.gamesDescription"), /Quelle/);
+assert.match(t("en", "sections.gamesDescription"), /source/);
+assert.equal(t("de", "nav.games"), "Spiele");
+assert.equal(t("en", "navGroups.games"), "Games");
+assert.equal(t("de", "games.kader.title"), "Kader-Raten");
+assert.equal(t("de", "games.tipp.title"), "Tipp-Spiel");
+assert.equal(t("de", "games.klick.title"), "Klick-Duell");
+assert.equal(t("de", "games.quiz.title"), "GPL-Quizshow");
+assert.equal(t("en", "games.play"), "Play");
 assert.equal(t("en", "sections.teamRostersTitle"), "Roster Overview");
 assert.equal(t("de", "empty.table"), "Für diese Ansicht gibt es noch keine belegten Zeilen.");
 assert.equal(t("de", "empty.chooseSeason"), "Wähle eine einzelne Saison aus, um den Spielplan zu sehen.");

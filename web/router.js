@@ -1,4 +1,4 @@
-import { VIEW_GROUPS, defaultViewForGroup, isValidView } from "./view_config.js";
+import { GAME_IDS, VIEW_GROUPS, defaultViewForGroup, isValidView } from "./view_config.js";
 
 const DEFAULT_VIEW = "all-time";
 const GROUP_IDS = new Set(VIEW_GROUPS.map((group) => group.id));
@@ -30,6 +30,12 @@ export function parseRouteHash(hash) {
     }
     return { view: "rivalries", personKey: null };
   }
+  if (parts[0] === "spiel") {
+    if (parts[1] && GAME_IDS.includes(parts[1])) {
+      return { view: "game", personKey: null, gameKey: parts[1] };
+    }
+    return { view: "games", personKey: null };
+  }
   if (GROUP_IDS.has(parts[0])) {
     return { view: defaultViewForGroup(parts[0]), personKey: null };
   }
@@ -59,4 +65,8 @@ export function rosterRouteHash(rosterKey) {
 
 export function rivalryRouteHash(aKey, bKey) {
   return `#/rivalitaet/${encodeURIComponent(aKey)}__${encodeURIComponent(bKey)}`;
+}
+
+export function gameRouteHash(gameId) {
+  return `#/spiel/${encodeURIComponent(gameId)}`;
 }
