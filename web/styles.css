@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   color-scheme: light;
   --bg: #f2f7fc;
   --ink: #07111f;
@@ -3704,7 +3704,7 @@ tbody tr:hover {
   color: var(--muted);
 }
 
-/* display:flex would beat the UA [hidden] rule — the highlight picker only
+/* display:flex would beat the UA [hidden] rule â€” the highlight picker only
    exists on the Elo track. */
 .zeitreise-speed[hidden] {
   display: none;
@@ -4049,4 +4049,99 @@ tbody tr:hover {
   .zeitreise-highlight-card {
     animation: none;
   }
+}
+
+/* Shared chart helpers (web/charts.js) */
+.chart-block {
+  margin: 18px 0;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.chart-block h3 {
+  margin: 0 0 4px;
+}
+
+.chart-note {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.chart-host {
+  position: relative;
+  width: 100%;
+}
+
+.chart-host svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.chart-fallback {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.chart-band {
+  fill: var(--viz-band);
+}
+
+.chart-band-label {
+  fill: var(--muted);
+  font-size: 0.68rem;
+}
+
+.chart-grid line {
+  stroke: var(--viz-grid);
+}
+
+.chart-axis path,
+.chart-axis line {
+  stroke: var(--viz-axis);
+}
+
+.chart-axis text {
+  fill: var(--muted);
+  font-size: 0.72rem;
+}
+
+.chart-line {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.25;
+}
+
+.chart-marker circle {
+  fill: var(--viz-3);
+  stroke: var(--surface);
+  stroke-width: 1.5;
+}
+
+.chart-marker-label {
+  fill: var(--ink);
+  font-size: 0.72rem;
+}
+
+.chart-focus {
+  fill: currentColor;
+  stroke: var(--surface);
+  stroke-width: 1.5;
+}
+
+.chart-tooltip {
+  position: absolute;
+  transform: translate(-50%, -130%);
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.78rem;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 12%);
 }
