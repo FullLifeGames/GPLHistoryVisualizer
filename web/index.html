@@ -424,13 +424,17 @@
           <button class="tab" type="button" data-record-tab="streaks" data-i18n="recordBook.tabStreaks">Serien</button>
         </nav>
         <div id="record-book-records">
-          <div id="record-key-buttons" class="record-key-buttons"></div>
-          <div id="record-holder-card" class="summary-grid"></div>
-          <div id="record-progression-block" class="chart-block">
-            <h3 data-i18n="recordBook.progressionTitle">Rekordverlauf</h3>
-            <div id="record-progression-chart"></div>
+          <div id="record-overview" class="record-overview-grid"></div>
+          <div id="record-detail" hidden>
+            <button class="show-more-button record-back" type="button" data-record-back data-i18n="recordBook.backToOverview">← Alle Rekorde</button>
+            <h3 id="record-detail-title" class="record-detail-title"></h3>
+            <div id="record-holder-card" class="summary-grid"></div>
+            <div id="record-progression-block" class="chart-block">
+              <h3 data-i18n="recordBook.progressionTitle">Rekordverlauf</h3>
+              <div id="record-progression-chart"></div>
+            </div>
+            <div id="record-progression-table" class="table-wrap"></div>
           </div>
-          <div id="record-progression-table" class="table-wrap"></div>
         </div>
         <div id="record-book-finder" hidden>
           <form id="record-finder-form" class="finder-form">

@@ -231,7 +231,7 @@ const state = {
   matchHighlightCardLimit: 8,
   upsetCardLimit: 8,
   recordBookTab: "records",
-  recordKey: "highest_elo",
+  recordKey: null,
   streakType: "all",
   hofTab: "hall",
   cinema: {
@@ -504,6 +504,11 @@ function bindControls() {
     if (recordKeyButton) {
       event.preventDefault();
       state.recordKey = recordKeyButton.dataset.recordKey;
+      renderRecordBook();
+    }
+    if (event.target.closest("[data-record-back]")) {
+      event.preventDefault();
+      state.recordKey = null;
       renderRecordBook();
     }
     const streakTypeButton = event.target.closest("[data-streak-type]");
@@ -3488,19 +3493,67 @@ function recordHolderLabel(row) {
   return personLink(row.holder_person_id || normalizedKey(row.holder_name), row.holder_name);
 }
 
+const RECORD_ICONS = {
+  highest_elo: "📈",
+  longest_win_streak: "🔥",
+  longest_unbeaten: "🛡️",
+  most_career_wins: "🏅",
+  most_career_matches: "🎮",
+  most_career_kills: "⚔️",
+  most_season_kills_person: "💥",
+  most_season_kills_pokemon: "🐉",
+  most_career_kills_pokemon: "👑",
+  most_seasons_played: "📅",
+};
+
+function currentRecordRow(rows) {
+  return rows.find((row) => row.superseded === "0" || row.superseded === 0) || rows[rows.length - 1];
+}
+
 function renderRecordTab() {
-  const buttons = document.querySelector("#record-key-buttons");
+  const overview = document.querySelector("#record-overview");
+  const detail = document.querySelector("#record-detail");
+  if (!overview || !detail) return;
+  overview.hidden = Boolean(state.recordKey);
+  detail.hidden = !state.recordKey;
+  if (!state.recordKey) {
+    renderRecordOverview(overview);
+    return;
+  }
+  renderRecordDetail();
+}
+
+function renderRecordOverview(overview) {
+  const allRows = state.data.recordsProgression ?? [];
+  overview.innerHTML = RECORD_KEYS.map((key) => {
+    const rows = allRows.filter((row) => row.record_key === key);
+    const current = currentRecordRow(rows);
+    if (!current) return "";
+    const holder = current.holder_pokemon
+      ? `${pokemonIcon(current.holder_pokemon, current.holder_pokemon)} ${escapeHtml(current.holder_pokemon)}`
+      : escapeHtml(current.holder_name);
+    return `
+      <article class="hof-card record-card" data-record-key="${escapeAttr(key)}" role="button" tabindex="0">
+        <h3><span class="award-legend-icon">${escapeHtml(RECORD_ICONS[key] || "🏁")}</span>${escapeHtml(t(state.language, `recordBook.records.${key}`))}</h3>
+        <p class="record-card-holder">${holder}</p>
+        <p class="record-card-value">${escapeHtml(String(displayNumber(current.value) || current.value))}</p>
+        <p class="hof-stats">${escapeHtml(t(state.language, "recordBook.sinceLabel"))} ${escapeHtml(seasonDisplay(current.season_id))}${current.week ? ` · ${escapeHtml(current.week)}` : ""} — ${escapeHtml(t(state.language, "recordBook.handOffs"))}: ${rows.length}</p>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderRecordDetail() {
   const holderCard = document.querySelector("#record-holder-card");
   const chartContainer = document.querySelector("#record-progression-chart");
-  if (!buttons || !holderCard || !chartContainer) return;
-
-  buttons.innerHTML = RECORD_KEYS.map(
-    (key) =>
-      `<button class="tab record-chip${key === state.recordKey ? " is-active" : ""}" type="button" data-record-key="${escapeAttr(key)}">${escapeHtml(t(state.language, `recordBook.records.${key}`))}</button>`,
-  ).join("");
+  const title = document.querySelector("#record-detail-title");
+  if (!holderCard || !chartContainer) return;
+  if (title) {
+    title.textContent = `${RECORD_ICONS[state.recordKey] || ""} ${t(state.language, `recordBook.records.${state.recordKey}`)}`.trim();
+  }
 
   const rows = (state.data.recordsProgression ?? []).filter((row) => row.record_key === state.recordKey);
-  const current = rows.find((row) => row.superseded === "0" || row.superseded === 0) || rows[rows.length - 1];
+  const current = currentRecordRow(rows);
 
   holderCard.innerHTML = current
     ? [
@@ -3715,13 +3768,19 @@ function renderAwards() {
 function renderAwardLegend() {
   const legend = document.querySelector("#award-legend");
   if (!legend) return;
+  // Only award types that actually occur in the data; a type with zero rows
+  // (nobody has earned it yet) would just clutter the legend.
+  const usedKeys = new Set((state.data.awards ?? []).map((row) => row.award_key));
   legend.innerHTML = Object.keys(AWARD_ICONS)
+    .filter((key) => usedKeys.has(key))
     .map(
       (key) => `
         <div class="award-legend-row">
           <span class="award-legend-icon">${escapeHtml(AWARD_ICONS[key])}</span>
-          <strong>${escapeHtml(awardName(key))}</strong>
-          <span class="award-legend-formula">${escapeHtml(awardFormula(AWARD_FORMULA_BY_KEY[key]))}</span>
+          <div class="award-legend-text">
+            <strong>${escapeHtml(awardName(key))}</strong>
+            <span class="award-legend-formula">${escapeHtml(awardFormula(AWARD_FORMULA_BY_KEY[key]))}</span>
+          </div>
         </div>
       `,
     )
