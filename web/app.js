@@ -441,6 +441,13 @@ function bindControls() {
     window.location.hash = rivalryRouteHash(canonicalPersonRouteKey(a), canonicalPersonRouteKey(b));
   });
 
+  ["#rivalry-a", "#rivalry-b"].forEach((selector) => {
+    document.querySelector(selector)?.addEventListener("change", () => {
+      state.rivalryCardLimit = DEFAULT_RIVALRY_CARD_LIMIT;
+      renderRivalries();
+    });
+  });
+
   document.querySelector("#oracle-form")?.addEventListener("submit", (event) => {
     event.preventDefault();
     state.oracle.aKey = document.querySelector("#oracle-a")?.value || "";
@@ -5253,6 +5260,10 @@ function isFocusedPersonValue(value, focusKey) {
     .some((key) => key && (key === focusKey || key === comparableFocus));
 }
 
+function chronologyNameForKey(key) {
+  return cachedFullEloChronology().perPerson.get(key)?.name || key;
+}
+
 function rivalryLink(aId, bId, label, className = "link-button") {
   const a = canonicalPersonRouteKey(aId);
   const b = canonicalPersonRouteKey(bId);
@@ -5289,7 +5300,33 @@ function renderRivalries() {
     cachedFullEloChronology().perPerson.entries(),
   );
 
-  const pairs = rivalryPairs(state.data.matchupSummary ?? [], state.data.matchHighlights ?? [], normalizedKey);
+  // Exactly one picked person filters the list to all of their pairings
+  // (without the 3-meetings ranking threshold); two picks navigate via the
+  // compare button instead.
+  const pickedA = document.querySelector("#rivalry-a")?.value || "";
+  const pickedB = document.querySelector("#rivalry-b")?.value || "";
+  const singlePick = pickedA && !pickedB ? pickedA : !pickedA && pickedB ? pickedB : "";
+  const filterId = singlePick ? canonicalPersonRouteKey(singlePick) : "";
+
+  let pairs = rivalryPairs(
+    state.data.matchupSummary ?? [],
+    state.data.matchHighlights ?? [],
+    normalizedKey,
+    filterId ? 1 : 3,
+  );
+  if (filterId) {
+    pairs = pairs.filter((row) => row.a_id === filterId || row.b_id === filterId);
+  }
+
+  const filterNote = document.querySelector("#rivalry-filter-note");
+  if (filterNote) {
+    const filterName = filterId ? chronologyNameForKey(singlePick) : "";
+    filterNote.textContent = filterId
+      ? t(state.language, "rivalries.filteredFor").replace("{name}", filterName)
+      : "";
+    filterNote.hidden = !filterId;
+  }
+
   if (!pairs.length) {
     cards.innerHTML = `<p class="empty">${escapeHtml(t(state.language, "rivalries.empty"))}</p>`;
     showMore.replaceChildren();
