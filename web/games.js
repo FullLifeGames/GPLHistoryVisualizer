@@ -159,10 +159,59 @@ export function kaderHintValues(pool, standingsRows = [], normalizeKey) {
 // source_urls of the row(s) it was built from — the reveal always cites them.
 export const QUIZ_CATEGORIES = ["champions", "standings", "killlists", "matchups"];
 
-function championsQuestion(rows, rng) {
+function championsCandidates(rows) {
   const candidates = rows.filter((row) => row.champion_name && row.season_id);
   const names = [...new Set(candidates.map((row) => row.champion_name))];
-  if (candidates.length < 1 || names.length < 4) return null;
+  return names.length >= 4 ? candidates : [];
+}
+
+function standingsCandidates(rows) {
+  const finals = rows.filter((row) => String(row.is_primary) === "true" && row.stage === "final_table" && row.player_name);
+  const tables = new Map();
+  for (const row of finals) {
+    const key = `${row.season_id}__${row.division}`;
+    if (!tables.has(key)) tables.set(key, []);
+    tables.get(key).push(row);
+  }
+  const candidates = [];
+  const bigTables = [...tables.values()]
+    .filter((table) => table.length >= 4)
+    .sort(
+      (a, b) => a[0].season_id.localeCompare(b[0].season_id) || String(a[0].division).localeCompare(String(b[0].division)),
+    );
+  for (const table of bigTables) {
+    for (const row of table) {
+      if (Number(row.rank) >= 1 && Number(row.rank) <= 3) candidates.push({ row, table });
+    }
+  }
+  return candidates;
+}
+
+function killlistsCandidates(rows) {
+  const byTrainer = new Map();
+  for (const row of rows) {
+    if (!row.trainer || !row.pokemon || !Number.isFinite(Number(row.kills))) continue;
+    const key = `${row.season_id}__${row.trainer}`;
+    if (!byTrainer.has(key)) byTrainer.set(key, []);
+    byTrainer.get(key).push(row);
+  }
+  return [...byTrainer.values()]
+    .filter((group) => group.length >= 4)
+    .map((group) => [...group].sort((a, b) => Number(b.kills) - Number(a.kills)))
+    .filter((group) => Number(group[0].kills) > Number(group[1].kills))
+    .sort((a, b) => `${a[0].season_id}${a[0].trainer}`.localeCompare(`${b[0].season_id}${b[0].trainer}`));
+}
+
+function matchupsCandidates(rows) {
+  return rows.filter(
+    (row) => row.person_id < row.opponent_id && Number(row.matches) >= 5 && Number(row.wins) !== Number(row.losses),
+  );
+}
+
+function championsQuestion(rows, rng) {
+  const candidates = championsCandidates(rows);
+  if (!candidates.length) return null;
+  const names = [...new Set(candidates.map((row) => row.champion_name))];
   const row = candidates[pickIndex(rng, candidates.length)];
   const distractors = shuffled(names.filter((name) => name !== row.champion_name), rng).slice(0, 3);
   return {
@@ -177,23 +226,9 @@ function championsQuestion(rows, rng) {
 }
 
 function standingsQuestion(rows, rng) {
-  const finals = rows.filter((row) => String(row.is_primary) === "true" && row.stage === "final_table" && row.player_name);
-  const tables = new Map();
-  for (const row of finals) {
-    const key = `${row.season_id}__${row.division}`;
-    if (!tables.has(key)) tables.set(key, []);
-    tables.get(key).push(row);
-  }
-  const bigTables = [...tables.values()]
-    .filter((table) => table.length >= 4)
-    .sort(
-      (a, b) => a[0].season_id.localeCompare(b[0].season_id) || String(a[0].division).localeCompare(String(b[0].division)),
-    );
-  if (!bigTables.length) return null;
-  const table = bigTables[pickIndex(rng, bigTables.length)];
-  const topRows = table.filter((row) => Number(row.rank) >= 1 && Number(row.rank) <= 3);
-  if (!topRows.length) return null;
-  const row = topRows[pickIndex(rng, topRows.length)];
+  const candidates = standingsCandidates(rows);
+  if (!candidates.length) return null;
+  const { row, table } = candidates[pickIndex(rng, candidates.length)];
   const distractors = shuffled(table.filter((other) => other !== row).map((other) => other.player_name), rng).slice(0, 3);
   if (distractors.length < 3) return null;
   return {
@@ -208,18 +243,7 @@ function standingsQuestion(rows, rng) {
 }
 
 function killlistsQuestion(rows, rng) {
-  const byTrainer = new Map();
-  for (const row of rows) {
-    if (!row.trainer || !row.pokemon || !Number.isFinite(Number(row.kills))) continue;
-    const key = `${row.season_id}__${row.trainer}`;
-    if (!byTrainer.has(key)) byTrainer.set(key, []);
-    byTrainer.get(key).push(row);
-  }
-  const groups = [...byTrainer.values()]
-    .filter((group) => group.length >= 4)
-    .map((group) => [...group].sort((a, b) => Number(b.kills) - Number(a.kills)))
-    .filter((group) => Number(group[0].kills) > Number(group[1].kills))
-    .sort((a, b) => `${a[0].season_id}${a[0].trainer}`.localeCompare(`${b[0].season_id}${b[0].trainer}`));
+  const groups = killlistsCandidates(rows);
   if (!groups.length) return null;
   const group = groups[pickIndex(rng, groups.length)];
   const top = group[0];
@@ -236,9 +260,7 @@ function killlistsQuestion(rows, rng) {
 }
 
 function matchupsQuestion(rows, rng) {
-  const decisive = rows.filter(
-    (row) => row.person_id < row.opponent_id && Number(row.matches) >= 5 && Number(row.wins) !== Number(row.losses),
-  );
+  const decisive = matchupsCandidates(rows);
   if (!decisive.length) return null;
   const row = decisive[pickIndex(rng, decisive.length)];
   const leader = Number(row.wins) > Number(row.losses) ? row.person_name : row.opponent_name;
@@ -263,7 +285,46 @@ const QUIZ_GENERATORS = {
   matchups: matchupsQuestion,
 };
 
+const QUIZ_CANDIDATES = {
+  champions: championsCandidates,
+  standings: standingsCandidates,
+  killlists: killlistsCandidates,
+  matchups: matchupsCandidates,
+};
+
+export function quizPoolSizes(sources = {}) {
+  const sizes = {};
+  for (const key of QUIZ_CATEGORIES) {
+    sizes[key] = QUIZ_CANDIDATES[key](sources[key] || []).length;
+  }
+  return sizes;
+}
+
+// "Alle" draws categories proportionally to the square root of their pool
+// size: small pools (champions has one row per season) still appear, just
+// clearly less often than the hundreds of killlist questions.
+export function weightedQuizCategory(sources, rng) {
+  const sizes = quizPoolSizes(sources);
+  const entries = QUIZ_CATEGORIES.map((key) => ({ key, weight: Math.sqrt(sizes[key] || 0) })).filter(
+    (entry) => entry.weight > 0,
+  );
+  if (!entries.length) return null;
+  const total = entries.reduce((sum, entry) => sum + entry.weight, 0);
+  let roll = rng() * total;
+  for (const entry of entries) {
+    roll -= entry.weight;
+    if (roll <= 0) return entry.key;
+  }
+  return entries[entries.length - 1].key;
+}
+
 export function quizQuestion(sources, category, rng) {
+  if (category === "all") {
+    const picked = weightedQuizCategory(sources, rng);
+    if (!picked) return null;
+    const question = QUIZ_GENERATORS[picked](sources[picked] || [], rng);
+    if (question) return question;
+  }
   const order = category === "all" ? shuffled(QUIZ_CATEGORIES, rng) : [category];
   for (const key of order) {
     const question = QUIZ_GENERATORS[key]?.(sources[key] || [], rng);

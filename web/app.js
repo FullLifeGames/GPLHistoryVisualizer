@@ -5587,6 +5587,7 @@ function cachedTippCandidates() {
 
 // You vs. Elo: pick the winner of a hidden historic result, then the reveal
 // compares your pick with the Elo forecast from the full-archive chronology.
+// The running tally lives in session state only — a reload starts fresh.
 function renderTippSpiel(body) {
   const chronology = cachedFullEloChronology();
   const candidates = cachedTippCandidates().filter((row) => chronology.perMatch.has(row.match_id));
@@ -5594,55 +5595,71 @@ function renderTippSpiel(body) {
     body.innerHTML = `<p class="muted">${escapeHtml(t(state.language, "games.tipp.empty"))}</p>`;
     return;
   }
-  const tally = readGameJson("gpl-game-tipp-spiel-score", { you: 0, elo: 0, rounds: 0 });
-  let round = state.games["tipp-spiel"];
+  let session = state.games["tipp-spiel"];
+  if (!session) {
+    session = { seed: String(Date.now() % 1000000), tally: { you: 0, elo: 0, rounds: 0 }, round: null };
+    state.games["tipp-spiel"] = session;
+  }
+  const tally = session.tally;
+  let round = session.round;
   if (!round || !candidates.some((row) => row.match_id === round.matchId)) {
-    const rng = seededRandom(`tipp-${dateSeedString()}-${tally.rounds}`);
+    const rng = seededRandom(`tipp-${session.seed}-${tally.rounds}`);
     round = { matchId: pickTippRound(candidates, rng).match_id, picked: "" };
-    state.games["tipp-spiel"] = round;
+    session.round = round;
   }
   const match = candidates.find((row) => row.match_id === round.matchId);
   const entry = chronology.perMatch.get(match.match_id);
   const winnerIsA = normalizedKey(match.winner) === normalizedKey(match.player_a);
   const eloPickA = entry.winProbA >= 0.5;
-  const spriteRow = (personName) => {
+  // Each side renders as a teamsheet-style panel over the season's roster
+  // background, so even a player without recorded Pokémon still shows a
+  // team graphic — the two panels always sit side by side.
+  const teamPanel = (personName, slot) => {
     const rows = (state.data.teamRosters || [])
       .filter((row) => row.season_id === match.season_id && normalizedKey(row.person_name) === normalizedKey(personName))
       .sort((a, b) => Number(a.slot || 0) - Number(b.slot || 0));
     const seen = new Set();
     const sprites = [];
+    let teamName = "";
     for (const row of rows) {
+      if (!teamName && row.team_name) teamName = row.team_name;
       const key = normalizedKey(row.pokemon);
       if (!row.pokemon || seen.has(key)) continue;
       seen.add(key);
-      sprites.push(pokemonSprite(row.pokemon));
+      sprites.push(`<span class="game-kader-slot">${pokemonSprite(row.pokemon)}</span>`);
       if (sprites.length >= 6) break;
     }
-    return sprites.length ? `<div class="game-sprite-row">${sprites.join("")}</div>` : "";
+    const background = ROSTER_BACKGROUND_BY_SEASON[match.season_id] || "";
+    return `
+      <div class="game-tipp-team" ${background ? `style="--roster-bg-image: url('${escapeAttr(background)}')"` : ""}>
+        <button class="link-button game-tipp-name" type="button" data-tipp-pick="${slot}">${escapeHtml(personName)}</button>
+        ${teamName ? `<p class="game-status game-tipp-teamname">${escapeHtml(teamName)}</p>` : ""}
+        ${
+          sprites.length
+            ? `<div class="game-sprite-row game-tipp-sprites">${sprites.join("")}</div>`
+            : `<p class="game-status game-tipp-noroster">${escapeHtml(t(state.language, "games.tipp.noRoster"))}</p>`
+        }
+      </div>`;
   };
   const header = `<p>${escapeHtml(seasonShortDisplay(match.season_id))} · ${escapeHtml(match.week || "")} · ${escapeHtml(match.division || "")}</p>`;
   if (!round.picked) {
     body.innerHTML = `
       ${header}
       <p>${escapeHtml(t(state.language, "games.tipp.prompt"))}</p>
-      <div class="game-tipp-choices">
-        <button class="link-button" type="button" data-tipp-pick="a">${escapeHtml(match.player_a)}</button>
+      <div class="game-tipp-duel">
+        ${teamPanel(match.player_a, "a")}
         <span class="game-tipp-vs">vs.</span>
-        <button class="link-button" type="button" data-tipp-pick="b">${escapeHtml(match.player_b)}</button>
+        ${teamPanel(match.player_b, "b")}
       </div>
-      ${spriteRow(match.player_a)}
-      ${spriteRow(match.player_b)}
       <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.tipp.tally"), { you: tally.you, elo: tally.elo, rounds: tally.rounds }))}</p>`;
     body.querySelectorAll("[data-tipp-pick]").forEach((button) => {
       button.addEventListener("click", () => {
         round.picked = button.dataset.tippPick;
         const youRight = (round.picked === "a") === winnerIsA;
         const eloRight = eloPickA === winnerIsA;
-        saveGameJson("gpl-game-tipp-spiel-score", {
-          you: tally.you + (youRight ? 1 : 0),
-          elo: tally.elo + (eloRight ? 1 : 0),
-          rounds: tally.rounds + 1,
-        });
+        tally.you += youRight ? 1 : 0;
+        tally.elo += eloRight ? 1 : 0;
+        tally.rounds += 1;
         renderGame();
       });
     });
@@ -5652,7 +5669,6 @@ function renderTippSpiel(body) {
   const eloPickName = eloPickA ? match.player_a : match.player_b;
   const eloPct = Math.round((eloPickA ? entry.winProbA : 1 - entry.winProbA) * 100);
   const youRight = (round.picked === "a") === winnerIsA;
-  const newTally = readGameJson("gpl-game-tipp-spiel-score", tally);
   const matchVideoLinks = videoLinksForMatch(match.match_id);
   body.innerHTML = `
     ${header}
@@ -5665,30 +5681,36 @@ function renderTippSpiel(body) {
         ${matchVideoLinks ? `<p>${matchVideoLinks}</p>` : ""}`,
       sourceUrls: match.source_urls,
     })}
-    <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.tipp.tally"), { you: newTally.you, elo: newTally.elo, rounds: newTally.rounds }))}</p>
+    <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.tipp.tally"), { you: tally.you, elo: tally.elo, rounds: tally.rounds }))}</p>
     <button id="tipp-next" class="link-button" type="button">${escapeHtml(t(state.language, "games.next"))}</button>`;
   body.querySelector("#tipp-next")?.addEventListener("click", () => {
-    state.games["tipp-spiel"] = null;
+    session.round = null;
     renderGame();
   });
 }
 
 // Higher/lower on video view counts. Session-seeded rounds (no cross-visitor
-// determinism needed here, unlike the daily Kader-Raten puzzle).
+// determinism needed here, unlike the daily Kader-Raten puzzle); score and
+// best streak are session-only and reset on reload.
 function renderKlickDuell(body) {
   const candidates = klickCandidates(state.data.videos || []);
   if (candidates.length < 2) {
     body.innerHTML = `<p class="muted">${escapeHtml(t(state.language, "games.klick.empty"))}</p>`;
     return;
   }
-  let game = state.games["klick-duell"];
+  let session = state.games["klick-duell"];
+  if (!session) {
+    session = { best: 0, run: null };
+    state.games["klick-duell"] = session;
+  }
+  let game = session.run;
   if (!game) {
     const rng = seededRandom(`klick-${dateSeedString()}-${Date.now() % 100000}`);
     const currentIndex = pickIndex(rng, candidates.length);
     game = { currentIndex, nextIndex: nextKlickIndex(candidates, currentIndex, rng), score: 0, revealed: false, over: false };
-    state.games["klick-duell"] = game;
+    session.run = game;
   }
-  const best = readGameJson("gpl-game-klick-duell-best", { best: 0 });
+  const best = { best: session.best };
   const current = candidates[game.currentIndex];
   const next = candidates[game.nextIndex];
   const card = (row, showCount) => `
@@ -5714,7 +5736,7 @@ function renderKlickDuell(body) {
       <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.klick.best"), { best: best.best }))}</p>
       <button id="klick-restart" class="link-button" type="button">${escapeHtml(t(state.language, "games.klick.restart"))}</button>`;
     body.querySelector("#klick-restart")?.addEventListener("click", () => {
-      state.games["klick-duell"] = null;
+      session.run = null;
       renderGame();
     });
     return;
@@ -5741,8 +5763,8 @@ function renderKlickDuell(body) {
       if (guessHigher === isHigher) {
         game.score += 1;
         game.revealed = true;
-        if (game.score > best.best) {
-          saveGameJson("gpl-game-klick-duell-best", { best: game.score });
+        if (game.score > session.best) {
+          session.best = game.score;
         }
       } else {
         game.over = true;
@@ -5761,8 +5783,28 @@ function renderKlickDuell(body) {
   });
 }
 
+const QUIZ_MODES = ["endless", "blitz", "sudden"];
+const QUIZ_BLITZ_LENGTH = 10;
+
+function freshQuizSession(mode = "endless", category = "all") {
+  return {
+    mode,
+    category,
+    seed: String(Date.now() % 1000000),
+    question: null,
+    answered: null,
+    score: { correct: 0, total: 0 },
+    blitz: { number: 1, correct: 0, done: false },
+    sudden: { streak: 0, best: 0, over: false },
+  };
+}
+
 // Template multiple choice over champions/standings/killlists/matchups.
 // Question text lives in i18n templates; the generator only returns params.
+// Modes: Endlos (running session score), Blitz (10 questions per round),
+// Sudden Death (until the first wrong answer). "Alle" draws categories
+// weighted by pool size so small pools like champions appear less often.
+// All scores are session-only — a reload starts fresh.
 function renderQuizshow(body) {
   const sources = {
     champions: state.data.champions || [],
@@ -5770,36 +5812,84 @@ function renderQuizshow(body) {
     killlists: state.data.killlists || [],
     matchups: state.data.matchupSummary || [],
   };
-  const score = readGameJson("gpl-game-quizshow-score", { correct: 0, total: 0 });
   let game = state.games.quizshow;
-  if (!game || !game.question) {
-    const category = game?.category || "all";
-    const rng = seededRandom(`quiz-${dateSeedString()}-${score.total}-${category}`);
-    game = { question: quizQuestion(sources, category, rng), answered: null, category };
+  if (!game) {
+    game = freshQuizSession();
     state.games.quizshow = game;
   }
+  const modeControls = `
+    <div class="game-form">
+      <label for="quiz-mode">${escapeHtml(t(state.language, "games.quiz.mode"))}</label>
+      <select id="quiz-mode">${QUIZ_MODES.map(
+        (key) => `<option value="${escapeAttr(key)}"${key === game.mode ? " selected" : ""}>${escapeHtml(t(state.language, `games.quiz.modes.${key}`))}</option>`,
+      ).join("")}</select>
+      <label for="quiz-category">${escapeHtml(t(state.language, "games.quiz.category"))}</label>
+      <select id="quiz-category">${["all", ...QUIZ_CATEGORIES]
+        .map(
+          (key) =>
+            `<option value="${escapeAttr(key)}"${key === game.category ? " selected" : ""}>${escapeHtml(
+              t(state.language, key === "all" ? "games.quiz.categoryAll" : `games.quiz.categories.${key}`),
+            )}</option>`,
+        )
+        .join("")}</select>
+    </div>`;
+  const bindControlsAndRestart = () => {
+    body.querySelector("#quiz-mode")?.addEventListener("change", (event) => {
+      state.games.quizshow = freshQuizSession(event.target.value, game.category);
+      renderGame();
+    });
+    body.querySelector("#quiz-category")?.addEventListener("change", (event) => {
+      state.games.quizshow = freshQuizSession(game.mode, event.target.value);
+      renderGame();
+    });
+    body.querySelector("#quiz-restart")?.addEventListener("click", () => {
+      state.games.quizshow = freshQuizSession(game.mode, game.category);
+      renderGame();
+    });
+  };
+  if ((game.mode === "blitz" && game.blitz.done) || (game.mode === "sudden" && game.sudden.over)) {
+    const resultCard =
+      game.mode === "blitz"
+        ? gameRevealCard({
+            title: formatMessage(t(state.language, "games.quiz.blitzResult"), { correct: game.blitz.correct, total: QUIZ_BLITZ_LENGTH }),
+            bodyHtml: "",
+            sourceUrls: "",
+          })
+        : gameRevealCard({
+            title: formatMessage(t(state.language, "games.quiz.suddenResult"), { streak: game.sudden.streak }),
+            bodyHtml: `<p>${escapeHtml(formatMessage(t(state.language, "games.quiz.best"), { best: game.sudden.best }))}</p>`,
+            sourceUrls: "",
+          });
+    body.innerHTML = `
+      ${modeControls}
+      ${resultCard}
+      <button id="quiz-restart" class="link-button" type="button">${escapeHtml(t(state.language, "games.quiz.restart"))}</button>`;
+    bindControlsAndRestart();
+    return;
+  }
   if (!game.question) {
-    body.innerHTML = `<p class="muted">${escapeHtml(t(state.language, "games.quiz.empty"))}</p>`;
+    const rng = seededRandom(`quiz-${game.seed}-${game.score.total}-${game.category}`);
+    game.question = quizQuestion(sources, game.category, rng);
+    game.answered = null;
+  }
+  if (!game.question) {
+    body.innerHTML = `${modeControls}<p class="muted">${escapeHtml(t(state.language, "games.quiz.empty"))}</p>`;
+    bindControlsAndRestart();
     return;
   }
   const question = game.question;
   const params = { ...question.params };
   if (params.season) params.season = seasonDisplay(params.season);
   const questionText = formatMessage(t(state.language, `games.quiz.q.${question.category}`), params);
-  const categoryOptions = ["all", ...QUIZ_CATEGORIES]
-    .map(
-      (key) =>
-        `<option value="${escapeAttr(key)}"${key === game.category ? " selected" : ""}>${escapeHtml(
-          t(state.language, key === "all" ? "games.quiz.categoryAll" : `games.quiz.categories.${key}`),
-        )}</option>`,
-    )
-    .join("");
   const answered = game.answered !== null;
+  const statusLine =
+    game.mode === "blitz"
+      ? formatMessage(t(state.language, "games.quiz.blitzStatus"), { n: game.blitz.number, total: QUIZ_BLITZ_LENGTH, correct: game.blitz.correct })
+      : game.mode === "sudden"
+        ? formatMessage(t(state.language, "games.quiz.suddenStatus"), { streak: game.sudden.streak })
+        : formatMessage(t(state.language, "games.quiz.score"), { correct: game.score.correct, total: game.score.total });
   body.innerHTML = `
-    <div class="game-form">
-      <label for="quiz-category">${escapeHtml(t(state.language, "games.quiz.category"))}</label>
-      <select id="quiz-category">${categoryOptions}</select>
-    </div>
+    ${modeControls}
     <h4 class="game-quiz-question">${escapeHtml(questionText)}</h4>
     <div class="game-quiz-options">
       ${question.options
@@ -5823,23 +5913,37 @@ function renderQuizshow(body) {
           <button id="quiz-next" class="link-button" type="button">${escapeHtml(t(state.language, "games.next"))}</button>`
         : ""
     }
-    <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.quiz.score"), { correct: score.correct, total: score.total }))}</p>`;
-  body.querySelector("#quiz-category")?.addEventListener("change", (event) => {
-    state.games.quizshow = { question: null, answered: null, category: event.target.value };
-    renderGame();
-  });
+    <p class="game-status">${escapeHtml(statusLine)}</p>`;
+  bindControlsAndRestart();
   if (!answered) {
     body.querySelectorAll("[data-quiz-option]").forEach((button) => {
       button.addEventListener("click", () => {
         game.answered = Number(button.dataset.quizOption);
         const right = Boolean(question.options[game.answered]?.correct);
-        saveGameJson("gpl-game-quizshow-score", { correct: score.correct + (right ? 1 : 0), total: score.total + 1 });
+        game.score.correct += right ? 1 : 0;
+        game.score.total += 1;
+        if (game.mode === "blitz" && right) game.blitz.correct += 1;
+        if (game.mode === "sudden" && right) {
+          game.sudden.streak += 1;
+          game.sudden.best = Math.max(game.sudden.best, game.sudden.streak);
+        }
         renderGame();
       });
     });
   }
   body.querySelector("#quiz-next")?.addEventListener("click", () => {
-    state.games.quizshow = { question: null, answered: null, category: game.category };
+    const right = Boolean(question.options[game.answered]?.correct);
+    if (game.mode === "blitz") {
+      if (game.blitz.number >= QUIZ_BLITZ_LENGTH) {
+        game.blitz.done = true;
+      } else {
+        game.blitz.number += 1;
+      }
+    } else if (game.mode === "sudden" && !right) {
+      game.sudden.over = true;
+    }
+    game.question = null;
+    game.answered = null;
     renderGame();
   });
 }

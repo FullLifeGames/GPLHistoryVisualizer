@@ -12,8 +12,10 @@ import {
   pickIndex,
   pickTippRound,
   QUIZ_CATEGORIES,
+  quizPoolSizes,
   quizQuestion,
   seededRandom,
+  weightedQuizCategory,
   shuffled,
   tippCandidates,
   updateDailyStreak,
@@ -216,6 +218,33 @@ test("quizQuestion matchups names the head-to-head leader", () => {
   assert.equal(question.options.length, 2);
   const correct = question.options.find((option) => option.correct);
   assert.equal(correct.label, "PresentLP");
+});
+
+test("quizPoolSizes counts eligible questions per category", () => {
+  assert.deepEqual(quizPoolSizes(QUIZ_SOURCES), { champions: 4, standings: 3, killlists: 1, matchups: 1 });
+  assert.deepEqual(quizPoolSizes({}), { champions: 0, standings: 0, killlists: 0, matchups: 0 });
+});
+
+test("weightedQuizCategory favors bigger pools but keeps small ones alive", () => {
+  const killlists = [];
+  for (let i = 0; i < 64; i += 1) {
+    killlists.push(
+      { season_id: "season_001", trainer: `T${i}`, pokemon: "A", kills: "9", source_urls: "u" },
+      { season_id: "season_001", trainer: `T${i}`, pokemon: "B", kills: "5", source_urls: "u" },
+      { season_id: "season_001", trainer: `T${i}`, pokemon: "C", kills: "3", source_urls: "u" },
+      { season_id: "season_001", trainer: `T${i}`, pokemon: "D", kills: "1", source_urls: "u" },
+    );
+  }
+  const sources = { champions: QUIZ_SOURCES.champions, standings: [], killlists, matchups: [] };
+  const rng = seededRandom("weights");
+  const counts = { champions: 0, killlists: 0 };
+  for (let i = 0; i < 300; i += 1) {
+    counts[weightedQuizCategory(sources, rng)] += 1;
+  }
+  // Champions has a far smaller pool: it must still appear, just clearly less often.
+  assert.ok(counts.killlists > counts.champions, `killlists ${counts.killlists} <= champions ${counts.champions}`);
+  assert.ok(counts.champions > 0);
+  assert.equal(weightedQuizCategory({ champions: [], standings: [], killlists: [], matchups: [] }, seededRandom("x")), null);
 });
 
 test("quizQuestion falls back across categories and returns null when empty", () => {

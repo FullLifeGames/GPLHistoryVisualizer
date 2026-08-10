@@ -254,6 +254,7 @@ export const TRANSLATIONS = {
         youPicked: "Dein Tipp: {name}",
         tally: "Du {you} : {elo} Elo · {rounds} Runden",
         empty: "Keine tippbaren Matches geladen.",
+        noRoster: "Kein Kader überliefert",
       },
       klick: {
         title: "Klick-Duell",
@@ -273,6 +274,18 @@ export const TRANSLATIONS = {
         description: "Multiple Choice quer durch Champions, Tabellen, Killlisten und Duelle.",
         category: "Kategorie",
         categoryAll: "Alle",
+        mode: "Modus",
+        modes: {
+          endless: "Endlos",
+          blitz: "Blitz: 10 Fragen",
+          sudden: "Sudden Death",
+        },
+        blitzStatus: "Frage {n} / {total} · Richtig: {correct}",
+        blitzResult: "Blitz-Runde vorbei: {correct} / {total} richtig!",
+        suddenStatus: "Serie: {streak}",
+        suddenResult: "Sudden Death vorbei! {streak} richtige in Folge.",
+        best: "Rekord: {best}",
+        restart: "Neue Runde",
         categories: {
           champions: "Champions",
           standings: "Tabellen",
@@ -1174,6 +1187,7 @@ export const TRANSLATIONS = {
         youPicked: "Your pick: {name}",
         tally: "You {you} : {elo} Elo · {rounds} rounds",
         empty: "No predictable matches loaded.",
+        noRoster: "No roster on record",
       },
       klick: {
         title: "Click Battle",
@@ -1193,6 +1207,18 @@ export const TRANSLATIONS = {
         description: "Multiple choice across champions, standings, kill lists and head-to-heads.",
         category: "Category",
         categoryAll: "All",
+        mode: "Mode",
+        modes: {
+          endless: "Endless",
+          blitz: "Blitz: 10 questions",
+          sudden: "Sudden death",
+        },
+        blitzStatus: "Question {n} / {total} · Correct: {correct}",
+        blitzResult: "Blitz round over: {correct} / {total} correct!",
+        suddenStatus: "Streak: {streak}",
+        suddenResult: "Sudden death over! {streak} correct in a row.",
+        best: "Best: {best}",
+        restart: "New round",
         categories: {
           champions: "Champions",
           standings: "Standings",
