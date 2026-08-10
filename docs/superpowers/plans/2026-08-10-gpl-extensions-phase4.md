@@ -45,7 +45,7 @@ Data sources (all already loaded or lazily loadable, header names verified):
 ### Task 1: Route, view config, nav + section shells, i18n scaffolding
 
 **Files:**
-- Modify: `web/view_config.js` (new group after `duels`, export `GAME_IDS`)
+- Modify: `web/view_config.js` (new group between `records` and `data`, matching the spec's menu order; export `GAME_IDS`)
 - Modify: `web/router.js` (spiel route + `gameRouteHash`)
 - Modify: `web/index.html` (nav group button, subnav tab, two `<section>` shells)
 - Modify: `web/i18n.js` (nav/section strings de+en)
@@ -126,7 +126,7 @@ Expected: FAIL (`gameRouteHash` not exported, games group missing, markup missin
 
 - [ ] **Step 3: Implement view_config.js**
 
-Insert after the `duels` group in `VIEW_GROUPS`:
+Insert between the `records` and `data` groups in `VIEW_GROUPS` (spec menu order):
 
 ```js
   {

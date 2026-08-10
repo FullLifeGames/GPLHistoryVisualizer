@@ -80,6 +80,10 @@ The rivalry ranking is computed, not sourced: score = meetings × (0.2 + closene
 
 The Orakel finds chains of transitive wins ("A beat B, B beat C") over a directed winner-to-loser graph. Only matches that were actually played and decided are edges: `forfeit` rows (never played), `unresolved` rows, and draws are excluded — so a forfeit win counts for the league table and Elo, but never for a win chain. The dominance leaderboard counts how many players someone beats directly and via chains; the share is over all archive players who appear in that graph.
 
+## Spiele (computed)
+
+All four games are generated from the normalized CSVs — nothing is hand-authored and nothing is official. The daily Kader-Raten puzzle is seeded by the visitor's local date, so users in different time zones can see the day roll over at different moments; rosters need at least six known Pokémon to qualify, so seasons with thin roster coverage never appear. The Tipp-Spiel only offers matches that were actually played, decided, and fully scored (the same forfeit/unresolved exclusions as the Orakel), and its Elo forecast comes from the client-side full-archive chronology (K=32, start 1500) — computed, not official. Quiz questions are built from champions, primary final tables, killlists (only trainers whose top killer is unambiguous), and head-to-heads with at least 5 meetings and a clear leader; every reveal cites the source rows it was generated from. Scores, streaks, and daily progress live only in the visitor's localStorage (`gpl-game-<id>-*` keys) and reset in private browsing. Klick-Duell thumbnails load from `i.ytimg.com` and degrade to text when offline.
+
 ## Zeitreise View
 
 The Zeitreise view replays the archive over a single timeline of 192 ticks: one per matchday, plus a trailing tick for each playoff round. Only seasons 6 and 10 played playoffs. Season 7's `stage=playoffs` row records a title, not a match — it has a winner but no opponent — and is therefore excluded, along with the 514 `video_source` rows that carry a video id but no players.
