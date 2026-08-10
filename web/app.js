@@ -3682,6 +3682,7 @@ function awardFormula(formula) {
 function renderAwards() {
   const cards = document.querySelector("#award-cards");
   if (!cards) return;
+  renderAwardLegend();
   const allRows = state.data.awards ?? [];
   const rows = awardsBySeason(allRows, state.season).filter((row) => rowMatchesSearch(row));
 
@@ -3710,6 +3711,34 @@ function renderAwards() {
     { filename: "gpl-awards.csv" },
   );
 }
+
+function renderAwardLegend() {
+  const legend = document.querySelector("#award-legend");
+  if (!legend) return;
+  legend.innerHTML = Object.keys(AWARD_ICONS)
+    .map(
+      (key) => `
+        <div class="award-legend-row">
+          <span class="award-legend-icon">${escapeHtml(AWARD_ICONS[key])}</span>
+          <strong>${escapeHtml(awardName(key))}</strong>
+          <span class="award-legend-formula">${escapeHtml(awardFormula(AWARD_FORMULA_BY_KEY[key]))}</span>
+        </div>
+      `,
+    )
+    .join("");
+}
+
+const AWARD_FORMULA_BY_KEY = {
+  champion: "sourced_title",
+  mvp: "weighted_rating_min5",
+  kill_leader: "season_kills",
+  best_newcomer: "weighted_rating_debut_min5",
+  upset_of_season: "min_pregame_win_chance",
+  giant_slayer: "beat_highest_rated",
+  holzloeffel: "last_place",
+  holzloeffel_redemption: "spoon_to_title",
+  iron_man: "consecutive_seasons",
+};
 
 function awardCard(row) {
   return `
@@ -3815,7 +3844,13 @@ function renderHofHall() {
   if (!criteriaList || !cardsHost) return;
 
   criteriaList.innerHTML = [`<strong>${escapeHtml(t(state.language, "hof.criteriaTitle"))}</strong>`]
-    .concat(HOF_CRITERIA_KEYS.map((key) => `<li>${escapeHtml(t(state.language, `hof.criteria.${key}`))}</li>`))
+    .concat(
+      HOF_CRITERIA_KEYS.map(
+        (key) =>
+          `<li><span class="award-legend-icon">${escapeHtml(hofCriterionIcon(key))}</span> ${escapeHtml(t(state.language, `hof.criteria.${key}`))}</li>`,
+      ),
+    )
+    .concat([`<li><span class="award-legend-icon">🏆</span> ${escapeHtml(t(state.language, "hof.legendTitles"))}</li>`])
     .join("");
 
   const chronology = cachedEloChronology();

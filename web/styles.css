@@ -4308,3 +4308,40 @@ tbody tr:hover {
   background: var(--surface-soft);
   font-size: 0.88rem;
 }
+
+.award-legend {
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-soft);
+}
+
+.award-legend summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.award-legend > div {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 6px 18px;
+  margin-top: 10px;
+}
+
+.award-legend-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.84rem;
+}
+
+.award-legend-icon {
+  width: 1.4em;
+  text-align: center;
+}
+
+.award-legend-formula {
+  color: var(--muted);
+}

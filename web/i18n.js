@@ -213,7 +213,8 @@ export const TRANSLATIONS = {
     },
     awards: {
       computedNote: "Alle Auszeichnungen sind rückwirkend berechnet, nicht offiziell verliehen.",
-      allTimeTitle: "Ewige Gewinnerliste",
+      legendTitle: "Legende",
+      allTimeTitle: "Meiste Auszeichnungen (inkl. 🥄)",
       careerTitle: "Karriere-Auszeichnungen",
       names: {
         champion: "Meister",
@@ -252,6 +253,7 @@ export const TRANSLATIONS = {
       spoonCounts: "Löffel-Sammler",
       redemptionTitle: "Erlösungs-Geschichten",
       redemptionLine: "{value}: {name}",
+      legendTitles: "„🏆 ×N“ auf einer Karte = Anzahl belegter Titel",
       empty: "Keine Einträge.",
     },
     personDetails: {
@@ -1002,7 +1004,8 @@ export const TRANSLATIONS = {
     },
     awards: {
       computedNote: "All awards are computed retroactively, not officially awarded.",
-      allTimeTitle: "All-time winners",
+      legendTitle: "Legend",
+      allTimeTitle: "Most awards (incl. 🥄)",
       careerTitle: "Career awards",
       names: {
         champion: "Champion",
@@ -1041,6 +1044,7 @@ export const TRANSLATIONS = {
       spoonCounts: "Spoon collectors",
       redemptionTitle: "Redemption arcs",
       redemptionLine: "{value}: {name}",
+      legendTitles: "“🏆 ×N” on a card = number of sourced titles",
       empty: "No entries.",
     },
     personDetails: {
