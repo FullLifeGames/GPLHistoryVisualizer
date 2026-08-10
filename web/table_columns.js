@@ -142,6 +142,19 @@ export const MATCH_HIGHLIGHT_COLUMNS = [
   "source",
 ];
 
+export const ELO_LEDGER_COLUMNS = [
+  "season",
+  "week",
+  "division",
+  "opponent",
+  "score",
+  "result",
+  "elo_delta",
+  "elo_after",
+  "videos",
+  "source",
+];
+
 export const UPSET_COLUMNS = [
   "rank",
   "season",

@@ -14,6 +14,7 @@ import { defaultViewForGroup, viewGroupForView } from "./view_config.js";
 import {
   ALL_TIME_COLUMNS,
   columnsForProfile,
+  ELO_LEDGER_COLUMNS,
   MATCH_HIGHLIGHT_COLUMNS,
   MATCHUP_COLUMNS,
   normalizeColumnProfile,
@@ -27,7 +28,7 @@ import {
   UPSET_COLUMNS,
   VIDEO_ARCHIVE_COLUMNS,
 } from "./table_columns.js";
-import { eloChronology, personEloSeries, upsetRows } from "./elo_history.js";
+import { eloChronology, eloLedgerRows, personEloSeries, upsetRows } from "./elo_history.js";
 import { buildSeries, lineChart } from "./charts.js";
 import { tableHeaderFilterConfig } from "./table_filters.js";
 import { textSorter, weekSortValue } from "./table_sort.js";
@@ -3203,6 +3204,43 @@ function upsetProbDisplay(value) {
   return Number.isFinite(value) ? `${Math.round(value * 100)} %` : "";
 }
 
+function renderPersonEloLedger(focusKey) {
+  const container = document.querySelector("#person-elo-ledger-table");
+  if (!container) return;
+  if (!focusKey) {
+    destroyTable("#person-elo-ledger-table");
+    container.replaceChildren();
+    return;
+  }
+
+  const chronology = cachedEloChronology();
+  const rows = eloLedgerRows(focusKey, chronology, state.data.matches ?? [], normalizedKey).map((row) => {
+    const delta = Math.round(row.elo_delta);
+    return {
+      _season_order: seasonOrder(row.season_id),
+      _week_order: weekOrder(row),
+      season: seasonLink(row.season_id),
+      week: row.week,
+      division: divisionDisplay(row.division, row.stage),
+      opponent: personLink(row.opponent_key, row.opponent_name),
+      score: row.score,
+      result: t(state.language, `values.${row.result}`),
+      elo_delta: `${delta > 0 ? "+" : ""}${delta}`,
+      elo_after: String(Math.round(row.elo_after)),
+      videos:
+        videoLinksForMatch(row.match_id, { compact: true }) ||
+        (row.video_url
+          ? `<a href="${escapeAttr(row.video_url)}" target="_blank" rel="noreferrer">${escapeHtml(t(state.language, "values.video"))}</a>`
+          : ""),
+      source: sourceCell(row.source_urls),
+    };
+  });
+
+  renderTable("#person-elo-ledger-table", rows, ELO_LEDGER_COLUMNS, ["season", "opponent", "videos", "source"], {
+    filename: "gpl-elo-ledger.csv",
+  });
+}
+
 function renderPersonEloChart(focusKey) {
   const block = document.querySelector("#person-elo-block");
   const container = document.querySelector("#person-elo-chart");
@@ -4313,6 +4351,7 @@ function renderPersonDetails() {
   renderPersonFocus();
   setDetailSections(focusedSections, Boolean(focusKey));
   renderPersonEloChart(focusKey);
+  renderPersonEloLedger(focusKey);
 
   const detailRows = statRows
     .sort((a, b) => (a.person_name || a.player_name || "").localeCompare(b.person_name || b.player_name || "") || a.season_id.localeCompare(b.season_id))
@@ -5176,6 +5215,8 @@ const NUMERIC_COLUMNS = new Set([
   "elo_pre_winner",
   "elo_pre_loser",
   "win_prob_winner",
+  "elo_delta",
+  "elo_after",
   "rating",
   "seasons",
   "divisions",

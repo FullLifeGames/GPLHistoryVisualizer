@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { eloChronology, personEloSeries, upsetRows } from "../web/elo_history.js";
+import { eloChronology, eloLedgerRows, personEloSeries, upsetRows } from "../web/elo_history.js";
 
 const fixture = [
   { season_id: "season_001", match_id: "m1", week: "1", stage: "Regular Season", player_a: "Anna", player_b: "Ben", winner: "Anna", data_status: "available" },
@@ -88,3 +88,21 @@ const empty = personEloSeries("nobody", chrono, stints, champs);
 assert.deepEqual(empty.points, []);
 assert.deepEqual(empty.bands, []);
 assert.deepEqual(empty.markers, []);
+
+// --- eloLedgerRows ---
+const ledger = eloLedgerRows("anna", chrono, fixture);
+assert.equal(ledger.length, 3);
+assert.equal(ledger[0].opponent_name, "Ben");
+assert.equal(ledger[0].result, "win");
+assert.ok(ledger[0].elo_delta > 0 && ledger[2].elo_delta < 0);
+assert.equal(ledger[2].result, "loss");
+assert.equal(Math.round(ledger[1].elo_after), 1531);
+assert.equal(ledger[0].match_id, "m1");
+assert.equal(ledger[0].season_id, "season_001");
+assert.deepEqual(eloLedgerRows("nobody", chrono, fixture), []);
+
+// a draw shows result "draw" even though the favorite loses rating points
+const drawLedger = eloLedgerRows("anna", chronoWithDraw, withDraw);
+const drawRow = drawLedger.find((row) => row.match_id === "m4");
+assert.equal(drawRow.result, "draw");
+assert.ok(drawRow.elo_delta < 0); // Anna is rated higher, so the draw costs points

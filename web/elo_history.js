@@ -96,6 +96,37 @@ export function personEloSeries(personKey, chronology, stintRows = [], championR
   return { points: person.points, bands, markers, peak: person.peak };
 }
 
+// One ledger row per rated match of a person, in chronological order, with
+// the signed Elo movement and the source match row's display fields joined in.
+export function eloLedgerRows(personKey, chronology, matches = [], normalizeKey = normalizedStatsKey) {
+  const matchById = new Map(matches.map((row) => [String(row.match_id || ""), row]));
+  const rows = [];
+  for (const matchId of chronology.order) {
+    const entry = chronology.perMatch.get(matchId);
+    if (!entry || (entry.aKey !== personKey && entry.bKey !== personKey)) continue;
+    const isA = entry.aKey === personKey;
+    const opponentKey = isA ? entry.bKey : entry.aKey;
+    const source = matchById.get(matchId) || {};
+    const winnerKey = normalizeKey(source.winner);
+    rows.push({
+      match_id: matchId,
+      season_id: entry.seasonId,
+      week: entry.week,
+      stage: entry.stage,
+      division: source.division || "",
+      opponent_name: isA ? entry.bName : entry.aName,
+      opponent_key: opponentKey,
+      score: [source.score_a, source.score_b].filter((value) => value !== undefined && value !== "").join(":"),
+      result: winnerKey === personKey ? "win" : winnerKey === opponentKey ? "loss" : "draw",
+      elo_delta: isA ? entry.deltaA : entry.deltaB,
+      elo_after: isA ? entry.eloAfterA : entry.eloAfterB,
+      video_url: source.video_url || "",
+      source_urls: source.source_urls || "",
+    });
+  }
+  return rows;
+}
+
 function seasonShortLabel(seasonId) {
   const match = String(seasonId || "").match(/season_0*(\d+)/);
   return match ? `S${match[1]}` : String(seasonId || "");
