@@ -2,6 +2,9 @@ import assert from "node:assert/strict";
 import {
   aggregatePersonStats,
   canonicalKilllistRows,
+  canonicalPersonKey,
+  comparablePersonKey,
+  personKeyIndex,
   cinemaAdjacentVideoKey,
   cinemaPerspectiveParticipantOptions,
   cinemaVideoKey,
@@ -47,6 +50,23 @@ import {
   winPercentage,
   winPercentageValue,
 } from "../web/stats.js";
+
+// Person links must emit one canonical key form (person_id) no matter which
+// key form the caller holds: person_id, display name, normalized name, alias.
+const PEOPLE_FIXTURE = [
+  { person_id: "person_bene", person_name: "Bene", person_name_normalized: "bene", aliases: "FullLifeGames" },
+  { person_id: "person_art_n_gaming", person_name: "Art'n'Gaming", person_name_normalized: "art n gaming", aliases: "Art'n'Gaming;Kaffecone" },
+];
+const personIndex = personKeyIndex(PEOPLE_FIXTURE);
+assert.equal(comparablePersonKey("person_bene"), "bene");
+assert.equal(canonicalPersonKey(personIndex, "bene"), "person_bene");
+assert.equal(canonicalPersonKey(personIndex, "person_bene"), "person_bene");
+assert.equal(canonicalPersonKey(personIndex, "Bene"), "person_bene");
+assert.equal(canonicalPersonKey(personIndex, "FullLifeGames"), "person_bene");
+assert.equal(canonicalPersonKey(personIndex, "Kaffecone"), "person_art_n_gaming");
+assert.equal(canonicalPersonKey(personIndex, "person_art_n_gaming"), "person_art_n_gaming");
+assert.equal(canonicalPersonKey(personIndex, "unbekannt"), "unbekannt"); // unknown keys pass through
+assert.equal(canonicalPersonKey(personIndex, ""), "");
 
 assert.equal(winPercentageValue(3, 1, 0), 75);
 assert.equal(winPercentage(3, 1, 0), "75.0%");

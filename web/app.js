@@ -35,6 +35,8 @@ import { textSorter, weekSortValue } from "./table_sort.js";
 import {
   aggregatePersonStats,
   canonicalKilllistRows,
+  canonicalPersonKey,
+  personKeyIndex,
   cinemaAdjacentVideoKey,
   cinemaPerspectiveParticipantOptions,
   cinemaVideoRows,
@@ -1533,8 +1535,19 @@ function sourceCell(value) {
   return labels ? `<span class="muted">${escapeHtml(labels)}</span>` : "";
 }
 
+let personKeyIndexCache = null;
+
+function canonicalPersonRouteKey(value) {
+  const people = state.data.people ?? [];
+  if (!personKeyIndexCache || personKeyIndexCache.source !== people) {
+    personKeyIndexCache = { source: people, value: personKeyIndex(people, normalizedKey) };
+  }
+  return canonicalPersonKey(personKeyIndexCache.value, value, normalizedKey);
+}
+
 function personLink(key, name) {
-  return `<a class="link-button" href="${escapeAttr(personRouteHash(key))}" data-person-key="${escapeAttr(key)}" data-person-name="${escapeAttr(name)}">${escapeHtml(name)}</a>`;
+  const canonical = canonicalPersonRouteKey(key || name);
+  return `<a class="link-button" href="${escapeAttr(personRouteHash(canonical))}" data-person-key="${escapeAttr(canonical)}" data-person-name="${escapeAttr(name)}">${escapeHtml(name)}</a>`;
 }
 
 function pokemonLink(key, name) {

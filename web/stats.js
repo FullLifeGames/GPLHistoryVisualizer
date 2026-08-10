@@ -632,6 +632,34 @@ export function weightedRating(wins, losses, draws, priorRate = BAYES_PRIOR_RATE
 
 // `onMatch(row, ratings)` fires after each counted match with the live rating
 // map, so callers can record a rating history without re-deriving the walk.
+// Person routes historically carry two key forms: the person_id from
+// aggregate CSVs ("person_bene") and normalized display names ("bene").
+// These helpers map any form to the canonical person_id so links stay
+// consistent; unknown values pass through untouched.
+export function personKeyIndex(people = [], normalizeKey = normalizedStatsKey) {
+  const index = new Map();
+  for (const row of people) {
+    const personId = row.person_id || "";
+    if (!personId) continue;
+    const candidates = [
+      personId,
+      row.person_name,
+      row.person_name_normalized,
+      ...String(row.aliases || "").split(";"),
+    ];
+    for (const candidate of candidates) {
+      const key = comparablePersonKey(candidate, normalizeKey);
+      if (key && !index.has(key)) index.set(key, personId);
+    }
+  }
+  return index;
+}
+
+export function canonicalPersonKey(index, value, normalizeKey = normalizedStatsKey) {
+  if (!value) return "";
+  return index.get(comparablePersonKey(value, normalizeKey)) || String(value);
+}
+
 export function eloRatings(matches = [], normalizeKey = normalizedStatsKey, { initialRating = 1500, kFactor = 32, onMatch = null } = {}) {
   const ratings = new Map();
 
@@ -1252,7 +1280,7 @@ function seasonNumber(seasonId) {
   return match ? Number(match[1]) : 999;
 }
 
-function comparablePersonKey(value, normalizeKey = normalizedStatsKey) {
+export function comparablePersonKey(value, normalizeKey = normalizedStatsKey) {
   const normalized = normalizeKey(value);
   return normalized.startsWith("person ") ? normalized.slice("person ".length) : normalized;
 }
