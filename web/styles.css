@@ -4588,8 +4588,72 @@ tbody tr:hover {
   gap: 8px;
 }
 
+.game-reveal {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 14px 16px;
+}
+
 .game-reveal h4 {
   margin: 0 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.game-reveal-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fff;
+  flex: 0 0 auto;
+}
+
+.game-reveal-success {
+  border-color: var(--viz-2);
+}
+
+.game-reveal-success h4 {
+  color: var(--viz-2);
+}
+
+.game-reveal-success .game-reveal-icon {
+  background: var(--viz-2);
+}
+
+.game-reveal-error {
+  border-color: var(--viz-6);
+}
+
+.game-reveal-error h4 {
+  color: var(--viz-6);
+}
+
+.game-reveal-error .game-reveal-icon {
+  background: var(--viz-6);
+}
+
+.game-good {
+  color: var(--viz-2);
+}
+
+.game-bad {
+  color: var(--viz-6);
+}
+
+p.game-status.game-good {
+  color: var(--viz-2);
+}
+
+p.game-status.game-bad {
+  color: var(--viz-6);
 }
 
 .game-reveal-sources {

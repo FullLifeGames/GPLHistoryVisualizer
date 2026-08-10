@@ -384,6 +384,12 @@ assert.equal(stylesCss.includes(".game-tipp-team {"), false);
 assert.match(appJs, /rosterBackgroundFor\(\{[^}]*season_id: match\.season_id/);
 // Matches where either player has no recorded roster never enter the pool.
 assert.equal(appJs.includes("cachedRosteredKeys"), true);
+// Right/wrong feedback: toned reveal cards plus per-option highlights.
+assert.equal(stylesCss.includes(".game-reveal-success"), true);
+assert.equal(stylesCss.includes(".game-reveal-error"), true);
+assert.equal(stylesCss.includes(".game-good"), true);
+assert.equal(stylesCss.includes(".game-bad"), true);
+assert.match(appJs, /tone: (youRight|right|progress\.solved)/);
 // Only the daily Kader-Raten persists in localStorage; every other score is
 // session-only and resets on reload.
 assert.equal(appJs.includes("gpl-game-kader-raten-day"), true);

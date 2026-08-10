@@ -5382,13 +5382,17 @@ const GAME_I18N_BY_ID = {
 
 // Every game round ends with this card: the outcome plus the source rows the
 // round was generated from, so no reveal ever shows an unsourced claim.
-function gameRevealCard({ title, bodyHtml, sourceUrls }) {
+// tone: "success" | "error" colors the card and adds a check/cross icon so
+// right and wrong read at a glance.
+function gameRevealCard({ title, bodyHtml, sourceUrls, tone = "" }) {
+  const toneClass = tone === "success" ? " game-reveal-success" : tone === "error" ? " game-reveal-error" : "";
+  const icon = tone === "success" ? "✓" : tone === "error" ? "✗" : "";
   const sources = sourceUrls
     ? `<p class="game-reveal-sources"><strong>${escapeHtml(t(state.language, "games.sourceTitle"))}:</strong> ${sourceLinks(sourceUrls)}</p>`
     : "";
   return `
-    <div class="game-reveal standalone-card">
-      <h4>${escapeHtml(title)}</h4>
+    <div class="game-reveal standalone-card${toneClass}">
+      <h4>${icon ? `<span class="game-reveal-icon" aria-hidden="true">${icon}</span>` : ""}${escapeHtml(title)}</h4>
       ${bodyHtml}
       ${sources}
     </div>`;
@@ -5459,8 +5463,13 @@ function kaderPuzzleArea(puzzle, progress, pools, finished) {
         bodyHtml: `<p>${personLink(canonicalPersonRouteKey(puzzle.pool.personName), puzzle.pool.personName)} · ${escapeHtml(puzzle.pool.teamName)} · ${escapeHtml(seasonDisplay(puzzle.pool.seasonId))}</p>
           <p><a class="link-button" href="${escapeAttr(rosterRouteHash(rosterGroupKeyFromRow(puzzle.pool.sampleRow)))}">${escapeHtml(t(state.language, "games.kader.rosterLink"))}</a></p>`,
         sourceUrls: puzzle.pool.sourceUrls,
+        tone: progress.solved ? "success" : "error",
       })
     : "";
+  const wrongLine =
+    !finished && progress.lastWrong
+      ? `<p class="game-status game-bad">✗ ${escapeHtml(formatMessage(t(state.language, "games.wrongGuess"), { name: progress.lastWrong }))}</p>`
+      : "";
   return `
     <div class="game-sprite-row">${sprites}</div>
     ${hintItems.length ? `<ul class="game-hints">${hintItems.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>` : ""}
@@ -5474,6 +5483,7 @@ function kaderPuzzleArea(puzzle, progress, pools, finished) {
             </select>
             <button class="link-button" type="submit">${escapeHtml(t(state.language, "games.kader.guess"))}</button>
           </form>
+          ${wrongLine}
           <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.kader.tries"), { used: progress.wrongGuesses, max: 6 }))}</p>`
     }`;
 }
@@ -5486,8 +5496,10 @@ function applyKaderGuess(progress, puzzle, guess) {
   progress.guessedKeys.push(guessKey);
   if (guessKey === puzzle.pool.personKey) {
     progress.solved = true;
+    progress.lastWrong = "";
     return "solved";
   }
+  progress.lastWrong = guess;
   progress.wrongGuesses += 1;
   if (progress.wrongGuesses >= 6) {
     progress.failed = true;
@@ -5757,11 +5769,12 @@ function renderTippSpiel(body) {
     ${header}
     ${gameRevealCard({
       title: youRight ? t(state.language, "games.correct") : t(state.language, "games.wrong"),
+      tone: youRight ? "success" : "error",
       bodyHtml: `
-        <p>${escapeHtml(formatMessage(t(state.language, "games.tipp.result"), { score: `${match.score_a}:${match.score_b}`, name: match.winner }))}</p>
-        <p>${escapeHtml(formatMessage(t(state.language, "games.tipp.scoreGuessLine"), { score: round.scoreGuess }))}${round.exactRight ? ` · ${escapeHtml(t(state.language, "games.tipp.exactHit"))}` : ""}</p>
+        <p class="game-good">${escapeHtml(formatMessage(t(state.language, "games.tipp.result"), { score: `${match.score_a}:${match.score_b}`, name: match.winner }))}</p>
+        <p class="${round.exactRight ? "game-good" : "game-bad"}">${round.exactRight ? "✓" : "✗"} ${escapeHtml(formatMessage(t(state.language, "games.tipp.scoreGuessLine"), { score: round.scoreGuess }))}${round.exactRight ? ` · ${escapeHtml(t(state.language, "games.tipp.exactHit"))}` : ""}</p>
+        <p class="${youRight ? "game-good" : "game-bad"}">${youRight ? "✓" : "✗"} ${escapeHtml(formatMessage(t(state.language, "games.tipp.youPicked"), { name: youPickName }))}</p>
         <p>${escapeHtml(formatMessage(t(state.language, "games.tipp.eloSays"), { name: eloPickName, pct: eloPct }))}</p>
-        <p>${escapeHtml(formatMessage(t(state.language, "games.tipp.youPicked"), { name: youPickName }))}</p>
         ${matchVideoLinks ? `<p>${matchVideoLinks}</p>` : ""}`,
       sourceUrls: match.source_urls,
     })}
@@ -5838,6 +5851,7 @@ function renderKlickVideoDuel(body, sub, modeControls, bindMode) {
       ${modeControls}
       ${gameRevealCard({
         title: formatMessage(t(state.language, "games.klick.gameOver"), { score: game.score }),
+        tone: "error",
         bodyHtml: `<div class="game-klick-row">${card(current, true)}${card(next, true)}</div>`,
         sourceUrls: next.source_urls,
       })}
@@ -5859,7 +5873,8 @@ function renderKlickVideoDuel(body, sub, modeControls, bindMode) {
     </div>
     ${
       game.revealed
-        ? `<button id="klick-continue" class="link-button" type="button">${escapeHtml(t(state.language, "games.next"))}</button>`
+        ? `<p class="game-status game-good">✓ ${escapeHtml(t(state.language, "games.correct"))}</p>
+          <button id="klick-continue" class="link-button" type="button">${escapeHtml(t(state.language, "games.next"))}</button>`
         : `<div class="game-tipp-choices">
             <button class="link-button" type="button" data-klick="higher">${escapeHtml(t(state.language, "games.klick.higher"))}</button>
             <button class="link-button" type="button" data-klick="lower">${escapeHtml(t(state.language, "games.klick.lower"))}</button>
@@ -5917,15 +5932,21 @@ function renderKlickStatsDuel(body, sub, modeControls, bindMode) {
   }
   const { stat, a, b } = game.round;
   const statLabel = t(state.language, `games.klick.stats.${stat}`);
-  const personCard = (row, side) => `
-    <button class="link-button game-quiz-option" type="button" data-stats-pick="${side}" ${game.revealed ? "disabled" : ""}>
-      ${escapeHtml(row.person_name)}${game.revealed ? ` — ${escapeHtml(displayNumber(Number(row[stat])))}` : ""}
-    </button>`;
+  const personCard = (row, side) => {
+    const isWinner = Number(row[stat]) > Number((row === a ? b : a)[stat]);
+    const marker = game.revealed ? (isWinner ? " is-correct" : side === game.pickedSide ? " is-wrong" : "") : "";
+    const icon = game.revealed && isWinner ? "✓ " : game.revealed && side === game.pickedSide ? "✗ " : "";
+    return `
+      <button class="link-button game-quiz-option${marker}" type="button" data-stats-pick="${side}" ${game.revealed ? "disabled" : ""}>
+        ${icon}${escapeHtml(row.person_name)}${game.revealed ? ` — ${escapeHtml(displayNumber(Number(row[stat])))}` : ""}
+      </button>`;
+  };
   if (game.over) {
     body.innerHTML = `
       ${modeControls}
       ${gameRevealCard({
         title: formatMessage(t(state.language, "games.klick.gameOver"), { score: game.score }),
+        tone: "error",
         bodyHtml: `
           <p>${escapeHtml(formatMessage(t(state.language, "games.klick.statsPrompt"), { stat: statLabel }))}</p>
           <p>${escapeHtml(a.person_name)}: ${escapeHtml(displayNumber(Number(a[stat])))} · ${escapeHtml(b.person_name)}: ${escapeHtml(displayNumber(Number(b[stat])))}</p>`,
@@ -5955,6 +5976,7 @@ function renderKlickStatsDuel(body, sub, modeControls, bindMode) {
       button.addEventListener("click", () => {
         const picked = button.dataset.statsPick === "a" ? a : b;
         const other = picked === a ? b : a;
+        game.pickedSide = button.dataset.statsPick;
         if (Number(picked[stat]) > Number(other[stat])) {
           game.score += 1;
           game.revealed = true;
@@ -6052,6 +6074,7 @@ function renderQuizshow(body) {
           })
         : gameRevealCard({
             title: formatMessage(t(state.language, "games.quiz.suddenResult"), { streak: game.sudden.streak }),
+            tone: "error",
             bodyHtml: `<p>${escapeHtml(formatMessage(t(state.language, "games.quiz.best"), { best: game.sudden.best }))}</p>`,
             sourceUrls: "",
           });
@@ -6094,6 +6117,8 @@ function renderQuizshow(body) {
             <button class="link-button game-quiz-option${
               answered ? (option.correct ? " is-correct" : index === game.answered ? " is-wrong" : "") : ""
             }" type="button" data-quiz-option="${index}" ${answered ? "disabled" : ""}>${
+              answered && option.correct ? "✓ " : answered && index === game.answered ? "✗ " : ""
+            }${
               question.category === "killlists" ? `<span class="game-option-sprite" aria-hidden="true">${pokemonSprite(option.label)}</span>` : ""
             }${escapeHtml(option.label)}</button>`,
         )
@@ -6103,6 +6128,7 @@ function renderQuizshow(body) {
       answered
         ? `${gameRevealCard({
             title: question.options[game.answered]?.correct ? t(state.language, "games.correct") : t(state.language, "games.wrong"),
+            tone: question.options[game.answered]?.correct ? "success" : "error",
             bodyHtml: `<p>${escapeHtml(question.options.find((option) => option.correct)?.label || "")}</p>`,
             sourceUrls: question.sourceUrls,
           })}
@@ -6172,6 +6198,7 @@ function renderWerBinIch(body) {
   const options = candidates.map((row) => row.person_name).sort((a, b) => a.localeCompare(b));
   const solutionCard = finished
     ? gameRevealCard({
+        tone: progress.solved ? "success" : "error",
         title: progress.solved
           ? formatMessage(t(state.language, "games.werbinich.solved"), { n: progress.wrongGuesses + 1 })
           : formatMessage(t(state.language, "games.werbinich.failed"), { name: person.person_name }),
@@ -6201,6 +6228,7 @@ function renderWerBinIch(body) {
             </select>
             <button class="link-button" type="submit">${escapeHtml(t(state.language, "games.kader.guess"))}</button>
           </form>
+          ${progress.lastWrong ? `<p class="game-status game-bad">✗ ${escapeHtml(formatMessage(t(state.language, "games.wrongGuess"), { name: progress.lastWrong }))}</p>` : ""}
           <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.kader.tries"), { used: progress.wrongGuesses, max: maxGuesses }))}</p>`
     }
     <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.werbinich.tally"), { solved: session.solvedCount, played: session.playedCount }))}</p>`;
@@ -6213,9 +6241,11 @@ function renderWerBinIch(body) {
     progress.guessedKeys.push(guessKey);
     if (guessKey === normalizedKey(person.person_name)) {
       progress.solved = true;
+      progress.lastWrong = "";
       session.playedCount += 1;
       session.solvedCount += 1;
     } else {
+      progress.lastWrong = guess;
       progress.wrongGuesses += 1;
       if (progress.wrongGuesses >= maxGuesses) {
         progress.failed = true;

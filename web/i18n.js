@@ -223,6 +223,7 @@ export const TRANSLATIONS = {
       sourceTitle: "Quelle",
       correct: "Richtig!",
       wrong: "Falsch!",
+      wrongGuess: "{name} ist es nicht.",
       next: "Nächste Runde",
       kader: {
         title: "Kader-Raten",
@@ -1194,6 +1195,7 @@ export const TRANSLATIONS = {
       sourceTitle: "Source",
       correct: "Correct!",
       wrong: "Wrong!",
+      wrongGuess: "It's not {name}.",
       next: "Next round",
       kader: {
         title: "Roster Riddle",
