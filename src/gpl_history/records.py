@@ -18,9 +18,12 @@ from typing import Any
 
 from .aggregates import (
     _add_urls,
+    _elo_by_person,
     _join_urls,
     _match_chronology,
+    _number,
     _person_id,
+    _season_sort,
 )
 
 STREAK_FIELDS = [
@@ -36,6 +39,33 @@ STREAK_FIELDS = [
     "end_match_id",
     "active",
     "source_urls",
+]
+
+RECORDS_PROGRESSION_FIELDS = [
+    "record_key",
+    "holder_person_id",
+    "holder_name",
+    "holder_pokemon",
+    "value",
+    "season_id",
+    "week",
+    "match_id",
+    "video_url",
+    "superseded",
+    "source_urls",
+]
+
+_RECORD_KEYS = [
+    "highest_elo",
+    "longest_win_streak",
+    "longest_unbeaten",
+    "most_career_wins",
+    "most_career_matches",
+    "most_career_kills",
+    "most_season_kills_person",
+    "most_season_kills_pokemon",
+    "most_career_kills_pokemon",
+    "most_seasons_played",
 ]
 
 RESULT_WIN = "win"
@@ -104,6 +134,166 @@ def _streak_row(
             "source_urls": _join_urls(sources),
         }
     ]
+
+
+class _Progression:
+    """Collects a record's hand-off rows; emits only on strict improvement."""
+
+    def __init__(self, record_key: str) -> None:
+        self.record_key = record_key
+        self.best: float | None = None
+        self.rows: list[dict[str, Any]] = []
+
+    def offer(self, value: float, holder_id: str, holder_name: str, holder_pokemon: str, context: dict[str, str], sources: str) -> None:
+        if self.best is not None and value <= self.best:
+            return
+        self.best = value
+        urls: set[str] = set()
+        _add_urls(urls, sources)
+        self.rows.append(
+            {
+                "record_key": self.record_key,
+                "holder_person_id": holder_id,
+                "holder_name": holder_name,
+                "holder_pokemon": holder_pokemon,
+                "value": _int_if_whole(value),
+                "season_id": context.get("season_id", ""),
+                "week": context.get("week", ""),
+                "match_id": context.get("match_id", ""),
+                "video_url": context.get("video_url", ""),
+                "superseded": 1,
+                "source_urls": _join_urls(urls),
+            }
+        )
+
+
+def _int_if_whole(value: float) -> Any:
+    number = float(value)
+    return int(number) if number.is_integer() else number
+
+
+def records_progression_rows(
+    matches: list[dict[str, str]],
+    stints: list[dict[str, str]],
+    killlists: list[dict[str, str]],
+) -> list[dict[str, Any]]:
+    progressions = {key: _Progression(key) for key in _RECORD_KEYS}
+
+    # Match-grain records advance inside a single Elo walk.
+    wins: dict[str, int] = defaultdict(int)
+    games: dict[str, int] = defaultdict(int)
+    win_run: dict[str, int] = defaultdict(int)
+    unbeaten_run: dict[str, int] = defaultdict(int)
+
+    def on_match(row: dict[str, str], details: dict[str, Any]) -> None:
+        context = {
+            "season_id": row.get("season_id") or "",
+            "week": row.get("week") or "",
+            "match_id": row.get("match_id") or "",
+            "video_url": row.get("video_url") or "",
+        }
+        sources = row.get("source_urls") or ""
+        winner_key = _person_id(row.get("winner"))
+        sides = (
+            (details["left_key"], row.get("player_a") or "", details["left_after"]),
+            (details["right_key"], row.get("player_b") or "", details["right_after"]),
+        )
+        for key, name, rating_after in sides:
+            games[key] += 1
+            progressions["most_career_matches"].offer(games[key], key, name, "", context, sources)
+            if winner_key == key:
+                wins[key] += 1
+                win_run[key] += 1
+                unbeaten_run[key] += 1
+                progressions["most_career_wins"].offer(wins[key], key, name, "", context, sources)
+                progressions["longest_win_streak"].offer(win_run[key], key, name, "", context, sources)
+                progressions["longest_unbeaten"].offer(unbeaten_run[key], key, name, "", context, sources)
+            elif not winner_key:
+                win_run[key] = 0
+                unbeaten_run[key] += 1
+                progressions["longest_unbeaten"].offer(unbeaten_run[key], key, name, "", context, sources)
+            else:
+                win_run[key] = 0
+                unbeaten_run[key] = 0
+            progressions["highest_elo"].offer(round(rating_after), key, name, "", context, sources)
+
+    _elo_by_person(matches, on_match=on_match)
+
+    # Season-grain records accumulate across seasons in season-sort order.
+    stints_by_season: dict[str, list[dict[str, str]]] = defaultdict(list)
+    for row in stints:
+        if row.get("data_status") == "not_available":
+            continue
+        season_id = row.get("season_id") or ""
+        if season_id:
+            stints_by_season[season_id].append(row)
+    killlists_by_season: dict[str, list[dict[str, str]]] = defaultdict(list)
+    for row in killlists:
+        if row.get("data_status") == "not_available":
+            continue
+        season_id = row.get("season_id") or ""
+        if season_id and row.get("pokemon"):
+            killlists_by_season[season_id].append(row)
+
+    career_kills: dict[str, float] = defaultdict(float)
+    career_seasons: dict[str, set[str]] = defaultdict(set)
+    career_pokemon_kills: dict[str, float] = defaultdict(float)
+    person_names: dict[str, str] = {}
+    pokemon_names: dict[str, str] = {}
+
+    for season_id in sorted(set(stints_by_season) | set(killlists_by_season), key=_season_sort):
+        season_context = {"season_id": season_id, "week": "", "match_id": "", "video_url": ""}
+
+        season_kills: dict[str, float] = defaultdict(float)
+        season_sources: dict[str, set[str]] = defaultdict(set)
+        for row in stints_by_season.get(season_id, []):
+            name = row.get("person_name") or ""
+            key = row.get("person_id") or _person_id(name)
+            if not key:
+                continue
+            person_names.setdefault(key, name)
+            season_kills[key] += _number(row.get("kills"))
+            _add_urls(season_sources[key], row.get("source_urls"))
+            career_seasons[key].add(season_id)
+        # Values within one season are simultaneous end-of-season states, so
+        # candidates are offered best-first: lesser values must never emit a
+        # phantom hand-off just because their holder sorts earlier by name.
+        for key in sorted(season_kills, key=lambda k: (-season_kills[k], k)):
+            sources = ";".join(sorted(season_sources[key]))
+            progressions["most_season_kills_person"].offer(season_kills[key], key, person_names.get(key, ""), "", season_context, sources)
+        for key in season_kills:
+            career_kills[key] += season_kills[key]
+        for key in sorted(season_kills, key=lambda k: (-career_kills[k], k)):
+            sources = ";".join(sorted(season_sources[key]))
+            progressions["most_career_kills"].offer(career_kills[key], key, person_names.get(key, ""), "", season_context, sources)
+        season_people = [key for key in career_seasons if season_id in career_seasons[key]]
+        for key in sorted(season_people, key=lambda k: (-len(career_seasons[k]), k)):
+            progressions["most_seasons_played"].offer(len(career_seasons[key]), key, person_names.get(key, ""), "", season_context, "")
+
+        pokemon_kills: dict[str, float] = defaultdict(float)
+        pokemon_sources: dict[str, set[str]] = defaultdict(set)
+        for row in killlists_by_season.get(season_id, []):
+            pokemon = row.get("pokemon") or ""
+            key = _person_id(pokemon)
+            pokemon_names.setdefault(key, pokemon)
+            pokemon_kills[key] += _number(row.get("kills"))
+            _add_urls(pokemon_sources[key], row.get("source_urls"))
+        for key in sorted(pokemon_kills, key=lambda k: (-pokemon_kills[k], k)):
+            sources = ";".join(sorted(pokemon_sources[key]))
+            progressions["most_season_kills_pokemon"].offer(pokemon_kills[key], "", "", pokemon_names.get(key, ""), season_context, sources)
+        for key in pokemon_kills:
+            career_pokemon_kills[key] += pokemon_kills[key]
+        for key in sorted(pokemon_kills, key=lambda k: (-career_pokemon_kills[k], k)):
+            sources = ";".join(sorted(pokemon_sources[key]))
+            progressions["most_career_kills_pokemon"].offer(career_pokemon_kills[key], "", "", pokemon_names.get(key, ""), season_context, sources)
+
+    rows: list[dict[str, Any]] = []
+    for key in _RECORD_KEYS:
+        emitted = progressions[key].rows
+        if emitted:
+            emitted[-1]["superseded"] = 0
+        rows.extend(emitted)
+    return rows
 
 
 def _person_results(matches: list[dict[str, str]]) -> dict[str, list[dict[str, Any]]]:

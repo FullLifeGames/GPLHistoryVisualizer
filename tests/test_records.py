@@ -1,5 +1,5 @@
 from gpl_history.aggregates import _elo_by_person
-from gpl_history.records import streak_rows
+from gpl_history.records import records_progression_rows, streak_rows
 
 
 def _match(mid, week, a, b, winner, **extra):
@@ -83,3 +83,55 @@ def test_streak_rows_skips_unresolved_and_short_runs():
     )
     assert [r for r in rows if r["streak_type"] == "win"] == []  # only 2 wins, below threshold
     assert [r for r in rows if r["streak_type"] == "unbeaten"] == []  # 2 results below threshold 4
+
+
+def test_highest_elo_progression_tracks_hand_offs():
+    matches = [
+        _match("m1", "1", "Anna", "Ben", "Anna", video_url="v1", source_urls="u1"),
+        _match("m2", "2", "Cid", "Dora", "Cid"),
+        _match("m3", "3", "Anna", "Cid", "Cid"),
+    ]
+    rows = [r for r in records_progression_rows(matches, [], []) if r["record_key"] == "highest_elo"]
+    assert rows[0]["holder_name"] == "Anna" and rows[0]["value"] == 1516
+    assert rows[0]["match_id"] == "m1" and rows[0]["video_url"] == "v1"
+    assert rows[-1]["holder_name"] == "Cid" and rows[-1]["superseded"] == 0
+    assert all(r["superseded"] == 1 for r in rows[:-1])
+
+
+def test_win_and_match_count_records_progress():
+    matches = [
+        _match("m1", "1", "Anna", "Ben", "Anna"),
+        _match("m2", "2", "Anna", "Ben", "Ben"),
+        _match("m3", "3", "Anna", "Ben", "Anna"),
+    ]
+    rows = records_progression_rows(matches, [], [])
+    wins = [r for r in rows if r["record_key"] == "most_career_wins"]
+    assert [(r["holder_name"], r["value"]) for r in wins] == [("Anna", 1), ("Anna", 2)]
+    games = [r for r in rows if r["record_key"] == "most_career_matches"]
+    assert games[0]["value"] == 1 and games[-1]["value"] == 3
+    streak = [r for r in rows if r["record_key"] == "longest_win_streak"]
+    assert streak and streak[0]["value"] == 1  # opened by the first win
+
+
+def test_pokemon_and_person_kill_records_use_season_grain():
+    stints = [
+        {"season_id": "season_001", "person_id": "", "person_name": "Anna", "kills": "30", "matches": "10", "wins": "8", "losses": "2", "draws": "0", "data_status": "available", "source_urls": "s1"},
+        {"season_id": "season_002", "person_id": "", "person_name": "Anna", "kills": "20", "matches": "10", "wins": "6", "losses": "4", "draws": "0", "data_status": "available", "source_urls": "s2"},
+        {"season_id": "season_002", "person_id": "", "person_name": "Ben", "kills": "40", "matches": "10", "wins": "7", "losses": "3", "draws": "0", "data_status": "available", "source_urls": "s3"},
+    ]
+    killlists = [
+        {"season_id": "season_001", "pokemon": "Gengar", "trainer": "Anna", "kills": "10", "appearances": "5", "data_status": "available", "source_urls": "u1"},
+        {"season_id": "season_002", "pokemon": "Mew", "trainer": "Ben", "kills": "14", "appearances": "6", "data_status": "available", "source_urls": "u2"},
+        {"season_id": "season_002", "pokemon": "Gengar", "trainer": "Cid", "kills": "3", "appearances": "2", "data_status": "available", "source_urls": "u3"},
+    ]
+    rows = records_progression_rows([], stints, killlists)
+    season_kills = [r for r in rows if r["record_key"] == "most_season_kills_person"]
+    assert [(r["holder_name"], r["value"]) for r in season_kills] == [("Anna", 30), ("Ben", 40)]
+    career_kills = [r for r in rows if r["record_key"] == "most_career_kills"]
+    assert career_kills[-1]["holder_name"] == "Anna" and career_kills[-1]["value"] == 50
+    poke_season = [r for r in rows if r["record_key"] == "most_season_kills_pokemon"]
+    assert [(r["holder_pokemon"], r["value"]) for r in poke_season] == [("Gengar", 10), ("Mew", 14)]
+    poke_career = [r for r in rows if r["record_key"] == "most_career_kills_pokemon"]
+    assert [(r["holder_pokemon"], r["value"]) for r in poke_career] == [("Gengar", 10), ("Mew", 14)]
+    seasons_played = [r for r in rows if r["record_key"] == "most_seasons_played"]
+    assert seasons_played[-1]["value"] == 2 and seasons_played[-1]["holder_name"] == "Anna"
