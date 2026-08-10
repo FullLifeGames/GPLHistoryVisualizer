@@ -4502,6 +4502,92 @@ tbody tr:hover {
   margin: 8px 0;
 }
 
+.game-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 0;
+  margin-bottom: 8px;
+}
+
+.game-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+}
+
+.game-card-icon .pokemon-sprite-frame {
+  transform: scale(0.6);
+  transform-origin: center;
+}
+
+#game-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+#view-game .section-head {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+}
+
+#game-body .game-form select {
+  max-width: 280px;
+}
+
+#game-body {
+  max-width: 860px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+#game-body .game-sprite-row,
+#game-body .game-form,
+#game-body .game-tipp-choices {
+  justify-content: center;
+}
+
+#game-body .game-hints {
+  list-style: none;
+  padding: 0;
+}
+
+#game-body .game-reveal.standalone-card,
+#game-body .game-quiz-options,
+#game-body .game-klick-row {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.game-option-sprite {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+}
+
+.game-option-sprite .pokemon-sprite-frame {
+  transform: scale(0.5);
+  transform-origin: center;
+}
+
+.game-quiz-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
 .game-reveal h4 {
   margin: 0 0 8px;
 }

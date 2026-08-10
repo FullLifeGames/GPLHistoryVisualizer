@@ -6,6 +6,7 @@ import {
   dateSeedString,
   kaderHintValues,
   kaderPools,
+  kaderPuzzle,
   klickCandidates,
   nextKlickIndex,
   pickIndex,
@@ -102,6 +103,14 @@ test("dailyKader picks deterministically per date and permutes the reveal order"
   assert.equal(one.pool.poolKey, pools[0].poolKey);
   assert.deepEqual([...one.revealOrder].sort((a, b) => a - b), [0, 1, 2, 3, 4, 5]);
   assert.equal(dailyKader([], "2026-08-10"), null);
+});
+
+test("kaderPuzzle is seed-stable and backs the daily puzzle", () => {
+  const pools = kaderPools(ROSTER_ROWS, norm);
+  // Free-play rounds reuse the same seeded picker with their own seed.
+  assert.deepEqual(kaderPuzzle(pools, "free-1"), kaderPuzzle(pools, "free-1"));
+  assert.deepEqual(kaderPuzzle(pools, "kader-2026-08-10"), dailyKader(pools, "2026-08-10"));
+  assert.equal(kaderPuzzle([], "free-1"), null);
 });
 
 test("kaderHintValues resolves division, final rank and season", () => {

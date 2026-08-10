@@ -44,6 +44,7 @@ import {
   dateSeedString,
   kaderHintValues,
   kaderPools,
+  kaderPuzzle,
   klickCandidates,
   nextKlickIndex,
   pickIndex,
@@ -423,6 +424,10 @@ function bindControls() {
       // In-view tab buttons (record book, hall of fame) share the .tab look
       // but carry no data-view; only subnav tabs navigate.
       if (!button.dataset.view) return;
+      if (button.dataset.gameId) {
+        navigateToHash(gameRouteHash(button.dataset.gameId));
+        return;
+      }
       navigateToView(button.dataset.view);
     });
   });
@@ -845,7 +850,10 @@ function setActiveView(viewName) {
     const inActiveGroup = item.dataset.viewGroup === activeGroup;
     item.hidden = !inActiveGroup;
     item.setAttribute("aria-hidden", String(!inActiveGroup));
-    item.classList.toggle("is-active", item.dataset.view === viewName);
+    // Game tabs share the "game" view id, so the active one is resolved by
+    // the focused game id instead.
+    const gameTabActive = !item.dataset.gameId || item.dataset.gameId === (state.gameFocus?.key || "");
+    item.classList.toggle("is-active", item.dataset.view === viewName && gameTabActive);
   });
   document.querySelectorAll(".nav-group-tab").forEach((item) => {
     item.classList.toggle("is-active", item.dataset.viewGroup === viewGroupForView(viewName));
@@ -5347,11 +5355,13 @@ function rivalryCard(row, rank) {
   `;
 }
 
+// Each game gets a mascot sprite: Ditto guesses identities, Xatu sees the
+// future, Porygon2 lives in the video world, Alakazam knows everything.
 const GAME_HUB_CARDS = [
-  { id: "kader-raten", i18nKey: "kader" },
-  { id: "tipp-spiel", i18nKey: "tipp" },
-  { id: "klick-duell", i18nKey: "klick" },
-  { id: "quizshow", i18nKey: "quiz" },
+  { id: "kader-raten", i18nKey: "kader", icon: "Ditto" },
+  { id: "tipp-spiel", i18nKey: "tipp", icon: "Xatu" },
+  { id: "klick-duell", i18nKey: "klick", icon: "Porygon2" },
+  { id: "quizshow", i18nKey: "quiz", icon: "Alakazam" },
 ];
 
 const GAME_I18N_BY_ID = {
@@ -5381,7 +5391,8 @@ function renderGames() {
   container.innerHTML = GAME_HUB_CARDS.map(
     (card) => `
       <article class="hof-card game-card">
-        <div class="highlight-card-head">
+        <div class="highlight-card-head game-card-head">
+          <span class="game-card-icon" aria-hidden="true">${pokemonSprite(card.icon)}</span>
           <h3>${escapeHtml(t(state.language, `games.${card.i18nKey}.title`))}</h3>
         </div>
         <p>${escapeHtml(t(state.language, `games.${card.i18nKey}.description`))}</p>
@@ -5399,7 +5410,8 @@ function renderGame() {
     return;
   }
   const i18nKey = GAME_I18N_BY_ID[gameId];
-  document.querySelector("#game-title").textContent = t(state.language, `games.${i18nKey}.title`);
+  const icon = GAME_HUB_CARDS.find((card) => card.id === gameId)?.icon || "";
+  document.querySelector("#game-title").innerHTML = `${icon ? `<span class="game-card-icon" aria-hidden="true">${pokemonSprite(icon)}</span>` : ""}${escapeHtml(t(state.language, `games.${i18nKey}.title`))}`;
   document.querySelector("#game-description").textContent = t(state.language, `games.${i18nKey}.description`);
   renderer(body);
 }
@@ -5412,51 +5424,35 @@ function cachedKaderPools(rosterRows) {
   return kaderPoolsCache.pools;
 }
 
-// Daily roster puzzle: sprite 1 is free; every wrong guess reveals the next
-// sprite and unlocks hints division -> rank -> season; six wrong guesses lose
-// the day. Progress and the daily streak persist in localStorage.
-function renderKaderRaten(body) {
-  const rosterRows = state.data.teamRosters || [];
-  const pools = cachedKaderPools(rosterRows);
-  const today = dateSeedString();
-  const daily = dailyKader(pools, today);
-  if (!daily) {
-    body.innerHTML = `<p class="muted">${escapeHtml(t(state.language, "games.kader.empty"))}</p>`;
-    return;
-  }
-  let day = readGameJson("gpl-game-kader-raten-day", null);
-  if (!day || day.date !== today) {
-    day = { date: today, wrongGuesses: 0, guessedKeys: [], solved: false, failed: false };
-  }
-  const streak = readGameJson("gpl-game-kader-raten-streak", { streak: 0, best: 0, lastDate: "" });
-  const finished = day.solved || day.failed;
-  const revealCount = finished ? daily.pool.pokemon.length : Math.min(day.wrongGuesses + 1, daily.pool.pokemon.length);
-  const hints = kaderHintValues(daily.pool, state.data.standings || [], normalizedKey);
+// Shared puzzle area for the daily and free-play Kader-Raten modes: revealed
+// sprites, unlocked hints, and either the guess form or the solution card.
+function kaderPuzzleArea(puzzle, progress, pools, finished) {
+  const revealCount = finished ? puzzle.pool.pokemon.length : Math.min(progress.wrongGuesses + 1, puzzle.pool.pokemon.length);
+  const hints = kaderHintValues(puzzle.pool, state.data.standings || [], normalizedKey);
   const hintItems = [
-    day.wrongGuesses >= 1 || finished ? formatMessage(t(state.language, "games.kader.hintDivision"), { division: hints.division }) : "",
-    (day.wrongGuesses >= 2 || finished) && hints.rank ? formatMessage(t(state.language, "games.kader.hintRank"), { rank: hints.rank }) : "",
-    day.wrongGuesses >= 3 || finished ? formatMessage(t(state.language, "games.kader.hintSeason"), { season: seasonDisplay(hints.seasonId) }) : "",
+    progress.wrongGuesses >= 1 || finished ? formatMessage(t(state.language, "games.kader.hintDivision"), { division: hints.division }) : "",
+    (progress.wrongGuesses >= 2 || finished) && hints.rank ? formatMessage(t(state.language, "games.kader.hintRank"), { rank: hints.rank }) : "",
+    progress.wrongGuesses >= 3 || finished ? formatMessage(t(state.language, "games.kader.hintSeason"), { season: seasonDisplay(hints.seasonId) }) : "",
   ].filter(Boolean);
   const options = [...new Set(pools.map((pool) => pool.personName))].sort((a, b) => a.localeCompare(b));
-  const sprites = daily.revealOrder
+  const sprites = puzzle.revealOrder
     .map((pokemonIndex, position) =>
       position < revealCount
-        ? `<span class="game-kader-slot">${pokemonSprite(daily.pool.pokemon[pokemonIndex])}</span>`
+        ? `<span class="game-kader-slot">${pokemonSprite(puzzle.pool.pokemon[pokemonIndex])}</span>`
         : `<span class="game-kader-slot game-kader-hidden" aria-hidden="true">?</span>`,
     )
     .join("");
   const solutionCard = finished
     ? gameRevealCard({
-        title: day.solved
-          ? formatMessage(t(state.language, "games.kader.solved"), { n: day.wrongGuesses + 1 })
-          : formatMessage(t(state.language, "games.kader.failed"), { name: daily.pool.personName }),
-        bodyHtml: `<p>${personLink(canonicalPersonRouteKey(daily.pool.personName), daily.pool.personName)} · ${escapeHtml(daily.pool.teamName)} · ${escapeHtml(seasonDisplay(daily.pool.seasonId))}</p>
-          <p><a class="link-button" href="${escapeAttr(rosterRouteHash(rosterGroupKeyFromRow(daily.pool.sampleRow)))}">${escapeHtml(t(state.language, "games.kader.rosterLink"))}</a></p>`,
-        sourceUrls: daily.pool.sourceUrls,
+        title: progress.solved
+          ? formatMessage(t(state.language, "games.kader.solved"), { n: progress.wrongGuesses + 1 })
+          : formatMessage(t(state.language, "games.kader.failed"), { name: puzzle.pool.personName }),
+        bodyHtml: `<p>${personLink(canonicalPersonRouteKey(puzzle.pool.personName), puzzle.pool.personName)} · ${escapeHtml(puzzle.pool.teamName)} · ${escapeHtml(seasonDisplay(puzzle.pool.seasonId))}</p>
+          <p><a class="link-button" href="${escapeAttr(rosterRouteHash(rosterGroupKeyFromRow(puzzle.pool.sampleRow)))}">${escapeHtml(t(state.language, "games.kader.rosterLink"))}</a></p>`,
+        sourceUrls: puzzle.pool.sourceUrls,
       })
     : "";
-  body.innerHTML = `
-    <p>${escapeHtml(t(state.language, "games.kader.prompt"))}</p>
+  return `
     <div class="game-sprite-row">${sprites}</div>
     ${hintItems.length ? `<ul class="game-hints">${hintItems.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>` : ""}
     ${
@@ -5469,27 +5465,113 @@ function renderKaderRaten(body) {
             </select>
             <button class="link-button" type="submit">${escapeHtml(t(state.language, "games.kader.guess"))}</button>
           </form>
-          <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.kader.tries"), { used: day.wrongGuesses, max: 6 }))}</p>`
-    }
-    <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.kader.streak"), { streak: streak.streak, best: streak.best }))}</p>`;
+          <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.kader.tries"), { used: progress.wrongGuesses, max: 6 }))}</p>`
+    }`;
+}
+
+// Applies a guess to a progress object; returns "solved" | "failed" | "wrong"
+// | "repeat" so the caller decides what to persist.
+function applyKaderGuess(progress, puzzle, guess) {
+  const guessKey = normalizedKey(guess);
+  if (!guessKey || progress.guessedKeys.includes(guessKey)) return "repeat";
+  progress.guessedKeys.push(guessKey);
+  if (guessKey === puzzle.pool.personKey) {
+    progress.solved = true;
+    return "solved";
+  }
+  progress.wrongGuesses += 1;
+  if (progress.wrongGuesses >= 6) {
+    progress.failed = true;
+    return "failed";
+  }
+  return "wrong";
+}
+
+// Daily roster puzzle: sprite 1 is free; every wrong guess reveals the next
+// sprite and unlocks hints division -> rank -> season; six wrong guesses lose
+// the day. Progress and the daily streak persist in localStorage. Free play
+// continues with session-seeded rosters that never touch the daily streak.
+function renderKaderRaten(body) {
+  const rosterRows = state.data.teamRosters || [];
+  const pools = cachedKaderPools(rosterRows);
+  if (!pools.length) {
+    body.innerHTML = `<p class="muted">${escapeHtml(t(state.language, "games.kader.empty"))}</p>`;
+    return;
+  }
+  const session = state.games["kader-raten"];
+  if (session?.mode === "free") {
+    renderKaderFreePlay(body, pools, session);
+    return;
+  }
+  const today = dateSeedString();
+  const daily = dailyKader(pools, today);
+  let day = readGameJson("gpl-game-kader-raten-day", null);
+  if (!day || day.date !== today) {
+    day = { date: today, wrongGuesses: 0, guessedKeys: [], solved: false, failed: false };
+  }
+  const streak = readGameJson("gpl-game-kader-raten-streak", { streak: 0, best: 0, lastDate: "" });
+  const finished = day.solved || day.failed;
+  body.innerHTML = `
+    <p>${escapeHtml(t(state.language, "games.kader.prompt"))}</p>
+    ${kaderPuzzleArea(daily, day, pools, finished)}
+    <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.kader.streak"), { streak: streak.streak, best: streak.best }))}</p>
+    <p><button id="kader-free-start" class="link-button" type="button">${escapeHtml(t(state.language, "games.kader.freePlay"))}</button></p>`;
   body.querySelector("#kader-form")?.addEventListener("submit", (event) => {
     event.preventDefault();
     const guess = body.querySelector("#kader-guess")?.value || "";
-    if (!guess) return;
-    const guessKey = normalizedKey(guess);
-    if (day.guessedKeys.includes(guessKey)) return;
-    day.guessedKeys.push(guessKey);
-    if (guessKey === daily.pool.personKey) {
-      day.solved = true;
+    const outcome = applyKaderGuess(day, daily, guess);
+    if (outcome === "repeat") return;
+    if (outcome === "solved") {
       saveGameJson("gpl-game-kader-raten-streak", updateDailyStreak(streak, today, true));
-    } else {
-      day.wrongGuesses += 1;
-      if (day.wrongGuesses >= 6) {
-        day.failed = true;
-        saveGameJson("gpl-game-kader-raten-streak", updateDailyStreak(streak, today, false));
-      }
+    } else if (outcome === "failed") {
+      saveGameJson("gpl-game-kader-raten-streak", updateDailyStreak(streak, today, false));
     }
     saveGameJson("gpl-game-kader-raten-day", day);
+    renderGame();
+  });
+  body.querySelector("#kader-free-start")?.addEventListener("click", () => {
+    state.games["kader-raten"] = {
+      mode: "free",
+      seed: String(Date.now() % 1000000),
+      round: 1,
+      solvedCount: 0,
+      playedCount: 0,
+      progress: { wrongGuesses: 0, guessedKeys: [], solved: false, failed: false },
+    };
+    renderGame();
+  });
+}
+
+function renderKaderFreePlay(body, pools, session) {
+  const puzzle = kaderPuzzle(pools, `kader-free-${session.seed}-${session.round}`);
+  const progress = session.progress;
+  const finished = progress.solved || progress.failed;
+  body.innerHTML = `
+    <p>${escapeHtml(formatMessage(t(state.language, "games.kader.freeRound"), { n: session.round }))}</p>
+    ${kaderPuzzleArea(puzzle, progress, pools, finished)}
+    <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.kader.freeTally"), { solved: session.solvedCount, played: session.playedCount }))}</p>
+    <p>
+      ${finished ? `<button id="kader-free-next" class="link-button" type="button">${escapeHtml(t(state.language, "games.kader.nextRoster"))}</button>` : ""}
+      <button id="kader-free-exit" class="link-button" type="button">${escapeHtml(t(state.language, "games.kader.backToDaily"))}</button>
+    </p>`;
+  body.querySelector("#kader-form")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const guess = body.querySelector("#kader-guess")?.value || "";
+    const outcome = applyKaderGuess(progress, puzzle, guess);
+    if (outcome === "repeat") return;
+    if (outcome === "solved" || outcome === "failed") {
+      session.playedCount += 1;
+      if (outcome === "solved") session.solvedCount += 1;
+    }
+    renderGame();
+  });
+  body.querySelector("#kader-free-next")?.addEventListener("click", () => {
+    session.round += 1;
+    session.progress = { wrongGuesses: 0, guessedKeys: [], solved: false, failed: false };
+    renderGame();
+  });
+  body.querySelector("#kader-free-exit")?.addEventListener("click", () => {
+    state.games["kader-raten"] = null;
     renderGame();
   });
 }
@@ -5725,7 +5807,9 @@ function renderQuizshow(body) {
           (option, index) => `
             <button class="link-button game-quiz-option${
               answered ? (option.correct ? " is-correct" : index === game.answered ? " is-wrong" : "") : ""
-            }" type="button" data-quiz-option="${index}" ${answered ? "disabled" : ""}>${escapeHtml(option.label)}</button>`,
+            }" type="button" data-quiz-option="${index}" ${answered ? "disabled" : ""}>${
+              question.category === "killlists" ? `<span class="game-option-sprite" aria-hidden="true">${pokemonSprite(option.label)}</span>` : ""
+            }${escapeHtml(option.label)}</button>`,
         )
         .join("")}
     </div>

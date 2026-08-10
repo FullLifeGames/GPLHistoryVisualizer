@@ -362,3 +362,12 @@ assert.match(appJs, /TOOLBAR_HIDDEN_VIEWS = new Set\(\[[^\]]*"games", "game"/);
 assert.equal(appJs.includes("readGameJson("), true);
 assert.equal(appJs.includes("saveGameJson("), true);
 assert.equal(stylesCss.includes(".game-reveal"), true);
+// Each game is its own subtab; the hub tab stays as the group overview.
+assert.equal(indexHtml.includes('data-i18n="nav.gamesOverview"'), true);
+assert.equal(indexHtml.includes('data-game-id="kader-raten"'), true);
+assert.equal(indexHtml.includes('data-game-id="tipp-spiel"'), true);
+assert.equal(indexHtml.includes('data-game-id="klick-duell"'), true);
+assert.equal(indexHtml.includes('data-game-id="quizshow"'), true);
+assert.match(appJs, /button\.dataset\.gameId[\s\S]*?gameRouteHash\(button\.dataset\.gameId\)/);
+assert.match(appJs, /item\.dataset\.gameId[\s\S]*?state\.gameFocus/);
+assert.equal(appJs.includes("game-card-icon"), true);

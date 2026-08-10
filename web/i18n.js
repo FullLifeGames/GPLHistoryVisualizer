@@ -62,6 +62,7 @@ export const TRANSLATIONS = {
       awards: "Auszeichnungen",
       hallOfFame: "Hall of Fame",
       games: "Spiele",
+      gamesOverview: "Übersicht",
     },
     navGroups: {
       people: "Personen",
@@ -238,6 +239,11 @@ export const TRANSLATIONS = {
         rosterLink: "Zum Kader",
         streak: "Tages-Serie: {streak} · Rekord: {best}",
         empty: "Keine Kaderdaten geladen.",
+        freePlay: "Einfach weiterspielen",
+        freeRound: "Freies Spiel · Runde {n}",
+        freeTally: "Frei gelöst: {solved} / {played}",
+        nextRoster: "Nächster Kader",
+        backToDaily: "Zurück zum Tagesrätsel",
       },
       tipp: {
         title: "Tipp-Spiel",
@@ -976,6 +982,7 @@ export const TRANSLATIONS = {
       awards: "Awards",
       hallOfFame: "Hall of Fame",
       games: "Games",
+      gamesOverview: "Overview",
     },
     navGroups: {
       people: "People",
@@ -1152,6 +1159,11 @@ export const TRANSLATIONS = {
         rosterLink: "View roster",
         streak: "Daily streak: {streak} · Best: {best}",
         empty: "No roster data loaded.",
+        freePlay: "Keep playing",
+        freeRound: "Free play · round {n}",
+        freeTally: "Free play solved: {solved} / {played}",
+        nextRoster: "Next roster",
+        backToDaily: "Back to the daily puzzle",
       },
       tipp: {
         title: "Prediction Game",

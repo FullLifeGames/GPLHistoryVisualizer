@@ -97,12 +97,16 @@ export function kaderPools(rosterRows = [], normalizeKey, minPokemon = 6) {
     .sort((a, b) => a.poolKey.localeCompare(b.poolKey));
 }
 
-export function dailyKader(pools, dateString) {
+export function kaderPuzzle(pools, seedString) {
   if (!pools.length) return null;
-  const rng = seededRandom(`kader-${dateString}`);
+  const rng = seededRandom(seedString);
   const pool = pools[pickIndex(rng, pools.length)];
   const revealOrder = shuffled(pool.pokemon.map((_, index) => index), rng);
   return { pool, revealOrder };
+}
+
+export function dailyKader(pools, dateString) {
+  return kaderPuzzle(pools, `kader-${dateString}`);
 }
 
 // Tipp-Spiel: forfeits and unresolved results are excluded the same way the
