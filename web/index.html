@@ -668,7 +668,20 @@
         </div>
         <details class="score-explainer">
           <summary data-i18n="rivalries.scoreFormulaTitle">Wie wird der Rivalitäts-Score berechnet?</summary>
-          <p data-i18n="rivalries.scoreFormula">Score = Duelle × (0,2 + Ausgeglichenheit) × (1 + log10(1 + Videoaufrufe)). Ausgeglichenheit = 1 − |Siege A − Siege B| / Duelle. Nur Paarungen mit mindestens 3 Duellen.</p>
+          <div class="score-explainer-grid">
+            <div>
+              <strong data-i18n="rivalries.scoreFormula">Score = Duelle × (0,2 + Ausgeglichenheit) × (1 + log10(1 + Videoaufrufe))</strong>
+              <p data-i18n="rivalries.scoreFormulaNote">Ausgeglichenheit = 1 − |Siege A − Siege B| / Duelle. Viele, enge und viel gesehene Duelle steigen im Rang. Berechnet, nicht offiziell.</p>
+            </div>
+            <div>
+              <strong data-i18n="rivalries.minMeetingsTitle">Mindestens 3 Duelle</strong>
+              <p data-i18n="rivalries.minMeetingsNote">Paarungen mit weniger als 3 Duellen erscheinen nicht in der Rangliste.</p>
+            </div>
+            <div>
+              <strong data-i18n="rivalries.viewsTitle">Videoaufrufe aus den Highlightdaten</strong>
+              <p data-i18n="rivalries.viewsNote">Die Aufrufe summieren alle zugeordneten Match-Videos der Paarung; Paarungen ohne Videodaten zählen mit 0 Aufrufen.</p>
+            </div>
+          </div>
         </details>
         <div id="rivalry-cards" class="hof-grid"></div>
         <div id="rivalry-show-more"></div>
@@ -686,7 +699,16 @@
           <h3 data-i18n="rivalries.eloGapTitle">Elo-Abstand über die Duelle</h3>
           <details class="score-explainer">
             <summary data-i18n="rivalries.eloGapExplainerTitle">Was zeigt der Elo-Abstand?</summary>
-            <p data-i18n="rivalries.eloGapExplainer">Für jedes Duell wird die Differenz der beiden Elo-Werte unmittelbar vor dem Kampf gezeigt (Elo aus der vollständigen Archiv-Chronologie, K=32, Start 1500). Je größer der Wert, desto klarer war die Favoritenrolle: Punkte über 0 heißen, der erstgenannte Spieler ging als Favorit ins Duell, Punkte unter 0, der zweitgenannte.</p>
+            <div class="score-explainer-grid">
+              <div>
+                <strong data-i18n="rivalries.eloGapFormula">Elo-Abstand = Elo(Spieler 1) − Elo(Spieler 2), jeweils unmittelbar vor dem Duell</strong>
+                <p data-i18n="rivalries.eloGapFormulaNote">Die Elo-Werte stammen aus der vollständigen Archiv-Chronologie (K=32, Start 1500) und entsprechen der Karriere-Kurve auf den Personenseiten.</p>
+              </div>
+              <div>
+                <strong data-i18n="rivalries.eloGapSignTitle">Vorzeichen = Favoritenrolle</strong>
+                <p data-i18n="rivalries.eloGapSignNote">Punkte über 0: der erstgenannte Spieler ging als Favorit ins Duell. Punkte unter 0: der zweitgenannte. Je größer der Betrag, desto klarer die Rollen.</p>
+              </div>
+            </div>
           </details>
           <div id="rivalry-gap-chart"></div>
           <p id="rivalry-gap-hint" class="muted"></p>
@@ -699,27 +721,24 @@
       <section id="view-oracle" class="view">
         <div class="section-head">
           <h2 data-i18n="sections.oracleTitle">Orakel der GPL</h2>
-          <p data-i18n="sections.oracleDescription">Wie viele Duelle liegen zwischen zwei Personen? Kürzeste Kette über tatsächlich gespielte Kämpfe.</p>
+          <p data-i18n="sections.oracleDescription">Wer schlägt wen – auch über Ecken? Das Orakel findet die kürzeste Siegeskette: A schlug B, B schlug C – also transitiver Sieg über C.</p>
         </div>
         <form id="oracle-form" class="matchup-form">
           <label>
-            <span data-i18n="matchup.firstName">Erster Name</span>
+            <span data-i18n="matchup.firstName">Erste Auswahl</span>
             <select id="oracle-a"></select>
           </label>
           <label>
-            <span data-i18n="matchup.secondName">Zweiter Name</span>
+            <span data-i18n="matchup.secondName">Zweite Auswahl</span>
             <select id="oracle-b"></select>
           </label>
-          <label class="oracle-toggle">
-            <input type="checkbox" id="oracle-include-stints" />
-            <span data-i18n="oracle.includeStints">Auch gemeinsame Saisons zählen</span>
-          </label>
-          <button type="submit" data-i18n="oracle.search">Verbinden</button>
+          <button type="submit" data-i18n="oracle.search">Kette finden</button>
         </form>
+        <p class="muted" data-i18n="oracle.chainNote">Nur tatsächlich gespielte, entschiedene Kämpfe zählen: keine Forfeits, Unentschieden oder ungeklärten Ergebnisse.</p>
         <div id="oracle-result" class="result-box"></div>
-        <h3 data-i18n="oracle.leaderboardTitle">Vernetzungs-Rangliste</h3>
-        <p class="muted" data-i18n="oracle.leaderboardNote">Anzahl verschiedener Gegner über die gesamte Archiv-Historie (ohne Forfeits und ungeklärte Kämpfe).</p>
-        <div id="oracle-leaderboard" class="table-host"></div>
+        <h3 data-i18n="oracle.leaderboardTitle">Dominanz-Rangliste</h3>
+        <p class="muted" data-i18n="oracle.leaderboardNote">Wie viele Spieler schlägt jemand direkt – und wie viele fallen über eine Siegeskette (transitiv)?</p>
+        <div id="oracle-leaderboard" class="table-wrap"></div>
       </section>
     </main>
 

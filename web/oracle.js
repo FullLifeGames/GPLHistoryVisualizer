@@ -1,7 +1,9 @@
-// Six-degrees graph over played matches. Forfeits and unresolved rows are
-// not edges: a chain hop must be a match that actually happened. The stored
-// edge for a pair is their first meeting, upgraded once if a later meeting
-// has a video and the stored one does not.
+// Directed win-chain graph over played, decided matches: an edge runs from
+// the winner to the loser, so a path is a chain of transitive victories
+// ("A beat B, B beat C"). Draws have no winner, forfeits and unresolved rows
+// were never played - none of them are edges. The stored edge for a pair is
+// their first such win, upgraded once if a later win has a video and the
+// stored one does not.
 
 const SKIPPED_BASIS = new Set(["forfeit", "unresolved"]);
 
@@ -11,20 +13,12 @@ function playedMatchRows(matches) {
   );
 }
 
-export function oracleGraph(matches = [], stints = [], { includeStints = false } = {}, normalizeKey) {
+export function winChainGraph(matches = [], normalizeKey) {
   const nodes = new Map();
   const edges = new Map();
   const touch = (key, name) => {
     if (!nodes.has(key)) nodes.set(key, { name });
     if (!edges.has(key)) edges.set(key, new Map());
-  };
-  const connect = (aKey, bKey, via, { upgradeForVideo = false } = {}) => {
-    const existing = edges.get(aKey).get(bKey);
-    if (!existing) {
-      edges.get(aKey).set(bKey, via);
-    } else if (upgradeForVideo && existing.type === "match" && !existing.videoUrl && via.videoUrl) {
-      edges.get(aKey).set(bKey, via);
-    }
   };
   for (const row of playedMatchRows(matches)) {
     const aKey = normalizeKey(row.player_a);
@@ -32,6 +26,9 @@ export function oracleGraph(matches = [], stints = [], { includeStints = false }
     if (!aKey || !bKey || aKey === bKey) continue;
     touch(aKey, row.player_a);
     touch(bKey, row.player_b);
+    const winnerKey = normalizeKey(row.winner);
+    if (winnerKey !== aKey && winnerKey !== bKey) continue;
+    const loserKey = winnerKey === aKey ? bKey : aKey;
     const via = {
       type: "match",
       matchId: String(row.match_id || ""),
@@ -40,47 +37,26 @@ export function oracleGraph(matches = [], stints = [], { includeStints = false }
       division: row.division || "",
       videoUrl: row.video_url || "",
     };
-    connect(aKey, bKey, via, { upgradeForVideo: true });
-    connect(bKey, aKey, via, { upgradeForVideo: true });
-  }
-  if (includeStints) {
-    const bySeasonDivision = new Map();
-    for (const row of stints) {
-      const key = normalizeKey(row.person_name);
-      if (!key) continue;
-      const groupKey = `${row.season_id}\u0000${row.division}`;
-      if (!bySeasonDivision.has(groupKey)) bySeasonDivision.set(groupKey, new Map());
-      bySeasonDivision.get(groupKey).set(key, row.person_name);
-    }
-    for (const [groupKey, members] of bySeasonDivision) {
-      const [seasonId, division] = groupKey.split("\u0000");
-      const entries = [...members.entries()];
-      for (let i = 0; i < entries.length; i += 1) {
-        for (let j = i + 1; j < entries.length; j += 1) {
-          const [aKey, aName] = entries[i];
-          const [bKey, bName] = entries[j];
-          touch(aKey, aName);
-          touch(bKey, bName);
-          const via = { type: "stint", seasonId, division };
-          connect(aKey, bKey, via);
-          connect(bKey, aKey, via);
-        }
-      }
+    const existing = edges.get(winnerKey).get(loserKey);
+    if (!existing) {
+      edges.get(winnerKey).set(loserKey, via);
+    } else if (!existing.videoUrl && via.videoUrl) {
+      edges.get(winnerKey).set(loserKey, via);
     }
   }
   return { nodes, edges };
 }
 
-// Breadth-first search with sorted neighbor order so the reported chain is
-// deterministic for a given dataset.
-export function oraclePath(graph, aKey, bKey) {
-  if (!graph.edges.has(aKey) || !graph.edges.has(bKey)) return null;
+// Breadth-first search along win edges with sorted neighbor order so the
+// reported chain is deterministic for a given dataset.
+export function winChainPath(graph, aKey, bKey) {
+  if (!graph.edges.has(aKey) || !graph.nodes.has(bKey)) return null;
   if (aKey === bKey) return [{ key: aKey, name: graph.nodes.get(aKey)?.name || aKey, via: null }];
   const cameFrom = new Map([[aKey, null]]);
   const queue = [aKey];
   while (queue.length) {
     const current = queue.shift();
-    const neighbors = [...graph.edges.get(current).keys()].sort();
+    const neighbors = [...(graph.edges.get(current)?.keys() ?? [])].sort();
     for (const neighbor of neighbors) {
       if (cameFrom.has(neighbor)) continue;
       cameFrom.set(neighbor, current);
@@ -104,22 +80,34 @@ export function oraclePath(graph, aKey, bKey) {
   return null;
 }
 
-export function connectednessRows(matches = [], normalizeKey) {
-  const byPerson = new Map();
-  for (const row of playedMatchRows(matches)) {
-    const aKey = normalizeKey(row.player_a);
-    const bKey = normalizeKey(row.player_b);
-    if (!aKey || !bKey || aKey === bKey) continue;
-    const track = (key, name, opponent) => {
-      if (!byPerson.has(key)) byPerson.set(key, { key, name, opponents: new Set(), matches: 0 });
-      const entry = byPerson.get(key);
-      entry.opponents.add(opponent);
-      entry.matches += 1;
-    };
-    track(aKey, row.player_a, bKey);
-    track(bKey, row.player_b, aKey);
+// How many players someone beats directly, and how many fall to a chain of
+// wins. Share is the transitive count over all other archive players, as a
+// whole percent.
+export function dominanceRows(graph) {
+  const totalOthers = Math.max(1, graph.nodes.size - 1);
+  const rows = [];
+  for (const [key, node] of graph.nodes) {
+    const direct = graph.edges.get(key)?.size ?? 0;
+    const seen = new Set([key]);
+    const queue = [key];
+    while (queue.length) {
+      const current = queue.shift();
+      for (const neighbor of graph.edges.get(current)?.keys() ?? []) {
+        if (seen.has(neighbor)) continue;
+        seen.add(neighbor);
+        queue.push(neighbor);
+      }
+    }
+    const transitive = seen.size - 1;
+    rows.push({
+      key,
+      name: node.name || key,
+      beats_direct: direct,
+      beats_transitive: transitive,
+      share: Math.round((transitive / totalOthers) * 100),
+    });
   }
-  return [...byPerson.values()]
-    .map((entry) => ({ key: entry.key, name: entry.name, opponents: entry.opponents.size, matches: entry.matches }))
-    .sort((a, b) => b.opponents - a.opponents || b.matches - a.matches || a.name.localeCompare(b.name));
+  return rows.sort(
+    (a, b) => b.beats_transitive - a.beats_transitive || b.beats_direct - a.beats_direct || a.name.localeCompare(b.name),
+  );
 }

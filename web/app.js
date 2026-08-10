@@ -15,10 +15,10 @@ import {
   ALL_TIME_COLUMNS,
   AWARD_COLUMNS,
   columnsForProfile,
-  CONNECTEDNESS_COLUMNS,
   ELO_LEDGER_COLUMNS,
   MATCH_FINDER_COLUMNS,
   MATCH_HIGHLIGHT_COLUMNS,
+  DOMINANCE_COLUMNS,
   RECORD_HOLDER_COLUMNS,
   RIVALRY_COLUMNS,
   STREAK_COLUMNS,
@@ -38,7 +38,7 @@ import { eloChronology, eloLedgerRows, personEloSeries, upsetRows } from "./elo_
 import { buildSeries, lineChart, paddedDomain, stepChart } from "./charts.js";
 import { awardsBySeason, finderFilterRows, hofInductees, spoonRows, streakTableRows } from "./records.js";
 import { rivalryMeetings, rivalryPairs } from "./rivalries.js";
-import { connectednessRows, oracleGraph, oraclePath } from "./oracle.js";
+import { dominanceRows, winChainGraph, winChainPath } from "./oracle.js";
 import { tableHeaderFilterConfig } from "./table_filters.js";
 import { textSorter, weekSortValue } from "./table_sort.js";
 import {
@@ -242,7 +242,6 @@ const state = {
   oracle: {
     aKey: "",
     bKey: "",
-    includeStints: false,
   },
   recordBookTab: "records",
   recordKey: null,
@@ -457,10 +456,6 @@ function bindControls() {
     renderOracle();
   });
 
-  document.querySelector("#oracle-include-stints")?.addEventListener("change", (event) => {
-    state.oracle.includeStints = Boolean(event.target.checked);
-    renderOracle();
-  });
 
   document.querySelectorAll("[data-draft-picked-status]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -5509,7 +5504,7 @@ function renderRivalryDetail() {
   if (mostWatchedEl) {
     mostWatchedEl.innerHTML = summary.mostWatched
       ? `
-        <article class="hof-card rivalry-card">
+        <article class="hof-card rivalry-card standalone-card">
           <h3>${escapeHtml(t(state.language, "rivalries.mostWatchedTitle"))}</h3>
           <p><span class="muted">${escapeHtml(seasonShortDisplay(summary.mostWatched.season_id))}${summary.mostWatched.week ? ` · ${escapeHtml(summary.mostWatched.week)}` : ""}</span> <strong>${escapeHtml(summary.mostWatched.score)}</strong></p>
           <p><span class="muted">${escapeHtml(t(state.language, "rivalries.views"))}</span> <strong>${escapeHtml(displayNumber(summary.mostWatched.view_total))}</strong></p>
@@ -5542,22 +5537,10 @@ let oracleGraphCache = null;
 
 function cachedOracleGraph() {
   const matches = state.data.matches ?? [];
-  const stints = state.data.personStints ?? [];
-  const include = state.oracle.includeStints;
-  if (
-    oracleGraphCache &&
-    oracleGraphCache.matches === matches &&
-    oracleGraphCache.stints === stints &&
-    oracleGraphCache.include === include
-  ) {
+  if (oracleGraphCache && oracleGraphCache.matches === matches) {
     return oracleGraphCache.value;
   }
-  oracleGraphCache = {
-    matches,
-    stints,
-    include,
-    value: oracleGraph(matches, stints, { includeStints: include }, normalizedKey),
-  };
+  oracleGraphCache = { matches, value: winChainGraph(matches, normalizedKey) };
   return oracleGraphCache.value;
 }
 
@@ -5580,11 +5563,6 @@ function populateOracleOptions(graph) {
 
 function oracleViaText(via) {
   if (!via) return "";
-  if (via.type === "stint") {
-    return t(state.language, "oracle.viaStint")
-      .replace("{season}", seasonShortDisplay(via.seasonId))
-      .replace("{division}", via.division || "");
-  }
   return t(state.language, "oracle.viaMatch")
     .replace("{season}", seasonShortDisplay(via.seasonId))
     .replace("{week}", via.week || "");
@@ -5592,7 +5570,7 @@ function oracleViaText(via) {
 
 function oracleHopHtml(hop) {
   const via = hop.via;
-  const videoHtml = via && via.type === "match"
+  const videoHtml = via
     ? videoLinksForMatch(via.matchId, { compact: true }) ||
       (via.videoUrl
         ? `<a href="${escapeAttr(via.videoUrl)}" target="_blank" rel="noreferrer">${escapeHtml(t(state.language, "values.video"))}</a>`
@@ -5603,6 +5581,29 @@ function oracleHopHtml(hop) {
       <span class="oracle-hop-via">${escapeHtml(oracleViaText(via))}${videoHtml ? ` · ${videoHtml}` : ""}</span>
     </div>
     <span class="oracle-person">${personLink(hop.key, hop.name)}</span>
+  `;
+}
+
+function oracleDirectionHtml(graph, fromKey, toKey) {
+  const fromName = graph.nodes.get(fromKey)?.name || fromKey;
+  const toName = graph.nodes.get(toKey)?.name || toKey;
+  const path = winChainPath(graph, fromKey, toKey);
+  if (!path) {
+    return `<p class="empty">${escapeHtml(
+      t(state.language, "oracle.noWinChain").replace("{a}", fromName).replace("{b}", toName),
+    )}</p>`;
+  }
+  const headline = t(state.language, "oracle.winChain")
+    .replace("{a}", fromName)
+    .replace("{b}", toName)
+    .replace("{n}", String(path.length - 1));
+  const chain = [
+    `<span class="oracle-person">${personLink(path[0].key, path[0].name)}</span>`,
+    ...path.slice(1).map((hop) => oracleHopHtml(hop)),
+  ].join("");
+  return `
+    <p class="oracle-headline"><strong>${escapeHtml(headline)}</strong></p>
+    <div class="oracle-chain">${chain}</div>
   `;
 }
 
@@ -5618,36 +5619,21 @@ function renderOracle() {
   } else if (aKey === bKey) {
     result.innerHTML = `<p class="muted">${escapeHtml(t(state.language, "oracle.samePerson"))}</p>`;
   } else {
-    const path = oraclePath(graph, aKey, bKey);
-    if (!path) {
-      result.innerHTML = `<p class="empty">${escapeHtml(t(state.language, "oracle.noPath"))}</p>`;
-    } else {
-      const aName = graph.nodes.get(aKey)?.name || aKey;
-      const bName = graph.nodes.get(bKey)?.name || bKey;
-      const usesStints = path.some((hop) => hop.via?.type === "stint");
-      const headline = t(state.language, usesStints ? "oracle.connectedStints" : "oracle.connected")
-        .replace("{a}", aName)
-        .replace("{b}", bName)
-        .replace("{n}", String(path.length - 1));
-      const chain = [
-        `<span class="oracle-person">${personLink(path[0].key, path[0].name)}</span>`,
-        ...path.slice(1).map((hop) => oracleHopHtml(hop)),
-      ].join("");
-      result.innerHTML = `
-        <p class="oracle-headline"><strong>${escapeHtml(headline)}</strong></p>
-        <div class="oracle-chain">${chain}</div>
-      `;
-    }
+    result.innerHTML = `
+      <div class="oracle-direction">${oracleDirectionHtml(graph, aKey, bKey)}</div>
+      <div class="oracle-direction">${oracleDirectionHtml(graph, bKey, aKey)}</div>
+    `;
   }
 
-  const leaderboard = connectednessRows(state.data.matches ?? [], normalizedKey).map((row, index) => ({
+  const leaderboard = dominanceRows(graph).map((row, index) => ({
     rank: index + 1,
     person: personLink(row.key, row.name),
-    opponents: row.opponents,
-    matches: row.matches,
+    beats_direct: row.beats_direct,
+    beats_transitive: row.beats_transitive,
+    share: `${row.share} %`,
   }));
-  renderTable("#oracle-leaderboard", leaderboard, CONNECTEDNESS_COLUMNS, ["person"], {
-    filename: "gpl-connectedness.csv",
+  renderTable("#oracle-leaderboard", leaderboard, DOMINANCE_COLUMNS, ["person"], {
+    filename: "gpl-dominanz.csv",
   });
 }
 
@@ -6233,7 +6219,9 @@ const NUMERIC_COLUMNS = new Set([
   "meetings",
   "closeness",
   "rivalry_score",
-  "opponents",
+  "beats_direct",
+  "beats_transitive",
+  "share",
   "rating",
   "seasons",
   "divisions",

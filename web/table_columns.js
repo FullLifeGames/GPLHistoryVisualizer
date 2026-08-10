@@ -211,11 +211,12 @@ export const RIVALRY_COLUMNS = [
   "source",
 ];
 
-export const CONNECTEDNESS_COLUMNS = [
+export const DOMINANCE_COLUMNS = [
   "rank",
   "person",
-  "opponents",
-  "matches",
+  "beats_direct",
+  "beats_transitive",
+  "share",
 ];
 
 export const UPSET_COLUMNS = [

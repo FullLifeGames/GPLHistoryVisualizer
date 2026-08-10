@@ -2103,6 +2103,14 @@ input:focus,
   font-weight: 900;
 }
 
+.score-explainer > p {
+  margin: 0;
+  padding: 0 14px 14px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .score-explainer-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -4356,14 +4364,16 @@ tbody tr:hover {
   font-size: 0.78rem;
 }
 
-.oracle-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
 .oracle-headline {
   margin: 0 0 10px;
+}
+
+.oracle-direction {
+  margin: 0 0 18px;
+}
+
+.oracle-direction:last-child {
+  margin-bottom: 0;
 }
 
 .oracle-chain {
@@ -4409,6 +4419,7 @@ tbody tr:hover {
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 8px;
+  padding: 0;
 }
 
 .rivalry-card .highlight-rank {
@@ -4437,6 +4448,18 @@ tbody tr:hover {
 
 .rivalry-back {
   margin: 0 0 10px;
+}
+
+/* Standalone cards outside a grid: bounded width and consistent vertical
+   rhythm, so single hof-cards never stretch across the whole page. */
+.standalone-card {
+  max-width: 420px;
+  margin: 16px 0;
+}
+
+#view-rivalry-detail > h3,
+#view-rivalry-detail > #rivalry-gap-block > h3 {
+  margin: 18px 0 10px;
 }
 
 #rivalry-gap-block .score-explainer {
