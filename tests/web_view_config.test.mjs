@@ -53,6 +53,13 @@ assert.equal(viewGroupForView("rivalry-detail"), "duels");
 assert.equal(isValidView("oracle"), true);
 assert.equal(isValidView("rivalries"), true);
 assert.equal(isValidView("rivalry-detail"), true);
+const seasonsGroup = VIEW_GROUPS.find((group) => group.id === "seasons");
+assert.deepEqual(seasonsGroup.detailViews, ["season-story", "season-wrapped"]);
+assert.equal(viewGroupForView("season-story"), "seasons");
+assert.equal(viewGroupForView("season-wrapped"), "seasons");
+assert.equal(isValidView("season-story"), true);
+assert.equal(isValidView("season-wrapped"), true);
+
 const gamesGroup = VIEW_GROUPS.find((group) => group.id === "games");
 assert.ok(gamesGroup, "games group missing");
 assert.deepEqual(gamesGroup.views, ["games"]);

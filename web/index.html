@@ -728,11 +728,46 @@
           <p data-i18n="sections.seasonDetailDescription">Tabellen, Titel, Killlisten und Videos für die ausgewählte Saison.</p>
         </div>
         <div id="season-detail-summary" class="summary-grid"></div>
+        <p class="story-entry" id="season-detail-links"></p>
         <div id="season-detail-standings" class="table-wrap"></div>
         <div id="season-detail-champions" class="table-wrap stacked-table"></div>
         <div id="season-detail-killlists" class="table-wrap stacked-table"></div>
         <div id="season-detail-videos" class="table-wrap stacked-table"></div>
         <div id="season-detail-claims" class="table-wrap stacked-table"></div>
+      </section>
+
+      <section id="view-season-story" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.seasonStoryTitle">Season Story</h2>
+          <p data-i18n="sections.seasonStoryDescription">Die Saison als scrollbare Erzählung: Tabellenrennen, Highlight-Kämpfe und Titelentscheidung — aus den Archivdaten erzeugt.</p>
+        </div>
+        <p class="muted" id="story-note"></p>
+        <div class="audience-controls story-controls">
+          <label for="story-division"><span data-i18n="seasonStory.division">Liga</span>
+            <select id="story-division"></select>
+          </label>
+        </div>
+        <div class="story-layout">
+          <aside class="story-sticky">
+            <h3 id="story-sticky-title"></h3>
+            <div id="story-standings"></div>
+          </aside>
+          <div class="story-beats" id="story-beats"></div>
+        </div>
+      </section>
+
+      <section id="view-season-wrapped" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.seasonWrappedTitle">GPL Wrapped</h2>
+          <p data-i18n="sections.seasonWrappedDescription">Die Saison in Karten: Champion, Upset, MVP und mehr. Auszeichnungen sind berechnet, nicht offiziell.</p>
+        </div>
+        <p class="muted" id="wrapped-note"></p>
+        <div class="wrapped-deck">
+          <button type="button" class="wrapped-nav" id="wrapped-prev" aria-label="previous">‹</button>
+          <div id="wrapped-card"></div>
+          <button type="button" class="wrapped-nav" id="wrapped-next" aria-label="next">›</button>
+        </div>
+        <div class="wrapped-dots" id="wrapped-dots"></div>
       </section>
 
       <section id="view-rivalries" class="view">

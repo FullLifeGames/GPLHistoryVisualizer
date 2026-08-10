@@ -1,5 +1,17 @@
 import assert from "node:assert/strict";
-import { gameRouteHash, parseRouteHash, personRouteHash, pokemonRouteHash, rivalryRouteHash, rosterRouteHash, seasonRouteHash, viewRouteHash } from "../web/router.js";
+import {
+  careerWrappedRouteHash,
+  gameRouteHash,
+  parseRouteHash,
+  personRouteHash,
+  pokemonRouteHash,
+  rivalryRouteHash,
+  rosterRouteHash,
+  seasonRouteHash,
+  seasonStoryRouteHash,
+  viewRouteHash,
+  wrappedRouteHash,
+} from "../web/router.js";
 
 assert.deepEqual(parseRouteHash(""), { view: "all-time", personKey: null });
 assert.deepEqual(parseRouteHash("#/killlists"), { view: "killlists", personKey: null });
@@ -34,6 +46,13 @@ assert.deepEqual(parseRouteHash("#/matchup"), { view: "rivalries", personKey: nu
 assert.equal(rivalryRouteHash("person_bene", "person_pokgalaxy"), "#/rivalitaet/person_bene__person_pokgalaxy");
 assert.equal(parseRouteHash(rivalryRouteHash("a b", "c d")).rivalryKey.aKey, "a b");
 
+assert.deepEqual(parseRouteHash("#/saison-story/season_004"), { view: "season-story", personKey: null, seasonId: "season_004" });
+assert.deepEqual(parseRouteHash("#/wrapped/season_004"), { view: "season-wrapped", personKey: null, seasonId: "season_004" });
+assert.deepEqual(parseRouteHash("#/wrapped/person/person_bene"), { view: "season-wrapped", personKey: null, wrappedPersonKey: "person_bene" });
+assert.equal(seasonStoryRouteHash("season_004"), "#/saison-story/season_004");
+assert.equal(wrappedRouteHash("season_004"), "#/wrapped/season_004");
+assert.equal(careerWrappedRouteHash("person_bene"), "#/wrapped/person/person_bene");
+assert.deepEqual(parseRouteHash(seasonStoryRouteHash("season_010")), { view: "season-story", personKey: null, seasonId: "season_010" });
 assert.deepEqual(parseRouteHash("#/spiel/kader-raten"), { view: "game", personKey: null, gameKey: "kader-raten" });
 assert.deepEqual(parseRouteHash(gameRouteHash("quizshow")), { view: "game", personKey: null, gameKey: "quizshow" });
 // Unknown game ids land on the hub instead of a broken detail page.

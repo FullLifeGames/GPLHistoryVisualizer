@@ -30,6 +30,15 @@ export function parseRouteHash(hash) {
     }
     return { view: "rivalries", personKey: null };
   }
+  if (parts[0] === "saison-story" && parts[1]) {
+    return { view: "season-story", personKey: null, seasonId: parts[1] };
+  }
+  if (parts[0] === "wrapped" && parts[1] === "person" && parts[2]) {
+    return { view: "season-wrapped", personKey: null, wrappedPersonKey: parts[2] };
+  }
+  if (parts[0] === "wrapped" && parts[1]) {
+    return { view: "season-wrapped", personKey: null, seasonId: parts[1] };
+  }
   if (parts[0] === "spiel") {
     if (parts[1] && GAME_IDS.includes(parts[1])) {
       return { view: "game", personKey: null, gameKey: parts[1] };
@@ -69,4 +78,16 @@ export function rivalryRouteHash(aKey, bKey) {
 
 export function gameRouteHash(gameId) {
   return `#/spiel/${encodeURIComponent(gameId)}`;
+}
+
+export function seasonStoryRouteHash(seasonId) {
+  return `#/saison-story/${encodeURIComponent(seasonId)}`;
+}
+
+export function wrappedRouteHash(seasonId) {
+  return `#/wrapped/${encodeURIComponent(seasonId)}`;
+}
+
+export function careerWrappedRouteHash(personKey) {
+  return `#/wrapped/person/${encodeURIComponent(personKey)}`;
 }

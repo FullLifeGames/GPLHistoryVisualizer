@@ -5206,3 +5206,104 @@ p.game-status.game-bad {
   stroke: var(--muted);
   stroke-dasharray: 3 3;
 }
+
+/* Season Story scrollytelling */
+.story-entry {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 10px 0 16px;
+}
+
+.story-layout {
+  align-items: start;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+}
+
+.story-sticky {
+  position: sticky;
+  top: 76px;
+}
+
+.story-sticky h3 {
+  margin: 0 0 8px;
+}
+
+.story-sticky table {
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  width: 100%;
+}
+
+.story-sticky td,
+.story-sticky th {
+  border-bottom: 1px solid var(--border);
+  padding: 4px 8px;
+  text-align: left;
+}
+
+.story-beats {
+  display: flex;
+  flex-direction: column;
+  gap: 32vh;
+  padding: 8vh 0 40vh;
+}
+
+.story-beat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  opacity: 0.55;
+  padding: 18px 20px;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.story-beat.is-active {
+  opacity: 1;
+  transform: translateY(-2px);
+}
+
+.story-beat .story-text {
+  font-size: 1.05rem;
+  margin: 0 0 8px;
+}
+
+.story-beat-champion .story-text {
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.story-thumb {
+  border-radius: 8px;
+  max-width: 100%;
+}
+
+.story-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 8px 0 0;
+}
+
+.story-sources {
+  font-size: 0.8rem;
+  margin: 8px 0 0;
+  opacity: 0.8;
+}
+
+@media (max-width: 800px) {
+  .story-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .story-sticky {
+    position: static;
+  }
+
+  .story-beats {
+    gap: 24px;
+    padding: 0;
+  }
+}

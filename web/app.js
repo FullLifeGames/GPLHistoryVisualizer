@@ -7,7 +7,19 @@ import {
   normalizeTheme,
   t,
 } from "./i18n.js";
-import { gameRouteHash, parseRouteHash, personRouteHash, pokemonRouteHash, rivalryRouteHash, rosterRouteHash, seasonRouteHash, viewRouteHash } from "./router.js";
+import {
+  careerWrappedRouteHash,
+  gameRouteHash,
+  parseRouteHash,
+  personRouteHash,
+  pokemonRouteHash,
+  rivalryRouteHash,
+  rosterRouteHash,
+  seasonRouteHash,
+  seasonStoryRouteHash,
+  viewRouteHash,
+  wrappedRouteHash,
+} from "./router.js";
 import { pokemonAssetId } from "./pokemon_names.js";
 import { normalizeRosterGroupKey, rosterIdentityKey } from "./roster_keys.js";
 import { GAME_IDS, defaultViewForGroup, viewGroupForView } from "./view_config.js";
@@ -47,6 +59,8 @@ import {
   timelineSliderModel,
 } from "./timeline_events.js";
 import { titleRaceDivisions, titleRaceSeries } from "./title_race.js";
+import { buildTimeline, standingsHistory } from "./timeline.js";
+import { seasonStoryBeats } from "./season_story.js";
 import { awardsBySeason, finderFilterRows, hofInductees, spoonRows, streakTableRows } from "./records.js";
 import { rivalryMeetings, rivalryPairs } from "./rivalries.js";
 import { dominanceRows, winChainGraph, winChainPath } from "./oracle.js";
@@ -196,6 +210,8 @@ const VIEW_DATASETS = {
   "review-workflow": ["reviewIndex", "missingKilllists", "missingKilllistAppearances", "lowConfidenceVideos", "ambiguousMatches"],
   "source-claims": ["sourceClaims"],
   "season-detail": ["videos", "sourceClaims", "seasonStorylines"],
+  "season-story": ["matchHighlights", "matchVideos", "titleOdds", "seasonStorylines"],
+  "season-wrapped": ["awards", "matchHighlights", "videos", "matchVideos", "personAllTime"],
 };
 
 const ROSTER_BACKGROUND_BY_SEASON = {
@@ -308,6 +324,13 @@ const state = {
   titleRace: {
     division: "",
   },
+  story: {
+    division: "",
+  },
+  wrapped: {
+    index: 0,
+  },
+  wrappedFocus: null,
   rosterVariantSelection: {},
   autoSeasonDefault: false,
   autoDataModeDefault: null,
@@ -349,6 +372,8 @@ const VIEW_RENDERERS = {
   "battle-history": renderBracketOverview,
   "match-highlights": renderMatchHighlights,
   "season-detail": renderSeasonDetail,
+  "season-story": renderSeasonStory,
+  "season-wrapped": renderSeasonWrapped,
   "table-history": renderTableHistory,
   "match-plan": renderMatchPlan,
   "video-archive": renderVideoArchive,
@@ -743,7 +768,21 @@ function applyRouteFromHash() {
   const previousView = state.view;
   const previousGroup = viewGroupForView(previousView);
   const currentGroup = viewGroupForView(route.view);
-  if (route.personKey) {
+  state.wrappedFocus = route.wrappedPersonKey ? { personKey: route.wrappedPersonKey } : null;
+  if (route.wrappedPersonKey) {
+    state.personFocus = null;
+    state.pokemonFocus = null;
+    state.rosterFocus = null;
+    state.rivalryFocus = null;
+    state.gameFocus = null;
+    state.season = "all";
+    state.autoSeasonDefault = false;
+    state.division = "all";
+    state.search = "";
+    seasonFilter.value = state.season;
+    divisionFilter.value = state.division;
+    searchFilter.value = "";
+  } else if (route.personKey) {
     state.personFocus = resolvePersonFocus(route.personKey);
     state.pokemonFocus = null;
     state.rosterFocus = null;
@@ -874,7 +913,7 @@ function applyViewDataModeDefaults(viewName, previousView) {
 // zeitreise manage their own controls; record book, hall of fame, rivalries,
 // and the oracle render career-scope data over the full archive that no
 // client-side slice can recompute; the games manage their own per-round state.
-const TOOLBAR_HIDDEN_VIEWS = new Set(["cinema", "zeitreise", "record-book", "hall-of-fame", "rivalries", "rivalry-detail", "oracle", "games", "game", "audience-history", "zeitstrahl"]);
+const TOOLBAR_HIDDEN_VIEWS = new Set(["cinema", "zeitreise", "record-book", "hall-of-fame", "rivalries", "rivalry-detail", "oracle", "games", "game", "audience-history", "zeitstrahl", "season-story", "season-wrapped"]);
 
 function setActiveView(viewName) {
   state.view = viewName;
@@ -5435,17 +5474,188 @@ function renderSourceClaims() {
   );
 }
 
+let storyObserver = null;
+
+function storyVideoThumb(videoUrl) {
+  const match = /[?&]v=([\w-]{6,})/.exec(String(videoUrl ?? ""));
+  if (!match) return "";
+  return `<a href="${escapeAttr(videoUrl)}" target="_blank" rel="noreferrer"><img class="story-thumb" src="https://i.ytimg.com/vi/${escapeAttr(match[1])}/mqdefault.jpg" alt="" loading="lazy" onerror="this.hidden=true" /></a>`;
+}
+
+function renderStoryStandings(host, titleEl, frames, weeks, frameIndex) {
+  const frame = frames[Math.min(frameIndex, frames.length - 1)] ?? [];
+  titleEl.textContent = weeks.length
+    ? formatMessage(t(state.language, "seasonStory.standingsAfter"), { week: weeks[Math.min(frameIndex, weeks.length - 1)] })
+    : "";
+  if (!frame.length) {
+    host.innerHTML = `<p class="empty">${escapeHtml(t(state.language, "seasonStory.empty"))}</p>`;
+    return;
+  }
+  host.innerHTML = `
+    <table>
+      <thead><tr><th>#</th><th>${escapeHtml(columnTitle(state.language, "person"))}</th><th>${escapeHtml(columnTitle(state.language, "points"))}</th><th>±</th></tr></thead>
+      <tbody>
+        ${frame
+          .slice(0, 10)
+          .map(
+            (row) =>
+              `<tr><td>${row.rank}</td><td>${personLink(personIdForName(row.name), row.name)}</td><td>${row.points}</td><td>${row.diff > 0 ? "+" : ""}${row.diff}</td></tr>`,
+          )
+          .join("")}
+      </tbody>
+    </table>`;
+}
+
+function storyBeatHtml(beat, index, frames, weeks) {
+  const lang = state.language;
+  let body = "";
+  let extra = "";
+  if (beat.kind === "intro") {
+    body = formatMessage(t(lang, "seasonStory.intro"), { players: beat.playerCount, matchdays: beat.matchdayCount });
+  } else if (beat.kind === "race") {
+    const frame = frames[Math.min(beat.frameIndex, frames.length - 1)] ?? [];
+    const leader = frame[0];
+    const chaser = frame[1];
+    if (!leader) return "";
+    const gap = chaser
+      ? formatMessage(t(lang, "seasonStory.raceGap"), { chaser: chaser.name, points: leader.points - chaser.points })
+      : "";
+    body = formatMessage(t(lang, "seasonStory.race"), { week: beat.week, leader: leader.name, points: leader.points, gap });
+  } else if (beat.kind === "highlight") {
+    body = formatMessage(t(lang, "seasonStory.highlight"), { playerA: beat.playerA, playerB: beat.playerB, score: beat.score });
+    const links = videoLinksForMatch(beat.matchId, { compact: true }) || (beat.videoUrl ? `<a href="${escapeAttr(beat.videoUrl)}" target="_blank" rel="noreferrer">${escapeHtml(t(lang, "seasonStory.watch"))}</a>` : "");
+    extra = `${storyVideoThumb(beat.videoUrl)}${links ? `<p class="story-links">${links}</p>` : ""}`;
+  } else if (beat.kind === "decided") {
+    body = formatMessage(t(lang, "seasonStory.decided"), { week: beat.week, name: beat.name });
+    extra = `<span class="simulation-badge">${escapeHtml(t(lang, "titleRace.simBadge"))}</span>`;
+  } else if (beat.kind === "playoff") {
+    body = formatMessage(t(lang, "seasonStory.playoff"), {
+      week: beat.weekLabel || beat.week,
+      playerA: beat.playerA,
+      playerB: beat.playerB,
+      score: beat.score || "?",
+      winner: beat.winner,
+    });
+    const links = videoLinksForMatch(beat.matchId, { compact: true });
+    if (links) extra = `<p class="story-links">${links}</p>`;
+  } else if (beat.kind === "champion") {
+    if (!beat.name) return "";
+    body = formatMessage(t(lang, "seasonStory.champion"), { name: personLink(personIdForName(beat.name), beat.name), team: escapeHtml(beat.team) });
+    extra = `<p class="story-links"><a class="link-button" href="${escapeAttr(wrappedRouteHash(state.season))}">${escapeHtml(t(lang, "seasonStory.toWrapped"))}</a></p>`;
+  }
+  const sources = beat.sourceUrls ? `<p class="story-sources">${sourceLinks(beat.sourceUrls)}</p>` : "";
+  const content = beat.kind === "champion" ? `<p class="story-text">${body}</p>` : `<p class="story-text">${escapeHtml(body)}</p>`;
+  return `<article class="story-beat story-beat-${beat.kind}" data-frame="${beat.frameIndex}" data-beat="${index}">${content}${extra}${sources}</article>`;
+}
+
+function renderSeasonStory() {
+  const note = document.querySelector("#story-note");
+  const beatsHost = document.querySelector("#story-beats");
+  const standingsHost = document.querySelector("#story-standings");
+  const stickyTitle = document.querySelector("#story-sticky-title");
+  const controls = document.querySelector(".story-controls");
+  if (storyObserver) {
+    storyObserver.disconnect();
+    storyObserver = null;
+  }
+  beatsHost.innerHTML = "";
+  standingsHost.innerHTML = "";
+  stickyTitle.textContent = "";
+  if (state.season === "all") {
+    controls.hidden = true;
+    note.textContent = t(state.language, "seasonStory.chooseSeason");
+    return;
+  }
+
+  const seasonMatches = (state.data.matches ?? []).filter((row) => row.season_id === state.season);
+  const timeline = buildTimeline(seasonMatches);
+  const history = standingsHistory(timeline).get(state.season);
+  const divisions = history ? [...history.keys()].filter(Boolean) : [];
+  if (!divisions.length) {
+    controls.hidden = true;
+    note.textContent = t(state.language, "seasonStory.empty");
+    return;
+  }
+  divisions.sort((a, b) => {
+    const rank = (division) => (division.toLowerCase().includes("regular") ? 0 : division.toLowerCase().includes("liga 1") ? 1 : 2);
+    return rank(a) - rank(b) || a.localeCompare(b, "de");
+  });
+  controls.hidden = divisions.length < 2;
+  if (!divisions.includes(state.story.division)) state.story.division = divisions[0];
+  const select = document.querySelector("#story-division");
+  select.innerHTML = divisions
+    .map(
+      (division) =>
+        `<option value="${escapeAttr(division)}"${division === state.story.division ? " selected" : ""}>${escapeHtml(divisionDisplay(division, "regular_season"))}</option>`,
+    )
+    .join("");
+  select.onchange = () => {
+    state.story.division = select.value;
+    renderSeasonStory();
+  };
+  note.textContent = "";
+
+  // Frames follow the season's ticks; keep only ticks that touch this
+  // division so frame indexes match the division's matchday list.
+  const divisionTickIndexes = [];
+  timeline.ticks.forEach((tick, index) => {
+    if (tick.matches.some((row) => (row.division || "") === state.story.division)) divisionTickIndexes.push(index);
+  });
+  const allFrames = history.get(state.story.division) ?? [];
+  const frames = divisionTickIndexes.map((index) => allFrames[index]).filter(Boolean);
+  const weeks = divisionTickIndexes
+    .map((index) => timeline.ticks[index])
+    .filter((tick) => tick.kind === "matchday")
+    .map((tick) => tick.weekNumber ?? tick.order);
+
+  const beats = seasonStoryBeats({
+    seasonId: state.season,
+    division: state.story.division,
+    weeks,
+    matches: state.data.matches ?? [],
+    champions: state.data.champions ?? [],
+    highlights: state.data.matchHighlights ?? [],
+    titleOdds: state.data.titleOdds ?? [],
+    playoffMatches: (state.data.matches ?? []).filter((row) => row.season_id === state.season && row.stage === "playoffs"),
+  });
+
+  beatsHost.innerHTML = beats.map((beat, index) => storyBeatHtml(beat, index, frames, weeks)).join("");
+  renderStoryStandings(standingsHost, stickyTitle, frames, weeks, 0);
+  storyObserver = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const frameIndex = Number(entry.target.dataset.frame);
+        beatsHost.querySelectorAll(".story-beat.is-active").forEach((el) => el.classList.remove("is-active"));
+        entry.target.classList.add("is-active");
+        renderStoryStandings(standingsHost, stickyTitle, frames, weeks, frameIndex);
+      }
+    },
+    { rootMargin: "-35% 0px -45% 0px" },
+  );
+  beatsHost.querySelectorAll(".story-beat").forEach((el) => storyObserver.observe(el));
+}
+
+function renderSeasonWrapped() {
+  // Filled in by the GPL Wrapped task; the route needs a renderer to exist.
+}
+
 function renderSeasonDetail() {
   const summary = document.querySelector("#season-detail-summary");
+  const detailLinks = document.querySelector("#season-detail-links");
   const tables = ["#season-detail-standings", "#season-detail-champions", "#season-detail-killlists", "#season-detail-videos", "#season-detail-claims"];
   tables.forEach(destroyTable);
   if (state.season === "all") {
     summary.innerHTML = `<p class="empty">${escapeHtml(t(state.language, "empty.chooseSeasonDetail"))}</p>`;
+    detailLinks.innerHTML = "";
     tables.forEach((selector) => {
       document.querySelector(selector).innerHTML = "";
     });
     return;
   }
+  detailLinks.innerHTML = `
+    <a class="link-button" href="${escapeAttr(seasonStoryRouteHash(state.season))}">${escapeHtml(t(state.language, "sections.seasonStoryTitle"))}</a>
+    <a class="link-button" href="${escapeAttr(wrappedRouteHash(state.season))}">${escapeHtml(t(state.language, "sections.seasonWrappedTitle"))}</a>`;
 
   const coverage = seasonCoverageRows(state.data).find((row) => row.season_id === state.season);
   const storyline = (state.data.seasonStorylines ?? []).find((row) => row.season_id === state.season);
