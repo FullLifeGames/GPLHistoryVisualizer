@@ -111,14 +111,23 @@ export function attentionStripPoints(matchHighlightRows, seasonId) {
         : null;
     if (z === null) continue;
     points.push({
+      // Playoff rounds ("Finale", "Spiel um Platz 3") carry no usable week
+      // number, so they sort behind the regular season by schedule id.
+      playoff: row.stage && row.stage !== "regular_season" ? 1 : 0,
       weekOrder: weekNumber(row.week),
+      matchId: String(row.match_id ?? ""),
       weekLabel: row.week,
       z,
       matchLabel: `${row.player_a} ${row.score} ${row.player_b}`,
       videoUrls: String(row.video_urls ?? "").split(";").map((url) => url.trim()).filter(Boolean),
     });
   }
-  points.sort((a, b) => a.weekOrder - b.weekOrder || a.matchLabel.localeCompare(b.matchLabel, "de"));
+  points.sort(
+    (a, b) =>
+      a.playoff - b.playoff ||
+      (a.playoff ? a.matchId.localeCompare(b.matchId, "en") : a.weekOrder - b.weekOrder) ||
+      a.matchLabel.localeCompare(b.matchLabel, "de"),
+  );
   return points.map((point, index) => ({
     x: index,
     weekLabel: point.weekLabel,

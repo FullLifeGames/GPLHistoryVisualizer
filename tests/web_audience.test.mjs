@@ -106,6 +106,30 @@ test("seasonMonthBands clamps bands to the charted month range", () => {
 const HIGHLIGHT_ROWS = [
   {
     season_id: "season_001",
+    stage: "playoff",
+    match_id: "season_001_schedule_0090",
+    week: "Spiel um Platz 3",
+    player_a: "Epsilon",
+    player_b: "Zeta",
+    score: "6 - 2",
+    views_trend_z_score_peak: "0.9",
+    views_z_score_peak: "0.9",
+    video_urls: "",
+  },
+  {
+    season_id: "season_001",
+    stage: "playoff",
+    match_id: "season_001_schedule_0091",
+    week: "Finale",
+    player_a: "Eta",
+    player_b: "Theta",
+    score: "6 - 4",
+    views_trend_z_score_peak: "3.5",
+    views_z_score_peak: "3.5",
+    video_urls: "",
+  },
+  {
+    season_id: "season_001",
     week: "3. Spieltag",
     player_a: "Alpha",
     player_b: "Beta",
@@ -148,9 +172,12 @@ const HIGHLIGHT_ROWS = [
 
 test("attentionStripPoints sorts by week and falls back to the plain z-score", () => {
   const points = attentionStripPoints(HIGHLIGHT_ROWS, "season_001");
-  assert.equal(points.length, 2); // the z-less week 2 row is dropped
-  assert.deepEqual(points.map((point) => point.weekLabel), ["1. Spieltag", "3. Spieltag"]);
-  assert.deepEqual(points.map((point) => point.x), [0, 1]);
+  assert.equal(points.length, 4); // the z-less week 2 row is dropped
+  assert.deepEqual(
+    points.map((point) => point.weekLabel),
+    ["1. Spieltag", "3. Spieltag", "Spiel um Platz 3", "Finale"],
+  );
+  assert.deepEqual(points.map((point) => point.x), [0, 1, 2, 3]);
   assert.equal(points[0].z, 1.1); // trend z missing -> plain z fallback
   assert.equal(points[1].z, 2.4);
   assert.equal(points[1].matchLabel, "Alpha 6 - 0 Beta");

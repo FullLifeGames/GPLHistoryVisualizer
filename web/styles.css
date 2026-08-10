@@ -4896,3 +4896,65 @@ p.game-status.game-bad {
 .record-detail-title {
   margin: 0 0 10px;
 }
+
+/* Publikums-Geschichte */
+#audience-chart,
+#audience-strip {
+  margin: 0 auto;
+  max-width: 1100px;
+}
+
+.audience-controls {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.audience-controls label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.audience-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  justify-content: center;
+  margin: 10px 0 26px;
+}
+
+.audience-legend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+
+.audience-legend-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: currentColor;
+}
+
+.audience-strip-head {
+  text-align: center;
+  margin-top: 8px;
+}
+
+.audience-strip-head p {
+  margin: 4px 0 8px;
+}
+
+.audience-strip-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.chart-bar {
+  opacity: 0.9;
+}

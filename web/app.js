@@ -35,7 +35,8 @@ import {
   VIDEO_ARCHIVE_COLUMNS,
 } from "./table_columns.js";
 import { eloChronology, eloLedgerRows, personEloSeries, upsetRows } from "./elo_history.js";
-import { buildSeries, lineChart, paddedDomain, stepChart } from "./charts.js";
+import { buildSeries, lineChart, paddedDomain, stackedBarChart, stepChart } from "./charts.js";
+import { attentionStripPoints, monthlyChannelStacks, seasonMonthBands, stripSeasonIds } from "./audience.js";
 import { awardsBySeason, finderFilterRows, hofInductees, spoonRows, streakTableRows } from "./records.js";
 import { rivalryMeetings, rivalryPairs } from "./rivalries.js";
 import { dominanceRows, winChainGraph, winChainPath } from "./oracle.js";
@@ -282,6 +283,10 @@ const state = {
     order: "published",
     search: "",
     selectedKey: "",
+  },
+  audience: {
+    metric: "uploads",
+    stripSeason: "",
   },
   rosterVariantSelection: {},
   autoSeasonDefault: false,
@@ -4351,9 +4356,105 @@ function groupRows(rows, keyFn) {
   }, new Map());
 }
 
+function compactCount(value) {
+  if (Math.abs(value) >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (Math.abs(value) >= 10_000) return `${Math.round(value / 1000)}k`;
+  return String(Math.round(value));
+}
+
 function renderAudienceHistory() {
-  const chart = document.querySelector("#audience-chart");
-  if (chart) chart.replaceChildren();
+  const chartHost = document.querySelector("#audience-chart");
+  const legend = document.querySelector("#audience-legend");
+  const stripHost = document.querySelector("#audience-strip");
+  const seasonSelect = document.querySelector("#audience-strip-season");
+  const metricSelect = document.querySelector("#audience-metric");
+  if (!chartHost || !legend || !stripHost || !seasonSelect || !metricSelect) return;
+  const lang = state.language;
+
+  metricSelect.value = state.audience.metric;
+  metricSelect.onchange = () => {
+    state.audience.metric = metricSelect.value === "views" ? "views" : "uploads";
+    renderAudienceHistory();
+  };
+
+  const videos = state.data.videos ?? [];
+  if (!videos.length) {
+    chartHost.innerHTML = `<p class="muted">${escapeHtml(t(lang, "audience.empty"))}</p>`;
+    legend.replaceChildren();
+  } else {
+    const metric = state.audience.metric;
+    const stacks = monthlyChannelStacks(videos, { metric, otherLabel: t(lang, "audience.otherChannels") });
+    const bands = seasonMonthBands(state.data.seasons ?? [], stacks.months, state.data.champions ?? []);
+    const monthLabel = (index) => {
+      const month = stacks.months[index];
+      if (!month) return "";
+      const [year, mm] = month.split("-");
+      return mm === "01" || index === 0 ? `${mm}/${year.slice(2)}` : "";
+    };
+    const formatValue = metric === "views" ? compactCount : (value) => String(Math.round(value));
+    stackedBarChart(chartHost, {
+      rows: stacks.rows,
+      bands,
+      height: 330,
+      formatX: monthLabel,
+      formatY: formatValue,
+      tooltip: (row) => {
+        const parts = stacks.channels
+          .map((channel, index) => ({ channel, value: row.values[index] }))
+          .filter((entry) => entry.value > 0)
+          .sort((a, b) => b.value - a.value)
+          .slice(0, 3)
+          .map((entry) => `${entry.channel} ${formatValue(entry.value)}`);
+        const total = `${t(lang, "audience.total")}: ${formatValue(row.total)}`;
+        return [row.month, total, ...parts].join(" · ");
+      },
+    });
+    legend.innerHTML = stacks.channels
+      .map(
+        (channel, index) =>
+          `<span class="audience-legend-chip"><span class="audience-legend-swatch viz-series-${(index % 8) + 1}"></span>${escapeHtml(channel)}</span>`,
+      )
+      .join("");
+  }
+
+  const highlightRows = state.data.matchHighlights ?? [];
+  const seasonIds = stripSeasonIds(highlightRows);
+  if (!seasonIds.length) {
+    seasonSelect.replaceChildren();
+    stripHost.innerHTML = `<p class="muted">${escapeHtml(t(lang, "audience.stripEmpty"))}</p>`;
+    return;
+  }
+  if (!seasonIds.includes(state.audience.stripSeason)) {
+    state.audience.stripSeason = seasonIds[seasonIds.length - 1];
+  }
+  seasonSelect.innerHTML = seasonIds
+    .map(
+      (seasonId) =>
+        `<option value="${escapeAttr(seasonId)}"${seasonId === state.audience.stripSeason ? " selected" : ""}>${escapeHtml(seasonDisplay(seasonId))}</option>`,
+    )
+    .join("");
+  seasonSelect.onchange = () => {
+    state.audience.stripSeason = seasonSelect.value;
+    renderAudienceHistory();
+  };
+  const points = attentionStripPoints(highlightRows, state.audience.stripSeason);
+  if (!points.length) {
+    stripHost.innerHTML = `<p class="muted">${escapeHtml(t(lang, "audience.stripEmpty"))}</p>`;
+    return;
+  }
+  stepChart(stripHost, {
+    series: [{ points: points.map((point) => ({ x: point.x, y: point.z, source: point })), className: "viz-series-1" }],
+    yDomain: paddedDomain([0, ...points.map((point) => point.z)]),
+    height: 220,
+    formatX: (value) => {
+      if (!Number.isInteger(value)) return "";
+      const point = points[value];
+      const week = /(\d+)/.exec(point?.weekLabel ?? "")?.[1];
+      return week ? String(Number(week)) : "";
+    },
+    formatY: (value) => displayNumber(Math.round(value * 10) / 10),
+    tooltip: (source) => `${source.weekLabel} · ${source.matchLabel} · z ${displayNumber(source.z)}`,
+  });
 }
 
 function renderVideoArchive() {

@@ -73,6 +73,8 @@ assert.equal(indexHtml.includes('id="audience-strip-season"'), true);
 assert.equal(indexHtml.includes('id="audience-strip"'), true);
 assert.equal(indexHtml.indexOf('data-view="cinema"') < indexHtml.indexOf('data-view="audience-history"'), true);
 assert.equal(appJs.includes('"audience-history": renderAudienceHistory'), true);
+assert.equal(stylesCss.includes(".audience-legend"), true);
+assert.equal(stylesCss.includes(".chart-bar"), true);
 assert.match(appJs, /TOOLBAR_HIDDEN_VIEWS = new Set\(\[[^\]]*"audience-history"/);
 assert.equal(indexHtml.includes('data-i18n="highlightMatches.scoreFormulaTitle"'), true);
 assert.equal(indexHtml.includes('id="person-summary-section"'), false);
