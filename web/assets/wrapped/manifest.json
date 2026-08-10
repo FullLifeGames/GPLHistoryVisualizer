@@ -1,0 +1,354 @@
+{
+  "cards": [
+    {
+      "season_id": "season_001",
+      "card_key": "champion",
+      "file": "season_001-champion.png"
+    },
+    {
+      "season_id": "season_001",
+      "card_key": "upset",
+      "file": "season_001-upset.png"
+    },
+    {
+      "season_id": "season_001",
+      "card_key": "mvp",
+      "file": "season_001-mvp.png"
+    },
+    {
+      "season_id": "season_001",
+      "card_key": "kill_leader",
+      "file": "season_001-kill_leader.png"
+    },
+    {
+      "season_id": "season_001",
+      "card_key": "top_video",
+      "file": "season_001-top_video.png"
+    },
+    {
+      "season_id": "season_001",
+      "card_key": "closest",
+      "file": "season_001-closest.png"
+    },
+    {
+      "season_id": "season_001",
+      "card_key": "spoon",
+      "file": "season_001-spoon.png"
+    },
+    {
+      "season_id": "season_002",
+      "card_key": "champion",
+      "file": "season_002-champion.png"
+    },
+    {
+      "season_id": "season_002",
+      "card_key": "upset",
+      "file": "season_002-upset.png"
+    },
+    {
+      "season_id": "season_002",
+      "card_key": "mvp",
+      "file": "season_002-mvp.png"
+    },
+    {
+      "season_id": "season_002",
+      "card_key": "kill_leader",
+      "file": "season_002-kill_leader.png"
+    },
+    {
+      "season_id": "season_002",
+      "card_key": "top_video",
+      "file": "season_002-top_video.png"
+    },
+    {
+      "season_id": "season_002",
+      "card_key": "closest",
+      "file": "season_002-closest.png"
+    },
+    {
+      "season_id": "season_002",
+      "card_key": "spoon",
+      "file": "season_002-spoon.png"
+    },
+    {
+      "season_id": "season_003",
+      "card_key": "champion",
+      "file": "season_003-champion.png"
+    },
+    {
+      "season_id": "season_003",
+      "card_key": "upset",
+      "file": "season_003-upset.png"
+    },
+    {
+      "season_id": "season_003",
+      "card_key": "mvp",
+      "file": "season_003-mvp.png"
+    },
+    {
+      "season_id": "season_003",
+      "card_key": "kill_leader",
+      "file": "season_003-kill_leader.png"
+    },
+    {
+      "season_id": "season_003",
+      "card_key": "top_video",
+      "file": "season_003-top_video.png"
+    },
+    {
+      "season_id": "season_003",
+      "card_key": "closest",
+      "file": "season_003-closest.png"
+    },
+    {
+      "season_id": "season_003",
+      "card_key": "spoon",
+      "file": "season_003-spoon.png"
+    },
+    {
+      "season_id": "season_004",
+      "card_key": "champion",
+      "file": "season_004-champion.png"
+    },
+    {
+      "season_id": "season_004",
+      "card_key": "upset",
+      "file": "season_004-upset.png"
+    },
+    {
+      "season_id": "season_004",
+      "card_key": "mvp",
+      "file": "season_004-mvp.png"
+    },
+    {
+      "season_id": "season_004",
+      "card_key": "kill_leader",
+      "file": "season_004-kill_leader.png"
+    },
+    {
+      "season_id": "season_004",
+      "card_key": "top_video",
+      "file": "season_004-top_video.png"
+    },
+    {
+      "season_id": "season_004",
+      "card_key": "closest",
+      "file": "season_004-closest.png"
+    },
+    {
+      "season_id": "season_004",
+      "card_key": "spoon",
+      "file": "season_004-spoon.png"
+    },
+    {
+      "season_id": "season_005",
+      "card_key": "champion",
+      "file": "season_005-champion.png"
+    },
+    {
+      "season_id": "season_005",
+      "card_key": "upset",
+      "file": "season_005-upset.png"
+    },
+    {
+      "season_id": "season_005",
+      "card_key": "mvp",
+      "file": "season_005-mvp.png"
+    },
+    {
+      "season_id": "season_005",
+      "card_key": "kill_leader",
+      "file": "season_005-kill_leader.png"
+    },
+    {
+      "season_id": "season_005",
+      "card_key": "top_video",
+      "file": "season_005-top_video.png"
+    },
+    {
+      "season_id": "season_005",
+      "card_key": "closest",
+      "file": "season_005-closest.png"
+    },
+    {
+      "season_id": "season_005",
+      "card_key": "spoon",
+      "file": "season_005-spoon.png"
+    },
+    {
+      "season_id": "season_006",
+      "card_key": "champion",
+      "file": "season_006-champion.png"
+    },
+    {
+      "season_id": "season_006",
+      "card_key": "upset",
+      "file": "season_006-upset.png"
+    },
+    {
+      "season_id": "season_006",
+      "card_key": "mvp",
+      "file": "season_006-mvp.png"
+    },
+    {
+      "season_id": "season_006",
+      "card_key": "kill_leader",
+      "file": "season_006-kill_leader.png"
+    },
+    {
+      "season_id": "season_006",
+      "card_key": "top_video",
+      "file": "season_006-top_video.png"
+    },
+    {
+      "season_id": "season_006",
+      "card_key": "closest",
+      "file": "season_006-closest.png"
+    },
+    {
+      "season_id": "season_006",
+      "card_key": "spoon",
+      "file": "season_006-spoon.png"
+    },
+    {
+      "season_id": "season_007",
+      "card_key": "champion",
+      "file": "season_007-champion.png"
+    },
+    {
+      "season_id": "season_007",
+      "card_key": "upset",
+      "file": "season_007-upset.png"
+    },
+    {
+      "season_id": "season_007",
+      "card_key": "mvp",
+      "file": "season_007-mvp.png"
+    },
+    {
+      "season_id": "season_007",
+      "card_key": "kill_leader",
+      "file": "season_007-kill_leader.png"
+    },
+    {
+      "season_id": "season_007",
+      "card_key": "top_video",
+      "file": "season_007-top_video.png"
+    },
+    {
+      "season_id": "season_007",
+      "card_key": "closest",
+      "file": "season_007-closest.png"
+    },
+    {
+      "season_id": "season_007",
+      "card_key": "spoon",
+      "file": "season_007-spoon.png"
+    },
+    {
+      "season_id": "season_008",
+      "card_key": "champion",
+      "file": "season_008-champion.png"
+    },
+    {
+      "season_id": "season_008",
+      "card_key": "upset",
+      "file": "season_008-upset.png"
+    },
+    {
+      "season_id": "season_008",
+      "card_key": "mvp",
+      "file": "season_008-mvp.png"
+    },
+    {
+      "season_id": "season_008",
+      "card_key": "kill_leader",
+      "file": "season_008-kill_leader.png"
+    },
+    {
+      "season_id": "season_008",
+      "card_key": "top_video",
+      "file": "season_008-top_video.png"
+    },
+    {
+      "season_id": "season_008",
+      "card_key": "closest",
+      "file": "season_008-closest.png"
+    },
+    {
+      "season_id": "season_008",
+      "card_key": "spoon",
+      "file": "season_008-spoon.png"
+    },
+    {
+      "season_id": "season_009",
+      "card_key": "champion",
+      "file": "season_009-champion.png"
+    },
+    {
+      "season_id": "season_009",
+      "card_key": "upset",
+      "file": "season_009-upset.png"
+    },
+    {
+      "season_id": "season_009",
+      "card_key": "mvp",
+      "file": "season_009-mvp.png"
+    },
+    {
+      "season_id": "season_009",
+      "card_key": "kill_leader",
+      "file": "season_009-kill_leader.png"
+    },
+    {
+      "season_id": "season_009",
+      "card_key": "top_video",
+      "file": "season_009-top_video.png"
+    },
+    {
+      "season_id": "season_009",
+      "card_key": "closest",
+      "file": "season_009-closest.png"
+    },
+    {
+      "season_id": "season_009",
+      "card_key": "spoon",
+      "file": "season_009-spoon.png"
+    },
+    {
+      "season_id": "season_010",
+      "card_key": "champion",
+      "file": "season_010-champion.png"
+    },
+    {
+      "season_id": "season_010",
+      "card_key": "upset",
+      "file": "season_010-upset.png"
+    },
+    {
+      "season_id": "season_010",
+      "card_key": "mvp",
+      "file": "season_010-mvp.png"
+    },
+    {
+      "season_id": "season_010",
+      "card_key": "kill_leader",
+      "file": "season_010-kill_leader.png"
+    },
+    {
+      "season_id": "season_010",
+      "card_key": "top_video",
+      "file": "season_010-top_video.png"
+    },
+    {
+      "season_id": "season_010",
+      "card_key": "closest",
+      "file": "season_010-closest.png"
+    },
+    {
+      "season_id": "season_010",
+      "card_key": "spoon",
+      "file": "season_010-spoon.png"
+    }
+  ]
+}

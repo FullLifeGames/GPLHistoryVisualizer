@@ -20,6 +20,9 @@ drive-archive = [
   "google-auth-oauthlib>=1.2.0",
   "yt-dlp>=2024.5.27",
 ]
+wrapped = [
+  "Pillow>=10.0.0",
+]
 
 [project.scripts]
 gpl-history = "gpl_history.cli:main"

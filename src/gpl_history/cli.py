@@ -114,6 +114,10 @@ def main(argv: list[str] | None = None) -> int:
     title_odds.add_argument("--sims", type=int, default=1000)
     title_odds.add_argument("--seed", type=int, default=42)
 
+    wrapped = subparsers.add_parser("wrapped-cards", help="Render shareable GPL Wrapped PNG cards (requires Pillow, pip install .[wrapped]).")
+    wrapped.add_argument("--data-dir", default="data")
+    wrapped.add_argument("--web-dir", default="web")
+
     args = parser.parse_args(argv)
 
     if args.command == "collect":
@@ -155,6 +159,12 @@ def main(argv: list[str] | None = None) -> int:
 
         count = build_and_write_title_odds(Path(args.data_dir), sims=args.sims, seed=args.seed)
         print(f"title_odds: {count}")
+        return 0
+    if args.command == "wrapped-cards":
+        from .wrapped_cards import render_wrapped_cards
+
+        count = render_wrapped_cards(Path(args.data_dir), Path(args.web_dir))
+        print(f"wrapped_cards: {count}")
         return 0
     if args.command == "report":
         generate_report(Path(args.data_dir), Path(args.out))
