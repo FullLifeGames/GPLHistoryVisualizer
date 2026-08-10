@@ -5384,14 +5384,14 @@ const GAME_I18N_BY_ID = {
 // round was generated from, so no reveal ever shows an unsourced claim.
 // tone: "success" | "error" colors the card and adds a check/cross icon so
 // right and wrong read at a glance.
-function gameRevealCard({ title, bodyHtml, sourceUrls, tone = "" }) {
+function gameRevealCard({ title, bodyHtml, sourceUrls, tone = "", wide = false }) {
   const toneClass = tone === "success" ? " game-reveal-success" : tone === "error" ? " game-reveal-error" : "";
   const icon = tone === "success" ? "✓" : tone === "error" ? "✗" : "";
   const sources = sourceUrls
     ? `<p class="game-reveal-sources"><strong>${escapeHtml(t(state.language, "games.sourceTitle"))}:</strong> ${sourceLinks(sourceUrls)}</p>`
     : "";
   return `
-    <div class="game-reveal standalone-card${toneClass}">
+    <div class="game-reveal standalone-card${toneClass}${wide ? " game-reveal-wide" : ""}">
       <h4>${icon ? `<span class="game-reveal-icon" aria-hidden="true">${icon}</span>` : ""}${escapeHtml(title)}</h4>
       ${bodyHtml}
       ${sources}
@@ -5852,6 +5852,7 @@ function renderKlickVideoDuel(body, sub, modeControls, bindMode) {
       ${gameRevealCard({
         title: formatMessage(t(state.language, "games.klick.gameOver"), { score: game.score }),
         tone: "error",
+        wide: true,
         bodyHtml: `<div class="game-klick-row">${card(current, true)}${card(next, true)}</div>`,
         sourceUrls: next.source_urls,
       })}

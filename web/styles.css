@@ -4662,6 +4662,16 @@ p.game-status.game-bad {
   color: var(--muted);
 }
 
+/* Reveal cards that carry two video cards need the full duel width. */
+.game-reveal-wide {
+  max-width: 760px;
+}
+
+.game-reveal-wide .game-klick-row {
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .game-sprite-row {
   display: flex;
   flex-wrap: wrap;
