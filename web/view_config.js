@@ -10,7 +10,8 @@ export const VIEW_GROUPS = [
     id: "duels",
     labelKey: "navGroups.duels",
     defaultView: "matchup",
-    views: ["matchup"],
+    views: ["matchup", "rivalries", "oracle"],
+    detailViews: ["rivalry-detail"],
   },
   {
     id: "pokemon",

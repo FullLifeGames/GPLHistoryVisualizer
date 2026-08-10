@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { defaultViewForGroup, subviewsForGroup, viewGroupForView, VIEW_GROUPS } from "../web/view_config.js";
+import { defaultViewForGroup, isValidView, subviewsForGroup, viewGroupForView, VIEW_GROUPS } from "../web/view_config.js";
 
 assert.deepEqual(
   VIEW_GROUPS.map((group) => group.id),
@@ -42,7 +42,17 @@ assert.equal(viewGroupForView("source-claims"), "data");
 assert.equal(viewGroupForView("missing"), "people");
 
 assert.deepEqual(subviewsForGroup("people"), ["all-time", "team-rosters"]);
-assert.deepEqual(subviewsForGroup("duels"), ["matchup"]);
+assert.deepEqual(subviewsForGroup("duels"), ["matchup", "rivalries", "oracle"]);
+
+const duelsGroup = VIEW_GROUPS.find((group) => group.id === "duels");
+assert.deepEqual(duelsGroup.views, ["matchup", "rivalries", "oracle"]);
+assert.deepEqual(duelsGroup.detailViews, ["rivalry-detail"]);
+assert.equal(viewGroupForView("rivalries"), "duels");
+assert.equal(viewGroupForView("oracle"), "duels");
+assert.equal(viewGroupForView("rivalry-detail"), "duels");
+assert.equal(isValidView("oracle"), true);
+assert.equal(isValidView("rivalries"), true);
+assert.equal(isValidView("rivalry-detail"), true);
 assert.deepEqual(subviewsForGroup("pokemon"), ["killlists", "pokemon-drafts"]);
 assert.deepEqual(subviewsForGroup("seasons"), ["battle-history", "match-highlights", "season-detail", "table-history", "match-plan", "zeitreise"]);
 assert.deepEqual(subviewsForGroup("videos"), ["video-archive", "cinema"]);

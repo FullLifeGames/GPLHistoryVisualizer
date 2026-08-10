@@ -18,6 +18,13 @@ export function parseRouteHash(hash) {
   if (parts[0] === "roster" && parts[1]) {
     return { view: "roster-detail", personKey: null, rosterKey: parts[1] };
   }
+  if (parts[0] === "rivalitaet" && parts[1]) {
+    const pair = parts[1].split("__");
+    if (pair.length === 2 && pair[0] && pair[1]) {
+      return { view: "rivalry-detail", personKey: null, rivalryKey: { aKey: pair[0], bKey: pair[1] } };
+    }
+    return { view: "rivalries", personKey: null };
+  }
   if (GROUP_IDS.has(parts[0])) {
     return { view: defaultViewForGroup(parts[0]), personKey: null };
   }
@@ -43,4 +50,8 @@ export function pokemonRouteHash(pokemonKey) {
 
 export function rosterRouteHash(rosterKey) {
   return `#/roster/${encodeURIComponent(rosterKey)}`;
+}
+
+export function rivalryRouteHash(aKey, bKey) {
+  return `#/rivalitaet/${encodeURIComponent(aKey)}__${encodeURIComponent(bKey)}`;
 }

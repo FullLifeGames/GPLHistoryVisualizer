@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { parseRouteHash, personRouteHash, pokemonRouteHash, rosterRouteHash, seasonRouteHash, viewRouteHash } from "../web/router.js";
+import { parseRouteHash, personRouteHash, pokemonRouteHash, rivalryRouteHash, rosterRouteHash, seasonRouteHash, viewRouteHash } from "../web/router.js";
 
 assert.deepEqual(parseRouteHash(""), { view: "all-time", personKey: null });
 assert.deepEqual(parseRouteHash("#/killlists"), { view: "killlists", personKey: null });
@@ -23,6 +23,15 @@ assert.deepEqual(parseRouteHash(`#/roster/${encodeURIComponent("[\"season_010\",
   personKey: null,
   rosterKey: "[\"season_010\",\"main\",\"wackel backel\",\"bene\"]",
 });
+
+assert.deepEqual(parseRouteHash("#/rivalitaet/person_bene__person_pokgalaxy"), {
+  view: "rivalry-detail",
+  personKey: null,
+  rivalryKey: { aKey: "person_bene", bKey: "person_pokgalaxy" },
+});
+assert.deepEqual(parseRouteHash("#/rivalitaet/broken"), { view: "rivalries", personKey: null });
+assert.equal(rivalryRouteHash("person_bene", "person_pokgalaxy"), "#/rivalitaet/person_bene__person_pokgalaxy");
+assert.equal(parseRouteHash(rivalryRouteHash("a b", "c d")).rivalryKey.aKey, "a b");
 
 assert.equal(viewRouteHash("all-time"), "#/all-time");
 assert.equal(viewRouteHash("pokemon-drafts"), "#/pokemon-drafts");
