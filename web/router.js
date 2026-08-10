@@ -18,6 +18,11 @@ export function parseRouteHash(hash) {
   if (parts[0] === "roster" && parts[1]) {
     return { view: "roster-detail", personKey: null, rosterKey: parts[1] };
   }
+  if (parts[0] === "matchup") {
+    // The matchup checker merged into the rivalry pair pages; old links land
+    // on the rivalry index with its pair pickers.
+    return { view: "rivalries", personKey: null };
+  }
   if (parts[0] === "rivalitaet" && parts[1]) {
     const pair = parts[1].split("__");
     if (pair.length === 2 && pair[0] && pair[1]) {

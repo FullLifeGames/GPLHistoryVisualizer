@@ -30,6 +30,7 @@ assert.deepEqual(parseRouteHash("#/rivalitaet/person_bene__person_pokgalaxy"), {
   rivalryKey: { aKey: "person_bene", bKey: "person_pokgalaxy" },
 });
 assert.deepEqual(parseRouteHash("#/rivalitaet/broken"), { view: "rivalries", personKey: null });
+assert.deepEqual(parseRouteHash("#/matchup"), { view: "rivalries", personKey: null });
 assert.equal(rivalryRouteHash("person_bene", "person_pokgalaxy"), "#/rivalitaet/person_bene__person_pokgalaxy");
 assert.equal(parseRouteHash(rivalryRouteHash("a b", "c d")).rivalryKey.aKey, "a b");
 

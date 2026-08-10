@@ -9,8 +9,8 @@ export const VIEW_GROUPS = [
   {
     id: "duels",
     labelKey: "navGroups.duels",
-    defaultView: "matchup",
-    views: ["matchup", "rivalries", "oracle"],
+    defaultView: "rivalries",
+    views: ["rivalries", "oracle"],
     detailViews: ["rivalry-detail"],
   },
   {

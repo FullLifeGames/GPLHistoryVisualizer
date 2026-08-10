@@ -13,7 +13,7 @@ assert.equal(viewGroupForView("awards"), "records");
 assert.equal(viewGroupForView("hall-of-fame"), "records");
 
 assert.equal(defaultViewForGroup("people"), "all-time");
-assert.equal(defaultViewForGroup("duels"), "matchup");
+assert.equal(defaultViewForGroup("duels"), "rivalries");
 assert.equal(defaultViewForGroup("pokemon"), "killlists");
 assert.equal(defaultViewForGroup("seasons"), "battle-history");
 assert.equal(defaultViewForGroup("videos"), "video-archive");
@@ -23,7 +23,6 @@ assert.equal(defaultViewForGroup("unknown"), "all-time");
 assert.equal(viewGroupForView("all-time"), "people");
 assert.equal(viewGroupForView("person-details"), "people");
 assert.equal(viewGroupForView("roster-detail"), "people");
-assert.equal(viewGroupForView("matchup"), "duels");
 assert.equal(viewGroupForView("killlists"), "pokemon");
 assert.equal(viewGroupForView("pokemon-drafts"), "pokemon");
 assert.equal(viewGroupForView("pokemon-detail"), "pokemon");
@@ -42,10 +41,11 @@ assert.equal(viewGroupForView("source-claims"), "data");
 assert.equal(viewGroupForView("missing"), "people");
 
 assert.deepEqual(subviewsForGroup("people"), ["all-time", "team-rosters"]);
-assert.deepEqual(subviewsForGroup("duels"), ["matchup", "rivalries", "oracle"]);
+assert.deepEqual(subviewsForGroup("duels"), ["rivalries", "oracle"]);
 
 const duelsGroup = VIEW_GROUPS.find((group) => group.id === "duels");
-assert.deepEqual(duelsGroup.views, ["matchup", "rivalries", "oracle"]);
+assert.deepEqual(duelsGroup.views, ["rivalries", "oracle"]);
+assert.equal(duelsGroup.views.includes("matchup"), false);
 assert.deepEqual(duelsGroup.detailViews, ["rivalry-detail"]);
 assert.equal(viewGroupForView("rivalries"), "duels");
 assert.equal(viewGroupForView("oracle"), "duels");

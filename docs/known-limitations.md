@@ -76,7 +76,9 @@ These views compute Elo (K=32, start 1500) from the match chronology at runtime;
 
 ## Rivalitäten and Orakel (computed)
 
-The rivalry ranking is computed, not sourced: score = meetings × (0.2 + closeness) × (1 + log10(1 + pair video views)), with closeness = 1 − |wins difference| / meetings, over `matchup_summary.csv` pairs with at least 3 meetings; the formula is printed in the view. Rivalry detail pages and their Elo-gap chart run on the full-archive client Elo chronology (K=32, start 1500) and inherit the result semantics above; the toolbar is hidden on these views because they are career-scope. The Orakel builds its chains only from matches that were actually played: `forfeit` and `unresolved` rows are not edges. The optional "shared season" toggle adds same-season-and-division edges from `person_stints.csv` and labels those hops accordingly; match edges always take precedence over shared-season edges.
+The rivalry ranking is computed, not sourced: score = meetings × (0.2 + closeness) × (1 + log10(1 + pair video views)), with closeness = 1 − |wins difference| / meetings, over `matchup_summary.csv` pairs with at least 3 meetings; the formula is printed in the view. Rivalry detail pages and their Elo-gap chart run on the full-archive client Elo chronology (K=32, start 1500) and inherit the result semantics above; the toolbar is hidden on these views because they are career-scope. The former matchup checker merged into the rivalry pair pages: the index carries pair pickers for any two people, and old `#/matchup` links redirect to the rivalry index.
+
+The Orakel finds chains of transitive wins ("A beat B, B beat C") over a directed winner-to-loser graph. Only matches that were actually played and decided are edges: `forfeit` rows (never played), `unresolved` rows, and draws are excluded — so a forfeit win counts for the league table and Elo, but never for a win chain. The dominance leaderboard counts how many players someone beats directly and via chains; the share is over all archive players who appear in that graph.
 
 ## Zeitreise View
 

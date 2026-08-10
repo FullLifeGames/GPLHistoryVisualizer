@@ -65,7 +65,6 @@
         <button class="tab" data-view-group="pokemon" data-view="killlists" data-i18n="nav.killlists">Pokémon-Killlisten</button>
         <button class="tab" data-view-group="pokemon" data-view="pokemon-drafts" data-i18n="nav.pokemonDrafts">Pokémon-Drafts</button>
         <button class="tab" data-view-group="people" data-view="team-rosters" data-i18n="nav.teamRosters">Kaderübersichten</button>
-        <button class="tab" data-view-group="duels" data-view="matchup" data-i18n="nav.matchup">Matchup-Check</button>
         <button class="tab" data-view-group="duels" data-view="rivalries" data-i18n="nav.rivalries">Rivalitäten</button>
         <button class="tab" data-view-group="duels" data-view="oracle" data-i18n="nav.oracle">Orakel</button>
         <button class="tab" data-view-group="seasons" data-view="battle-history" data-i18n="nav.battleHistory">Spielbaum</button>
@@ -642,25 +641,6 @@
         <div id="season-detail-claims" class="table-wrap stacked-table"></div>
       </section>
 
-      <section id="view-matchup" class="view">
-        <div class="section-head">
-          <h2 data-i18n="sections.matchupTitle">Matchup-Check</h2>
-          <p data-i18n="sections.matchupDescription">Vergleiche zwei Trainer oder Teams anhand verfügbarer Match-Zeilen.</p>
-        </div>
-        <form id="matchup-form" class="matchup-form">
-          <label>
-            <span data-i18n="matchup.firstName">Erster Name</span>
-            <select id="matchup-a"></select>
-          </label>
-          <label>
-            <span data-i18n="matchup.secondName">Zweiter Name</span>
-            <select id="matchup-b"></select>
-          </label>
-          <button type="submit" data-i18n="matchup.check">Prüfen</button>
-        </form>
-        <div id="matchup-result" class="result-box"></div>
-      </section>
-
       <section id="view-rivalries" class="view">
         <div class="section-head">
           <h2 data-i18n="sections.rivalriesTitle">Rivalitäten</h2>
@@ -683,6 +663,17 @@
             </div>
           </div>
         </details>
+        <form id="rivalry-form" class="matchup-form">
+          <label>
+            <span data-i18n="matchup.firstName">Erste Auswahl</span>
+            <select id="rivalry-a"></select>
+          </label>
+          <label>
+            <span data-i18n="matchup.secondName">Zweite Auswahl</span>
+            <select id="rivalry-b"></select>
+          </label>
+          <button type="submit" data-i18n="rivalries.compare">Vergleichen</button>
+        </form>
         <div id="rivalry-cards" class="hof-grid"></div>
         <div id="rivalry-show-more"></div>
         <div id="rivalry-table" class="table-wrap"></div>

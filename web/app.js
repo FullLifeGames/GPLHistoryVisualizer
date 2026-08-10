@@ -61,7 +61,6 @@ import {
   numberValue,
   personStorySummary,
   personPokemonHighlights,
-  personOptionsFromAllTimeRows,
   pokemonDraftOverviewRows,
   pokemonTitleIndex,
   pokemonStorySummary,
@@ -129,7 +128,6 @@ const DATASETS = { ...CORE_DATASETS, ...LAZY_DATASETS };
 
 const VIEW_DATASETS = {
   "all-time": ["personAllTime"],
-  matchup: ["matchVideos", "matchupSummary"],
   killlists: ["pokemonDraftOverview", "pokemonAllTime"],
   "pokemon-drafts": ["pokemonDraftOverview", "pokemonDraftInstances"],
   "pokemon-detail": ["pokemonDraftOverview", "pokemonDraftInstances"],
@@ -277,8 +275,6 @@ const columnProfileFilter = document.querySelector("#column-profile-filter");
 const seasonFilter = document.querySelector("#season-filter");
 const divisionFilter = document.querySelector("#division-filter");
 const searchFilter = document.querySelector("#search-filter");
-const matchupA = document.querySelector("#matchup-a");
-const matchupB = document.querySelector("#matchup-b");
 const cinemaSeasonFilter = document.querySelector("#cinema-season-filter");
 const cinemaParticipantFilter = document.querySelector("#cinema-participant-filter");
 const cinemaPerspectiveFilter = document.querySelector("#cinema-perspective-filter");
@@ -294,7 +290,6 @@ const LINKABLE_SEASON_COLUMNS = new Set(["season", "season_id", "season_list", "
 const LINKABLE_PERSON_COLUMNS = new Set(["name", "person", "trainer", "trainers", "player_a", "player_b", "winner", "opponent", "perspective_person", "peak_perspective", "champion"]);
 const VIEW_RENDERERS = {
   "all-time": renderAllTime,
-  matchup: renderMatchup,
   killlists: renderKilllists,
   "pokemon-drafts": renderPokemonDrafts,
   "pokemon-detail": renderPokemonDetail,
@@ -339,7 +334,6 @@ async function init() {
     await ensureDatasetsForView(state.view);
     populateSeasonFilter();
     populateDivisionFilter();
-    populateMatchupOptions();
     populateCinemaControls();
     render();
     statusEl.textContent = t(state.language, "status.loaded");
@@ -368,7 +362,6 @@ function bindControls() {
     resetUpsetCardLimit();
     divisionFilter.value = state.division;
     populateDivisionFilter();
-    populateMatchupOptions();
     populateCinemaControls();
     render();
   });
@@ -387,7 +380,6 @@ function bindControls() {
     populateSeasonFilter();
     populateDivisionFilter();
     dataModeFilter.value = state.dataMode;
-    populateMatchupOptions();
     populateCinemaControls();
     render();
   });
@@ -419,7 +411,6 @@ function bindControls() {
     resetRosterCardLimit();
     resetMatchHighlightCardLimit();
     resetUpsetCardLimit();
-    populateMatchupOptions();
     populateCinemaControls();
     render();
   });
@@ -429,7 +420,6 @@ function bindControls() {
     resetRosterCardLimit();
     resetMatchHighlightCardLimit();
     resetUpsetCardLimit();
-    populateMatchupOptions();
     populateCinemaControls();
     render();
   });
@@ -439,14 +429,16 @@ function bindControls() {
     resetRosterCardLimit();
     resetMatchHighlightCardLimit();
     resetUpsetCardLimit();
-    populateMatchupOptions();
     populateCinemaControls();
     render();
   });
 
-  document.querySelector("#matchup-form").addEventListener("submit", (event) => {
+  document.querySelector("#rivalry-form")?.addEventListener("submit", (event) => {
     event.preventDefault();
-    renderMatchup();
+    const a = document.querySelector("#rivalry-a")?.value || "";
+    const b = document.querySelector("#rivalry-b")?.value || "";
+    if (!a || !b || a === b) return;
+    window.location.hash = rivalryRouteHash(canonicalPersonRouteKey(a), canonicalPersonRouteKey(b));
   });
 
   document.querySelector("#oracle-form")?.addEventListener("submit", (event) => {
@@ -579,13 +571,11 @@ function bindControls() {
 async function handleRouteChange() {
   applyRouteFromHash();
   populateDivisionFilter();
-  populateMatchupOptions();
   populateCinemaControls();
   await yieldBeforeViewRender();
   const loadedLazyDatasets = await ensureDatasetsForView(state.view);
   if (loadedLazyDatasets) {
     populateDivisionFilter();
-    populateMatchupOptions();
     populateCinemaControls();
     statusEl.textContent = t(state.language, "status.loaded");
     statusEl.classList.add("is-ready");
@@ -615,34 +605,17 @@ function navigateToHash(hash) {
   window.location.hash = hash;
 }
 
+// The matchup checker merged into the rivalry pair pages: any head-to-head
+// button (person pages, historic data-matchup-select markup) now opens the
+// pair view for (primary, value); without a primary it lands on the index.
 function selectMatchupParticipant(value, slot = "b", primary = "") {
-  if (primary) {
-    setMatchupSelectValue(matchupA, primary);
-  }
-  if (slot === "a") {
-    setMatchupSelectValue(matchupA, value);
-  } else if (slot === "b") {
-    setMatchupSelectValue(matchupB, value);
-  } else if (!matchupA.value) {
-    setMatchupSelectValue(matchupA, value);
-  } else {
-    setMatchupSelectValue(matchupB, value);
-  }
-  if (state.view !== "matchup") {
-    navigateToView("matchup");
+  const valueKey = canonicalPersonRouteKey(value);
+  const primaryKey = primary ? canonicalPersonRouteKey(primary) : "";
+  if (!valueKey || !primaryKey || valueKey === primaryKey) {
+    navigateToView("rivalries");
     return;
   }
-  renderMatchup();
-}
-
-function setMatchupSelectValue(select, value) {
-  const key = matchupSelectKey(value);
-  if (!key) return false;
-  if (![...select.options].some((option) => option.value === key)) {
-    return false;
-  }
-  select.value = key;
-  return true;
+  navigateToHash(rivalryRouteHash(primaryKey, valueKey));
 }
 
 function bindCinemaControls() {
@@ -1164,21 +1137,6 @@ function divisionPriority(division) {
   }[division] ?? 50;
 }
 
-function populateMatchupOptions() {
-  const previousA = matchupA.value;
-  const previousB = matchupB.value;
-  const options = matchupOptions();
-  const optionHtml = [
-    `<option value="">${escapeHtml(t(state.language, "matchup.placeholder"))}</option>`,
-    ...options.map((option) => `<option value="${escapeAttr(option.value)}">${escapeHtml(option.label)}</option>`),
-  ].join("");
-  [matchupA, matchupB].forEach((select, index) => {
-    const previous = index === 0 ? previousA : previousB;
-    select.innerHTML = optionHtml;
-    select.value = options.some((option) => option.value === previous) ? previous : "";
-  });
-}
-
 function populateCinemaControls() {
   if (!cinemaSeasonFilter || !cinemaParticipantFilter || !cinemaPerspectiveFilter || !cinemaTypeFilter || !cinemaStageFilter || !cinemaOrderFilter) {
     return;
@@ -1306,12 +1264,6 @@ function setSelectOptions(select, options, selectedValue) {
     .map((option) => `<option value="${escapeAttr(option.value)}">${escapeHtml(option.label)}</option>`)
     .join("");
   select.value = options.some((option) => option.value === previous) ? previous : options[0]?.value || "";
-}
-
-function matchupOptions() {
-  const statRows = filteredPersonStats({ primaryOnly: state.dataMode === "primary" });
-  const champions = filtered(state.data.champions ?? []).filter((row) => ["source_evidenced", "user_provided"].includes(row.data_status));
-  return personOptionsFromAllTimeRows(statRows, champions, normalizedKey);
 }
 
 function render() {
@@ -5301,70 +5253,6 @@ function isFocusedPersonValue(value, focusKey) {
     .some((key) => key && (key === focusKey || key === comparableFocus));
 }
 
-function renderMatchup() {
-  const result = document.querySelector("#matchup-result");
-  const a = matchupA.value;
-  const b = matchupB.value;
-  if (!a) {
-    result.innerHTML = `<p class="muted">${escapeHtml(t(state.language, "matchup.enterNames"))}</p>`;
-    return;
-  }
-
-  const availableMatches = availableMatchRows();
-  if (!b) {
-    const sourceRows = aggregateMatchupRows(a) ?? matchupOverview(availableMatches, a, normalizedKey);
-    const overviewRows = sourceRows.map((row) => ({
-      ...row,
-      opponent: matchupSelectButton(row.opponent_key, row.opponent, "b", a),
-    }));
-    const overviewColumns = columnsForProfile(MATCHUP_COLUMNS, state.columnProfile);
-    result.innerHTML = overviewRows.length
-      ? `<div class="table-wrap">${tableHtml(overviewRows, overviewColumns, ["opponent"])}</div>`
-      : `<p class="empty">${escapeHtml(t(state.language, "matchup.empty"))}</p>`;
-    return;
-  }
-
-  const matches = availableMatches.filter((row) => {
-    const left = [row.player_a, row.team_a].map(normalizedKey);
-    const right = [row.player_b, row.team_b].map(normalizedKey);
-    return (left.includes(a) && right.includes(b)) || (left.includes(b) && right.includes(a));
-  });
-
-  let aWins = 0;
-  let bWins = 0;
-  matches.forEach((row) => {
-    const winner = normalizedKey(row.winner);
-    if (winner === a) aWins += 1;
-    if (winner === b) bWins += 1;
-  });
-
-  const matchRows = matches.slice(0, 25).map((row) => {
-    const playerA = row.player_a || row.team_a;
-    const playerB = row.player_b || row.team_b;
-    return {
-    season: seasonDisplay(row.season_id),
-    division: divisionDisplay(row.division, row.stage),
-    week: row.week,
-    player_a: matchupSelectButton(playerA, playerA, "a"),
-    player_b: matchupSelectButton(playerB, playerB, "b"),
-    winner: row.winner,
-    score: row.score_a || row.score_b ? `${row.score_a || "?"} - ${row.score_b || "?"}` : "",
-    videos: videoLinksForMatch(row.match_id),
-    source: sourceLink(row.video_url || row.source_urls, row.video_title || row.video_id || t(state.language, "values.source")),
-    };
-  });
-
-  const matchColumns = columnsForProfile(["season", "division", "week", "player_a", "player_b", "score", "winner", "videos", "source"], state.columnProfile);
-  result.innerHTML = `
-    <div class="result-grid">
-      <div class="metric"><span class="muted">${escapeHtml(t(state.language, "matchup.matches"))}</span><strong>${matches.length}</strong></div>
-      <div class="metric"><span class="muted">${escapeHtml(t(state.language, "matchup.firstWins"))}</span><strong>${aWins}</strong></div>
-      <div class="metric"><span class="muted">${escapeHtml(t(state.language, "matchup.secondWins"))}</span><strong>${bWins}</strong></div>
-    </div>
-    ${matches.length ? `<div class="table-wrap">${tableHtml(matchRows, matchColumns, ["player_a", "player_b", "videos", "source"])}</div>` : `<p class="empty">${escapeHtml(t(state.language, "matchup.empty"))}</p>`}
-  `;
-}
-
 function rivalryLink(aId, bId, label, className = "link-button") {
   const a = canonicalPersonRouteKey(aId);
   const b = canonicalPersonRouteKey(bId);
@@ -5394,6 +5282,12 @@ function renderRivalries() {
   const cards = document.querySelector("#rivalry-cards");
   const showMore = document.querySelector("#rivalry-show-more");
   if (!cards || !showMore) return;
+
+  populatePairSelects(
+    document.querySelector("#rivalry-a"),
+    document.querySelector("#rivalry-b"),
+    cachedFullEloChronology().perPerson.entries(),
+  );
 
   const pairs = rivalryPairs(state.data.matchupSummary ?? [], state.data.matchHighlights ?? [], normalizedKey);
   if (!pairs.length) {
@@ -5544,21 +5438,27 @@ function cachedOracleGraph() {
   return oracleGraphCache.value;
 }
 
-function populateOracleOptions(graph) {
-  const selects = [document.querySelector("#oracle-a"), document.querySelector("#oracle-b")];
-  if (selects.some((select) => !select)) return;
-  const options = [...graph.nodes.entries()]
+// Shared person-pair pickers (oracle, rivalry compare): full-archive person
+// list sorted by name, preserving the current selection across re-renders.
+function populatePairSelects(selectA, selectB, entries) {
+  if (!selectA || !selectB) return;
+  const options = [...entries]
     .map(([key, node]) => ({ key, name: node.name || key }))
     .sort((a, b) => a.name.localeCompare(b.name));
+  const keys = new Set(options.map((option) => option.key));
   const optionHtml = [
     `<option value="">${escapeHtml(t(state.language, "matchup.placeholder"))}</option>`,
     ...options.map((option) => `<option value="${escapeAttr(option.key)}">${escapeHtml(option.name)}</option>`),
   ].join("");
-  selects.forEach((select) => {
+  [selectA, selectB].forEach((select) => {
     const previous = select.value;
     select.innerHTML = optionHtml;
-    if (previous && graph.nodes.has(previous)) select.value = previous;
+    if (previous && keys.has(previous)) select.value = previous;
   });
+}
+
+function populateOracleOptions(graph) {
+  populatePairSelects(document.querySelector("#oracle-a"), document.querySelector("#oracle-b"), graph.nodes.entries());
 }
 
 function oracleViaText(via) {
@@ -5635,26 +5535,6 @@ function renderOracle() {
   renderTable("#oracle-leaderboard", leaderboard, DOMINANCE_COLUMNS, ["person"], {
     filename: "gpl-dominanz.csv",
   });
-}
-
-function aggregateMatchupRows(selectedKey) {
-  const rows = state.data.matchupSummary ?? [];
-  if (!rows.length || state.season !== "all" || state.division !== "all") {
-    return null;
-  }
-  const comparable = matchupSelectKey(selectedKey);
-  return rows
-    .filter((row) => matchupSelectKey(row.person_id || row.person_name) === comparable || matchupSelectKey(row.person_name) === comparable)
-    .filter((row) => rowMatchesSearch(row))
-    .map((row) => ({
-      opponent_key: matchupSelectKey(row.opponent_id || row.opponent_name),
-      opponent: row.opponent_name,
-      matches: row.matches,
-      wins: row.wins,
-      losses: row.losses,
-      draws: row.draws,
-      win_pct: row.win_pct,
-    }));
 }
 
 function matchupSelectButton(value, label = value, slot = "b", primary = "") {

@@ -73,7 +73,8 @@ assert.equal(t("de", "sections.tableHistoryDescription"), "Tabellenstände je Sa
 assert.equal(t("de", "sections.battleHistoryDescription"), "Grafische Sicht auf Playoffs, Gruppenphasen und belegte Matchwege der gewählten Saison.");
 assert.equal(t("de", "sections.videoArchiveDescription"), "Öffentliche GPL-Videos aus Teilnehmerkanälen mit Best-effort-Zuordnung zu Spieltagen.");
 assert.equal(t("de", "sections.dataCoverageDescription"), "Saisonweise Abdeckung der normalisierten CSVs und bekannte Lücken.");
-assert.equal(t("de", "sections.matchupDescription"), "Vergleiche zwei Trainer oder Teams anhand verfügbarer Match-Zeilen.");
+assert.match(t("de", "sections.rivalriesDescription"), /Duelle der GPL-Geschichte/);
+assert.match(t("de", "sections.oracleDescription"), /Siegeskette/);
 assert.equal(t("en", "sections.teamRostersTitle"), "Roster Overview");
 assert.equal(t("de", "empty.table"), "Für diese Ansicht gibt es noch keine belegten Zeilen.");
 assert.equal(t("de", "empty.chooseSeason"), "Wähle eine einzelne Saison aus, um den Spielplan zu sehen.");

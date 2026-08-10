@@ -66,13 +66,15 @@ Eight primary groups (currently four). View ids never change, so all existing `#
 | Group id | Label de / en | Views (subnav) | Detail views |
 |---|---|---|---|
 | `people` | Spieler / People | all-time, team-rosters | person-details, roster-detail |
-| `duels` (Phase 0) | Duelle / Head-to-Head | matchup, rivalries (P3), oracle (P3), team-duel (P7) | rivalry-detail (P3) |
+| `duels` (Phase 0) | Duelle / Head-to-Head | rivalries (P3), oracle (P3), team-duel (P7) | rivalry-detail (P3) |
 | `pokemon` | Pokémon / Pokémon | killlists, pokemon-drafts | pokemon-detail |
 | `seasons` | Saisons / Seasons | battle-history, match-highlights, season-detail, table-history, match-plan, zeitreise | season-story (P6) |
 | `videos` (Phase 0) | Videos / Videos | video-archive, cinema, audience-history (P5), zeitstrahl (P5) | — |
 | `records` (Phase 1) | Rekorde / Records | upset-index, record-book (P2), awards (P2), hall-of-fame (P2) | — |
 | `games` (Phase 4) | Spiele / Games | games (hub) | game (routed `#/spiel/<gameId>`) |
 | `data` | Daten / Data | unchanged (8 views) | — |
+
+*(Changed during Phase 3, user-approved: the matchup view merged into the rivalry pair pages — the rivalry index carries pair pickers, `#/matchup` redirects to `rivalries`. The Orakel shipped as directed win chains ("Siegesketten") with a dominance leaderboard instead of the undirected played-against BFS, which was trivially short on GPL data.)*
 
 Per-feature placement decisions taken from the user's notes: Match-/Streak-Finder lives **inside** the Rekordbuch view as tabs, not as its own menu entry; Holzlöffel is a tab inside Hall of Fame; the four games are one menu entry (hub) with routed sub-pages; An diesem Tag is a widget at the top of Zeitstrahl (plus an optional small teaser chip on the default view, dismissible, added only if it stays visually quiet).
 
