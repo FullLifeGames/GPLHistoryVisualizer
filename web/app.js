@@ -5712,7 +5712,7 @@ function renderTippSpiel(body) {
         <span class="game-tipp-vs">vs.</span>
         ${teamPanel(match.player_b, "b")}
       </div>
-      <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.tipp.tally"), { you: tally.you, elo: tally.elo, rounds: tally.rounds }))}</p>`;
+      <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.tipp.tallyYou"), { you: tally.you, rounds: tally.rounds }))} · ${escapeHtml(formatMessage(t(state.language, "games.tipp.tallyElo"), { elo: tally.elo, rounds: tally.rounds }))}</p>`;
     body.querySelectorAll("[data-tipp-pick]").forEach((button) => {
       button.addEventListener("click", () => {
         round.picked = button.dataset.tippPick;
@@ -5742,7 +5742,7 @@ function renderTippSpiel(body) {
         ${matchVideoLinks ? `<p>${matchVideoLinks}</p>` : ""}`,
       sourceUrls: match.source_urls,
     })}
-    <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.tipp.tally"), { you: tally.you, elo: tally.elo, rounds: tally.rounds }))}</p>
+    <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.tipp.tallyYou"), { you: tally.you, rounds: tally.rounds }))} · ${escapeHtml(formatMessage(t(state.language, "games.tipp.tallyElo"), { elo: tally.elo, rounds: tally.rounds }))}</p>
     <button id="tipp-next" class="link-button" type="button">${escapeHtml(t(state.language, "games.next"))}</button>`;
   body.querySelector("#tipp-next")?.addEventListener("click", () => {
     session.round = null;

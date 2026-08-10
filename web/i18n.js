@@ -252,7 +252,8 @@ export const TRANSLATIONS = {
         result: "Ergebnis: {score} – Sieger: {name}",
         eloSays: "Elo-Prognose: {name} ({pct} %)",
         youPicked: "Dein Tipp: {name}",
-        tally: "Du {you} : {elo} Elo · {rounds} Runden",
+        tallyYou: "Richtig getippt: {you} / {rounds}",
+        tallyElo: "Elo-Prognose richtig: {elo} / {rounds}",
         empty: "Keine tippbaren Matches geladen.",
       },
       klick: {
@@ -1184,7 +1185,8 @@ export const TRANSLATIONS = {
         result: "Result: {score} – winner: {name}",
         eloSays: "Elo forecast: {name} ({pct} %)",
         youPicked: "Your pick: {name}",
-        tally: "You {you} : {elo} Elo · {rounds} rounds",
+        tallyYou: "Correct picks: {you} / {rounds}",
+        tallyElo: "Elo forecast correct: {elo} / {rounds}",
         empty: "No predictable matches loaded.",
       },
       klick: {
