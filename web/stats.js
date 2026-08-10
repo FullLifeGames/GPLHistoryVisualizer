@@ -667,6 +667,8 @@ export function eloRatings(matches = [], normalizeKey = normalizedStatsKey, { in
       const winner = normalizeKey(row.winner);
       const leftScore = winner === left.key ? 1 : winner === right.key ? 0 : 0.5;
       const rightScore = 1 - leftScore;
+      const leftBefore = left.rating;
+      const rightBefore = right.rating;
       const leftExpected = expectedEloScore(left.rating, right.rating);
       const rightExpected = expectedEloScore(right.rating, left.rating);
 
@@ -686,7 +688,17 @@ export function eloRatings(matches = [], normalizeKey = normalizedStatsKey, { in
         right.draws += 1;
       }
 
-      if (onMatch) onMatch(row, ratings);
+      if (onMatch) {
+        onMatch(row, ratings, {
+          leftKey: left.key,
+          rightKey: right.key,
+          leftBefore,
+          rightBefore,
+          leftExpected,
+          leftAfter: left.rating,
+          rightAfter: right.rating,
+        });
+      }
     });
 
   return [...ratings.values()]
