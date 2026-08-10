@@ -75,6 +75,7 @@
         <button class="tab" data-view-group="seasons" data-view="match-plan" data-i18n="nav.matchPlan">Spielplan</button>
         <button class="tab" data-view-group="videos" data-view="video-archive" data-i18n="nav.videoArchive">Video-Archiv</button>
         <button class="tab" data-view-group="videos" data-view="cinema" data-i18n="nav.cinema">Kino-Modus</button>
+        <button class="tab" data-view-group="videos" data-view="audience-history" data-i18n="nav.audienceHistory">Publikum</button>
         <button class="tab" data-view-group="records" data-view="upset-index" data-i18n="nav.upsetIndex">Upset-Index</button>
         <button class="tab" data-view-group="records" data-view="record-book" data-i18n="nav.recordBook">Rekordbuch</button>
         <button class="tab" data-view-group="records" data-view="awards" data-i18n="nav.awards">Auszeichnungen</button>
@@ -285,6 +286,33 @@
         </details>
         <div id="cinema-screen" class="cinema-screen"></div>
         <div id="cinema-list" class="cinema-layout"></div>
+      </section>
+
+      <section id="view-audience-history" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.audienceHistoryTitle">Publikums-Geschichte</h2>
+          <p data-i18n="sections.audienceHistoryDescription">Uploads und Aufrufe pro Monat über alle Teilnehmerkanäle, mit Saisonfenstern und Champions.</p>
+        </div>
+        <div class="audience-controls">
+          <label>
+            <span data-i18n="audience.metric">Kennzahl</span>
+            <select id="audience-metric">
+              <option value="uploads" data-i18n="audience.metricUploads">Uploads pro Monat</option>
+              <option value="views" data-i18n="audience.metricViews">Aufrufe pro Monat</option>
+            </select>
+          </label>
+        </div>
+        <div id="audience-chart"></div>
+        <div id="audience-legend" class="audience-legend"></div>
+        <div class="audience-strip-head">
+          <h3 data-i18n="audience.stripTitle">Aufmerksamkeits-Streifen</h3>
+          <p class="muted" data-i18n="audience.stripNote">Wöchentliche View-Z-Scores der Highlightkämpfe einer Saison.</p>
+          <label class="audience-strip-picker">
+            <span data-i18n="filters.season">Saison</span>
+            <select id="audience-strip-season"></select>
+          </label>
+        </div>
+        <div id="audience-strip"></div>
       </section>
 
       <section id="view-zeitreise" class="view">

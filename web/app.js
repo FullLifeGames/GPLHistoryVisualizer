@@ -163,6 +163,7 @@ const VIEW_DATASETS = {
   "team-rosters": ["pokemonDraftOverview", "teamPokemonUsage", "teamRosters", "rosterScores"],
   "roster-detail": ["pokemonDraftOverview", "teamPokemonUsage", "teamRosters", "rosterScores", "rosterMatchdays"],
   "video-archive": ["videos"],
+  "audience-history": ["videos", "matchHighlights"],
   "upset-index": ["matchHighlights", "matchVideos"],
   rivalries: ["matchupSummary", "matchHighlights", "matchVideos"],
   "rivalry-detail": ["matchupSummary", "matchHighlights", "matchVideos"],
@@ -326,6 +327,7 @@ const VIEW_RENDERERS = {
   "table-history": renderTableHistory,
   "match-plan": renderMatchPlan,
   "video-archive": renderVideoArchive,
+  "audience-history": renderAudienceHistory,
   "upset-index": renderUpsetIndex,
   rivalries: renderRivalries,
   "rivalry-detail": renderRivalryDetail,
@@ -846,7 +848,7 @@ function applyViewDataModeDefaults(viewName, previousView) {
 // zeitreise manage their own controls; record book, hall of fame, rivalries,
 // and the oracle render career-scope data over the full archive that no
 // client-side slice can recompute; the games manage their own per-round state.
-const TOOLBAR_HIDDEN_VIEWS = new Set(["cinema", "zeitreise", "record-book", "hall-of-fame", "rivalries", "rivalry-detail", "oracle", "games", "game"]);
+const TOOLBAR_HIDDEN_VIEWS = new Set(["cinema", "zeitreise", "record-book", "hall-of-fame", "rivalries", "rivalry-detail", "oracle", "games", "game", "audience-history"]);
 
 function setActiveView(viewName) {
   state.view = viewName;
@@ -4347,6 +4349,11 @@ function groupRows(rows, keyFn) {
     groups.set(key, group);
     return groups;
   }, new Map());
+}
+
+function renderAudienceHistory() {
+  const chart = document.querySelector("#audience-chart");
+  if (chart) chart.replaceChildren();
 }
 
 function renderVideoArchive() {
