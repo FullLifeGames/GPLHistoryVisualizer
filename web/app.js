@@ -3659,7 +3659,139 @@ function renderStreaksTab() {
   );
 }
 
-function renderAwards() {}
+const AWARD_ICONS = {
+  champion: "🏆",
+  mvp: "🥇",
+  kill_leader: "⚔️",
+  best_newcomer: "🌱",
+  upset_of_season: "⚡",
+  giant_slayer: "🗡️",
+  holzloeffel: "🥄",
+  holzloeffel_redemption: "🔁",
+  iron_man: "🛡️",
+};
+
+function awardName(awardKey) {
+  return t(state.language, `awards.names.${awardKey}`);
+}
+
+function awardFormula(formula) {
+  return t(state.language, `awards.formulas.${formula}`);
+}
+
+function renderAwards() {
+  const cards = document.querySelector("#award-cards");
+  if (!cards) return;
+  const allRows = state.data.awards ?? [];
+  const rows = awardsBySeason(allRows, state.season).filter((row) => rowMatchesSearch(row));
+
+  if (state.season === "all") {
+    cards.innerHTML = allTimeAwardCards(rows);
+  } else {
+    cards.innerHTML = rows.length
+      ? rows.filter((row) => row.scope === "season").map((row) => awardCard(row)).join("")
+      : `<p class="empty">${escapeHtml(t(state.language, "hof.empty"))}</p>`;
+  }
+
+  renderTable(
+    "#award-table",
+    rows.map((row) => ({
+      _season_order: seasonOrder(row.season_id),
+      season: row.scope === "career" ? escapeHtml(t(state.language, "awards.careerTitle")) : seasonLink(row.season_id),
+      award: `${AWARD_ICONS[row.award_key] || ""} ${escapeHtml(awardName(row.award_key))}`.trim(),
+      division: row.division,
+      person: personLink(row.person_id || normalizedKey(row.person_name), row.person_name),
+      value: row.value,
+      formula: `<span title="${escapeAttr(awardFormula(row.formula))}">${escapeHtml(awardFormula(row.formula))}</span>`,
+      source: sourceCell(row.source_urls),
+    })),
+    AWARD_COLUMNS,
+    ["season", "award", "person", "formula", "source"],
+    { filename: "gpl-awards.csv" },
+  );
+}
+
+function awardCard(row) {
+  return `
+    <article class="highlight-card award-card">
+      <div class="highlight-card-head">
+        <span class="highlight-rank">${escapeHtml(AWARD_ICONS[row.award_key] || "🎖️")}</span>
+        <span class="highlight-card-meta">${escapeHtml(seasonDisplay(row.season_id))}${row.division ? ` · ${escapeHtml(row.division)}` : ""}</span>
+        <strong><small>${escapeHtml(awardName(row.award_key))}</small>${escapeHtml(String(row.value || ""))}</strong>
+      </div>
+      <h3 class="highlight-match-title">${personLink(row.person_id || normalizedKey(row.person_name), row.person_name)}</h3>
+      <p class="upset-prob-line">${escapeHtml(awardFormula(row.formula))}</p>
+    </article>
+  `;
+}
+
+function allTimeAwardCards(rows) {
+  const byPerson = new Map();
+  for (const row of rows) {
+    const key = row.person_id || normalizedKey(row.person_name);
+    if (!byPerson.has(key)) byPerson.set(key, { name: row.person_name, key, counts: new Map(), total: 0 });
+    const entry = byPerson.get(key);
+    entry.counts.set(row.award_key, (entry.counts.get(row.award_key) ?? 0) + 1);
+    entry.total += 1;
+  }
+  const top = [...byPerson.values()].sort((a, b) => b.total - a.total || a.name.localeCompare(b.name)).slice(0, 12);
+  return top
+    .map(
+      (entry) => `
+        <article class="highlight-card award-card">
+          <div class="highlight-card-head">
+            <span class="highlight-rank">${escapeHtml(String(entry.total))}</span>
+            <span class="highlight-card-meta">${escapeHtml(t(state.language, "awards.allTimeTitle"))}</span>
+          </div>
+          <h3 class="highlight-match-title">${personLink(entry.key, entry.name)}</h3>
+          <div class="highlight-card-stats award-count-row">
+            ${[...entry.counts.entries()]
+              .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+              .map(([key, count]) => `<span title="${escapeAttr(awardName(key))}">${escapeHtml(AWARD_ICONS[key] || "")}<strong>${escapeHtml(String(count))}</strong></span>`)
+              .join("")}
+          </div>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+function renderPersonTrophies(focusKey) {
+  const shelf = document.querySelector("#person-trophies");
+  if (!shelf) return;
+  if (!focusKey) {
+    shelf.hidden = true;
+    shelf.replaceChildren();
+    return;
+  }
+  const comparable = personComparableKey(focusKey);
+  const titleChips = (state.data.champions ?? [])
+    .filter((row) => ["source_evidenced", "user_provided"].includes(row.data_status))
+    .filter((row) => personComparableKey(row.champion_person_id || normalizedKey(row.champion_name)) === comparable)
+    .map(
+      (row) =>
+        `<span class="trophy-chip is-title" title="${escapeAttr(`${t(state.language, "awards.names.champion")} ${seasonDisplay(row.season_id)}`)}">🏆 ${escapeHtml(seasonShortDisplay(row.season_id))}</span>`,
+    );
+  const awardChips = (state.data.awards ?? [])
+    .filter((row) => row.award_key !== "champion")
+    .filter((row) => personComparableKey(row.person_id || normalizedKey(row.person_name)) === comparable)
+    .map((row) => {
+      const label = row.scope === "career" ? String(row.value || "") : seasonShortDisplay(row.season_id);
+      const tooltip = `${awardName(row.award_key)}${row.season_id ? ` ${seasonDisplay(row.season_id)}` : ""} — ${awardFormula(row.formula)}`;
+      return `<span class="trophy-chip" title="${escapeAttr(tooltip)}">${escapeHtml(AWARD_ICONS[row.award_key] || "🎖️")} ${escapeHtml(label)}</span>`;
+    });
+
+  const chips = titleChips.concat(awardChips);
+  shelf.hidden = !chips.length;
+  shelf.innerHTML = chips.length
+    ? `${chips.join("")}<span class="trophy-note">${escapeHtml(t(state.language, "awards.computedNote"))}</span>`
+    : "";
+}
+
+function seasonShortDisplay(seasonId) {
+  const match = String(seasonId || "").match(/season_0*(\d+)/);
+  return match ? `S${match[1]}` : String(seasonId || "");
+}
 
 function renderHallOfFame() {}
 
@@ -4666,6 +4798,7 @@ function renderPersonDetails() {
 
   renderPersonFocus();
   setDetailSections(focusedSections, Boolean(focusKey));
+  renderPersonTrophies(focusKey);
   renderPersonEloChart(focusKey);
   renderPersonEloLedger(focusKey);
 
