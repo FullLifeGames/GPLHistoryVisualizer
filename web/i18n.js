@@ -265,6 +265,22 @@ export const TRANSLATIONS = {
       quiz: {
         title: "GPL-Quizshow",
         description: "Multiple Choice quer durch Champions, Tabellen, Killlisten und Duelle.",
+        category: "Kategorie",
+        categoryAll: "Alle",
+        categories: {
+          champions: "Champions",
+          standings: "Tabellen",
+          killlists: "Killlisten",
+          matchups: "Duelle",
+        },
+        q: {
+          champions: "Wer wurde Champion von {season}?",
+          standings: "Wer belegte Platz {rank} in {division}, {season}?",
+          killlists: "Welches Pokémon holte die meisten Kills für {trainer} in {season}?",
+          matchups: "Wer führt das direkte Duell {a} vs. {b} an ({matches} Spiele)?",
+        },
+        score: "Punktestand: {correct} / {total}",
+        empty: "Keine Quizdaten geladen.",
       },
     },
     upsets: {
@@ -1163,6 +1179,22 @@ export const TRANSLATIONS = {
       quiz: {
         title: "GPL Quiz Show",
         description: "Multiple choice across champions, standings, kill lists and head-to-heads.",
+        category: "Category",
+        categoryAll: "All",
+        categories: {
+          champions: "Champions",
+          standings: "Standings",
+          killlists: "Kill lists",
+          matchups: "Head-to-heads",
+        },
+        q: {
+          champions: "Who became champion of {season}?",
+          standings: "Who finished rank {rank} in {division}, {season}?",
+          killlists: "Which Pokémon scored the most kills for {trainer} in {season}?",
+          matchups: "Who leads the head-to-head {a} vs. {b} ({matches} games)?",
+        },
+        score: "Score: {correct} / {total}",
+        empty: "No quiz data loaded.",
       },
     },
     upsets: {

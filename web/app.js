@@ -48,6 +48,8 @@ import {
   nextKlickIndex,
   pickIndex,
   pickTippRound,
+  QUIZ_CATEGORIES,
+  quizQuestion,
   seededRandom,
   shuffled,
   tippCandidates,
@@ -5677,8 +5679,85 @@ function renderKlickDuell(body) {
   });
 }
 
+// Template multiple choice over champions/standings/killlists/matchups.
+// Question text lives in i18n templates; the generator only returns params.
 function renderQuizshow(body) {
-  body.innerHTML = `<p class="muted">${escapeHtml(t(state.language, "games.quiz.description"))}</p>`;
+  const sources = {
+    champions: state.data.champions || [],
+    standings: state.data.standings || [],
+    killlists: state.data.killlists || [],
+    matchups: state.data.matchupSummary || [],
+  };
+  const score = readGameJson("gpl-game-quizshow-score", { correct: 0, total: 0 });
+  let game = state.games.quizshow;
+  if (!game || !game.question) {
+    const category = game?.category || "all";
+    const rng = seededRandom(`quiz-${dateSeedString()}-${score.total}-${category}`);
+    game = { question: quizQuestion(sources, category, rng), answered: null, category };
+    state.games.quizshow = game;
+  }
+  if (!game.question) {
+    body.innerHTML = `<p class="muted">${escapeHtml(t(state.language, "games.quiz.empty"))}</p>`;
+    return;
+  }
+  const question = game.question;
+  const params = { ...question.params };
+  if (params.season) params.season = seasonDisplay(params.season);
+  const questionText = formatMessage(t(state.language, `games.quiz.q.${question.category}`), params);
+  const categoryOptions = ["all", ...QUIZ_CATEGORIES]
+    .map(
+      (key) =>
+        `<option value="${escapeAttr(key)}"${key === game.category ? " selected" : ""}>${escapeHtml(
+          t(state.language, key === "all" ? "games.quiz.categoryAll" : `games.quiz.categories.${key}`),
+        )}</option>`,
+    )
+    .join("");
+  const answered = game.answered !== null;
+  body.innerHTML = `
+    <div class="game-form">
+      <label for="quiz-category">${escapeHtml(t(state.language, "games.quiz.category"))}</label>
+      <select id="quiz-category">${categoryOptions}</select>
+    </div>
+    <h4 class="game-quiz-question">${escapeHtml(questionText)}</h4>
+    <div class="game-quiz-options">
+      ${question.options
+        .map(
+          (option, index) => `
+            <button class="link-button game-quiz-option${
+              answered ? (option.correct ? " is-correct" : index === game.answered ? " is-wrong" : "") : ""
+            }" type="button" data-quiz-option="${index}" ${answered ? "disabled" : ""}>${escapeHtml(option.label)}</button>`,
+        )
+        .join("")}
+    </div>
+    ${
+      answered
+        ? `${gameRevealCard({
+            title: question.options[game.answered]?.correct ? t(state.language, "games.correct") : t(state.language, "games.wrong"),
+            bodyHtml: `<p>${escapeHtml(question.options.find((option) => option.correct)?.label || "")}</p>`,
+            sourceUrls: question.sourceUrls,
+          })}
+          <button id="quiz-next" class="link-button" type="button">${escapeHtml(t(state.language, "games.next"))}</button>`
+        : ""
+    }
+    <p class="game-status">${escapeHtml(formatMessage(t(state.language, "games.quiz.score"), { correct: score.correct, total: score.total }))}</p>`;
+  body.querySelector("#quiz-category")?.addEventListener("change", (event) => {
+    state.games.quizshow = { question: null, answered: null, category: event.target.value };
+    renderGame();
+  });
+  if (!answered) {
+    body.querySelectorAll("[data-quiz-option]").forEach((button) => {
+      button.addEventListener("click", () => {
+        game.answered = Number(button.dataset.quizOption);
+        const right = Boolean(question.options[game.answered]?.correct);
+        saveGameJson("gpl-game-quizshow-score", { correct: score.correct + (right ? 1 : 0), total: score.total + 1 });
+        renderGame();
+      });
+    });
+  }
+  body.querySelector("#quiz-next")?.addEventListener("click", () => {
+    state.games.quizshow = { question: null, answered: null, category: game.category };
+    renderGame();
+  });
 }
 
 const GAME_RENDERERS = {

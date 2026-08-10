@@ -10,6 +10,8 @@ import {
   nextKlickIndex,
   pickIndex,
   pickTippRound,
+  QUIZ_CATEGORIES,
+  quizQuestion,
   seededRandom,
   shuffled,
   tippCandidates,
@@ -146,6 +148,73 @@ test("klickCandidates requires id, title and a positive view count", () => {
     { video_id: "v6", title: "F", view_count: "2000" },
   ];
   assert.deepEqual(klickCandidates(rows).map((row) => row.video_id), ["v1", "v6"]);
+});
+
+const QUIZ_SOURCES = {
+  champions: [
+    { season_id: "season_001", champion_name: "PresentLP", source_urls: "https://sheet/c1" },
+    { season_id: "season_002", champion_name: "Raizor", source_urls: "https://sheet/c2" },
+    { season_id: "season_003", champion_name: "Morbolth", source_urls: "https://sheet/c3" },
+    { season_id: "season_004", champion_name: "Bene", source_urls: "https://sheet/c4" },
+  ],
+  standings: [
+    { season_id: "season_001", division: "Liga 1", stage: "final_table", is_primary: "true", rank: "1", player_name: "PresentLP", source_urls: "https://sheet/s1" },
+    { season_id: "season_001", division: "Liga 1", stage: "final_table", is_primary: "true", rank: "2", player_name: "Raizor", source_urls: "https://sheet/s1" },
+    { season_id: "season_001", division: "Liga 1", stage: "final_table", is_primary: "true", rank: "3", player_name: "Morbolth", source_urls: "https://sheet/s1" },
+    { season_id: "season_001", division: "Liga 1", stage: "final_table", is_primary: "true", rank: "4", player_name: "Bene", source_urls: "https://sheet/s1" },
+  ],
+  killlists: [
+    { season_id: "season_001", trainer: "PresentLP", pokemon: "Knakrack", kills: "20", source_urls: "https://sheet/k1" },
+    { season_id: "season_001", trainer: "PresentLP", pokemon: "Scherox", kills: "12", source_urls: "https://sheet/k1" },
+    { season_id: "season_001", trainer: "PresentLP", pokemon: "Rotom", kills: "8", source_urls: "https://sheet/k1" },
+    { season_id: "season_001", trainer: "PresentLP", pokemon: "Despotar", kills: "5", source_urls: "https://sheet/k1" },
+  ],
+  matchups: [
+    { person_id: "person_a", person_name: "PresentLP", opponent_id: "person_b", opponent_name: "Raizor", matches: "11", wins: "6", losses: "5", source_urls: "https://sheet/m1" },
+  ],
+};
+
+test("quizQuestion builds a champions question with one correct option", () => {
+  const question = quizQuestion(QUIZ_SOURCES, "champions", seededRandom("quiz-champ"));
+  assert.equal(question.category, "champions");
+  assert.ok(question.params.season);
+  assert.equal(question.options.length, 4);
+  assert.equal(question.options.filter((option) => option.correct).length, 1);
+  const labels = question.options.map((option) => option.label);
+  assert.equal(new Set(labels).size, 4);
+  assert.ok(question.sourceUrls);
+  // Deterministic for the same seed.
+  assert.deepEqual(question, quizQuestion(QUIZ_SOURCES, "champions", seededRandom("quiz-champ")));
+});
+
+test("quizQuestion standings names the player at the drawn rank", () => {
+  const question = quizQuestion(QUIZ_SOURCES, "standings", seededRandom("quiz-standings"));
+  assert.equal(question.category, "standings");
+  const correct = question.options.find((option) => option.correct);
+  const expected = QUIZ_SOURCES.standings.find((row) => row.rank === String(question.params.rank));
+  assert.equal(correct.label, expected.player_name);
+});
+
+test("quizQuestion killlists picks the top killer as the correct answer", () => {
+  const question = quizQuestion(QUIZ_SOURCES, "killlists", seededRandom("quiz-kills"));
+  const correct = question.options.find((option) => option.correct);
+  assert.equal(correct.label, "Knakrack");
+  assert.equal(question.params.trainer, "PresentLP");
+});
+
+test("quizQuestion matchups names the head-to-head leader", () => {
+  const question = quizQuestion(QUIZ_SOURCES, "matchups", seededRandom("quiz-matchups"));
+  assert.equal(question.options.length, 2);
+  const correct = question.options.find((option) => option.correct);
+  assert.equal(correct.label, "PresentLP");
+});
+
+test("quizQuestion falls back across categories and returns null when empty", () => {
+  const onlyChampions = { champions: QUIZ_SOURCES.champions, standings: [], killlists: [], matchups: [] };
+  const question = quizQuestion(onlyChampions, "all", seededRandom("quiz-all"));
+  assert.equal(question.category, "champions");
+  assert.equal(quizQuestion({ champions: [], standings: [], killlists: [], matchups: [] }, "all", seededRandom("x")), null);
+  assert.deepEqual(QUIZ_CATEGORIES, ["champions", "standings", "killlists", "matchups"]);
 });
 
 test("nextKlickIndex avoids the current video and equal view counts", () => {

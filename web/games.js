@@ -150,3 +150,120 @@ export function kaderHintValues(pool, standingsRows = [], normalizeKey) {
   );
   return { division: pool.division, rank: finalRow ? String(finalRow.rank ?? "") : "", seasonId: pool.seasonId };
 }
+
+// Quizshow: every question is generated from archive rows and carries the
+// source_urls of the row(s) it was built from — the reveal always cites them.
+export const QUIZ_CATEGORIES = ["champions", "standings", "killlists", "matchups"];
+
+function championsQuestion(rows, rng) {
+  const candidates = rows.filter((row) => row.champion_name && row.season_id);
+  const names = [...new Set(candidates.map((row) => row.champion_name))];
+  if (candidates.length < 1 || names.length < 4) return null;
+  const row = candidates[pickIndex(rng, candidates.length)];
+  const distractors = shuffled(names.filter((name) => name !== row.champion_name), rng).slice(0, 3);
+  return {
+    category: "champions",
+    params: { season: row.season_id },
+    options: shuffled(
+      [{ label: row.champion_name, correct: true }, ...distractors.map((label) => ({ label, correct: false }))],
+      rng,
+    ),
+    sourceUrls: row.source_urls || "",
+  };
+}
+
+function standingsQuestion(rows, rng) {
+  const finals = rows.filter((row) => String(row.is_primary) === "true" && row.stage === "final_table" && row.player_name);
+  const tables = new Map();
+  for (const row of finals) {
+    const key = `${row.season_id}__${row.division}`;
+    if (!tables.has(key)) tables.set(key, []);
+    tables.get(key).push(row);
+  }
+  const bigTables = [...tables.values()]
+    .filter((table) => table.length >= 4)
+    .sort(
+      (a, b) => a[0].season_id.localeCompare(b[0].season_id) || String(a[0].division).localeCompare(String(b[0].division)),
+    );
+  if (!bigTables.length) return null;
+  const table = bigTables[pickIndex(rng, bigTables.length)];
+  const topRows = table.filter((row) => Number(row.rank) >= 1 && Number(row.rank) <= 3);
+  if (!topRows.length) return null;
+  const row = topRows[pickIndex(rng, topRows.length)];
+  const distractors = shuffled(table.filter((other) => other !== row).map((other) => other.player_name), rng).slice(0, 3);
+  if (distractors.length < 3) return null;
+  return {
+    category: "standings",
+    params: { rank: Number(row.rank), season: row.season_id, division: row.division },
+    options: shuffled(
+      [{ label: row.player_name, correct: true }, ...distractors.map((label) => ({ label, correct: false }))],
+      rng,
+    ),
+    sourceUrls: row.source_urls || "",
+  };
+}
+
+function killlistsQuestion(rows, rng) {
+  const byTrainer = new Map();
+  for (const row of rows) {
+    if (!row.trainer || !row.pokemon || !Number.isFinite(Number(row.kills))) continue;
+    const key = `${row.season_id}__${row.trainer}`;
+    if (!byTrainer.has(key)) byTrainer.set(key, []);
+    byTrainer.get(key).push(row);
+  }
+  const groups = [...byTrainer.values()]
+    .filter((group) => group.length >= 4)
+    .map((group) => [...group].sort((a, b) => Number(b.kills) - Number(a.kills)))
+    .filter((group) => Number(group[0].kills) > Number(group[1].kills))
+    .sort((a, b) => `${a[0].season_id}${a[0].trainer}`.localeCompare(`${b[0].season_id}${b[0].trainer}`));
+  if (!groups.length) return null;
+  const group = groups[pickIndex(rng, groups.length)];
+  const top = group[0];
+  const distractors = shuffled(group.slice(1).map((row) => row.pokemon), rng).slice(0, 3);
+  return {
+    category: "killlists",
+    params: { trainer: top.trainer, season: top.season_id },
+    options: shuffled(
+      [{ label: top.pokemon, correct: true }, ...distractors.map((label) => ({ label, correct: false }))],
+      rng,
+    ),
+    sourceUrls: top.source_urls || "",
+  };
+}
+
+function matchupsQuestion(rows, rng) {
+  const decisive = rows.filter(
+    (row) => row.person_id < row.opponent_id && Number(row.matches) >= 5 && Number(row.wins) !== Number(row.losses),
+  );
+  if (!decisive.length) return null;
+  const row = decisive[pickIndex(rng, decisive.length)];
+  const leader = Number(row.wins) > Number(row.losses) ? row.person_name : row.opponent_name;
+  return {
+    category: "matchups",
+    params: { a: row.person_name, b: row.opponent_name, matches: Number(row.matches) },
+    options: shuffled(
+      [
+        { label: row.person_name, correct: row.person_name === leader },
+        { label: row.opponent_name, correct: row.opponent_name === leader },
+      ],
+      rng,
+    ),
+    sourceUrls: row.source_urls || "",
+  };
+}
+
+const QUIZ_GENERATORS = {
+  champions: championsQuestion,
+  standings: standingsQuestion,
+  killlists: killlistsQuestion,
+  matchups: matchupsQuestion,
+};
+
+export function quizQuestion(sources, category, rng) {
+  const order = category === "all" ? shuffled(QUIZ_CATEGORIES, rng) : [category];
+  for (const key of order) {
+    const question = QUIZ_GENERATORS[key]?.(sources[key] || [], rng);
+    if (question) return question;
+  }
+  return null;
+}
