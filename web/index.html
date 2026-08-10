@@ -672,10 +672,11 @@
         </details>
         <div id="rivalry-cards" class="hof-grid"></div>
         <div id="rivalry-show-more"></div>
-        <div id="rivalry-table" class="table-host"></div>
+        <div id="rivalry-table" class="table-wrap"></div>
       </section>
 
       <section id="view-rivalry-detail" class="view">
+        <p class="rivalry-back"><a class="link-button" href="#/rivalries" data-i18n="rivalries.backToIndex">← Alle Rivalitäten</a></p>
         <div class="section-head">
           <h2 id="rivalry-detail-title"></h2>
           <p class="muted" data-i18n="rivalries.detailNote">Datenbasis: gesamtes Archiv. Elo-Werte aus der Client-Chronologie (K=32, Start 1500), keine offizielle Wertung.</p>
@@ -683,6 +684,10 @@
         <div id="rivalry-summary" class="summary-grid"></div>
         <div id="rivalry-gap-block">
           <h3 data-i18n="rivalries.eloGapTitle">Elo-Abstand über die Duelle</h3>
+          <details class="score-explainer">
+            <summary data-i18n="rivalries.eloGapExplainerTitle">Was zeigt der Elo-Abstand?</summary>
+            <p data-i18n="rivalries.eloGapExplainer">Für jedes Duell wird die Differenz der beiden Elo-Werte unmittelbar vor dem Kampf gezeigt (Elo aus der vollständigen Archiv-Chronologie, K=32, Start 1500). Je größer der Wert, desto klarer war die Favoritenrolle: Punkte über 0 heißen, der erstgenannte Spieler ging als Favorit ins Duell, Punkte unter 0, der zweitgenannte.</p>
+          </details>
           <div id="rivalry-gap-chart"></div>
           <p id="rivalry-gap-hint" class="muted"></p>
         </div>

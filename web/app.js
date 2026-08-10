@@ -5472,10 +5472,7 @@ function renderRivalryDetail() {
     return;
   }
 
-  title.innerHTML = [
-    `${personLink(focus.aKey, aName)} <span class="highlight-vs">vs</span> ${personLink(focus.bKey, bName)}`,
-    matchupSelectButton(bKey, t(state.language, "rivalries.toMatchup"), "b", aKey),
-  ].join(" ");
+  title.innerHTML = `${personLink(focus.aKey, aName)} <span class="highlight-vs">vs</span> ${personLink(focus.bKey, bName)}`;
 
   const streakDisplay = summary.streak.side
     ? `${summary.streak.side === "a" ? aName : bName} · ${summary.streak.length}`
