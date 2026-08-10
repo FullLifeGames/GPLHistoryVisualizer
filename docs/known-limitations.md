@@ -74,6 +74,10 @@ These views compute Elo (K=32, start 1500) from the match chronology at runtime;
 
 `streaks.csv`, `records_progression.csv`, and `awards.csv` are generated aggregates, not sourced claims: the GPL never awarded an official MVP or kept a record book. Every award row carries a `formula` id whose exact definition is shown in the web app, and every row keeps the `source_urls` of the underlying data. Kill-based awards and person kill records use the standings kill columns (complete per season); Pokémon kill records use the killlists and therefore inherit the coverage limits described under Killlist Coverage — early-season Pokémon records undercount. Streaks and Elo-based records follow the result semantics above (forfeit wins count like the league counted them, winner-less rows are draws, `unresolved` rows are skipped).
 
+## Rivalitäten and Orakel (computed)
+
+The rivalry ranking is computed, not sourced: score = meetings × (0.2 + closeness) × (1 + log10(1 + pair video views)), with closeness = 1 − |wins difference| / meetings, over `matchup_summary.csv` pairs with at least 3 meetings; the formula is printed in the view. Rivalry detail pages and their Elo-gap chart run on the full-archive client Elo chronology (K=32, start 1500) and inherit the result semantics above; the toolbar is hidden on these views because they are career-scope. The Orakel builds its chains only from matches that were actually played: `forfeit` and `unresolved` rows are not edges. The optional "shared season" toggle adds same-season-and-division edges from `person_stints.csv` and labels those hops accordingly; match edges always take precedence over shared-season edges.
+
 ## Zeitreise View
 
 The Zeitreise view replays the archive over a single timeline of 192 ticks: one per matchday, plus a trailing tick for each playoff round. Only seasons 6 and 10 played playoffs. Season 7's `stage=playoffs` row records a title, not a match — it has a winner but no opponent — and is therefore excluded, along with the 514 `video_source` rows that carry a video id but no players.
