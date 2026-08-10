@@ -343,10 +343,11 @@
         </div>
         <div id="zeitstrahl-today" class="zeitstrahl-widget standalone-card">
           <h3 data-i18n="zeitstrahl.todayTitle">Heute vor X Jahren</h3>
-          <label class="zeitstrahl-date-picker">
+          <div class="zeitstrahl-date-picker">
             <span data-i18n="zeitstrahl.pickDate">Datum</span>
-            <input id="zeitstrahl-date" type="date" />
-          </label>
+            <input id="zeitstrahl-date-slider" type="range" min="0" max="365" step="1" value="0" data-i18n-aria-label="zeitstrahl.pickDate" aria-label="Datum" />
+            <output id="zeitstrahl-date-label" for="zeitstrahl-date-slider"></output>
+          </div>
           <div id="zeitstrahl-today-results"></div>
         </div>
         <p class="muted zeitstrahl-upload-note" data-i18n="zeitstrahl.uploadDateNote">Alle Zeitpunkte sind Upload-Daten der Videos, nicht Spieltermine.</p>

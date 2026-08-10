@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { groupEventsByYear, onThisDayEvents, timelineEvents } from "../web/timeline_events.js";
+import { dayIndexFromMonthDay, groupEventsByYear, monthDayFromDayIndex, onThisDayEvents, timelineEvents } from "../web/timeline_events.js";
 
 const SEASONS = [
   {
@@ -230,6 +230,20 @@ test("seasons without a finale week end with their last match's original upload"
   };
   const ends = timelineEvents(sources, { milestoneSteps: [] }).filter((event) => event.type === "season-end");
   assert.equal(ends[0].date, "2022-07-27");
+});
+
+test("day index mapping round-trips across the leap-reference year", () => {
+  assert.equal(monthDayFromDayIndex(0), "01-01");
+  assert.equal(monthDayFromDayIndex(31), "02-01");
+  assert.equal(monthDayFromDayIndex(59), "02-29"); // leap day stays reachable
+  assert.equal(monthDayFromDayIndex(365), "12-31");
+  assert.equal(monthDayFromDayIndex(9999), "12-31"); // clamped
+  assert.equal(dayIndexFromMonthDay("01-01"), 0);
+  assert.equal(dayIndexFromMonthDay("12-31"), 365);
+  assert.equal(dayIndexFromMonthDay("09-14"), monthDayFromDayIndex(dayIndexFromMonthDay("09-14")) === "09-14" ? dayIndexFromMonthDay("09-14") : -1);
+  for (const monthDay of ["02-29", "03-01", "06-15", "09-14"]) {
+    assert.equal(monthDayFromDayIndex(dayIndexFromMonthDay(monthDay)), monthDay);
+  }
 });
 
 test("onThisDayEvents matches month-day in earlier years only", () => {

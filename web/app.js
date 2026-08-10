@@ -37,7 +37,7 @@ import {
 import { eloChronology, eloLedgerRows, personEloSeries, upsetRows } from "./elo_history.js";
 import { buildSeries, lineChart, paddedDomain, stackedBarChart, stepChart } from "./charts.js";
 import { attentionStripPoints, engagementAnomalies, monthlyChannelStacks, seasonMonthBands, stripSeasonIds } from "./audience.js";
-import { groupEventsByYear, onThisDayEvents, seasonEndDates, timelineEvents } from "./timeline_events.js";
+import { dayIndexFromMonthDay, groupEventsByYear, monthDayFromDayIndex, onThisDayEvents, seasonEndDates, timelineEvents } from "./timeline_events.js";
 import { awardsBySeason, finderFilterRows, hofInductees, spoonRows, streakTableRows } from "./records.js";
 import { rivalryMeetings, rivalryPairs } from "./rivalries.js";
 import { dominanceRows, winChainGraph, winChainPath } from "./oracle.js";
@@ -293,7 +293,7 @@ const state = {
     stripSeason: "",
   },
   zeitstrahl: {
-    date: "",
+    monthDay: "",
   },
   rosterVariantSelection: {},
   autoSeasonDefault: false,
@@ -4446,10 +4446,15 @@ function renderAudienceHistory() {
       return mm === "01" || index === 0 ? `${mm}/${year.slice(2)}` : "";
     };
     const formatValue = metric === "uploads" ? (value) => String(Math.round(value)) : compactCount;
+    const lastIndex = stacks.channels.length - 1;
+    const hasOtherBucket = lastIndex >= 0 && stacks.channels[lastIndex] === otherLabel;
+    const seriesClass = (index) =>
+      hasOtherBucket && index === lastIndex ? "viz-series-other" : `viz-series-${(index % 12) + 1}`;
     stackedBarChart(chartHost, {
       rows: stacks.rows,
       bands,
       height: 330,
+      seriesClass,
       formatX: monthLabel,
       formatY: formatValue,
       tooltip: (row) => {
@@ -4466,7 +4471,7 @@ function renderAudienceHistory() {
     legend.innerHTML = stacks.channels
       .map(
         (channel, index) =>
-          `<span class="audience-legend-chip"><span class="audience-legend-swatch viz-series-${(index % 8) + 1}"></span>${escapeHtml(displayGroup(channel))}</span>`,
+          `<span class="audience-legend-chip"><span class="audience-legend-swatch ${seriesClass(index)}"></span>${escapeHtml(displayGroup(channel))}</span>`,
       )
       .join("");
   }
@@ -4652,16 +4657,19 @@ function zeitstrahlEventRow(event) {
 
 function renderZeitstrahlToday(events) {
   const results = document.querySelector("#zeitstrahl-today-results");
-  const input = document.querySelector("#zeitstrahl-date");
-  if (!results || !input) return;
+  const slider = document.querySelector("#zeitstrahl-date-slider");
+  const label = document.querySelector("#zeitstrahl-date-label");
+  if (!results || !slider || !label) return;
   const lang = state.language;
-  if (!state.zeitstrahl.date) state.zeitstrahl.date = dateSeedString();
-  input.value = state.zeitstrahl.date;
-  input.onchange = () => {
-    state.zeitstrahl.date = input.value || dateSeedString();
-    renderZeitstrahlToday(cachedTimelineEvents());
+  if (!state.zeitstrahl.monthDay) state.zeitstrahl.monthDay = dateSeedString().slice(5);
+  slider.value = String(dayIndexFromMonthDay(state.zeitstrahl.monthDay));
+  slider.oninput = () => {
+    state.zeitstrahl.monthDay = monthDayFromDayIndex(Number(slider.value));
+    renderZeitstrahlToday(events);
   };
-  const hits = onThisDayEvents(events, state.zeitstrahl.date);
+  const [month, day] = state.zeitstrahl.monthDay.split("-");
+  label.textContent = lang === "de" ? `${day}.${month}.` : `${month}-${day}`;
+  const hits = onThisDayEvents(events, `${dateSeedString().slice(0, 4)}-${state.zeitstrahl.monthDay}`);
   if (!hits.length) {
     results.innerHTML = `<p class="muted">${escapeHtml(t(lang, "zeitstrahl.noEvents"))}</p>`;
     return;

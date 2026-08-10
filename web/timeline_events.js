@@ -170,6 +170,29 @@ export function groupEventsByYear(events) {
     .map(([year, yearEvents]) => ({ year, events: [...yearEvents].reverse() }));
 }
 
+// Calendar-slider mapping for the "Heute vor X Jahren" widget: day index
+// 0..365 over a leap-reference year so 29.02. stays reachable.
+const MONTH_LENGTHS = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+export function monthDayFromDayIndex(index) {
+  let remaining = Math.max(0, Math.min(365, Math.trunc(Number(index) || 0)));
+  for (let month = 0; month < 12; month += 1) {
+    if (remaining < MONTH_LENGTHS[month]) {
+      return `${String(month + 1).padStart(2, "0")}-${String(remaining + 1).padStart(2, "0")}`;
+    }
+    remaining -= MONTH_LENGTHS[month];
+  }
+  return "12-31";
+}
+
+export function dayIndexFromMonthDay(monthDay) {
+  const [month, day] = String(monthDay ?? "").split("-").map(Number);
+  if (!Number.isFinite(month) || !Number.isFinite(day)) return 0;
+  let index = 0;
+  for (let m = 0; m < Math.min(Math.max(month - 1, 0), 12); m += 1) index += MONTH_LENGTHS[m];
+  return Math.max(0, Math.min(365, index + day - 1));
+}
+
 export function onThisDayEvents(events, isoDate) {
   const date = dateKey(isoDate);
   if (!date) return [];

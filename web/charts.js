@@ -357,12 +357,13 @@ export function stackedBarChart(container, config = {}) {
 
     const step = rows.length ? innerWidth / Math.max(rows.length, 1) : innerWidth;
     const barWidth = Math.max(Math.min(step * 0.72, 48), 1);
+    const seriesClass = config.seriesClass || ((index) => `viz-series-${(index % 12) + 1}`);
     rows.forEach((row, rowIndex) => {
       segmentsPerRow[rowIndex].forEach((segment, channelIndex) => {
         if (segment.y0 === segment.y1) return;
         root
           .append("rect")
-          .attr("class", `chart-bar viz-series-${(channelIndex % 8) + 1}`)
+          .attr("class", `chart-bar ${seriesClass(channelIndex)}`)
           .attr("x", x(rowIndex) - barWidth / 2)
           .attr("y", y(Math.max(segment.y0, segment.y1)))
           .attr("width", barWidth)

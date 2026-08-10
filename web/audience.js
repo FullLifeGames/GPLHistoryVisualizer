@@ -29,7 +29,7 @@ export function monthRangeKeys(firstKey, lastKey) {
 const METRIC_FIELDS = { views: "view_count", likes: "like_count", comments: "comment_count" };
 const GROUP_FIELDS = { channel: "channel_title", type: "video_type", season: "detected_season_id", person: "perspective_person" };
 
-export function monthlyChannelStacks(videoRows, { metric = "uploads", topChannels = 6, otherLabel = "Andere", groupBy = "channel" } = {}) {
+export function monthlyChannelStacks(videoRows, { metric = "uploads", topChannels = 10, otherLabel = "Andere", groupBy = "channel" } = {}) {
   const field = METRIC_FIELDS[metric];
   const groupField = GROUP_FIELDS[groupBy] || GROUP_FIELDS.channel;
   const entries = [];

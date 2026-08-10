@@ -35,6 +35,12 @@
   --viz-6: #e34948;
   --viz-7: #e87ba4;
   --viz-8: #eb6834;
+  /* Extension slots 9-12 for wide stacked breakdowns (audience charts):
+     only used alongside a legend and hover tooltips, never as the sole cue. */
+  --viz-9: #00879c;
+  --viz-10: #8a6d3b;
+  --viz-11: #b03fc9;
+  --viz-12: #5b7c8d;
   --viz-ghost: #cddced;
   --viz-grid: #e5eef6;
   --viz-axis: #b6c8da;
@@ -79,6 +85,10 @@
   --viz-6: #e66767;
   --viz-7: #d55181;
   --viz-8: #d95926;
+  --viz-9: #2ba7bd;
+  --viz-10: #a98a4e;
+  --viz-11: #c467d8;
+  --viz-12: #7d9cad;
   --viz-ghost: #26405c;
   --viz-grid: #1b2d44;
   --viz-axis: #35506e;
@@ -3580,6 +3590,12 @@ tbody tr:hover {
 .viz-series-6 { color: var(--viz-6); }
 .viz-series-7 { color: var(--viz-7); }
 .viz-series-8 { color: var(--viz-8); }
+.viz-series-9 { color: var(--viz-9); }
+.viz-series-10 { color: var(--viz-10); }
+.viz-series-11 { color: var(--viz-11); }
+.viz-series-12 { color: var(--viz-12); }
+/* The overflow bucket ("Andere") reads as background noise, not a series. */
+.viz-series-other { color: var(--muted); }
 
 .zeitreise-line {
   fill: none;
@@ -4906,14 +4922,21 @@ p.game-status.game-bad {
 
 .audience-controls {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
-  margin-bottom: 12px;
+  gap: 10px 22px;
+  margin: 0 auto 16px;
+  max-width: 900px;
 }
 
 .audience-controls label {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.audience-controls select {
+  max-width: 220px;
 }
 
 .audience-legend {
@@ -5037,10 +5060,22 @@ p.game-status.game-bad {
 }
 
 .zeitstrahl-date-picker {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   margin-bottom: 10px;
+}
+
+#zeitstrahl-date-slider {
+  flex: 1;
+  min-width: 0;
+}
+
+#zeitstrahl-date-label {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  min-width: 54px;
+  text-align: right;
 }
 
 #zeitstrahl-today-results p {
