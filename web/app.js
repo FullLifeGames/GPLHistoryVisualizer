@@ -61,6 +61,7 @@ import {
 import { titleRaceDivisions, titleRaceSeries } from "./title_race.js";
 import { buildTimeline, standingsHistory } from "./timeline.js";
 import { seasonStoryBeats } from "./season_story.js";
+import { careerWrappedCards, wrappedCards } from "./wrapped.js";
 import { awardsBySeason, finderFilterRows, hofInductees, spoonRows, streakTableRows } from "./records.js";
 import { rivalryMeetings, rivalryPairs } from "./rivalries.js";
 import { dominanceRows, winChainGraph, winChainPath } from "./oracle.js";
@@ -4143,7 +4144,7 @@ function renderPersonTrophies(focusKey) {
   const chips = titleChips.concat(awardChips);
   shelf.hidden = !chips.length;
   shelf.innerHTML = chips.length
-    ? `${chips.join("")}<span class="trophy-note">${escapeHtml(t(state.language, "awards.computedNote"))}</span>`
+    ? `${chips.join("")}<span class="trophy-note">${escapeHtml(t(state.language, "awards.computedNote"))}</span><a class="link-button" href="${escapeAttr(careerWrappedRouteHash(focusKey))}">${escapeHtml(t(state.language, "wrapped.careerEntry"))}</a>`
     : "";
 }
 
@@ -5636,8 +5637,134 @@ function renderSeasonStory() {
   beatsHost.querySelectorAll(".story-beat").forEach((el) => storyObserver.observe(el));
 }
 
+const WRAPPED_CARD_TITLE_KEYS = {
+  champion: "championTitle",
+  upset: "upsetTitle",
+  mvp: "mvpTitle",
+  kill_leader: "killLeaderTitle",
+  top_video: "topVideoTitle",
+  closest: "closestTitle",
+  spoon: "spoonTitle",
+  titles: "titlesTitle",
+  matches: "matchesTitle",
+  kills: "killsTitle",
+  elo: "eloTitle",
+  awards: "awardsTitle",
+  spoons: "spoonsTitle",
+};
+
+async function loadWrappedManifest() {
+  if (state.wrappedManifest !== undefined) return state.wrappedManifest;
+  try {
+    const response = await fetch("assets/wrapped/manifest.json", { cache: "no-store" });
+    state.wrappedManifest = response.ok ? await response.json() : null;
+  } catch {
+    state.wrappedManifest = null;
+  }
+  return state.wrappedManifest;
+}
+
+function wrappedDownloadHtml(card, personKey) {
+  if (personKey || !state.wrappedManifest) return "";
+  const entry = (state.wrappedManifest.cards ?? []).find(
+    (item) => item.season_id === state.season && item.card_key === card.key,
+  );
+  if (!entry) return "";
+  return `<a class="link-button" href="assets/wrapped/${escapeAttr(entry.file)}" download>${escapeHtml(t(state.language, "wrapped.download"))}</a>`;
+}
+
+function wrappedCardHtml(card, personKey) {
+  const background = !personKey ? ROSTER_BACKGROUND_BY_SEASON[state.season] : null;
+  const style = background ? ` style="background-image: url('${escapeAttr(background)}')"` : "";
+  const title = t(state.language, `wrapped.${WRAPPED_CARD_TITLE_KEYS[card.key]}`);
+  const valueLine =
+    card.key === "top_video"
+      ? formatMessage(t(state.language, "wrapped.views"), { count: displayNumber(card.value) })
+      : card.value !== null && card.value !== undefined && card.value !== "" && card.key !== "closest"
+        ? displayNumber(card.value)
+        : "";
+  return `
+    <article class="wrapped-card${background ? " has-art" : ""}"${style}>
+      <div class="wrapped-card-scrim">
+        <span class="wrapped-card-icon">${card.icon}</span>
+        <h3>${escapeHtml(title)}</h3>
+        <p class="wrapped-card-name">${card.personId ? personLink(canonicalPersonRouteKey(card.personId), card.name) : escapeHtml(card.name)}</p>
+        ${valueLine ? `<p class="wrapped-card-value">${escapeHtml(String(valueLine))}</p>` : ""}
+        ${card.detail ? `<p class="wrapped-card-detail">${escapeHtml(card.detail)}</p>` : ""}
+        ${card.videoUrl ? `<p><a class="link-button" href="${escapeAttr(card.videoUrl)}" target="_blank" rel="noreferrer">▶</a></p>` : ""}
+        ${card.computed ? `<p class="wrapped-card-note">${escapeHtml(t(state.language, "wrapped.computedNote"))}</p>` : ""}
+        ${card.sourceUrls ? `<p class="wrapped-card-sources">${sourceLinks(String(card.sourceUrls).split(";").slice(0, 3).join(";"))}</p>` : ""}
+        <span class="wrapped-download-slot">${wrappedDownloadHtml(card, personKey)}</span>
+      </div>
+    </article>`;
+}
+
 function renderSeasonWrapped() {
-  // Filled in by the GPL Wrapped task; the route needs a renderer to exist.
+  const note = document.querySelector("#wrapped-note");
+  const cardHost = document.querySelector("#wrapped-card");
+  const dots = document.querySelector("#wrapped-dots");
+  const personKey = state.wrappedFocus?.personKey ?? null;
+
+  let cards = [];
+  let heading = "";
+  if (personKey) {
+    const personRow = (state.data.personAllTime ?? []).find(
+      (row) => row.person_id === personKey || normalizedKey(row.person_name) === normalizedKey(personKey),
+    );
+    cards = careerWrappedCards({ personRow, awards: state.data.awards ?? [], champions: state.data.champions ?? [] });
+    heading = formatMessage(t(state.language, "wrapped.careerHeading"), { name: personRow?.person_name ?? personKey });
+  } else if (state.season !== "all") {
+    cards = wrappedCards({
+      seasonId: state.season,
+      awards: state.data.awards ?? [],
+      champions: state.data.champions ?? [],
+      highlights: state.data.matchHighlights ?? [],
+      videos: state.data.videos ?? [],
+    });
+    heading = formatMessage(t(state.language, "wrapped.seasonHeading"), { season: seasonDisplay(state.season) });
+  }
+
+  if (!cards.length) {
+    note.textContent = t(state.language, "wrapped.empty");
+    cardHost.innerHTML = "";
+    dots.innerHTML = "";
+    return;
+  }
+  note.textContent = heading;
+  const deckKey = personKey || state.season;
+  if (state.wrapped.deckKey !== deckKey) {
+    state.wrapped.deckKey = deckKey;
+    state.wrapped.index = 0;
+  }
+  if (state.wrapped.index >= cards.length) state.wrapped.index = 0;
+
+  const show = (index) => {
+    state.wrapped.index = (index + cards.length) % cards.length;
+    const card = cards[state.wrapped.index];
+    cardHost.innerHTML = wrappedCardHtml(card, personKey);
+    dots.innerHTML = cards
+      .map(
+        (_, dot) =>
+          `<button type="button" class="wrapped-dot${dot === state.wrapped.index ? " is-active" : ""}" data-index="${dot}" aria-label="${dot + 1}"></button>`,
+      )
+      .join("");
+    dots.querySelectorAll(".wrapped-dot").forEach((el) => {
+      el.onclick = () => show(Number(el.dataset.index));
+    });
+  };
+  document.querySelector("#wrapped-prev").onclick = () => show(state.wrapped.index - 1);
+  document.querySelector("#wrapped-next").onclick = () => show(state.wrapped.index + 1);
+  const section = document.querySelector("#view-season-wrapped");
+  section.onkeydown = (event) => {
+    if (event.key === "ArrowLeft") show(state.wrapped.index - 1);
+    if (event.key === "ArrowRight") show(state.wrapped.index + 1);
+  };
+  show(state.wrapped.index);
+  // Download buttons appear once the (optional) manifest is known; re-show so
+  // the current card picks its slot content up.
+  loadWrappedManifest().then((manifest) => {
+    if (manifest && state.view === "season-wrapped") show(state.wrapped.index);
+  });
 }
 
 function renderSeasonDetail() {
