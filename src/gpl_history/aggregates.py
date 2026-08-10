@@ -563,7 +563,7 @@ def season_storyline_rows(
     return rows
 
 
-def _elo_by_person(matches: list[dict[str, str]], initial_rating: float = 1500, k_factor: float = 32) -> dict[str, float]:
+def _elo_by_person(matches: list[dict[str, str]], initial_rating: float = 1500, k_factor: float = 32, on_match=None) -> dict[str, float]:
     ratings: dict[str, float] = defaultdict(lambda: initial_rating)
     for row in sorted(matches, key=_match_chronology):
         if row.get("data_status") in {"not_available", "source_video_only"}:
@@ -583,6 +583,20 @@ def _elo_by_person(matches: list[dict[str, str]], initial_rating: float = 1500, 
         right_expected = 1 / (1 + 10 ** ((left_rating - right_rating) / 400))
         ratings[left_key] = left_rating + k_factor * (left_score - left_expected)
         ratings[right_key] = right_rating + k_factor * (right_score - right_expected)
+        if on_match:
+            # Mirrors the onMatch details object of eloRatings in web/stats.js.
+            on_match(
+                row,
+                {
+                    "left_key": left_key,
+                    "right_key": right_key,
+                    "left_before": left_rating,
+                    "right_before": right_rating,
+                    "left_expected": left_expected,
+                    "left_after": ratings[left_key],
+                    "right_after": ratings[right_key],
+                },
+            )
     return dict(ratings)
 
 
