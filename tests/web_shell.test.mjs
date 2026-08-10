@@ -91,7 +91,7 @@ assert.equal(indexHtml.includes('id="zeitstrahl-date-slider"'), true);
 assert.equal(indexHtml.includes('id="zeitstrahl-date-label"'), true);
 assert.equal(indexHtml.includes('id="zeitstrahl-slider-scale"'), true);
 assert.equal(stylesCss.includes(".zeitstrahl-tick"), true);
-assert.equal(stylesCss.includes(".zeitstrahl-month"), true);
+assert.equal(stylesCss.includes(".zeitstrahl-scale-year"), true);
 assert.equal(stylesCss.includes(".viz-series-12"), true);
 assert.equal(stylesCss.includes(".viz-series-other"), true);
 assert.equal(stylesCss.includes("--viz-12:"), true);

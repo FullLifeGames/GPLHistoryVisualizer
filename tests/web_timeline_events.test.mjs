@@ -1,13 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  dayIndexFromMonthDay,
-  eventDayIndices,
+  dateFromDayNumber,
+  dayNumberFromDate,
   groupEventsByYear,
-  monthDayFromDayIndex,
-  nearestDayIndex,
-  onThisDayEvents,
+  nearestEventDay,
   timelineEvents,
+  timelineSliderModel,
 } from "../web/timeline_events.js";
 
 const SEASONS = [
@@ -240,49 +239,38 @@ test("seasons without a finale week end with their last match's original upload"
   assert.equal(ends[0].date, "2022-07-27");
 });
 
-test("day index mapping round-trips across the leap-reference year", () => {
-  assert.equal(monthDayFromDayIndex(0), "01-01");
-  assert.equal(monthDayFromDayIndex(31), "02-01");
-  assert.equal(monthDayFromDayIndex(59), "02-29"); // leap day stays reachable
-  assert.equal(monthDayFromDayIndex(365), "12-31");
-  assert.equal(monthDayFromDayIndex(9999), "12-31"); // clamped
-  assert.equal(dayIndexFromMonthDay("01-01"), 0);
-  assert.equal(dayIndexFromMonthDay("12-31"), 365);
-  assert.equal(dayIndexFromMonthDay("09-14"), monthDayFromDayIndex(dayIndexFromMonthDay("09-14")) === "09-14" ? dayIndexFromMonthDay("09-14") : -1);
-  for (const monthDay of ["02-29", "03-01", "06-15", "09-14"]) {
-    assert.equal(monthDayFromDayIndex(dayIndexFromMonthDay(monthDay)), monthDay);
+test("day numbers round-trip real dates", () => {
+  for (const date of ["2014-09-14", "2016-02-29", "2026-02-01", "1970-01-01"]) {
+    assert.equal(dateFromDayNumber(dayNumberFromDate(date)), date);
   }
+  assert.equal(dayNumberFromDate("1970-01-01"), 0);
+  assert.equal(dayNumberFromDate("1970-01-02") - dayNumberFromDate("1970-01-01"), 1);
 });
 
-test("eventDayIndices collects sorted unique anniversary days from earlier years", () => {
+test("timelineSliderModel spans the archive with counts and year marks", () => {
   const events = [
     { date: "2014-09-14", year: 2014 },
-    { date: "2015-09-14", year: 2015 }, // same month-day -> deduped
-    { date: "2015-01-05", year: 2015 },
-    { date: "2020-12-31", year: 2020 }, // not before 2020 -> excluded
+    { date: "2014-09-14", year: 2014 }, // same day counts twice
+    { date: "2015-02-15", year: 2015 },
+    { date: "2016-08-10", year: 2016 },
   ];
-  assert.deepEqual(eventDayIndices(events, 2020), [dayIndexFromMonthDay("01-05"), dayIndexFromMonthDay("09-14")]);
-  assert.equal(eventDayIndices(events, 2021).length, 3);
-  assert.deepEqual(eventDayIndices([], 2020), []);
+  const model = timelineSliderModel(events);
+  assert.equal(model.min, dayNumberFromDate("2014-09-14"));
+  assert.equal(model.max, dayNumberFromDate("2016-08-10"));
+  assert.equal(model.eventDays.length, 3);
+  assert.equal(model.counts.get(dayNumberFromDate("2014-09-14")), 2);
+  // 2014 is labeled at the range start, 2015/2016 at their Jan 1.
+  assert.deepEqual(model.yearMarks.map((mark) => mark.year), [2014, 2015, 2016]);
+  assert.equal(model.yearMarks[0].dayNumber, model.min);
+  assert.equal(model.yearMarks[1].dayNumber, dayNumberFromDate("2015-01-01"));
+  assert.deepEqual(timelineSliderModel([]).eventDays, []);
 });
 
-test("nearestDayIndex snaps to the closest eventful day", () => {
-  const indices = [10, 100, 300];
-  assert.equal(nearestDayIndex(indices, 10), 10);
-  assert.equal(nearestDayIndex(indices, 54), 10); // ties resolve to the earlier day
-  assert.equal(nearestDayIndex(indices, 56), 100);
-  assert.equal(nearestDayIndex(indices, 999), 300);
-  assert.equal(nearestDayIndex([], 42), 42); // no events -> value passes through
-});
-
-test("onThisDayEvents matches month-day in earlier years only", () => {
-  const events = timelineEvents(SOURCES, { topVideosPerYear: 1, milestoneSteps: [1] });
-  const hits = onThisDayEvents(events, "2020-09-14");
-  assert.ok(hits.length >= 2); // season start + first-video milestone share 09-14
-  assert.deepEqual(hits.map((event) => event.yearsAgo), [...hits.map((event) => event.yearsAgo)].sort((a, b) => a - b));
-  assert.equal(hits[0].yearsAgo, 6);
-  assert.ok(hits.every((event) => event.date.endsWith("-09-14")));
-  // same-year "anniversaries" are excluded
-  assert.equal(onThisDayEvents(events, "2014-09-14").length, 0);
-  assert.deepEqual(onThisDayEvents(events, "2020-01-31"), []);
+test("nearestEventDay snaps to the closest eventful day", () => {
+  const days = [10, 100, 300];
+  assert.equal(nearestEventDay(days, 10), 10);
+  assert.equal(nearestEventDay(days, 54), 10); // ties resolve to the earlier day
+  assert.equal(nearestEventDay(days, 56), 100);
+  assert.equal(nearestEventDay(days, 99999), 300);
+  assert.equal(nearestEventDay([], 42), 42); // no events -> value passes through
 });

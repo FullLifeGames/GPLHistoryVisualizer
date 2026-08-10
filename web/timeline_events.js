@@ -170,58 +170,50 @@ export function groupEventsByYear(events) {
     .map(([year, yearEvents]) => ({ year, events: [...yearEvents].reverse() }));
 }
 
-// Calendar-slider mapping for the "Heute vor X Jahren" widget: day index
-// 0..365 over a leap-reference year so 29.02. stays reachable.
-const MONTH_LENGTHS = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+// Full-history slider mapping: dates become linear day numbers (days since
+// the Unix epoch, UTC) so the widget scrubs the real 2014-2026 archive span.
+const DAY_MS = 86400000;
 
-export function monthDayFromDayIndex(index) {
-  let remaining = Math.max(0, Math.min(365, Math.trunc(Number(index) || 0)));
-  for (let month = 0; month < 12; month += 1) {
-    if (remaining < MONTH_LENGTHS[month]) {
-      return `${String(month + 1).padStart(2, "0")}-${String(remaining + 1).padStart(2, "0")}`;
-    }
-    remaining -= MONTH_LENGTHS[month];
-  }
-  return "12-31";
+export function dayNumberFromDate(isoDate) {
+  const [year, month, day] = String(isoDate ?? "").split("-").map(Number);
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return 0;
+  return Math.round(Date.UTC(year, month - 1, day) / DAY_MS);
 }
 
-export function dayIndexFromMonthDay(monthDay) {
-  const [month, day] = String(monthDay ?? "").split("-").map(Number);
-  if (!Number.isFinite(month) || !Number.isFinite(day)) return 0;
-  let index = 0;
-  for (let m = 0; m < Math.min(Math.max(month - 1, 0), 12); m += 1) index += MONTH_LENGTHS[m];
-  return Math.max(0, Math.min(365, index + day - 1));
+export function dateFromDayNumber(dayNumber) {
+  return new Date(Math.trunc(Number(dayNumber) || 0) * DAY_MS).toISOString().slice(0, 10);
 }
 
-// Day indices (0..365) that actually have anniversaries — the widget slider
-// snaps to these so it can never land on an empty day. beforeYear mirrors
-// onThisDayEvents: only events from earlier years count as anniversaries.
-export function eventDayIndices(events, beforeYear) {
-  const days = new Set();
+// The scrubber's data model: slider bounds, the days that actually have
+// events (snap targets), per-day event counts, and year marks for the scale.
+export function timelineSliderModel(events) {
+  const counts = new Map();
   for (const event of events ?? []) {
-    if (beforeYear != null && !(event.year < beforeYear)) continue;
-    days.add(dayIndexFromMonthDay(event.date.slice(5)));
+    const dayNumber = dayNumberFromDate(event.date);
+    counts.set(dayNumber, (counts.get(dayNumber) || 0) + 1);
   }
-  return [...days].sort((a, b) => a - b);
+  const eventDays = [...counts.keys()].sort((a, b) => a - b);
+  if (!eventDays.length) return { min: 0, max: 1, eventDays, counts, yearMarks: [] };
+  const min = eventDays[0];
+  const max = eventDays[eventDays.length - 1];
+  const firstYear = Number(dateFromDayNumber(min).slice(0, 4));
+  const lastYear = Number(dateFromDayNumber(max).slice(0, 4));
+  const yearMarks = [];
+  for (let year = firstYear; year <= lastYear; year += 1) {
+    const dayNumber = dayNumberFromDate(`${year}-01-01`);
+    if (dayNumber >= min && dayNumber <= max) yearMarks.push({ dayNumber, year });
+  }
+  // The first year usually starts mid-year; label it at the range start.
+  if (!yearMarks.length || yearMarks[0].year > firstYear) yearMarks.unshift({ dayNumber: min, year: firstYear });
+  return { min, max, eventDays, counts, yearMarks };
 }
 
-export function nearestDayIndex(indices, value) {
-  const clamped = Math.max(0, Math.min(365, Math.trunc(Number(value) || 0)));
-  if (!indices?.length) return clamped;
-  let best = indices[0];
-  for (const index of indices) {
-    if (Math.abs(index - clamped) < Math.abs(best - clamped)) best = index;
+export function nearestEventDay(eventDays, value) {
+  const target = Math.trunc(Number(value) || 0);
+  if (!eventDays?.length) return target;
+  let best = eventDays[0];
+  for (const day of eventDays) {
+    if (Math.abs(day - target) < Math.abs(best - target)) best = day;
   }
   return best;
-}
-
-export function onThisDayEvents(events, isoDate) {
-  const date = dateKey(isoDate);
-  if (!date) return [];
-  const monthDay = date.slice(5);
-  const year = Number(date.slice(0, 4));
-  return (events ?? [])
-    .filter((event) => event.date.slice(5) === monthDay && event.year < year)
-    .map((event) => ({ ...event, yearsAgo: year - event.year }))
-    .sort((a, b) => a.yearsAgo - b.yearsAgo || a.type.localeCompare(b.type, "en"));
 }

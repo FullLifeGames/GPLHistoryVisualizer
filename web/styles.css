@@ -5093,7 +5093,7 @@ p.game-status.game-bad {
   border-radius: 1px;
 }
 
-.zeitstrahl-month {
+.zeitstrahl-scale-year {
   position: absolute;
   top: 10px;
   font-size: 0.62rem;
