@@ -171,6 +171,10 @@ export const TRANSLATIONS = {
     personDetails: {
       focus: "Person",
       showAll: "Alle Personen",
+      eloChartTitle: "Karriere-Kurve (Elo)",
+      eloChartNote: "Elo je Kampf über alle Saisons, aus der Kampfchronologie berechnet. Kämpfe ohne belegten Sieger zählen 0,5.",
+      eloLedgerTitle: "Elo-Kontoauszug",
+      eloPeak: "Karrierehoch",
       timelineTitle: "Saisonverlauf",
       seasonRowsTitle: "Stints & Tabellenzeilen",
       pokemonTitle: "Pokémon & Kills",
@@ -854,6 +858,10 @@ export const TRANSLATIONS = {
     personDetails: {
       focus: "Person",
       showAll: "All people",
+      eloChartTitle: "Career Curve (Elo)",
+      eloChartNote: "Elo per match across all seasons, computed from the match chronology. Matches without a sourced winner count 0.5.",
+      eloLedgerTitle: "Elo Ledger",
+      eloPeak: "Career high",
       timelineTitle: "Season Timeline",
       seasonRowsTitle: "Stints & Table Rows",
       pokemonTitle: "Pokémon & Kills",

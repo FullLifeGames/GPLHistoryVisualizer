@@ -417,9 +417,18 @@
         </div>
         <div id="person-focus" class="person-focus" hidden></div>
         <div id="person-story-summary" class="summary-grid person-summary-grid"></div>
+        <div id="person-elo-block" class="chart-block" hidden>
+          <h3 data-i18n="personDetails.eloChartTitle">Karriere-Kurve (Elo)</h3>
+          <p class="chart-note" data-i18n="personDetails.eloChartNote">Elo je Kampf über alle Saisons, aus der Kampfchronologie berechnet. Kämpfe ohne belegten Sieger zählen 0,5.</p>
+          <div id="person-elo-chart"></div>
+        </div>
         <details class="detail-table-section" id="person-timeline-section" open>
           <summary data-i18n="personDetails.timelineTitle">Saisonverlauf</summary>
           <div id="person-timeline-table" class="table-wrap"></div>
+        </details>
+        <details class="detail-table-section" id="person-elo-ledger-section">
+          <summary data-i18n="personDetails.eloLedgerTitle">Elo-Kontoauszug</summary>
+          <div id="person-elo-ledger-table" class="table-wrap"></div>
         </details>
         <details class="detail-table-section" id="person-season-section" open>
           <summary data-i18n="personDetails.seasonRowsTitle">Stints & Tabellenzeilen</summary>

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { eloChronology, upsetRows } from "../web/elo_history.js";
+import { eloChronology, personEloSeries, upsetRows } from "../web/elo_history.js";
 
 const fixture = [
   { season_id: "season_001", match_id: "m1", week: "1", stage: "Regular Season", player_a: "Anna", player_b: "Ben", winner: "Anna", data_status: "available" },
@@ -66,3 +66,25 @@ assert.ok(!upsetsWithDraw.some((row) => row.match_id === "m5"));
 const highlighted = upsetRows(fixture, chrono, [{ match_id: "m3", views_z_score_peak: "3.2" }]);
 assert.equal(highlighted[0].views_z_score, "3.2");
 assert.equal(highlighted[1].views_z_score, "");
+
+// --- personEloSeries ---
+const stints = [
+  { season_id: "season_001", person_name: "Anna", team_name: "Team A", division: "Liga 1" },
+];
+const champs = [{ season_id: "season_001", champion_name: "Anna" }];
+const series = personEloSeries("anna", chrono, stints, champs);
+assert.equal(series.points.length, 3);
+assert.equal(series.bands.length, 1);
+assert.ok(series.bands[0].label.includes("Team A"));
+assert.equal(series.bands[0].fromSeq, 0);
+assert.equal(series.bands[0].toSeq, 2);
+assert.equal(series.markers.length, 1);
+assert.equal(series.markers[0].seq, 2); // title marker at last match of the title season
+assert.equal(series.peak.matchId, "m2");
+assert.ok(Math.round(series.peak.rating) === 1531);
+
+// unknown person yields an empty series instead of throwing
+const empty = personEloSeries("nobody", chrono, stints, champs);
+assert.deepEqual(empty.points, []);
+assert.deepEqual(empty.bands, []);
+assert.deepEqual(empty.markers, []);

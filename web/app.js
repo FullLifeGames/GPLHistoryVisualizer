@@ -27,7 +27,8 @@ import {
   UPSET_COLUMNS,
   VIDEO_ARCHIVE_COLUMNS,
 } from "./table_columns.js";
-import { eloChronology, upsetRows } from "./elo_history.js";
+import { eloChronology, personEloSeries, upsetRows } from "./elo_history.js";
+import { buildSeries, lineChart } from "./charts.js";
 import { tableHeaderFilterConfig } from "./table_filters.js";
 import { textSorter, weekSortValue } from "./table_sort.js";
 import {
@@ -3202,6 +3203,61 @@ function upsetProbDisplay(value) {
   return Number.isFinite(value) ? `${Math.round(value * 100)} %` : "";
 }
 
+function renderPersonEloChart(focusKey) {
+  const block = document.querySelector("#person-elo-block");
+  const container = document.querySelector("#person-elo-chart");
+  if (!block || !container) return;
+
+  const chronology = focusKey ? cachedEloChronology() : null;
+  const series = focusKey
+    ? personEloSeries(focusKey, chronology, state.data.personStints ?? [], state.data.champions ?? [], normalizedKey)
+    : null;
+  const hasCurve = Boolean(series && series.points.length >= 2);
+  block.hidden = !hasCurve;
+  if (!hasCurve) {
+    container.replaceChildren();
+    return;
+  }
+
+  const built = buildSeries(series.points, (point) => point.seq, (point) => point.rating);
+  const markers = series.markers.map((marker) => ({
+    x: marker.seq,
+    y: marker.rating,
+    label: "🏆",
+    title: `${t(state.language, "columns.titles")} ${marker.label}`,
+  }));
+  const peakPoint = series.points.find((point) => point.matchId === series.peak.matchId);
+  if (peakPoint) {
+    markers.push({
+      x: peakPoint.seq,
+      y: peakPoint.rating,
+      label: `${t(state.language, "personDetails.eloPeak")} ${Math.round(series.peak.rating)}`,
+      className: "chart-marker-peak",
+    });
+  }
+
+  lineChart(container, {
+    series: [{ id: "elo", points: built.points, className: "viz-series-1" }],
+    bands: series.bands.map((band) => ({ fromX: band.fromSeq, toX: band.toSeq, label: band.label })),
+    markers,
+    xDomain: built.xDomain,
+    yDomain: built.yDomain,
+    formatX: () => "",
+    formatY: (value) => String(Math.round(value)),
+    fallbackText: t(state.language, "personDetails.eloChartNote"),
+    tooltip: (point) => {
+      const entry = chronology.perMatch.get(point.matchId);
+      if (!entry) return String(Math.round(point.rating));
+      const isA = entry.aKey === focusKey;
+      const opponent = isA ? entry.bName : entry.aName;
+      const delta = isA ? entry.deltaA : entry.deltaB;
+      const sign = delta >= 0 ? "+" : "";
+      const week = entry.week ? ` ${entry.week}` : "";
+      return `${seasonDisplay(entry.seasonId)}${week} · vs ${opponent}: ${sign}${Math.round(delta)} → ${Math.round(point.rating)}`;
+    },
+  });
+}
+
 function upsetCard(row, rank) {
   const probLine = t(state.language, "upsets.probLine")
     .replace("{name}", row.winner_name)
@@ -4243,6 +4299,7 @@ function renderPersonDetails() {
   const focusKey = state.personFocus?.key;
   const focusedSections = [
     "#person-timeline-section",
+    "#person-elo-ledger-section",
     "#person-season-section",
     "#person-pokemon-section",
     "#person-video-section",
@@ -4255,6 +4312,7 @@ function renderPersonDetails() {
 
   renderPersonFocus();
   setDetailSections(focusedSections, Boolean(focusKey));
+  renderPersonEloChart(focusKey);
 
   const detailRows = statRows
     .sort((a, b) => (a.person_name || a.player_name || "").localeCompare(b.person_name || b.player_name || "") || a.season_id.localeCompare(b.season_id))

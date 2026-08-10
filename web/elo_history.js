@@ -48,6 +48,59 @@ export function eloChronology(matches = [], normalizeKey = normalizedStatsKey) {
   return { perMatch, perPerson, order, finalRows };
 }
 
+// Career series for one person: every post-match rating in sequence, with
+// season/team stint bands and championship markers placed on the sequence
+// axis. Bands group the person's own points by season, so gaps between the
+// person's active seasons never stretch a band across seasons they sat out.
+export function personEloSeries(personKey, chronology, stintRows = [], championRows = [], normalizeKey = normalizedStatsKey) {
+  const person = chronology.perPerson.get(personKey);
+  if (!person || !person.points.length) {
+    return { points: [], bands: [], markers: [], peak: { rating: -Infinity, matchId: "" } };
+  }
+
+  const teamBySeason = new Map();
+  for (const row of stintRows) {
+    if (normalizeKey(row.person_name) !== personKey) continue;
+    const existing = teamBySeason.get(row.season_id);
+    const team = row.team_name || "";
+    teamBySeason.set(row.season_id, existing && existing !== team ? `${existing} / ${team}` : team);
+  }
+
+  const bands = [];
+  for (const point of person.points) {
+    const last = bands[bands.length - 1];
+    if (last && last.seasonId === point.seasonId) {
+      last.toSeq = point.seq;
+    } else {
+      bands.push({ seasonId: point.seasonId, fromSeq: point.seq, toSeq: point.seq });
+    }
+  }
+  for (const band of bands) {
+    const team = teamBySeason.get(band.seasonId) || "";
+    const season = seasonShortLabel(band.seasonId);
+    band.label = team ? `${season} · ${team}` : season;
+  }
+
+  const lastPointBySeason = new Map();
+  for (const point of person.points) {
+    lastPointBySeason.set(point.seasonId, point);
+  }
+  const markers = [];
+  for (const row of championRows) {
+    if (normalizeKey(row.champion_name) !== personKey) continue;
+    const point = lastPointBySeason.get(row.season_id);
+    if (!point) continue;
+    markers.push({ seq: point.seq, rating: point.rating, seasonId: row.season_id, label: seasonShortLabel(row.season_id) });
+  }
+
+  return { points: person.points, bands, markers, peak: person.peak };
+}
+
+function seasonShortLabel(seasonId) {
+  const match = String(seasonId || "").match(/season_0*(\d+)/);
+  return match ? `S${match[1]}` : String(seasonId || "");
+}
+
 // Ranks decided matches by how improbable the winner's victory was under the
 // pregame Elo. Forfeits stay out: the league counted them as wins, but nobody
 // beat the odds in a match that was never played. Draws have no winner to rank.
