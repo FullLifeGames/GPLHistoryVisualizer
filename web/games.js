@@ -155,9 +155,74 @@ export function kaderHintValues(pool, standingsRows = [], normalizeKey) {
   return { division: pool.division, rank: finalRow ? String(finalRow.rank ?? "") : "", seasonId: pool.seasonId };
 }
 
+// Stats duel (Klick-Duell mode): compare two careers on a random stat. Only
+// people with all stats recorded qualify, and both sides must differ so the
+// question always has one right answer.
+export const STATS_DUEL_STATS = ["kills", "wins", "matches", "seasons"];
+
+export function statsDuelCandidates(rows = []) {
+  return rows.filter(
+    (row) => row.person_name && STATS_DUEL_STATS.every((stat) => String(row[stat] ?? "") !== "" && Number.isFinite(Number(row[stat]))),
+  );
+}
+
+export function statsDuelRound(candidates = [], rng) {
+  if (candidates.length < 2) return null;
+  for (const stat of shuffled(STATS_DUEL_STATS, rng)) {
+    for (let attempt = 0; attempt < 24; attempt += 1) {
+      const i = pickIndex(rng, candidates.length);
+      let j = pickIndex(rng, candidates.length);
+      if (j === i) j = (j + 1) % candidates.length;
+      const a = candidates[i];
+      const b = candidates[j];
+      if (Number(a[stat]) !== Number(b[stat])) {
+        return { stat, a, b };
+      }
+    }
+  }
+  return null;
+}
+
+// "Wer bin ich?": staged career riddle over the all-time table. Short
+// careers are excluded — with three matches there is nothing to riddle.
+export function personRiddleCandidates(allTimeRows = [], minMatches = 10) {
+  return allTimeRows.filter((row) => row.person_name && Number(row.matches) >= minMatches);
+}
+
+export function personRiddleRound(candidates = [], rng) {
+  if (!candidates.length) return null;
+  return candidates[pickIndex(rng, candidates.length)];
+}
+
+// Hints ordered least to most revealing; ids resolve to i18n templates.
+export function personRiddleHints(row, stintsRows = [], normalizeKey) {
+  const personKey = normalizeKey(row.person_name);
+  const teams = [];
+  const seenTeams = new Set();
+  for (const stint of stintsRows) {
+    if (normalizeKey(stint.person_name) !== personKey || !stint.team_name) continue;
+    const teamKey = normalizeKey(stint.team_name);
+    if (seenTeams.has(teamKey)) continue;
+    seenTeams.add(teamKey);
+    teams.push(stint.team_name);
+  }
+  const titles = Number(row.seasons_won) || 0;
+  const hints = [
+    { id: "activity", params: { seasons: Number(row.seasons) || 0, matches: Number(row.matches) || 0 } },
+    { id: "kills", params: { kills: Number(row.kills) || 0, wins: Number(row.wins) || 0 } },
+  ];
+  if (teams.length) {
+    hints.push({ id: "teams", params: { teams: teams.join(", ") } });
+  }
+  hints.push({ id: "peak", params: { elo: Number(row.elo) || 0, rank: String(row.best_rank ?? "") } });
+  hints.push(titles > 0 ? { id: "titles", params: { count: titles, seasons: row.title_seasons || "" } } : { id: "noTitles", params: {} });
+  hints.push({ id: "initial", params: { letter: String(row.person_name || "?").slice(0, 1).toUpperCase() } });
+  return hints;
+}
+
 // Quizshow: every question is generated from archive rows and carries the
 // source_urls of the row(s) it was built from — the reveal always cites them.
-export const QUIZ_CATEGORIES = ["champions", "standings", "killlists", "matchups"];
+export const QUIZ_CATEGORIES = ["champions", "standings", "killlists", "drafts", "matchups"];
 
 function championsCandidates(rows) {
   const candidates = rows.filter((row) => row.champion_name && row.season_id);
@@ -206,6 +271,10 @@ function matchupsCandidates(rows) {
   return rows.filter(
     (row) => row.person_id < row.opponent_id && Number(row.matches) >= 5 && Number(row.wins) !== Number(row.losses),
   );
+}
+
+function draftsCandidates(rows) {
+  return rows.filter((row) => row.pokemon && row.person_name && row.season_id);
 }
 
 function championsQuestion(rows, rng) {
@@ -278,10 +347,35 @@ function matchupsQuestion(rows, rng) {
   };
 }
 
+function draftsQuestion(rows, rng) {
+  const candidates = draftsCandidates(rows);
+  if (!candidates.length) return null;
+  const row = candidates[pickIndex(rng, candidates.length)];
+  const others = [
+    ...new Set(
+      candidates
+        .filter((other) => other.season_id === row.season_id && other.person_name !== row.person_name)
+        .map((other) => other.person_name),
+    ),
+  ];
+  const distractors = shuffled(others, rng).slice(0, 3);
+  if (distractors.length < 3) return null;
+  return {
+    category: "drafts",
+    params: { pokemon: row.pokemon, season: row.season_id },
+    options: shuffled(
+      [{ label: row.person_name, correct: true }, ...distractors.map((label) => ({ label, correct: false }))],
+      rng,
+    ),
+    sourceUrls: row.source_urls || "",
+  };
+}
+
 const QUIZ_GENERATORS = {
   champions: championsQuestion,
   standings: standingsQuestion,
   killlists: killlistsQuestion,
+  drafts: draftsQuestion,
   matchups: matchupsQuestion,
 };
 
@@ -289,6 +383,7 @@ const QUIZ_CANDIDATES = {
   champions: championsCandidates,
   standings: standingsCandidates,
   killlists: killlistsCandidates,
+  drafts: draftsCandidates,
   matchups: matchupsCandidates,
 };
 

@@ -9,12 +9,18 @@ import {
   kaderPuzzle,
   klickCandidates,
   nextKlickIndex,
+  personRiddleCandidates,
+  personRiddleHints,
+  personRiddleRound,
   pickIndex,
   pickTippRound,
   QUIZ_CATEGORIES,
   quizPoolSizes,
   quizQuestion,
   seededRandom,
+  STATS_DUEL_STATS,
+  statsDuelCandidates,
+  statsDuelRound,
   weightedQuizCategory,
   shuffled,
   tippCandidates,
@@ -183,6 +189,12 @@ const QUIZ_SOURCES = {
   matchups: [
     { person_id: "person_a", person_name: "PresentLP", opponent_id: "person_b", opponent_name: "Raizor", matches: "11", wins: "6", losses: "5", source_urls: "https://sheet/m1" },
   ],
+  drafts: [
+    { season_id: "season_001", pokemon: "Arbok", person_name: "Art'n'Gaming", source_urls: "https://sheet/d1" },
+    { season_id: "season_001", pokemon: "Knakrack", person_name: "PresentLP", source_urls: "https://sheet/d2" },
+    { season_id: "season_001", pokemon: "Despotar", person_name: "Raizor", source_urls: "https://sheet/d3" },
+    { season_id: "season_001", pokemon: "Rotom", person_name: "Morbolth", source_urls: "https://sheet/d4" },
+  ],
 };
 
 test("quizQuestion builds a champions question with one correct option", () => {
@@ -221,8 +233,21 @@ test("quizQuestion matchups names the head-to-head leader", () => {
 });
 
 test("quizPoolSizes counts eligible questions per category", () => {
-  assert.deepEqual(quizPoolSizes(QUIZ_SOURCES), { champions: 4, standings: 3, killlists: 1, matchups: 1 });
-  assert.deepEqual(quizPoolSizes({}), { champions: 0, standings: 0, killlists: 0, matchups: 0 });
+  assert.deepEqual(quizPoolSizes(QUIZ_SOURCES), { champions: 4, standings: 3, killlists: 1, drafts: 4, matchups: 1 });
+  assert.deepEqual(quizPoolSizes({}), { champions: 0, standings: 0, killlists: 0, drafts: 0, matchups: 0 });
+});
+
+test("quizQuestion drafts asks who drafted the pokemon", () => {
+  const question = quizQuestion(QUIZ_SOURCES, "drafts", seededRandom("quiz-drafts"));
+  assert.equal(question.category, "drafts");
+  assert.ok(question.params.pokemon);
+  assert.equal(question.options.length, 4);
+  const correct = question.options.find((option) => option.correct);
+  const expected = QUIZ_SOURCES.drafts.find((row) => row.pokemon === question.params.pokemon);
+  assert.equal(correct.label, expected.person_name);
+  assert.ok(question.sourceUrls);
+  // Too few distinct trainers in the season -> no question.
+  assert.equal(quizQuestion({ ...QUIZ_SOURCES, drafts: QUIZ_SOURCES.drafts.slice(0, 2) }, "drafts", seededRandom("x")), null);
 });
 
 test("weightedQuizCategory favors bigger pools but keeps small ones alive", () => {
@@ -251,8 +276,69 @@ test("quizQuestion falls back across categories and returns null when empty", ()
   const onlyChampions = { champions: QUIZ_SOURCES.champions, standings: [], killlists: [], matchups: [] };
   const question = quizQuestion(onlyChampions, "all", seededRandom("quiz-all"));
   assert.equal(question.category, "champions");
-  assert.equal(quizQuestion({ champions: [], standings: [], killlists: [], matchups: [] }, "all", seededRandom("x")), null);
-  assert.deepEqual(QUIZ_CATEGORIES, ["champions", "standings", "killlists", "matchups"]);
+  assert.equal(quizQuestion({ champions: [], standings: [], killlists: [], drafts: [], matchups: [] }, "all", seededRandom("x")), null);
+  assert.deepEqual(QUIZ_CATEGORIES, ["champions", "standings", "killlists", "drafts", "matchups"]);
+});
+
+const ALL_TIME_ROWS = [
+  { person_id: "person_bene", person_name: "Bene", seasons: "8", season_list: "S3, S4", seasons_won: "4", title_seasons: "S4, S8", matches: "128", wins: "95", losses: "32", kills: "589", elo: "1762", best_rank: "1", source_urls: "https://sheet/a1" },
+  { person_id: "person_neu", person_name: "Neuling", seasons: "1", season_list: "S10", seasons_won: "0", title_seasons: "", matches: "22", wins: "8", losses: "14", kills: "40", elo: "1460", best_rank: "7", source_urls: "https://sheet/a2" },
+  // Too few matches: excluded from the riddle pool.
+  { person_id: "person_kurz", person_name: "Kurz", seasons: "1", season_list: "S1", seasons_won: "0", title_seasons: "", matches: "3", wins: "1", losses: "2", kills: "2", elo: "1502", best_rank: "9", source_urls: "" },
+];
+
+test("personRiddleCandidates filters short careers and picks deterministically", () => {
+  const candidates = personRiddleCandidates(ALL_TIME_ROWS);
+  assert.deepEqual(candidates.map((row) => row.person_name), ["Bene", "Neuling"]);
+  const round = personRiddleRound(candidates, seededRandom("riddle-1"));
+  assert.ok(candidates.includes(round));
+  assert.equal(personRiddleRound(candidates, seededRandom("riddle-1")), round);
+  assert.equal(personRiddleRound([], seededRandom("x")), null);
+});
+
+test("personRiddleHints builds staged hints from career data", () => {
+  const stints = [
+    { person_name: "Bene", team_name: "Wackel Backel" },
+    { person_name: "Bene", team_name: "Team Zwei" },
+    { person_name: "Bene", team_name: "Wackel Backel" },
+    { person_name: "Andere", team_name: "Fremd" },
+  ];
+  const hints = personRiddleHints(ALL_TIME_ROWS[0], stints, norm);
+  assert.deepEqual(hints.map((hint) => hint.id), ["activity", "kills", "teams", "peak", "titles", "initial"]);
+  assert.deepEqual(hints[0].params, { seasons: 8, matches: 128 });
+  assert.deepEqual(hints[1].params, { kills: 589, wins: 95 });
+  assert.equal(hints[2].params.teams, "Wackel Backel, Team Zwei");
+  assert.deepEqual(hints[3].params, { elo: 1762, rank: "1" });
+  assert.deepEqual(hints[4].params, { count: 4, seasons: "S4, S8" });
+  assert.deepEqual(hints[5].params, { letter: "B" });
+  // No teams on record -> the teams hint is skipped; no titles -> noTitles.
+  const bare = personRiddleHints(ALL_TIME_ROWS[1], [], norm);
+  assert.deepEqual(bare.map((hint) => hint.id), ["activity", "kills", "peak", "noTitles", "initial"]);
+});
+
+test("statsDuel builds deterministic pairs with differing values", () => {
+  const rows = [
+    { person_name: "A", kills: "100", wins: "50", matches: "80", seasons: "5" },
+    { person_name: "B", kills: "60", wins: "30", matches: "70", seasons: "4" },
+    { person_name: "C", kills: "10", wins: "5", matches: "12", seasons: "1" },
+    // Missing numbers are excluded.
+    { person_name: "D", kills: "", wins: "1", matches: "2", seasons: "1" },
+    { person_name: "", kills: "9", wins: "1", matches: "2", seasons: "1" },
+  ];
+  const candidates = statsDuelCandidates(rows);
+  assert.deepEqual(candidates.map((row) => row.person_name), ["A", "B", "C"]);
+  const round = statsDuelRound(candidates, seededRandom("stats-1"));
+  assert.ok(STATS_DUEL_STATS.includes(round.stat));
+  assert.notEqual(round.a.person_name, round.b.person_name);
+  assert.notEqual(Number(round.a[round.stat]), Number(round.b[round.stat]));
+  assert.deepEqual(round, statsDuelRound(candidates, seededRandom("stats-1")));
+  assert.equal(statsDuelRound([candidates[0]], seededRandom("x")), null);
+  // All values equal on every stat -> no fair question exists.
+  const twins = [
+    { person_name: "X", kills: "5", wins: "5", matches: "5", seasons: "5" },
+    { person_name: "Y", kills: "5", wins: "5", matches: "5", seasons: "5" },
+  ];
+  assert.equal(statsDuelRound(twins, seededRandom("x")), null);
 });
 
 test("nextKlickIndex avoids the current video and equal view counts", () => {
