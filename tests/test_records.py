@@ -222,8 +222,10 @@ def test_award_rows_newcomer_upset_and_iron_man():
     assert [(r["season_id"], r["person_name"]) for r in newcomers if r["season_id"] == "season_002"] == [("season_002", "Neo")]
     upset = [r for r in rows if r["award_key"] == "upset_of_season"]
     assert upset and upset[0]["person_name"] == "Ben" and 0 < upset[0]["value"] < 50
+    assert upset[0]["detail"] == "Anna"
     slayer = [r for r in rows if r["award_key"] == "giant_slayer"]
     assert slayer and slayer[0]["person_name"] == "Ben" and slayer[0]["value"] == 1531  # Anna's pregame Elo in m3
+    assert slayer[0]["detail"] == "Anna"  # the beaten giant
     iron = [r for r in rows if r["award_key"] == "iron_man"]
     assert iron and iron[0]["person_name"] == "Anna" and iron[0]["value"] == 2
 

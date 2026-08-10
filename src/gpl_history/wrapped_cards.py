@@ -50,6 +50,15 @@ def _season_number(season_id: str) -> str:
     return f"Saison {int(digits)}" if digits else season_id
 
 
+# German value phrasing per award, mirroring awards.valueDisplay in i18n.js.
+_AWARD_VALUE_LINES = {
+    "mvp": "Wertung {value}",
+    "kill_leader": "{value} Kills",
+    "upset_of_season": "nur {value} % Elo-Siegchance",
+    "holzloeffel": "Rang {value}",
+}
+
+
 def _award_text(awards: list[dict[str, str]], season_id: str, award_key: str, card_key: str) -> dict[str, Any] | None:
     row = next(
         (
@@ -61,13 +70,16 @@ def _award_text(awards: list[dict[str, str]], season_id: str, award_key: str, ca
     )
     if not row:
         return None
+    value = row.get("value") or ""
+    template = _AWARD_VALUE_LINES.get(award_key)
+    opponent = row.get("detail") or ""
     return {
         "season_id": season_id,
         "card_key": card_key,
         "title": _CARD_TITLES[card_key],
         "name": row.get("person_name") or "",
-        "value_line": row.get("value") or "",
-        "detail": "",
+        "value_line": template.format(value=value) if template and value else value,
+        "detail": f"gegen {opponent}" if opponent and award_key == "upset_of_season" else "",
         "computed": True,
     }
 

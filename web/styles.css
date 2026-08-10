@@ -5247,8 +5247,8 @@ p.game-status.game-bad {
 .story-beats {
   display: flex;
   flex-direction: column;
-  gap: 10vh;
-  padding: 2vh 0 14vh;
+  gap: 4vh;
+  padding: 1vh 0 8vh;
 }
 
 .story-award-note {

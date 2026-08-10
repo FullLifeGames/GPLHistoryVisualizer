@@ -42,6 +42,7 @@ export function seasonStoryBeats({
   seasonId,
   division,
   weeks = [],
+  frames = [],
   matches = [],
   champions = [],
   highlights = [],
@@ -57,10 +58,15 @@ export function seasonStoryBeats({
   const players = new Set(divisionMatches.flatMap((row) => [row.player_a, row.player_b]).filter(Boolean));
 
   const number = seasonNumber(seasonId);
-  const previousChampion =
+  // Seasons can crown several champions (S9 ran Singles and Doubles), so the
+  // defending line names all of last season's title holders.
+  const previousChampions =
     number === null
-      ? null
-      : champions.find((row) => seasonNumber(row.season_id) === number - 1) ?? null;
+      ? []
+      : champions
+          .filter((row) => seasonNumber(row.season_id) === number - 1)
+          .map((row) => row.champion_name)
+          .filter(Boolean);
 
   beats.push({
     kind: "intro",
@@ -69,7 +75,7 @@ export function seasonStoryBeats({
     playerCount: players.size,
     matchCount: divisionMatches.length,
     matchdayCount: weeks.length,
-    defendingChampion: previousChampion?.champion_name ?? "",
+    defendingChampion: previousChampions.join(" & "),
     sourceUrls: divisionMatches[0]?.source_urls ?? "",
   });
 
@@ -82,12 +88,37 @@ export function seasonStoryBeats({
       checkpointIndexes.add(Math.max(1, Math.round(weeks.length * ratio) - 1));
     }
   }
+  // Every hand-off of first place becomes its own beat — the table race is
+  // the story's spine. Frames align 1:1 with the matchday list; the leader
+  // after matchday 1 is covered by the intro, so changes start at index 1.
+  const leadChangeIndexes = new Set();
+  for (let index = 1; index < Math.min(frames.length, weeks.length); index += 1) {
+    const previous = frames[index - 1]?.[0];
+    const current = frames[index]?.[0];
+    if (!previous || !current || previous.key === current.key) continue;
+    leadChangeIndexes.add(index);
+    beats.push({
+      kind: "lead",
+      week: weeks[index],
+      frameIndex: index,
+      name: current.name,
+      points: current.points,
+      previousName: previous.name,
+    });
+  }
+
   for (const index of [...checkpointIndexes].sort((a, b) => a - b)) {
+    // A lead-change beat on the same matchday already tells the standings
+    // story; a generic checkpoint next to it would just repeat the table.
+    if (leadChangeIndexes.has(index)) continue;
     beats.push({ kind: "race", week: weeks[index], frameIndex: index });
   }
 
+  // Only this division's matches qualify as highlight beats — a Liga-2 story
+  // must not celebrate Hauptrunde matches, and playoff matches already have
+  // their own beats.
   const topMatches = highlights
-    .filter((row) => row.season_id === seasonId)
+    .filter((row) => row.season_id === seasonId && (row.division || "") === division)
     .map((row) => ({ row, score: Number.parseFloat(row.highlight_score) }))
     .filter((entry) => Number.isFinite(entry.score))
     .sort((a, b) => b.score - a.score)
@@ -161,21 +192,25 @@ export function seasonStoryBeats({
       name: row.person_name,
       personId: row.person_id,
       value: row.value,
+      formula: row.formula ?? "",
+      detail: row.detail ?? "",
       sourceUrls: row.source_urls ?? "",
     });
   }
 
-  const championRow = champions.find((row) => row.season_id === seasonId);
-  beats.push({
-    kind: "champion",
-    week: Number.POSITIVE_INFINITY,
-    frameIndex: weeks.length ? weeks.length - 1 : 0,
-    name: championRow?.champion_name ?? "",
-    team: championRow?.champion_team ?? "",
-    sourceUrls: championRow?.source_urls ?? "",
-  });
+  // One beat per crowned champion — S9 ended with Singles AND Doubles titles.
+  for (const championRow of champions.filter((row) => row.season_id === seasonId)) {
+    beats.push({
+      kind: "champion",
+      week: Number.POSITIVE_INFINITY,
+      frameIndex: weeks.length ? weeks.length - 1 : 0,
+      name: championRow.champion_name ?? "",
+      team: championRow.champion_team ?? "",
+      sourceUrls: championRow.source_urls ?? "",
+    });
+  }
 
-  const rank = { intro: 0, race: 1, highlight: 1, decided: 1, playoff: 2, award: 3, champion: 4 };
+  const rank = { intro: 0, lead: 1, race: 1, highlight: 1, decided: 1, playoff: 2, award: 3, champion: 4 };
   beats.sort((a, b) => rank[a.kind] - rank[b.kind] || a.week - b.week);
   return beats;
 }

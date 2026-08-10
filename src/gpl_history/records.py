@@ -149,6 +149,7 @@ AWARD_FIELDS = [
     "person_name",
     "value",
     "formula",
+    "detail",
     "source_urls",
 ]
 
@@ -247,7 +248,7 @@ def award_rows(
     return sorted(rows, key=sort_key)
 
 
-def _award(award_key: str, scope: str, season_id: str, division: str, person_id: str, person_name: str, value: Any, formula: str, source_urls: str) -> dict[str, Any]:
+def _award(award_key: str, scope: str, season_id: str, division: str, person_id: str, person_name: str, value: Any, formula: str, source_urls: str, detail: str = "") -> dict[str, Any]:
     urls: set[str] = set()
     _add_urls(urls, source_urls)
     return {
@@ -259,6 +260,7 @@ def _award(award_key: str, scope: str, season_id: str, division: str, person_id:
         "person_name": person_name,
         "value": value,
         "formula": formula,
+        "detail": detail,
         "source_urls": _join_urls(urls),
     }
 
@@ -321,7 +323,8 @@ def _elo_awards(matches: list[dict[str, str]]) -> list[dict[str, Any]]:
         winner_name = (row.get("player_a") if winner_is_left else row.get("player_b")) or ""
         winner_expected = details["left_expected"] if winner_is_left else 1 - details["left_expected"]
         opponent_before = details["right_before"] if winner_is_left else details["left_before"]
-        context = {"division": row.get("division") or "", "sources": row.get("source_urls") or ""}
+        opponent_name = (row.get("player_b") if winner_is_left else row.get("player_a")) or ""
+        context = {"division": row.get("division") or "", "sources": row.get("source_urls") or "", "opponent_name": opponent_name}
         current_upset = upsets.get(season_id)
         if current_upset is None or winner_expected < current_upset["expected"]:
             upsets[season_id] = {"expected": winner_expected, "person_id": winner_key, "name": winner_name, **context}
@@ -335,12 +338,12 @@ def _elo_awards(matches: list[dict[str, str]]) -> list[dict[str, Any]]:
     for season_id in sorted(upsets, key=_season_sort):
         entry = upsets[season_id]
         rows.append(
-            _award("upset_of_season", "season", season_id, entry["division"], entry["person_id"], entry["name"], round(entry["expected"] * 100), "min_pregame_win_chance", entry["sources"])
+            _award("upset_of_season", "season", season_id, entry["division"], entry["person_id"], entry["name"], round(entry["expected"] * 100), "min_pregame_win_chance", entry["sources"], detail=entry["opponent_name"])
         )
     for season_id in sorted(slayers, key=_season_sort):
         entry = slayers[season_id]
         rows.append(
-            _award("giant_slayer", "season", season_id, entry["division"], entry["person_id"], entry["name"], round(entry["opponent"]), "beat_highest_rated", entry["sources"])
+            _award("giant_slayer", "season", season_id, entry["division"], entry["person_id"], entry["name"], round(entry["opponent"]), "beat_highest_rated", entry["sources"], detail=entry["opponent_name"])
         )
     return rows
 

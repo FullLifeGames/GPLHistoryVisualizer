@@ -5475,7 +5475,7 @@ function renderSourceClaims() {
   );
 }
 
-let storyObserver = null;
+let storyScrollHandler = null;
 
 function storyVideoThumb(videoUrl) {
   const match = /[?&]v=([\w-]{6,})/.exec(String(videoUrl ?? ""));
@@ -5548,18 +5548,35 @@ function storyBeatHtml(beat, index, frames, weeks) {
     });
     const links = videoLinksForMatch(beat.matchId, { compact: true });
     if (links) extra = `<p class="story-links">${links}</p>`;
+  } else if (beat.kind === "lead") {
+    body = formatMessage(t(lang, "seasonStory.lead"), {
+      week: beat.week,
+      name: personLink(personIdForName(beat.name), beat.name),
+      points: beat.points,
+      previous: personLink(personIdForName(beat.previousName), beat.previousName),
+    });
   } else if (beat.kind === "award") {
+    const hasOpponent = ["min_pregame_win_chance", "beat_highest_rated"].includes(beat.formula) && beat.detail;
+    const valueText = hasOpponent
+      ? formatMessage(t(lang, `awards.valueDisplayVs.${beat.awardKey}`), {
+          name: personLink(personIdForName(beat.detail), beat.detail),
+          value: escapeHtml(displayNumber(beat.value)),
+        })
+      : escapeHtml(awardValueDisplay(beat.awardKey, beat.value));
     body = formatMessage(t(lang, "seasonStory.award"), {
       award: escapeHtml(awardName(beat.awardKey)),
       name: personLink(personIdForName(beat.name), beat.name),
-      value: escapeHtml(String(beat.value ?? "")),
+      value: valueText,
     });
-    extra = `<p class="story-award-note">${escapeHtml(t(lang, "awards.computedNote"))}</p>`;
+    const noteParts = [beat.formula ? awardFormula(beat.formula) : "", t(lang, "awards.computedNote")].filter(Boolean);
+    extra = `<p class="story-award-note">${escapeHtml(noteParts.join(" · "))}</p>`;
   } else if (beat.kind === "champion") {
     if (!beat.name) return "";
     body = formatMessage(t(lang, "seasonStory.champion"), { name: personLink(personIdForName(beat.name), beat.name), team: escapeHtml(beat.team) });
+    // Playoff seasons crown a champion who need not lead the regular-season
+    // table; a "runners-up" line from that table would contradict the title.
     const finalFrame = frames[frames.length - 1] ?? [];
-    if (finalFrame.length >= 3) {
+    if (finalFrame.length >= 3 && normalizedKey(finalFrame[0].name) === normalizedKey(beat.name)) {
       body += formatMessage(t(lang, "seasonStory.championPodium"), {
         second: personLink(personIdForName(finalFrame[1].name), finalFrame[1].name),
         third: personLink(personIdForName(finalFrame[2].name), finalFrame[2].name),
@@ -5568,7 +5585,7 @@ function storyBeatHtml(beat, index, frames, weeks) {
     extra = `<p class="story-links"><a class="link-button" href="${escapeAttr(wrappedRouteHash(state.season))}">${escapeHtml(t(lang, "seasonStory.toWrapped"))}</a></p>`;
   }
   const sources = beat.sourceUrls ? `<p class="story-sources">${sourceLinks(beat.sourceUrls)}</p>` : "";
-  const rawKinds = new Set(["champion", "award"]);
+  const rawKinds = new Set(["champion", "award", "lead"]);
   const content = rawKinds.has(beat.kind) ? `<p class="story-text">${body}</p>` : `<p class="story-text">${escapeHtml(body)}</p>`;
   return `<article class="story-beat story-beat-${beat.kind}" data-frame="${beat.frameIndex}" data-beat="${index}">${content}${extra}${sources}</article>`;
 }
@@ -5579,9 +5596,9 @@ function renderSeasonStory() {
   const standingsHost = document.querySelector("#story-standings");
   const stickyTitle = document.querySelector("#story-sticky-title");
   const controls = document.querySelector(".story-controls");
-  if (storyObserver) {
-    storyObserver.disconnect();
-    storyObserver = null;
+  if (storyScrollHandler) {
+    window.removeEventListener("scroll", storyScrollHandler);
+    storyScrollHandler = null;
   }
   beatsHost.innerHTML = "";
   standingsHost.innerHTML = "";
@@ -5595,7 +5612,12 @@ function renderSeasonStory() {
   const seasonMatches = (state.data.matches ?? []).filter((row) => row.season_id === state.season);
   const timeline = buildTimeline(seasonMatches);
   const history = standingsHistory(timeline).get(state.season);
-  const divisions = history ? [...history.keys()].filter(Boolean) : [];
+  // Playoff-only "divisions" (S6/S10 bracket matches) are no leagues to tell
+  // a table story about — their matches appear as playoff beats instead.
+  const regularDivisions = new Set(
+    seasonMatches.filter((row) => row.stage === "regular_season").map((row) => row.division || ""),
+  );
+  const divisions = history ? [...history.keys()].filter((division) => division && regularDivisions.has(division)) : [];
   if (!divisions.length) {
     controls.hidden = true;
     note.textContent = t(state.language, "seasonStory.empty");
@@ -5637,6 +5659,7 @@ function renderSeasonStory() {
     seasonId: state.season,
     division: state.story.division,
     weeks,
+    frames,
     matches: state.data.matches ?? [],
     champions: state.data.champions ?? [],
     highlights: state.data.matchHighlights ?? [],
@@ -5647,19 +5670,49 @@ function renderSeasonStory() {
 
   beatsHost.innerHTML = beats.map((beat, index) => storyBeatHtml(beat, index, frames, weeks)).join("");
   renderStoryStandings(standingsHost, stickyTitle, frames, weeks, 0);
-  storyObserver = new IntersectionObserver(
-    (entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        const frameIndex = Number(entry.target.dataset.frame);
-        beatsHost.querySelectorAll(".story-beat.is-active").forEach((el) => el.classList.remove("is-active"));
-        entry.target.classList.add("is-active");
-        renderStoryStandings(standingsHost, stickyTitle, frames, weeks, frameIndex);
+
+  // Activation follows a focus line at 40% viewport height: the beat whose
+  // center is closest wins. Unlike an IntersectionObserver band this always
+  // has a winner, so the champion beat lights up even when the page cannot
+  // scroll it up to the line.
+  let activeBeat = -1;
+  const updateActiveBeat = () => {
+    const beatElements = beatsHost.querySelectorAll(".story-beat");
+    if (!beatElements.length) return;
+    const focusLine = window.innerHeight * 0.4;
+    let best = 0;
+    let bestDistance = Infinity;
+    beatElements.forEach((el, index) => {
+      const rect = el.getBoundingClientRect();
+      const distance = Math.abs(rect.top + rect.height / 2 - focusLine);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = index;
       }
-    },
-    { rootMargin: "-35% 0px -45% 0px" },
-  );
-  beatsHost.querySelectorAll(".story-beat").forEach((el) => storyObserver.observe(el));
+    });
+    // Fully scrolled down, the finale can never reach the focus line — the
+    // end of the page IS the end of the story, so the last beat wins there.
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 8) {
+      best = beatElements.length - 1;
+    }
+    if (best === activeBeat) return;
+    activeBeat = best;
+    beatsHost.querySelectorAll(".story-beat.is-active").forEach((el) => el.classList.remove("is-active"));
+    const element = beatElements[best];
+    element.classList.add("is-active");
+    renderStoryStandings(standingsHost, stickyTitle, frames, weeks, Number(element.dataset.frame));
+  };
+  let scrollScheduled = false;
+  storyScrollHandler = () => {
+    if (scrollScheduled) return;
+    scrollScheduled = true;
+    requestAnimationFrame(() => {
+      scrollScheduled = false;
+      updateActiveBeat();
+    });
+  };
+  window.addEventListener("scroll", storyScrollHandler, { passive: true });
+  updateActiveBeat();
 }
 
 const WRAPPED_CARD_TITLE_KEYS = {
@@ -5698,16 +5751,27 @@ function wrappedDownloadHtml(card, personKey) {
   return `<a class="link-button" href="assets/wrapped/${escapeAttr(entry.file)}" download>${escapeHtml(t(state.language, "wrapped.download"))}</a>`;
 }
 
+function awardValueDisplay(awardKey, value) {
+  return formatMessage(t(state.language, `awards.valueDisplay.${awardKey}`), { value: displayNumber(value) });
+}
+
 function wrappedCardHtml(card, personKey) {
   const background = !personKey ? ROSTER_BACKGROUND_BY_SEASON[state.season] : null;
   const style = background ? ` style="background-image: url('${escapeAttr(background)}')"` : "";
   const title = t(state.language, `wrapped.${WRAPPED_CARD_TITLE_KEYS[card.key]}`);
-  const valueLine =
-    card.key === "top_video"
+  const valueLine = card.awardKey
+    ? awardValueDisplay(card.awardKey, card.value)
+    : card.key === "top_video"
       ? formatMessage(t(state.language, "wrapped.views"), { count: displayNumber(card.value) })
       : card.value !== null && card.value !== undefined && card.value !== "" && card.key !== "closest"
         ? displayNumber(card.value)
         : "";
+  const detailLine = card.awardKey && card.detail
+    ? formatMessage(t(state.language, "wrapped.against"), { name: card.detail })
+    : card.detail;
+  const note = card.computed
+    ? [card.formula ? awardFormula(card.formula) : "", t(state.language, "wrapped.computedNote")].filter(Boolean).join(" · ")
+    : "";
   return `
     <article class="wrapped-card${background ? " has-art" : ""}"${style}>
       <div class="wrapped-card-scrim">
@@ -5715,9 +5779,9 @@ function wrappedCardHtml(card, personKey) {
         <h3>${escapeHtml(title)}</h3>
         <p class="wrapped-card-name">${card.personId ? personLink(canonicalPersonRouteKey(card.personId), card.name) : escapeHtml(card.name)}</p>
         ${valueLine ? `<p class="wrapped-card-value">${escapeHtml(String(valueLine))}</p>` : ""}
-        ${card.detail ? `<p class="wrapped-card-detail">${escapeHtml(card.detail)}</p>` : ""}
+        ${detailLine ? `<p class="wrapped-card-detail">${escapeHtml(detailLine)}</p>` : ""}
         ${card.videoUrl ? `<p><a class="link-button" href="${escapeAttr(card.videoUrl)}" target="_blank" rel="noreferrer">▶</a></p>` : ""}
-        ${card.computed ? `<p class="wrapped-card-note">${escapeHtml(t(state.language, "wrapped.computedNote"))}</p>` : ""}
+        ${note ? `<p class="wrapped-card-note">${escapeHtml(note)}</p>` : ""}
         ${card.sourceUrls ? `<p class="wrapped-card-sources">${sourceLinks(String(card.sourceUrls).split(";").slice(0, 3).join(";"))}</p>` : ""}
         <span class="wrapped-download-slot">${wrappedDownloadHtml(card, personKey)}</span>
       </div>

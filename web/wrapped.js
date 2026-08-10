@@ -33,7 +33,9 @@ function awardCard(awards, seasonId, awardKey, cardKey) {
     name: row.person_name,
     personId: row.person_id,
     value: Number.parseFloat(row.value),
-    detail: "",
+    detail: row.detail ?? "",
+    awardKey,
+    formula: row.formula ?? "",
     sourceUrls: row.source_urls ?? "",
     computed: true,
   };

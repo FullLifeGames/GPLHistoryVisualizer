@@ -73,6 +73,15 @@ test("beats start with intro and end with champion", () => {
   assert.equal(beats[beats.length - 1].name, "Alice");
 });
 
+test("seasons with several champions get one beat each", () => {
+  const champions = [
+    ...BASE.champions,
+    { season_id: "season_001", champion_name: "Dana", champion_team: "Team D", source_urls: "u" },
+  ];
+  const championBeats = seasonStoryBeats({ ...BASE, champions }).filter((beat) => beat.kind === "champion");
+  assert.deepEqual(championBeats.map((beat) => beat.name), ["Alice", "Dana"]);
+});
+
 test("intro counts players, matches, and matchdays", () => {
   const intro = seasonStoryBeats(BASE)[0];
   assert.equal(intro.playerCount, 2);
@@ -82,13 +91,28 @@ test("intro counts players, matches, and matchdays", () => {
   assert.equal(intro.defendingChampion, "");
 });
 
-test("intro names the defending champion from the previous season", () => {
+test("intro names all defending champions from the previous season", () => {
   const champions = [
     ...BASE.champions,
     { season_id: "season_000", champion_name: "Zed", champion_team: "Team Z", source_urls: "u" },
   ];
   const intro = seasonStoryBeats({ ...BASE, champions })[0];
   assert.equal(intro.defendingChampion, "Zed");
+  const twoTitles = [
+    ...champions,
+    { season_id: "season_000", champion_name: "Yara", champion_team: "Team Y", source_urls: "u" },
+  ];
+  const doubleIntro = seasonStoryBeats({ ...BASE, champions: twoTitles })[0];
+  assert.equal(doubleIntro.defendingChampion, "Zed & Yara");
+});
+
+test("highlight beats only cover the division of the story", () => {
+  const highlights = [
+    ...BASE.highlights,
+    { season_id: "season_001", match_id: "mx", division: "Liga 2", week: "1. Spieltag", player_a: "Xavier", player_b: "Yara", score: "6 - 0", highlight_score: "99", video_urls: "", source_urls: "u" },
+  ];
+  const beats = seasonStoryBeats({ ...BASE, highlights });
+  assert.equal(beats.some((beat) => beat.matchId === "mx"), false);
 });
 
 test("award beats appear for the division before the champion", () => {
@@ -124,6 +148,25 @@ test("race beats appear at mid-race checkpoints", () => {
   const race = seasonStoryBeats(BASE).filter((beat) => beat.kind === "race");
   assert.ok(race.length >= 1);
   assert.ok(race.every((beat) => beat.frameIndex >= 0 && beat.frameIndex <= 3));
+});
+
+test("lead changes become beats and replace race checkpoints on the same matchday", () => {
+  const frames = [
+    [{ key: "alice", name: "Alice", points: 3, rank: 1 }, { key: "bob", name: "Bob", points: 0, rank: 2 }],
+    [{ key: "bob", name: "Bob", points: 6, rank: 1 }, { key: "alice", name: "Alice", points: 3, rank: 2 }],
+    [{ key: "bob", name: "Bob", points: 9, rank: 1 }, { key: "alice", name: "Alice", points: 3, rank: 2 }],
+    [{ key: "alice", name: "Alice", points: 12, rank: 1 }, { key: "bob", name: "Bob", points: 9, rank: 2 }],
+  ];
+  const beats = seasonStoryBeats({ ...BASE, frames });
+  const leads = beats.filter((beat) => beat.kind === "lead");
+  assert.deepEqual(leads.map((beat) => [beat.week, beat.name, beat.previousName]), [
+    [2, "Bob", "Alice"],
+    [4, "Alice", "Bob"],
+  ]);
+  // Quarter checkpoints land on matchdays 1, 2, and 3; the lead change on
+  // matchday 2 swallows that checkpoint.
+  const raceWeeks = beats.filter((beat) => beat.kind === "race").map((beat) => beat.week);
+  assert.equal(raceWeeks.includes(2), false);
 });
 
 test("playoff beats are emitted in bracket order before the champion", () => {
