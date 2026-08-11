@@ -2752,6 +2752,7 @@ export function summarizeTrainerPokemon(rows, selectedPersonKey = "", normalizeK
       differential: row.differential,
       seasons: row.seasons.size,
       season_list: formatSeasonList([...row.seasons]),
+      season_ids: [...row.seasons].sort((a, b) => seasonNumber(a) - seasonNumber(b)),
       divisions: row.divisions.size,
       teams: row.teams.size,
       source_urls: [...row.sourceUrls].join(";"),

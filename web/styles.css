@@ -5832,3 +5832,7 @@ p.game-status.game-bad {
   padding: 0;
   text-decoration: underline;
 }
+
+.wrapped-back-link {
+  margin-left: 8px;
+}

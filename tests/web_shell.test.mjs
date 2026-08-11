@@ -365,8 +365,18 @@ assert.equal(appJs.includes("applyDataMode("), true);
 assert.equal(appJs.includes("columnsForProfile("), true);
 assert.equal(indexHtml.includes('id="person-missing-section"'), false);
 assert.equal(appJs.includes('renderTable("#person-missing-table"'), false);
-assert.equal(appJs.includes('renderTable("#person-timeline-table", timelineRows, ["season", "division", "team", "record", "win_pct", "rating", "points", "kills", "deaths", "differential", "title", "source"]'), true);
-assert.match(appJs, /renderTable\(\s*"#person-pokemon-table",\s*pokemonRows,\s*\["pokemon", "appearances", "kills", "kill_rate", "seasons", "season_list", "teams", "source"\][\s\S]*?hintColumns: POKEMON_USAGE_HINT_COLUMNS/);
+assert.equal(appJs.includes('renderTable("#person-timeline-table", timelineRows, ["season", "division", "team", "rank", "record", "win_pct", "rating", "points", "kills", "deaths", "differential", "title", "source"]'), true);
+// Saisonverlauf bleibt chronologisch; die Stints-Tabelle ist als Duplikat entfernt.
+assert.match(appJs, /renderTable\("#person-timeline-table"[\s\S]*?\{ initialSort: \[\] \}\)/);
+assert.equal(indexHtml.includes('id="person-season-section"'), false);
+assert.equal(appJs.includes("#person-season-table"), false);
+// Pokémon-Tabelle nennt Titel + Titel-Saisons; Videos stehen ganz unten.
+assert.equal(appJs.includes('"titles", "title_seasons"'), true);
+assert.equal(indexHtml.indexOf('id="person-pokemon-section"') < indexHtml.indexOf('id="person-timeline-section"'), true);
+assert.equal(indexHtml.indexOf('id="person-matchup-section"') < indexHtml.indexOf('id="person-video-section"'), true);
+// Karriere-Wrapped verlinkt zurück zur Person.
+assert.equal(appJs.includes("wrapped-back-link"), true);
+assert.match(appJs, /renderTable\(\s*"#person-pokemon-table",\s*pokemonRows,\s*\["pokemon", "appearances", "kills", "kill_rate", "titles", "title_seasons", "seasons", "season_list", "teams", "source"\][\s\S]*?hintColumns: POKEMON_USAGE_HINT_COLUMNS/);
 assert.equal(appJs.includes('["trainer", "appearances", "kills", "deaths", "differential"'), false);
 assert.equal(appJs.includes('["season", "divisions", "appearances", "kills", "deaths", "differential"'), false);
 assert.equal(appJs.includes('["season", "division", "trainer", "team", "appearances", "kills", "deaths", "differential"'), false);
