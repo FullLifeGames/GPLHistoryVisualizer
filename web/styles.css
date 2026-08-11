@@ -2913,6 +2913,15 @@ tbody tr:hover {
   color: var(--muted);
 }
 
+/* Ladehinweise in Grid-Hosts (Summary-Karten, Kader-Raster, Spielbaum) dürfen
+   nicht in eine einzelne schmale Grid-Zelle gequetscht werden. */
+.summary-grid > .empty,
+.roster-grid > .empty,
+.bracket-board > .empty {
+  grid-column: 1 / -1;
+  text-align: center;
+}
+
 .matchup-form {
   display: grid;
   grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) auto;
