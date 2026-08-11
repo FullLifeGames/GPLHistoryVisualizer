@@ -25,11 +25,11 @@ for (const view of ["all-time", "team-rosters", "person-details", "roster-detail
   assert.equal(viewGroupForView(view), "records");
 }
 
-// Saisons: Hub-Stack + Chronik.
-assert.equal(defaultViewForGroup("seasons"), "season-detail");
-assert.deepEqual(subviewsForGroup("seasons"), ["season-detail", "match-plan", "battle-history", "table-history", "season-story", "season-wrapped", "zeitreise"]);
-assert.deepEqual(stackViews("season-hub"), ["season-detail", "match-plan", "battle-history", "table-history", "season-story", "season-wrapped"]);
-assert.equal(stackDefaultView("season-hub"), "season-detail");
+// Saisons: Hub-Stack + Chronik. Spielbaum eröffnet, die Akte schließt ab.
+assert.equal(defaultViewForGroup("seasons"), "battle-history");
+assert.deepEqual(subviewsForGroup("seasons"), ["battle-history", "table-history", "season-story", "season-wrapped", "match-plan", "season-detail", "zeitreise"]);
+assert.deepEqual(stackViews("season-hub"), ["battle-history", "table-history", "season-story", "season-wrapped", "match-plan", "season-detail"]);
+assert.equal(stackDefaultView("season-hub"), "battle-history");
 for (const view of stackViews("season-hub")) {
   assert.equal(stackForView(view), "season-hub");
   assert.equal(viewGroupForView(view), "seasons");
@@ -44,8 +44,9 @@ assert.equal(viewGroupForView("rivalry-detail"), "duels");
 assert.deepEqual(subviewsForGroup("pokemon"), ["killlists", "pokemon-drafts"]);
 assert.equal(viewGroupForView("pokemon-detail"), "pokemon");
 
-// Videos übernimmt die Highlightkämpfe und den Upset-Index.
-assert.deepEqual(subviewsForGroup("videos"), ["video-archive", "cinema", "match-highlights", "upset-index", "audience-history", "zeitstrahl"]);
+// Videos übernimmt Highlightkämpfe und Upset-Index; Kino und Archiv schließen ab.
+assert.equal(defaultViewForGroup("videos"), "match-highlights");
+assert.deepEqual(subviewsForGroup("videos"), ["match-highlights", "upset-index", "audience-history", "zeitstrahl", "cinema", "video-archive"]);
 assert.equal(viewGroupForView("match-highlights"), "videos");
 assert.equal(viewGroupForView("upset-index"), "videos");
 

@@ -9,13 +9,13 @@ export const VIEW_GROUPS = [
   {
     id: "seasons",
     labelKey: "navGroups.seasons",
-    defaultView: "season-detail",
-    views: ["season-detail", "match-plan", "battle-history", "table-history", "season-story", "season-wrapped", "zeitreise"],
+    defaultView: "battle-history",
+    views: ["battle-history", "table-history", "season-story", "season-wrapped", "match-plan", "season-detail", "zeitreise"],
     stacks: [
       {
         id: "season-hub",
         labelKey: "seasonHub.tab",
-        views: ["season-detail", "match-plan", "battle-history", "table-history", "season-story", "season-wrapped"],
+        views: ["battle-history", "table-history", "season-story", "season-wrapped", "match-plan", "season-detail"],
       },
     ],
   },
@@ -36,8 +36,8 @@ export const VIEW_GROUPS = [
   {
     id: "videos",
     labelKey: "navGroups.videos",
-    defaultView: "video-archive",
-    views: ["video-archive", "cinema", "match-highlights", "upset-index", "audience-history", "zeitstrahl"],
+    defaultView: "match-highlights",
+    views: ["match-highlights", "upset-index", "audience-history", "zeitstrahl", "cinema", "video-archive"],
   },
   {
     id: "games",

@@ -16,7 +16,6 @@ import {
   rivalryRouteHash,
   rosterRouteHash,
   seasonRouteHash,
-  seasonStoryRouteHash,
   viewRouteHash,
   wrappedRouteHash,
 } from "./router.js";
@@ -5994,20 +5993,15 @@ function renderSeasonWrapped() {
 
 function renderSeasonDetail() {
   const summary = document.querySelector("#season-detail-summary");
-  const detailLinks = document.querySelector("#season-detail-links");
   const tables = ["#season-detail-standings", "#season-detail-champions", "#season-detail-killlists", "#season-detail-videos", "#season-detail-claims"];
   tables.forEach(destroyTable);
   if (state.season === "all") {
     summary.innerHTML = `<p class="empty">${escapeHtml(t(state.language, "empty.chooseSeasonDetail"))}</p>`;
-    detailLinks.innerHTML = "";
     tables.forEach((selector) => {
       document.querySelector(selector).innerHTML = "";
     });
     return;
   }
-  detailLinks.innerHTML = `
-    <a class="link-button" href="${escapeAttr(seasonStoryRouteHash(state.season))}">${escapeHtml(t(state.language, "sections.seasonStoryTitle"))}</a>
-    <a class="link-button" href="${escapeAttr(wrappedRouteHash(state.season))}">${escapeHtml(t(state.language, "sections.seasonWrappedTitle"))}</a>`;
 
   const coverage = seasonCoverageRows(state.data).find((row) => row.season_id === state.season);
   const storyline = (state.data.seasonStorylines ?? []).find((row) => row.season_id === state.season);
