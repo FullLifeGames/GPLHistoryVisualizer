@@ -29,7 +29,23 @@ assert.equal(indexHtml.includes('id="view-roster-detail"'), true);
 assert.equal(indexHtml.includes('id="roster-detail-visual"'), true);
 assert.equal(indexHtml.includes('id="roster-detail-matchday-matrix"'), true);
 assert.equal(indexHtml.includes('data-view-group="overview"'), false);
-assert.equal(indexHtml.includes('data-view-group="people"'), true);
+assert.equal(indexHtml.includes('data-view-group="people"'), false);
+assert.equal(indexHtml.includes('data-view-group="records"'), true);
+// Saison-Hub: ein Haupt-Tab, sechs Kapitel-Tabs in eigener Zeile.
+assert.equal(indexHtml.includes('data-view-stack="season-hub"'), true);
+assert.equal(indexHtml.includes('class="tabs stack-tabs"'), true);
+assert.equal((indexHtml.match(/data-view-stack-member="season-hub"/g) || []).length, 6);
+assert.equal(indexHtml.includes('data-view-stack-member="season-hub" data-view="season-detail"'), true);
+assert.equal(indexHtml.includes('data-view-stack-member="season-hub" data-view="season-wrapped"'), true);
+// Werkstatt: abgesetzter Tool-Tab statt gleichberechtigter Gruppe.
+assert.equal(indexHtml.includes('class="nav-group-tab is-tool"'), true);
+// Tab-Tooltips speisen sich aus den Sektionsbeschreibungen.
+assert.equal(indexHtml.includes('data-i18n-title="sections.oracleDescription"'), true);
+assert.equal(indexHtml.includes('data-i18n-title="sections.zeitreiseDescription"'), true);
+assert.equal(appJs.includes("state.stackView"), true);
+assert.equal(appJs.includes("stackDefaultView("), true);
+assert.equal(stylesCss.includes(".stack-tabs"), true);
+assert.equal(stylesCss.includes(".nav-group-tab.is-tool"), true);
 assert.equal(indexHtml.includes('data-view-group="pokemon"'), true);
 assert.equal(indexHtml.includes('data-view-group="seasons"'), true);
 assert.equal(indexHtml.includes('data-view-group="data"'), true);
@@ -215,9 +231,9 @@ assert.equal(indexHtml.includes('data-i18n="filters.searchHint"'), true);
 assert.equal(i18nJs.includes('Leerzeichen = UND'), true);
 assert.equal(i18nJs.includes('spaces = AND'), true);
 assert.equal(appJs.includes("i.ytimg.com/vi/"), true);
-assert.equal(appJs.includes('const ALL_SEASON_DEFAULT_VIEWS = new Set(["match-highlights"])'), true);
+assert.equal(appJs.includes("ALL_SEASON_DEFAULT_VIEWS"), false);
 assert.match(appJs, /const DATA_MODE_DEFAULT_BY_VIEW = \{[\s\S]*?"match-highlights": "all"/);
-assert.match(appJs, /ALL_SEASON_DEFAULT_VIEWS\.has\(route\.view\)[\s\S]*?state\.autoSeasonDefault = false;[\s\S]*?\} else if \(currentGroup === "seasons" && !route\.seasonId && state\.season === "all"\)/);
+assert.match(appJs, /function applyViewDefaults\(route, previousView\)[\s\S]*?currentGroup === "seasons" && !route\.seasonId && state\.season === "all"/);
 assert.match(appJs, /function applyViewDataModeDefaults\(viewName, previousView\)[\s\S]*?state\.autoDataModeDefault[\s\S]*?dataModeFilter\.value = state\.dataMode/);
 assert.equal(appJs.includes("matchHighlightCardLimit"), true);
 assert.equal(appJs.includes("data-show-more-match-highlights"), true);

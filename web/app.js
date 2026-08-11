@@ -22,7 +22,7 @@ import {
 } from "./router.js";
 import { pokemonAssetId } from "./pokemon_names.js";
 import { normalizeRosterGroupKey, rosterIdentityKey } from "./roster_keys.js";
-import { GAME_IDS, defaultViewForGroup, viewGroupForView } from "./view_config.js";
+import { GAME_IDS, VIEW_GROUPS, defaultViewForGroup, isStandaloneView, stackDefaultView, stackForView, viewGroupForView } from "./view_config.js";
 import {
   ALL_TIME_COLUMNS,
   AWARD_COLUMNS,
@@ -229,7 +229,6 @@ const ROSTER_BACKGROUND_BY_SEASON = {
 };
 
 const ROSTER_BACKGROUND_POOL = Object.values(ROSTER_BACKGROUND_BY_SEASON);
-const ALL_SEASON_DEFAULT_VIEWS = new Set(["match-highlights"]);
 const DATA_MODE_DEFAULT_BY_VIEW = {
   "match-highlights": "all",
 };
@@ -291,6 +290,7 @@ const state = {
   rosterFocus: null,
   rivalryFocus: null,
   gameFocus: null,
+  stackView: {},
   games: {},
   draftPickedStatus: "all",
   draftTierFilter: "all",
@@ -489,6 +489,11 @@ function bindControls() {
 
   document.querySelectorAll(".tab").forEach((button) => {
     button.addEventListener("click", () => {
+      // Stack tabs (season hub) reopen the last-visited member view.
+      if (button.dataset.viewStack) {
+        navigateToView(state.stackView[button.dataset.viewStack] || stackDefaultView(button.dataset.viewStack));
+        return;
+      }
       // In-view tab buttons (record book, hall of fame) share the .tab look
       // but carry no data-view; only subnav tabs navigate.
       if (!button.dataset.view) return;
@@ -899,12 +904,7 @@ function applyViewDefaults(route, previousView) {
     state.season = "all";
     state.autoSeasonDefault = false;
   }
-  if (currentGroup === "seasons" && !route.seasonId && ALL_SEASON_DEFAULT_VIEWS.has(route.view)) {
-    if (state.autoSeasonDefault) {
-      state.season = "all";
-    }
-    state.autoSeasonDefault = false;
-  } else if (currentGroup === "seasons" && !route.seasonId && state.season === "all") {
+  if (currentGroup === "seasons" && !route.seasonId && state.season === "all") {
     state.season = "season_010";
     state.autoSeasonDefault = true;
   }
@@ -933,19 +933,36 @@ const TOOLBAR_HIDDEN_VIEWS = new Set(["cinema", "zeitreise", "record-book", "hal
 
 function setActiveView(viewName) {
   state.view = viewName;
+  const activeStack = stackForView(viewName);
+  if (activeStack) {
+    state.stackView[activeStack] = viewName;
+  }
+  // Der Wegweiser steht über den Gruppen: keine Gruppe ist aktiv.
+  const activeGroup = isStandaloneView(viewName) ? null : viewGroupForView(viewName);
   document.querySelector(".toolbar")?.classList.toggle("is-cinema-hidden", TOOLBAR_HIDDEN_VIEWS.has(viewName));
+  document.querySelector(".stack-tabs")?.toggleAttribute("hidden", !activeStack);
   document.querySelectorAll(".tab").forEach((item) => {
-    const activeGroup = viewGroupForView(viewName);
+    if (item.dataset.viewStackMember) {
+      const visible = item.dataset.viewStackMember === activeStack;
+      item.hidden = !visible;
+      item.setAttribute("aria-hidden", String(!visible));
+      item.classList.toggle("is-active", item.dataset.view === viewName);
+      return;
+    }
     const inActiveGroup = item.dataset.viewGroup === activeGroup;
     item.hidden = !inActiveGroup;
     item.setAttribute("aria-hidden", String(!inActiveGroup));
+    if (item.dataset.viewStack) {
+      item.classList.toggle("is-active", item.dataset.viewStack === activeStack);
+      return;
+    }
     // Game tabs share the "game" view id, so the active one is resolved by
     // the focused game id instead.
     const gameTabActive = !item.dataset.gameId || item.dataset.gameId === (state.gameFocus?.key || "");
     item.classList.toggle("is-active", item.dataset.view === viewName && gameTabActive);
   });
   document.querySelectorAll(".nav-group-tab").forEach((item) => {
-    item.classList.toggle("is-active", item.dataset.viewGroup === viewGroupForView(viewName));
+    item.classList.toggle("is-active", item.dataset.viewGroup === activeGroup);
   });
   document.querySelectorAll(".view").forEach((view) => {
     view.classList.toggle("is-active", view.id === `view-${viewName}`);

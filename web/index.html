@@ -51,54 +51,57 @@
 
     <main class="app-shell">
       <nav class="primary-tabs" aria-label="Hauptbereiche">
-        <button class="nav-group-tab is-active" type="button" data-view-group="people" data-i18n="navGroups.people">Personen</button>
+        <button class="nav-group-tab is-active" type="button" data-view-group="records" data-i18n="navGroups.records">Bestenlisten</button>
+        <button class="nav-group-tab" type="button" data-view-group="seasons" data-i18n="navGroups.seasons">Saisons</button>
         <button class="nav-group-tab" type="button" data-view-group="duels" data-i18n="navGroups.duels">Duelle</button>
         <button class="nav-group-tab" type="button" data-view-group="pokemon" data-i18n="navGroups.pokemon">Pokémon</button>
-        <button class="nav-group-tab" type="button" data-view-group="seasons" data-i18n="navGroups.seasons">Saisons & Kämpfe</button>
         <button class="nav-group-tab" type="button" data-view-group="videos" data-i18n="navGroups.videos">Videos</button>
-        <button class="nav-group-tab" type="button" data-view-group="records" data-i18n="navGroups.records">Rekorde</button>
         <button class="nav-group-tab" type="button" data-view-group="games" data-i18n="navGroups.games">Spiele</button>
-        <button class="nav-group-tab" type="button" data-view-group="data" data-i18n="navGroups.data">Daten & Review</button>
+        <button class="nav-group-tab is-tool" type="button" data-view-group="data" data-i18n="navGroups.data">Werkstatt</button>
       </nav>
 
       <nav class="tabs sub-tabs" aria-label="Ansichten">
-        <button class="tab is-active" data-view-group="people" data-view="all-time" data-i18n="nav.allTime">Ewige Tabelle</button>
-        <button class="tab" data-view-group="pokemon" data-view="killlists" data-i18n="nav.killlists">Pokémon-Killlisten</button>
-        <button class="tab" data-view-group="pokemon" data-view="pokemon-drafts" data-i18n="nav.pokemonDrafts">Pokémon-Drafts</button>
-        <button class="tab" data-view-group="people" data-view="team-rosters" data-i18n="nav.teamRosters">Kaderübersichten</button>
-        <button class="tab" data-view-group="duels" data-view="rivalries" data-i18n="nav.rivalries">Rivalitäten</button>
-        <button class="tab" data-view-group="duels" data-view="oracle" data-i18n="nav.oracle">Orakel</button>
-        <button class="tab" data-view-group="duels" data-view="team-duel" data-i18n="nav.teamDuel">Zeitmaschine</button>
-        <button class="tab" data-view-group="seasons" data-view="battle-history" data-i18n="nav.battleHistory">Spielbaum</button>
-        <button class="tab" data-view-group="seasons" data-view="match-highlights" data-i18n="nav.matchHighlights">Highlightkämpfe</button>
-        <button class="tab" data-view-group="seasons" data-view="season-detail" data-i18n="nav.seasonDetail">Saisonakte</button>
-        <button class="tab" data-view-group="seasons" data-view="season-story" data-i18n="nav.seasonStory">Season Story</button>
-        <button class="tab" data-view-group="seasons" data-view="season-wrapped" data-i18n="nav.seasonWrapped">GPL Wrapped</button>
-        <button class="tab" data-view-group="seasons" data-view="table-history" data-i18n="nav.tableHistory">Tabellenverlauf</button>
-        <button class="tab" data-view-group="seasons" data-view="match-plan" data-i18n="nav.matchPlan">Spielplan</button>
-        <button class="tab" data-view-group="videos" data-view="video-archive" data-i18n="nav.videoArchive">Video-Archiv</button>
-        <button class="tab" data-view-group="videos" data-view="cinema" data-i18n="nav.cinema">Kino-Modus</button>
-        <button class="tab" data-view-group="videos" data-view="audience-history" data-i18n="nav.audienceHistory">Publikum</button>
-        <button class="tab" data-view-group="videos" data-view="zeitstrahl" data-i18n="nav.zeitstrahl">Zeitstrahl</button>
-        <button class="tab" data-view-group="records" data-view="upset-index" data-i18n="nav.upsetIndex">Upset-Index</button>
-        <button class="tab" data-view-group="records" data-view="record-book" data-i18n="nav.recordBook">Rekordbuch</button>
-        <button class="tab" data-view-group="records" data-view="awards" data-i18n="nav.awards">Auszeichnungen</button>
-        <button class="tab" data-view-group="records" data-view="hall-of-fame" data-i18n="nav.hallOfFame">Hall of Fame</button>
+        <button class="tab is-active" data-view-group="records" data-view="all-time" data-i18n="nav.allTime" data-i18n-title="sections.allTimeDescription">Ewige Tabelle</button>
+        <button class="tab" data-view-group="records" data-view="team-rosters" data-i18n="nav.teamRosters" data-i18n-title="sections.teamRostersDescription">Kaderübersichten</button>
+        <button class="tab" data-view-group="records" data-view="record-book" data-i18n="nav.recordBook" data-i18n-title="sections.recordBookDescription">Rekordbuch</button>
+        <button class="tab" data-view-group="records" data-view="awards" data-i18n="nav.awards" data-i18n-title="sections.awardsDescription">Auszeichnungen</button>
+        <button class="tab" data-view-group="records" data-view="hall-of-fame" data-i18n="nav.hallOfFame" data-i18n-title="sections.hallOfFameDescription">Hall of Fame</button>
+        <button class="tab" data-view-group="records" data-view="upset-index" data-i18n="nav.upsetIndex" data-i18n-title="sections.upsetIndexDescription">Upset-Index</button>
+        <button class="tab" data-view-group="seasons" data-view-stack="season-hub" data-i18n="seasonHub.tab" data-i18n-title="sections.seasonDetailDescription">Saison</button>
+        <button class="tab" data-view-group="seasons" data-view="zeitreise" data-i18n="nav.zeitreise" data-i18n-title="sections.zeitreiseDescription">Chronik</button>
+        <button class="tab" data-view-group="duels" data-view="rivalries" data-i18n="nav.rivalries" data-i18n-title="sections.rivalriesDescription">Rivalitäten</button>
+        <button class="tab" data-view-group="duels" data-view="oracle" data-i18n="nav.oracle" data-i18n-title="sections.oracleDescription">Orakel</button>
+        <button class="tab" data-view-group="duels" data-view="team-duel" data-i18n="nav.teamDuel" data-i18n-title="sections.teamDuelDescription">Zeitmaschine</button>
+        <button class="tab" data-view-group="pokemon" data-view="killlists" data-i18n="nav.killlists" data-i18n-title="sections.killlistsDescription">Pokémon-Killlisten</button>
+        <button class="tab" data-view-group="pokemon" data-view="pokemon-drafts" data-i18n="nav.pokemonDrafts" data-i18n-title="sections.pokemonDraftsDescription">Pokémon-Drafts</button>
+        <button class="tab" data-view-group="videos" data-view="video-archive" data-i18n="nav.videoArchive" data-i18n-title="sections.videoArchiveDescription">Video-Archiv</button>
+        <button class="tab" data-view-group="videos" data-view="cinema" data-i18n="nav.cinema" data-i18n-title="sections.cinemaDescription">Kino-Modus</button>
+        <button class="tab" data-view-group="videos" data-view="match-highlights" data-i18n="nav.matchHighlights" data-i18n-title="sections.matchHighlightsDescription">Highlightkämpfe</button>
+        <button class="tab" data-view-group="videos" data-view="audience-history" data-i18n="nav.audienceHistory" data-i18n-title="sections.audienceHistoryDescription">Publikum</button>
+        <button class="tab" data-view-group="videos" data-view="zeitstrahl" data-i18n="nav.zeitstrahl" data-i18n-title="sections.zeitstrahlDescription">Meilensteine</button>
         <button class="tab" data-view-group="games" data-view="games" data-i18n="nav.gamesOverview">Übersicht</button>
         <button class="tab" data-view-group="games" data-view="game" data-game-id="kader-raten" data-i18n="games.kader.title">Kader-Raten</button>
         <button class="tab" data-view-group="games" data-view="game" data-game-id="tipp-spiel" data-i18n="games.tipp.title">Tipp-Spiel</button>
         <button class="tab" data-view-group="games" data-view="game" data-game-id="klick-duell" data-i18n="games.klick.title">Klick-Duell</button>
         <button class="tab" data-view-group="games" data-view="game" data-game-id="quizshow" data-i18n="games.quiz.title">GPL-Quizshow</button>
         <button class="tab" data-view-group="games" data-view="game" data-game-id="wer-bin-ich" data-i18n="games.werbinich.title">Wer bin ich?</button>
-        <button class="tab" data-view-group="seasons" data-view="zeitreise" data-i18n="nav.zeitreise">Zeitreise</button>
-        <button class="tab" data-view-group="data" data-view="data-coverage" data-i18n="nav.dataCoverage">Datenlage</button>
-        <button class="tab" data-view-group="data" data-view="data-gaps" data-i18n="nav.dataGaps">Lückenübersicht</button>
-        <button class="tab" data-view-group="data" data-view="roster-gaps" data-i18n="nav.rosterGaps">Kaderlücken</button>
-        <button class="tab" data-view-group="data" data-view="appearance-gaps" data-i18n="nav.appearanceGaps">Einsatzlücken</button>
-        <button class="tab" data-view-group="data" data-view="video-review" data-i18n="nav.videoReview">Video-Review</button>
-        <button class="tab" data-view-group="data" data-view="match-video-coverage" data-i18n="nav.matchVideoCoverage">Kampfvideo-Abdeckung</button>
-        <button class="tab" data-view-group="data" data-view="review-workflow" data-i18n="nav.reviewWorkflow">Review</button>
-        <button class="tab" data-view-group="data" data-view="source-claims" data-i18n="nav.sourceClaims">Quellenclaims</button>
+        <button class="tab" data-view-group="data" data-view="data-coverage" data-i18n="nav.dataCoverage" data-i18n-title="sections.dataCoverageDescription">Datenlage</button>
+        <button class="tab" data-view-group="data" data-view="data-gaps" data-i18n="nav.dataGaps" data-i18n-title="sections.dataGapsDescription">Lückenübersicht</button>
+        <button class="tab" data-view-group="data" data-view="roster-gaps" data-i18n="nav.rosterGaps" data-i18n-title="sections.rosterGapsDescription">Kaderlücken</button>
+        <button class="tab" data-view-group="data" data-view="appearance-gaps" data-i18n="nav.appearanceGaps" data-i18n-title="sections.appearanceGapsDescription">Einsatzlücken</button>
+        <button class="tab" data-view-group="data" data-view="video-review" data-i18n="nav.videoReview" data-i18n-title="sections.videoReviewDescription">Video-Review</button>
+        <button class="tab" data-view-group="data" data-view="match-video-coverage" data-i18n="nav.matchVideoCoverage" data-i18n-title="sections.matchVideoCoverageDescription">Kampfvideo-Abdeckung</button>
+        <button class="tab" data-view-group="data" data-view="review-workflow" data-i18n="nav.reviewWorkflow" data-i18n-title="sections.reviewWorkflowDescription">Review</button>
+        <button class="tab" data-view-group="data" data-view="source-claims" data-i18n="nav.sourceClaims" data-i18n-title="sections.sourceClaimsDescription">Quellenclaims</button>
+      </nav>
+
+      <nav class="tabs stack-tabs" aria-label="Saison-Kapitel" hidden>
+        <button class="tab" data-view-stack-member="season-hub" data-view="season-detail" data-i18n="seasonHub.overview" data-i18n-title="sections.seasonDetailDescription">Akte</button>
+        <button class="tab" data-view-stack-member="season-hub" data-view="match-plan" data-i18n="seasonHub.matchPlan" data-i18n-title="sections.matchPlanDescription">Spielplan</button>
+        <button class="tab" data-view-stack-member="season-hub" data-view="battle-history" data-i18n="seasonHub.bracket" data-i18n-title="sections.battleHistoryDescription">Spielbaum</button>
+        <button class="tab" data-view-stack-member="season-hub" data-view="table-history" data-i18n="seasonHub.tableHistory" data-i18n-title="sections.tableHistoryDescription">Tabellenverlauf</button>
+        <button class="tab" data-view-stack-member="season-hub" data-view="season-story" data-i18n="seasonHub.story" data-i18n-title="sections.seasonStoryDescription">Story</button>
+        <button class="tab" data-view-stack-member="season-hub" data-view="season-wrapped" data-i18n="seasonHub.wrapped" data-i18n-title="sections.seasonWrappedDescription">Wrapped</button>
       </nav>
 
       <section class="toolbar">
