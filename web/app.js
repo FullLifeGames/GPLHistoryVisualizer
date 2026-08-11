@@ -373,6 +373,7 @@ let activeColumnHelpAnchor = null;
 const LINKABLE_SEASON_COLUMNS = new Set(["season", "season_id", "season_list", "title_seasons", "best_season"]);
 const LINKABLE_PERSON_COLUMNS = new Set(["name", "person", "trainer", "trainers", "player_a", "player_b", "winner", "opponent", "perspective_person", "peak_perspective", "champion"]);
 const VIEW_RENDERERS = {
+  wegweiser: renderWegweiser,
   "all-time": renderAllTime,
   killlists: renderKilllists,
   "pokemon-drafts": renderPokemonDrafts,
@@ -929,7 +930,70 @@ function applyViewDataModeDefaults(viewName, previousView) {
 // zeitreise manage their own controls; record book, hall of fame, rivalries,
 // and the oracle render career-scope data over the full archive that no
 // client-side slice can recompute; the games manage their own per-round state.
-const TOOLBAR_HIDDEN_VIEWS = new Set(["cinema", "zeitreise", "record-book", "hall-of-fame", "rivalries", "rivalry-detail", "oracle", "team-duel", "games", "game", "audience-history", "zeitstrahl"]);
+const TOOLBAR_HIDDEN_VIEWS = new Set(["cinema", "zeitreise", "record-book", "hall-of-fame", "rivalries", "rivalry-detail", "oracle", "team-duel", "games", "game", "audience-history", "zeitstrahl", "wegweiser"]);
+
+// Karten speisen sich aus VIEW_GROUPS + den vorhandenen Sektionstexten, damit
+// der Wegweiser ohne zweiten Pflegeort aktuell bleibt.
+const WEGWEISER_SECTION_KEYS = {
+  "all-time": "allTime",
+  "team-rosters": "teamRosters",
+  "record-book": "recordBook",
+  awards: "awards",
+  "hall-of-fame": "hallOfFame",
+  "upset-index": "upsetIndex",
+  zeitreise: "zeitreise",
+  rivalries: "rivalries",
+  oracle: "oracle",
+  "team-duel": "teamDuel",
+  killlists: "killlists",
+  "pokemon-drafts": "pokemonDrafts",
+  "video-archive": "videoArchive",
+  cinema: "cinema",
+  "match-highlights": "matchHighlights",
+  "audience-history": "audienceHistory",
+  zeitstrahl: "zeitstrahl",
+  games: "games",
+};
+
+function wegweiserCardHtml(view, title, description) {
+  return `<button type="button" class="wegweiser-card" data-wegweiser-view="${escapeAttr(view)}">
+      <strong>${escapeHtml(title)}</strong>
+      <span>${escapeHtml(description)}</span>
+    </button>`;
+}
+
+function renderWegweiser() {
+  const host = document.querySelector("#wegweiser-groups");
+  if (!host) return;
+  const lang = state.language;
+  const groupsHtml = VIEW_GROUPS.filter((group) => !group.tool).map((group) => {
+    const cards = [];
+    const seenStacks = new Set();
+    for (const view of group.views) {
+      const stackId = stackForView(view);
+      if (stackId) {
+        if (seenStacks.has(stackId)) continue;
+        seenStacks.add(stackId);
+        cards.push(wegweiserCardHtml(stackDefaultView(stackId), t(lang, "seasonHub.tab"), t(lang, "wegweiser.seasonHub")));
+        continue;
+      }
+      const sectionKey = WEGWEISER_SECTION_KEYS[view];
+      if (!sectionKey) continue;
+      cards.push(wegweiserCardHtml(view, t(lang, `sections.${sectionKey}Title`), t(lang, `sections.${sectionKey}Description`)));
+    }
+    return `<section class="wegweiser-group">
+        <h3>${escapeHtml(t(lang, group.labelKey))}</h3>
+        <div class="wegweiser-grid">${cards.join("")}</div>
+      </section>`;
+  });
+  const workshop = `<p class="wegweiser-workshop">${escapeHtml(t(lang, "wegweiser.workshopNote"))}
+      <button type="button" class="wegweiser-workshop-link" data-wegweiser-view="data-coverage">${escapeHtml(t(lang, "wegweiser.workshopLink"))}</button>
+    </p>`;
+  host.innerHTML = groupsHtml.join("") + workshop;
+  host.querySelectorAll("[data-wegweiser-view]").forEach((button) => {
+    button.addEventListener("click", () => navigateToView(button.dataset.wegweiserView));
+  });
+}
 
 function setActiveView(viewName) {
   state.view = viewName;

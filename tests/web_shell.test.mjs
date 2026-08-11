@@ -490,3 +490,14 @@ assert.equal(appJs.includes("gpl-game-kader-raten-streak"), true);
 assert.equal(appJs.includes("gpl-game-tipp-spiel-score"), false);
 assert.equal(appJs.includes("gpl-game-klick-duell-best"), false);
 assert.equal(appJs.includes("gpl-game-quizshow-score"), false);
+
+// Wegweiser: Header-Zugang + Kartenraster über alle Gruppen.
+assert.equal(indexHtml.includes('id="wegweiser-link"'), true);
+assert.equal(indexHtml.includes('href="#/wegweiser"'), true);
+assert.equal(indexHtml.includes('id="view-wegweiser"'), true);
+assert.equal(indexHtml.includes('id="wegweiser-groups"'), true);
+assert.equal(appJs.includes("wegweiser: renderWegweiser"), true);
+assert.equal(appJs.includes("WEGWEISER_SECTION_KEYS"), true);
+assert.match(appJs, /TOOLBAR_HIDDEN_VIEWS = new Set\(\[[^\]]*"wegweiser"/);
+assert.equal(stylesCss.includes(".wegweiser-card"), true);
+assert.equal(stylesCss.includes(".wegweiser-grid"), true);

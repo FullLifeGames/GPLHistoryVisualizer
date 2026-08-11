@@ -5775,3 +5775,60 @@ p.game-status.game-bad {
     grid-template-columns: auto minmax(0, 1fr) auto;
   }
 }
+
+.wegweiser-group {
+  margin-bottom: 24px;
+}
+
+.wegweiser-group h3 {
+  margin: 0 0 10px;
+}
+
+.wegweiser-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 10px;
+}
+
+.wegweiser-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  padding: 12px 14px;
+  box-shadow: 0 1px 2px rgb(6 35 65 / 6%);
+}
+
+.wegweiser-card:hover {
+  border-color: rgb(17 191 243 / 55%);
+  background: var(--surface-soft);
+}
+
+.wegweiser-card span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.wegweiser-workshop {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 8px 0 0;
+}
+
+.wegweiser-workshop-link {
+  border: 0;
+  background: none;
+  color: var(--accent-strong);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  padding: 0;
+  text-decoration: underline;
+}

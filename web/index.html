@@ -29,6 +29,7 @@
           data-i18n="controls.reportIssue"
           >Problem melden</a
         >
+        <a class="header-button" id="wegweiser-link" href="#/wegweiser" data-i18n="nav.wegweiser">Wegweiser</a>
         <button class="header-button" id="language-toggle" type="button">English</button>
         <button class="header-button" id="theme-toggle" type="button">Nachtmodus</button>
         <div class="status" id="load-status" data-i18n="status.loading">Lade CSV-Daten</div>
@@ -691,6 +692,14 @@
         </div>
         <div id="match-video-summary" class="summary-grid"></div>
         <div id="match-video-coverage-table" class="table-wrap"></div>
+      </section>
+
+      <section id="view-wegweiser" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.wegweiserTitle">Wegweiser</h2>
+          <p data-i18n="sections.wegweiserDescription">Alle Bereiche der Seite im Überblick – jede Karte führt direkt zur Ansicht.</p>
+        </div>
+        <div id="wegweiser-groups"></div>
       </section>
 
       <section id="view-data-coverage" class="view">
