@@ -3054,11 +3054,13 @@ function renderTitleRace() {
   }
   note.textContent = noteText;
 
+  // A single champion means every final probability is 0% or 100% — the
+  // telling number per player is the highest chance they ever held.
   const legendHtml = (entries) =>
     entries
       .map(
         (entry, index) =>
-          `<span class="audience-legend-chip"><span class="audience-legend-swatch viz-series-${(index % 12) + 1}"></span>${personLink(personIdForName(entry.name), entry.name)} · ${titleRacePercent(entry.final)}</span>`,
+          `<span class="audience-legend-chip"><span class="audience-legend-swatch viz-series-${(index % 12) + 1}"></span>${personLink(personIdForName(entry.name), entry.name)} · ${formatMessage(t(state.language, "titleRace.legendPeak"), { value: titleRacePercent(entry.peak) })}</span>`,
       )
       .join("");
 
