@@ -314,7 +314,7 @@ assert.equal(appJs.includes('class="table-scroll-hint"'), true);
 assert.equal(appJs.includes("data-table-scroll-left"), true);
 assert.equal(appJs.includes("data-table-scroll-right"), true);
 assert.equal(appJs.includes("movableColumns: false"), true);
-assert.equal(appJs.includes("paginationSize: 25"), true);
+assert.match(appJs, /paginationSize: options\.showAllRows \? Math\.max\(displayRows\.length, 25\) : 25/);
 assert.equal(appJs.includes("paginationSizeSelector: [25, 50, 100, true]"), true);
 assert.equal(appJs.includes("resizable: false"), true);
 assert.equal(appJs.includes("stickyIdentityColumn(visibleColumns, options.stickyColumn)"), true);

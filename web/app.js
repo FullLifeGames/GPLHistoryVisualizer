@@ -4157,7 +4157,7 @@ function renderAwards() {
     })),
     AWARD_COLUMNS,
     ["season", "award", "person", "formula", "source"],
-    { filename: "gpl-awards.csv" },
+    { filename: "gpl-awards.csv", showAllRows: true },
   );
 }
 
@@ -4218,7 +4218,8 @@ function allTimeAwardCards(rows) {
     entry.counts.set(row.award_key, (entry.counts.get(row.award_key) ?? 0) + 1);
     entry.total += 1;
   }
-  const top = [...byPerson.values()].sort((a, b) => b.total - a.total || a.name.localeCompare(b.name)).slice(0, 12);
+  // Alle Personen mit mindestens einer Auszeichnung — bewusst ohne Top-N-Kappung.
+  const top = [...byPerson.values()].sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
   return top
     .map(
       (entry) => `
@@ -8233,7 +8234,7 @@ function renderTable(selector, rows, columns, html = false, options = {}) {
     langs: TABULATOR_LANGS,
     movableColumns: false,
     pagination: "local",
-    paginationSize: 25,
+    paginationSize: options.showAllRows ? Math.max(displayRows.length, 25) : 25,
     paginationSizeSelector: [25, 50, 100, true],
     placeholder: t(state.language, "empty.table"),
     initialSort: options.initialSort ?? initialSort(visibleColumns),
