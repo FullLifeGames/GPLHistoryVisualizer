@@ -72,8 +72,27 @@ def test_playoff_spots_from_playoff_matches():
     assert by_person["person_alice"]["p_playoffs"] == "1.0000"
     assert by_person["person_bob"]["p_playoffs"] == "1.0000"
     assert by_person["person_carol"]["p_playoffs"] == "0.0000"
-    # Playoff matches never get their own odds rows.
+    # Playoff matches never get their own division rows.
     assert not [row for row in rows if row["division"] == "Playoffs"]
+
+
+def test_playoff_rounds_add_title_checkpoints():
+    fixture = FIXTURE + [
+        _match("season_001", "Playoffs", "Halbfinale", "Alice", "Carol", "Alice", "p1", stage="playoffs"),
+        _match("season_001", "Playoffs", "Finale", "Alice", "Bob", "Alice", "p2", stage="playoffs"),
+    ]
+    rows = title_odds_rows(fixture, sims=100, seed=1)
+    rounds = sorted({row["week"] for row in rows if int(row["week"]) >= 100})
+    assert rounds == ["120", "140"]
+    finale = {row["person_id"]: row for row in rows if row["week"] == "140"}
+    # After the finale the champion is certain; playoff-round rows carry no p_playoffs.
+    assert finale["person_alice"]["p_first"] == "1.0000"
+    assert finale["person_bob"]["p_first"] == "0.0000"
+    assert finale["person_alice"]["p_playoffs"] == ""
+    semi = {row["person_id"]: row for row in rows if row["week"] == "120"}
+    # After the semifinal only the two finalists can still win the title.
+    assert semi["person_carol"]["p_first"] == "0.0000"
+    assert float(semi["person_alice"]["p_first"]) + float(semi["person_bob"]["p_first"]) == 1.0
 
 
 def test_skips_invalid_rows():

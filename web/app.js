@@ -2956,7 +2956,21 @@ function titleRacePercent(value) {
   return `${Math.round(value * 100)} %`;
 }
 
-function titleRaceChartConfig(entries, probabilityField, tooltipKey, extra = {}) {
+const TITLE_RACE_ROUND_KEYS = { 100: "roundPre", 110: "roundQuarter", 120: "roundSemi", 130: "roundThird", 140: "roundFinal" };
+
+function titleRaceWeekDisplay(week) {
+  const key = TITLE_RACE_ROUND_KEYS[Number(week)];
+  return key ? t(state.language, `titleRace.${key}`) : String(week);
+}
+
+function titleRaceChartConfig(race, entries, probabilityField, tooltipKey, extra = {}) {
+  const tickLabels = new Map(
+    race.ticks.map((tick) => [tick.x, tick.labelKey ? t(state.language, `titleRace.${tick.labelKey}`) : tick.label]),
+  );
+  const step = Math.max(1, Math.ceil(race.ticks.length / 12));
+  const xTickValues = race.ticks
+    .filter((tick, index) => tick.labelKey || index % step === 0 || index === race.ticks.length - 1)
+    .map((tick) => tick.x);
   return {
     series: entries.map((entry, index) => ({
       className: `viz-series-${(index % 12) + 1} title-race-line`,
@@ -2965,12 +2979,13 @@ function titleRaceChartConfig(entries, probabilityField, tooltipKey, extra = {})
     })),
     height: extra.height ?? 280,
     yDomain: [0, 1.02],
-    formatX: (value) => (Number.isInteger(value) ? String(value) : ""),
+    xTickValues,
+    formatX: (value) => tickLabels.get(value) ?? "",
     formatY: titleRacePercent,
     tooltip: (source) =>
       formatMessage(t(state.language, tooltipKey), {
         name: source.person_name,
-        week: source.week,
+        week: titleRaceWeekDisplay(source.week),
         value: titleRacePercent(Number.parseFloat(source[probabilityField])),
       }),
     fallbackText: t(state.language, "titleRace.empty"),
@@ -2993,10 +3008,12 @@ function renderTitleRace() {
   const controls = document.querySelector(".title-race-controls");
   const playoffHead = document.querySelector("#title-race-playoffs-head");
   const playoffChart = document.querySelector("#title-race-playoffs-chart");
+  const playoffLegend = document.querySelector("#title-race-playoffs-legend");
   if (!chart) return;
   playoffHead.hidden = true;
   clearChartHost(playoffChart);
   legend.innerHTML = "";
+  playoffLegend.innerHTML = "";
 
   const rows = state.data.titleOdds ?? [];
   if (state.season === "all") {
@@ -3027,36 +3044,44 @@ function renderTitleRace() {
   };
 
   const race = titleRaceSeries(rows, { seasonId: state.season, division: state.titleRace.division });
+  const hasPlayoffRounds = race.ticks.some((tick) => tick.labelKey);
   let noteText = formatMessage(t(state.language, "titleRace.note"), { sims: race.sims, seed: race.seed });
+  if (hasPlayoffRounds) {
+    noteText += ` ${t(state.language, "titleRace.notePlayoffs")}`;
+  }
   if (race.decidedWeek !== null) {
-    noteText += ` ${formatMessage(t(state.language, "titleRace.decidedNote"), { name: race.decidedName, week: race.decidedWeek })}`;
+    noteText += ` ${formatMessage(t(state.language, "titleRace.decidedNote"), { name: race.decidedName, week: titleRaceWeekDisplay(race.decidedWeek) })}`;
   }
   note.textContent = noteText;
 
+  const legendHtml = (entries) =>
+    entries
+      .map(
+        (entry, index) =>
+          `<span class="audience-legend-chip"><span class="audience-legend-swatch viz-series-${(index % 12) + 1}"></span>${personLink(personIdForName(entry.name), entry.name)} · ${titleRacePercent(entry.final)}</span>`,
+      )
+      .join("");
+
   const markers = [];
-  if (race.decidedWeek !== null) {
+  if (race.decidedX !== null) {
     markers.push({
-      x: race.decidedWeek,
+      x: race.decidedX,
       y: 0.95,
       label: t(state.language, "titleRace.decided"),
       labelAt: "top",
       className: "title-race-decided",
     });
   }
-  lineChart(chart, titleRaceChartConfig(race.series, "p_first", "titleRace.tooltip", { markers }));
-  legend.innerHTML = race.series
-    .map(
-      (entry, index) =>
-        `<span class="audience-legend-chip"><span class="audience-legend-swatch viz-series-${(index % 12) + 1}"></span>${personLink(personIdForName(entry.name), entry.name)} · ${titleRacePercent(entry.final)}</span>`,
-    )
-    .join("");
+  lineChart(chart, titleRaceChartConfig(race, race.series, "p_first", "titleRace.tooltip", { markers }));
+  legend.innerHTML = legendHtml(race.series);
 
   if (race.playoffSeries) {
     playoffHead.hidden = false;
     lineChart(
       playoffChart,
-      titleRaceChartConfig(race.playoffSeries, "p_playoffs", "titleRace.playoffTooltip", { height: 220, fallbackText: "" }),
+      titleRaceChartConfig(race, race.playoffSeries, "p_playoffs", "titleRace.playoffTooltip", { height: 220, fallbackText: "" }),
     );
+    playoffLegend.innerHTML = legendHtml(race.playoffSeries);
   }
 }
 

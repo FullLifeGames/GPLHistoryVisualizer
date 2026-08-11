@@ -187,7 +187,12 @@ function renderChart(container, config, kind) {
 
     const formatX = config.formatX || ((value) => String(value));
     const formatY = config.formatY || ((value) => String(Math.round(value)));
-    const xAxis = d3.axisBottom(x).ticks(Math.min(8, innerWidth / 80)).tickFormat(formatX);
+    const xAxis = d3.axisBottom(x).tickFormat(formatX);
+    if (config.xTickValues) {
+      xAxis.tickValues(config.xTickValues);
+    } else {
+      xAxis.ticks(Math.min(8, innerWidth / 80));
+    }
     const yAxis = d3.axisLeft(y).tickValues(yTicks).tickFormat(formatY);
     root.append("g").attr("class", "chart-axis chart-axis-x").attr("transform", `translate(0,${innerHeight})`).call(xAxis);
     root.append("g").attr("class", "chart-axis chart-axis-y").call(yAxis);
@@ -241,12 +246,17 @@ function renderChart(container, config, kind) {
       container.appendChild(tooltip);
       const focus = root.append("circle").attr("class", "chart-focus").attr("r", 4).style("display", "none");
 
-      const nearestPoint = (mouseX) => {
+      // Both axes count: with many overlapping series (Titelrennen) an
+      // x-only pick would always land on the same line — the cursor's
+      // vertical position chooses between series at the same matchday.
+      const nearestPoint = (mouseX, mouseY) => {
         let best = null;
         let bestDistance = Infinity;
         for (const series of seriesList) {
           for (const point of series.points) {
-            const distance = Math.abs(x(point.x) - mouseX);
+            const dx = x(point.x) - mouseX;
+            const dy = y(point.y) - mouseY;
+            const distance = dx * dx + dy * dy;
             if (distance < bestDistance) {
               bestDistance = distance;
               best = { point, series };
@@ -263,8 +273,8 @@ function renderChart(container, config, kind) {
         .attr("height", innerHeight)
         .attr("fill", "transparent")
         .on("mousemove", (event) => {
-          const [mouseX] = d3.pointer(event);
-          const best = nearestPoint(mouseX);
+          const [mouseX, mouseY] = d3.pointer(event);
+          const best = nearestPoint(mouseX, mouseY);
           if (!best) return;
           focus
             .style("display", null)

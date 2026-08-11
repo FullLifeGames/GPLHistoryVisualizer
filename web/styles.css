@@ -4929,6 +4929,10 @@ p.game-status.game-bad {
   max-width: 900px;
 }
 
+.audience-controls[hidden] {
+  display: none;
+}
+
 .audience-controls label {
   display: flex;
   align-items: center;
@@ -5194,7 +5198,7 @@ p.game-status.game-bad {
 }
 
 .title-race-controls {
-  margin-bottom: 6px;
+  margin: 14px 0 8px;
 }
 
 .chart-line.title-race-line {

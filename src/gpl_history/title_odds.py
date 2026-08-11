@@ -97,6 +97,81 @@ def _playoff_participants(matches: list[dict[str, str]]) -> dict[str, set[str]]:
     return participants
 
 
+def _playoff_matches(matches: list[dict[str, str]], season_id: str) -> list[dict[str, Any]]:
+    """The season's playoff matches with bracket sources, in round order.
+
+    Each participant slot is traced to the latest earlier playoff match the
+    actual player appeared in ("winner" or "loser" of it) — that is the
+    bracket wiring. Players without an earlier playoff match are fixed seeds
+    (S6 seeds four players straight into the Viertelfinale, S10 seeds
+    Minetube into the Halbfinale).
+    """
+    rows = [
+        row
+        for row in matches
+        if row.get("season_id") == season_id
+        and row.get("stage") == "playoffs"
+        and row.get("data_status") not in _SKIPPED_STATUSES
+        and row.get("result_basis") != "unresolved"
+        and row.get("player_a")
+        and row.get("player_b")
+    ]
+    rows.sort(key=lambda row: (_week_sort(row.get("week"), row.get("stage")), row.get("match_id") or ""))
+    entries: list[dict[str, Any]] = []
+    last_match_of: dict[str, int] = {}
+    for row in rows:
+        order = _week_sort(row.get("week"), row.get("stage"))
+        slots = []
+        for player in (row.get("player_a"), row.get("player_b")):
+            key = _person_id(player)
+            source_index = last_match_of.get(key)
+            if source_index is None:
+                slots.append(("seed", key))
+            else:
+                source = entries[source_index]
+                role = "winner" if source["winner"] == key else "loser"
+                slots.append(("from", source_index, role))
+        winner = _person_id(row.get("winner"))
+        loser_key = _person_id(row.get("player_b")) if winner == _person_id(row.get("player_a")) else _person_id(row.get("player_a"))
+        entries.append({"order": order, "slots": slots, "winner": winner, "loser": loser_key})
+        for player in (row.get("player_a"), row.get("player_b")):
+            last_match_of[_person_id(player)] = len(entries) - 1
+    return entries
+
+
+def _simulate_title(entries: list[dict[str, Any]], known_through: int, ratings: dict[str, float], rng: random.Random) -> str:
+    """One tournament walk; returns the champion's person id.
+
+    Matches through ``known_through`` keep their real outcome; later matches
+    take their participants from the simulated bracket wiring and are decided
+    by frozen-Elo win probability. The champion is the winner of the last
+    round's match (the Platz-3 match never decides the title).
+    """
+    outcomes: list[tuple[str, str]] = []
+    champion = ""
+    final_order = max(entry["order"] for entry in entries)
+    for entry in entries:
+        participants = []
+        for slot in entry["slots"]:
+            if slot[0] == "seed":
+                participants.append(slot[1])
+            else:
+                _, source_index, role = slot
+                outcome = outcomes[source_index]
+                participants.append(outcome[0] if role == "winner" else outcome[1])
+        if entry["order"] <= known_through:
+            outcomes.append((entry["winner"], entry["loser"]))
+        else:
+            key_a, key_b = participants
+            if rng.random() < _win_probability(ratings, key_a, key_b):
+                outcomes.append((key_a, key_b))
+            else:
+                outcomes.append((key_b, key_a))
+        if entry["order"] == final_order:
+            champion = outcomes[-1][0]
+    return champion
+
+
 def _win_probability(ratings: dict[str, float], key_a: str, key_b: str) -> float:
     rating_a = ratings.get(key_a, 1500.0)
     rating_b = ratings.get(key_b, 1500.0)
@@ -133,6 +208,7 @@ def title_odds_rows(matches: list[dict[str, str]], *, sims: int = 1000, seed: in
         for week in weeks:
             ratings = _ratings_at(snapshots, season_id, week)
             base_points: dict[str, float] = defaultdict(float)
+            base_diff: dict[str, float] = defaultdict(float)
             future: list[tuple[str, str, float]] = []
             for row in division_rows:
                 order = _week_sort(row.get("week"), row.get("stage"))
@@ -147,6 +223,9 @@ def title_odds_rows(matches: list[dict[str, str]], *, sims: int = 1000, seed: in
                     else:
                         base_points[key_a] += _POINTS_DRAW
                         base_points[key_b] += _POINTS_DRAW
+                    score_diff = _score_number(row.get("score_a")) - _score_number(row.get("score_b"))
+                    base_diff[key_a] += score_diff
+                    base_diff[key_b] -= score_diff
                 else:
                     future.append((key_a, key_b, _win_probability(ratings, key_a, key_b)))
 
@@ -160,7 +239,11 @@ def title_odds_rows(matches: list[dict[str, str]], *, sims: int = 1000, seed: in
                         points[key_a] = points.get(key_a, 0.0) + _POINTS_WIN
                     else:
                         points[key_b] = points.get(key_b, 0.0) + _POINTS_WIN
-                ranked = sorted(ids, key=lambda pid: (-points.get(pid, 0.0), rng.random()))
+                # Ties break like the official tables where possible: points,
+                # then the kill differential accumulated from known results;
+                # only what remains tied falls to chance. At the last matchday
+                # this reproduces the official ranking.
+                ranked = sorted(ids, key=lambda pid: (-points.get(pid, 0.0), -base_diff.get(pid, 0.0), rng.random()))
                 first_counts[ranked[0]] += 1
                 if spots:
                     for pid in ranked[:spots]:
@@ -181,7 +264,43 @@ def title_odds_rows(matches: list[dict[str, str]], *, sims: int = 1000, seed: in
                         "source_urls": source_urls,
                     }
                 )
+
+        # Playoff seasons continue the title race through the bracket: one
+        # checkpoint after each round (the Platz-3 round never affects the
+        # title and gets none), with the champion decided over the real
+        # bracket wiring and frozen-Elo probabilities for unplayed rounds.
+        if spots:
+            bracket = _playoff_matches(matches, season_id)
+            rounds = sorted({entry["order"] for entry in bracket if entry["order"] != 130})
+            for round_order in rounds:
+                ratings = _ratings_at(snapshots, season_id, round_order)
+                rng = random.Random(f"{seed}:{season_id}:{division}:playoffs:{round_order}")
+                title_counts: dict[str, int] = defaultdict(int)
+                for _ in range(sims):
+                    title_counts[_simulate_title(bracket, round_order, ratings, rng)] += 1
+                for pid in ids:
+                    rows.append(
+                        {
+                            "season_id": season_id,
+                            "division": division,
+                            "week": str(round_order),
+                            "person_id": pid,
+                            "person_name": players[pid],
+                            "p_first": f"{title_counts[pid] / sims:.4f}" if sims else "",
+                            "p_playoffs": "",
+                            "sims": sims,
+                            "seed": seed,
+                            "source_urls": source_urls,
+                        }
+                    )
     return rows
+
+
+def _score_number(value: Any) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return 0.0
 
 
 def build_and_write_title_odds(data_dir: Path, *, sims: int = 1000, seed: int = 42) -> int:
