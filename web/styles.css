@@ -4219,8 +4219,15 @@ tbody tr:hover {
   color: var(--ink);
   font-size: 0.78rem;
   pointer-events: none;
-  white-space: nowrap;
+  white-space: normal;
+  width: max-content;
+  max-width: min(340px, calc(100% - 16px));
+  text-align: center;
   box-shadow: 0 2px 8px rgb(0 0 0 / 12%);
+}
+
+.chart-tooltip.is-below {
+  transform: translate(-50%, 12px);
 }
 
 .upset-prob-line {

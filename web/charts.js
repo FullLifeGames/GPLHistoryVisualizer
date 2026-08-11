@@ -285,9 +285,16 @@ function renderChart(container, config, kind) {
           if (text) {
             tooltip.hidden = false;
             tooltip.textContent = text;
-            const left = Math.min(Math.max(x(best.point.x) + MARGIN.left, 40), width - 40);
-            tooltip.style.left = `${(left / width) * 100}%`;
+            // Erst nach dem Textsetzen messen: die Klammerung muss die echte
+            // Tooltip-Breite kennen, sonst ragt er seitlich aus dem Screen.
+            const containerWidth = container.getBoundingClientRect().width || width;
+            const half = Math.min(tooltip.offsetWidth, containerWidth - 16) / 2;
+            const pointLeft = ((x(best.point.x) + MARGIN.left) / width) * containerWidth;
+            const left = Math.min(Math.max(pointLeft, half + 8), containerWidth - half - 8);
+            tooltip.style.left = `${(left / containerWidth) * 100}%`;
             tooltip.style.top = `${((y(best.point.y) + MARGIN.top) / height) * 100}%`;
+            // Nahe der Oberkante unter den Punkt klappen statt abzuschneiden.
+            tooltip.classList.toggle("is-below", y(best.point.y) + MARGIN.top < tooltip.offsetHeight + 16);
           }
           if (config.onHover) config.onHover(best.point.source, best.series);
         })
@@ -405,8 +412,11 @@ export function stackedBarChart(container, config = {}) {
           if (!text) return;
           tooltip.hidden = false;
           tooltip.textContent = text;
-          const left = Math.min(Math.max(x(rowIndex) + MARGIN.left, 40), width - 40);
-          tooltip.style.left = `${(left / width) * 100}%`;
+          const containerWidth = container.getBoundingClientRect().width || width;
+          const half = Math.min(tooltip.offsetWidth, containerWidth - 16) / 2;
+          const pointLeft = ((x(rowIndex) + MARGIN.left) / width) * containerWidth;
+          const left = Math.min(Math.max(pointLeft, half + 8), containerWidth - half - 8);
+          tooltip.style.left = `${(left / containerWidth) * 100}%`;
           tooltip.style.top = `${(MARGIN.top / height) * 100}%`;
         })
         .on("mouseleave", () => {
