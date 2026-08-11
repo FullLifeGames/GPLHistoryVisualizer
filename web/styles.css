@@ -4513,23 +4513,69 @@ tbody tr:hover {
   margin: 10px 0;
 }
 
-.team-duel-speed-list {
-  max-width: 460px;
+.team-duel-tiers {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 10px 14px;
+  max-width: 860px;
 }
 
-.team-duel-speed-row {
-  display: flex;
+.team-duel-tier-row {
+  display: grid;
+  grid-template-columns: 1fr 56px 1fr;
   align-items: center;
-  gap: 8px;
-  padding: 2px 0;
+  gap: 10px;
+  padding: 5px 0;
   border-bottom: 1px solid var(--line);
 }
 
-.team-duel-speed-row strong {
-  margin-left: auto;
+.team-duel-tiers .team-duel-tier-row:last-child {
+  border-bottom: 0;
+}
+
+.team-duel-tier-head {
+  border-bottom: 2px solid var(--line);
+}
+
+.team-duel-tier-side {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 20px;
+}
+
+.team-duel-tier-a {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.team-duel-tier-b {
+  justify-content: flex-start;
+}
+
+.team-duel-tier-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 1px 10px 1px 4px;
+  font-size: 13px;
+}
+
+.team-duel-tier-a .team-duel-tier-chip {
+  border-color: var(--accent-strong);
+}
+
+.team-duel-tier-speed {
+  text-align: center;
+  font-weight: 800;
+  color: var(--accent-strong);
 }
 
 .team-duel-side-dot {
+  display: inline-block;
   width: 10px;
   height: 10px;
   border-radius: 50%;
@@ -4545,15 +4591,55 @@ tbody tr:hover {
 }
 
 .team-duel-sim {
-  border: 1px dashed var(--line);
-  border-radius: 10px;
-  padding: 12px 16px;
-  margin-top: 16px;
+  border: 1px dashed var(--accent-strong);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 14px 18px;
+  margin-top: 18px;
+  max-width: 860px;
 }
 
-.team-duel-sim-line {
-  font-size: 1.1rem;
-  font-weight: 700;
+.team-duel-sim-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.team-duel-sim-head h3 {
+  margin: 0;
+}
+
+.team-duel-sim-names {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-top: 10px;
+  font-size: 15px;
+}
+
+.team-duel-sim-side {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.team-duel-sim-bar {
+  height: 14px;
+  border-radius: 999px;
+  background: var(--muted);
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.team-duel-sim-bar-a {
+  display: block;
+  height: 100%;
+  background: var(--accent-strong);
+}
+
+.team-duel-sim-elo {
+  margin-top: 6px;
 }
 
 .rivalry-card p {

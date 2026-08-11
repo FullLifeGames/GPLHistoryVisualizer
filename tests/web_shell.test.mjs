@@ -421,7 +421,7 @@ assert.equal(indexHtml.includes("@pkmn/data@"), true);
 assert.equal(appJs.includes('"team-duel": renderTeamDuel'), true);
 assert.equal(appJs.includes("pkmnGenerationAdapter("), true);
 assert.match(appJs, /TOOLBAR_HIDDEN_VIEWS = new Set\(\[[^\]]*"team-duel"/);
-assert.match(appJs, /"team-duel":\s*\["teamRosters"\]/);
+assert.match(appJs, /"team-duel":\s*\["teamRosters", "teamPokemonUsage", "pokemonDraftOverview"\]/);
 assert.equal(stylesCss.includes(".team-duel-grid"), true);
 assert.equal(stylesCss.includes(".team-duel-sim"), true);
 

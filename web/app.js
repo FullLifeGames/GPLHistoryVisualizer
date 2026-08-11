@@ -198,7 +198,7 @@ const VIEW_DATASETS = {
   rivalries: ["matchupSummary", "matchHighlights", "matchVideos"],
   "rivalry-detail": ["matchupSummary", "matchHighlights", "matchVideos"],
   oracle: ["matchVideos"],
-  "team-duel": ["teamRosters"],
+  "team-duel": ["teamRosters", "teamPokemonUsage", "pokemonDraftOverview"],
   games: [],
   game: ["teamRosters", "rosterMatchdays", "videos", "matchupSummary", "matchVideos", "personAllTime", "pokemonDraftInstances"],
   "record-book": ["streaks", "recordsProgression", "matchVideos", "rosterMatchdays"],
@@ -7594,7 +7594,14 @@ function pkmnGenerationAdapter(genNumber) {
     typeNames: [...gen.types].map((type) => type.name),
     species: (id) => {
       const species = gen.species.get(id);
-      return species ? { name: species.name, types: [...species.types], baseStats: { ...species.baseStats } } : null;
+      return species
+        ? {
+            name: species.name,
+            types: [...species.types],
+            baseStats: { ...species.baseStats },
+            abilities: Object.values(species.abilities ?? {}),
+          }
+        : null;
     },
     effectiveness: (attackType, defTypes) => {
       const type = gen.types.get(attackType);
@@ -7607,11 +7614,44 @@ function pkmnGenerationAdapter(genNumber) {
 const TEAM_DUEL_STATS = ["hp", "atk", "def", "spa", "spd", "spe"];
 const TEAM_DUEL_STAT_KEYS = { hp: "statHp", atk: "statAtk", def: "statDef", spa: "statSpa", spd: "statSpd", spe: "statSpe" };
 
+function teamDuelPhaseLabel(roster) {
+  if (!roster.phase) return "";
+  // "Playoffs · … · Playoffs" would be noise: skip the phase suffix when the
+  // division name already carries it.
+  if (normalizedKey(roster.division).includes(normalizedKey(roster.phase))) return "";
+  const label = t(state.language, `teamDuel.phases.${roster.phase}`);
+  return label === `teamDuel.phases.${roster.phase}` ? roster.phase : label;
+}
+
 function teamDuelOptionLabel(roster) {
   const who = roster.personName || roster.teamName;
   const team = roster.teamName && roster.personName ? ` (${roster.teamName})` : "";
   const division = roster.division ? `${roster.division} · ` : "";
-  return `${division}${who}${team}`;
+  const phase = teamDuelPhaseLabel(roster);
+  return `${division}${who}${team}${phase ? ` · ${phase}` : ""}`;
+}
+
+// The merged Kaderübersicht pipeline (manual usage + team_rosters.csv +
+// killlist-derived rosters) also covers seasons 1 and 2, which have no
+// dedicated roster sheet. Rebuilding it is costly, so cache per data refs.
+let teamDuelRosterCache = null;
+function cachedTeamDuelRosters() {
+  const source = [state.data.teamRosters, state.data.teamPokemonUsage, state.data.killlists, state.data.pokemonDraftOverview];
+  if (teamDuelRosterCache && teamDuelRosterCache.source.every((ref, index) => ref === source[index])) {
+    return teamDuelRosterCache.value;
+  }
+  // Raw pokemon rows, NOT rosterDisplayGroups(): the display groups collapse
+  // each roster to its selected variant, which would hide the Hinrunde teams.
+  const pokemonRows = teamRosterPokemonRows(
+    {
+      teamUsage: mergedRosterUsageRows(state.data.teamPokemonUsage ?? [], state.data.teamRosters ?? []),
+      killlists: rosterKilllistRows(state.data.killlists ?? [], "all"),
+      pokemonDraftOverview: state.data.pokemonDraftOverview ?? [],
+    },
+    normalizedKey,
+  );
+  teamDuelRosterCache = { source, value: teamDuelRosters(pokemonRows) };
+  return teamDuelRosterCache.value;
 }
 
 function populateTeamDuelSelects(rosters) {
@@ -7644,7 +7684,7 @@ function teamDuelSideLabel(roster) {
 
 function teamDuelSideHtml(side) {
   const roster = side.roster;
-  const subline = [roster.personName && roster.teamName ? roster.teamName : "", seasonDisplay(roster.seasonId), roster.division]
+  const subline = [roster.personName && roster.teamName ? roster.teamName : "", seasonDisplay(roster.seasonId), roster.division, teamDuelPhaseLabel(roster)]
     .filter(Boolean)
     .join(" · ");
   const genChip = `<span class="team-duel-gen">${escapeHtml(formatMessage(t(state.language, "teamDuel.generation"), { gen: side.gen }))}</span>`;
@@ -7681,29 +7721,48 @@ function teamDuelTypesHtml(sheet, labelA, labelB) {
       rowsByType.get(row.type)[sideKey] = row;
     }
   }
-  const cell = (entry) => (entry ? `${entry.weak} / ${entry.resist} / ${entry.immune}` : "—");
+  const cell = (entry) =>
+    entry ? `${entry.weak} / ${entry.resist} / ${entry.immune}${entry.abilityImmune ? ` (+${entry.abilityImmune})` : ""}` : "—";
   const rows = [...rowsByType.entries()]
     .map(([type, sides]) => `<tr><td>${escapeHtml(type)}</td><td>${cell(sides.a)}</td><td>${cell(sides.b)}</td></tr>`)
     .join("");
   const legend = `${t(state.language, "teamDuel.weak")} / ${t(state.language, "teamDuel.resist")} / ${t(state.language, "teamDuel.immune")}`;
   return `
     <h3>${escapeHtml(t(state.language, "teamDuel.typesTitle"))}</h3>
-    <p class="muted">${escapeHtml(t(state.language, "teamDuel.typesNote"))} (${escapeHtml(legend)})</p>
+    <p class="muted">${escapeHtml(t(state.language, "teamDuel.typesNote"))} (${escapeHtml(legend)}) ${escapeHtml(t(state.language, "teamDuel.typesAbilityNote"))}</p>
     <div class="table-wrap"><table class="team-duel-table"><thead><tr><th></th><th>${escapeHtml(labelA)}</th><th>${escapeHtml(labelB)}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
-function teamDuelSpeedHtml(sheet) {
+function teamDuelSpeedHtml(sheet, labelA, labelB) {
   if (!sheet.speedTiers.length) return "";
-  const rows = sheet.speedTiers
+  const tiers = new Map();
+  for (const entry of sheet.speedTiers) {
+    if (!tiers.has(entry.speed)) tiers.set(entry.speed, { a: [], b: [] });
+    tiers.get(entry.speed)[entry.side].push(entry);
+  }
+  const chip = (entry) =>
+    `<span class="team-duel-tier-chip">${pokemonIcon(entry.name)}<span>${escapeHtml(entry.name)}</span></span>`;
+  const rows = [...tiers.entries()]
     .map(
-      (entry) =>
-        `<div class="team-duel-speed-row"><span class="team-duel-side-dot side-${entry.side}" aria-hidden="true"></span>${pokemonIcon(entry.name)}<span>${escapeHtml(entry.name)}</span><strong>${entry.speed}</strong></div>`,
+      ([speed, sides]) => `
+      <div class="team-duel-tier-row">
+        <div class="team-duel-tier-side team-duel-tier-a">${sides.a.map(chip).join("")}</div>
+        <div class="team-duel-tier-speed">${speed}</div>
+        <div class="team-duel-tier-side team-duel-tier-b">${sides.b.map(chip).join("")}</div>
+      </div>`,
     )
     .join("");
   return `
     <h3>${escapeHtml(t(state.language, "teamDuel.speedTitle"))}</h3>
     <p class="muted">${escapeHtml(t(state.language, "teamDuel.speedNote"))}</p>
-    <div class="team-duel-speed-list">${rows}</div>`;
+    <div class="team-duel-tiers">
+      <div class="team-duel-tier-row team-duel-tier-head">
+        <div class="team-duel-tier-side team-duel-tier-a"><strong>${escapeHtml(labelA)}</strong></div>
+        <div class="team-duel-tier-speed">${escapeHtml(t(state.language, "teamDuel.statSpe"))}</div>
+        <div class="team-duel-tier-side team-duel-tier-b"><strong>${escapeHtml(labelB)}</strong></div>
+      </div>
+      ${rows}
+    </div>`;
 }
 
 function teamDuelSimHtml(rosterA, rosterB) {
@@ -7714,15 +7773,24 @@ function teamDuelSimHtml(rosterA, rosterB) {
     eloAtSeasonEnd(keyA, chronology, rosterA.seasonId),
     eloAtSeasonEnd(keyB, chronology, rosterB.seasonId),
   );
+  const pa = outcome ? Math.round(outcome.pA * 100) : 0;
   const body = outcome
-    ? `<p class="team-duel-sim-line">${escapeHtml(
+    ? `
+      <div class="team-duel-sim-names">
+        <span class="team-duel-sim-side"><span class="team-duel-side-dot side-a" aria-hidden="true"></span>${escapeHtml(teamDuelSideLabel(rosterA))} <strong>${pa} %</strong></span>
+        <span class="team-duel-sim-side"><strong>${100 - pa} %</strong> ${escapeHtml(teamDuelSideLabel(rosterB))}<span class="team-duel-side-dot side-b" aria-hidden="true"></span></span>
+      </div>
+      <div class="team-duel-sim-bar" role="img" aria-label="${escapeAttr(
         formatMessage(t(state.language, "teamDuel.simLine"), {
           a: teamDuelSideLabel(rosterA),
           b: teamDuelSideLabel(rosterB),
-          pa: Math.round(outcome.pA * 100),
-          pb: Math.round(outcome.pB * 100),
+          pa,
+          pb: 100 - pa,
         }),
-      )}</p><p class="muted">${escapeHtml(
+      )}">
+        <span class="team-duel-sim-bar-a" style="width: ${pa}%;"></span>
+      </div>
+      <p class="muted team-duel-sim-elo">${escapeHtml(
         formatMessage(t(state.language, "teamDuel.simElo"), {
           a: teamDuelSideLabel(rosterA),
           b: teamDuelSideLabel(rosterB),
@@ -7733,8 +7801,10 @@ function teamDuelSimHtml(rosterA, rosterB) {
     : `<p class="muted">${escapeHtml(t(state.language, "teamDuel.simMissing"))}</p>`;
   return `
     <div class="team-duel-sim">
-      <span class="simulation-badge">${escapeHtml(t(state.language, "titleRace.simBadge"))}</span>
-      <h3>${escapeHtml(t(state.language, "teamDuel.simTitle"))}</h3>
+      <div class="team-duel-sim-head">
+        <h3>${escapeHtml(t(state.language, "teamDuel.simTitle"))}</h3>
+        <span class="simulation-badge">${escapeHtml(t(state.language, "titleRace.simBadge"))}</span>
+      </div>
       <p class="muted">${escapeHtml(t(state.language, "teamDuel.simNote"))}</p>
       ${body}
     </div>`;
@@ -7751,7 +7821,7 @@ function teamDuelSourcesHtml(rosterA, rosterB) {
 function renderTeamDuel() {
   const notes = document.querySelector("#team-duel-notes");
   if (!notes) return;
-  const rosters = teamDuelRosters(state.data.teamRosters ?? []);
+  const rosters = cachedTeamDuelRosters();
   populateTeamDuelSelects(rosters);
   const hosts = {
     sheet: document.querySelector("#team-duel-sheet"),
@@ -7809,7 +7879,7 @@ function renderTeamDuel() {
       <div class="team-duel-grid">${teamDuelSideHtml(sheet.a)}${teamDuelSideHtml(sheet.b)}</div>`;
   }
   if (hosts.types) hosts.types.innerHTML = teamDuelTypesHtml(sheet, teamDuelSideLabel(rosterA), teamDuelSideLabel(rosterB));
-  if (hosts.speed) hosts.speed.innerHTML = teamDuelSpeedHtml(sheet);
+  if (hosts.speed) hosts.speed.innerHTML = teamDuelSpeedHtml(sheet, teamDuelSideLabel(rosterA), teamDuelSideLabel(rosterB));
   if (hosts.sim) hosts.sim.innerHTML = teamDuelSimHtml(rosterA, rosterB);
   if (hosts.sources) hosts.sources.innerHTML = teamDuelSourcesHtml(rosterA, rosterB);
 }

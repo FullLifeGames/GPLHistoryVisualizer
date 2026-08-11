@@ -19,16 +19,19 @@ test("rosterSeasonGeneration maps seasons to numeric generations", () => {
   assert.equal(rosterSeasonGeneration("season_999"), 9);
 });
 
-test("teamDuelRosters groups by season/division/person and dedupes across phases", () => {
+test("teamDuelRosters keeps roster phases apart — Hin- and Rückrunde are different teams", () => {
   const rosters = teamDuelRosters(ROSTER_ROWS);
-  assert.equal(rosters.length, 2);
-  const [steve, bene] = rosters;
+  assert.equal(rosters.length, 3);
+  const [steve, beneHin, beneRueck] = rosters;
   assert.equal(steve.seasonId, "season_002");
   assert.equal(steve.personName, "SteveParker");
+  assert.equal(steve.phase, "");
   assert.deepEqual(steve.pokemon, ["Panzaeron", "Latios"]);
-  assert.equal(bene.teamName, "Victini Bottom");
-  assert.deepEqual(bene.pokemon, ["Roserade", "Zeraora"]);
-  assert.ok(steve.key !== bene.key);
+  assert.equal(beneHin.phase, "hinrunde");
+  assert.deepEqual(beneHin.pokemon, ["Roserade"]);
+  assert.equal(beneRueck.phase, "rueckrunde");
+  assert.deepEqual(beneRueck.pokemon, ["Roserade", "Zeraora"]);
+  assert.equal(new Set([steve.key, beneHin.key, beneRueck.key]).size, 3);
 });
 
 test("teamDuelRosters drops rows without pokemon or identity", () => {
@@ -41,9 +44,11 @@ test("teamDuelRosters drops rows without pokemon or identity", () => {
 
 // Minimal fixture gen: ids are what pokemonAssetId produces from the names used.
 const FIXTURE_SPECIES = {
-  skarmory: { name: "Skarmory", types: ["Steel", "Flying"], baseStats: { hp: 65, atk: 80, def: 140, spa: 40, spd: 70, spe: 70 } },
-  latios: { name: "Latios", types: ["Dragon", "Psychic"], baseStats: { hp: 80, atk: 90, def: 80, spa: 130, spd: 110, spe: 110 } },
-  roserade: { name: "Roserade", types: ["Grass", "Poison"], baseStats: { hp: 60, atk: 70, def: 65, spa: 125, spd: 105, spe: 90 } },
+  skarmory: { name: "Skarmory", types: ["Steel", "Flying"], baseStats: { hp: 65, atk: 80, def: 140, spa: 40, spd: 70, spe: 70 }, abilities: ["Sturdy", "Keen Eye"] },
+  latios: { name: "Latios", types: ["Dragon", "Psychic"], baseStats: { hp: 80, atk: 90, def: 80, spa: 130, spd: 110, spe: 110 }, abilities: ["Levitate"] },
+  roserade: { name: "Roserade", types: ["Grass", "Poison"], baseStats: { hp: 60, atk: 70, def: 65, spa: 125, spd: 105, spe: 90 }, abilities: ["Natural Cure", "Poison Point"] },
+  rotomwash: { name: "Rotom-Wash", types: ["Electric", "Water"], baseStats: { hp: 50, atk: 65, def: 107, spa: 105, spd: 107, spe: 86 }, abilities: ["Levitate"] },
+  bronzong: { name: "Bronzong", types: ["Steel", "Psychic"], baseStats: { hp: 67, atk: 89, def: 116, spa: 79, spd: 116, spe: 33 }, abilities: ["Levitate", "Heatproof"] },
 };
 const FIXTURE_CHART = {
   Fire: { Steel: 2, Grass: 2, Dragon: 0.5 },
@@ -56,7 +61,7 @@ const FIXTURE_GEN = {
   effectiveness: (attackType, defTypes) => defTypes.reduce((mult, def) => mult * (FIXTURE_CHART[attackType]?.[def] ?? 1), 1),
 };
 const ROSTER_A = { key: "a", seasonId: "season_002", division: "Regular Season", teamName: "ToxicBlast", personName: "SteveParker", pokemon: ["Panzaeron", "Latios"], sourceUrls: "sheet-a" };
-const ROSTER_B = { key: "b", seasonId: "season_008", division: "Liga 1", teamName: "Victini Bottom", personName: "Bene", pokemon: ["Roserade", "Fantexemplar"], sourceUrls: "sheet-b" };
+const ROSTER_B = { key: "b", seasonId: "season_008", division: "Liga 1", teamName: "Victini Bottom", personName: "Bene", pokemon: ["Roserade", "Fantexemplar", "Rotom-Wasch", "Bronzong"], sourceUrls: "sheet-b" };
 
 test("teamDuelSheet resolves species, averages and flags cross-era pairs", () => {
   const sheet = teamDuelSheet({ rosterA: ROSTER_A, rosterB: ROSTER_B, genA: FIXTURE_GEN, genB: FIXTURE_GEN });
@@ -72,18 +77,28 @@ test("teamDuelSheet resolves species, averages and flags cross-era pairs", () =>
 test("teamDuelSheet builds the defensive type matrix per attacking type", () => {
   const sheet = teamDuelSheet({ rosterA: ROSTER_A, rosterB: ROSTER_B, genA: FIXTURE_GEN, genB: FIXTURE_GEN });
   const ground = sheet.typeMatrix.a.find((row) => row.type === "Ground");
-  // Skarmory: 2 * 0 = 0 -> immune; Latios: neutral.
-  assert.deepEqual(ground, { type: "Ground", weak: 0, resist: 0, immune: 1 });
+  // Skarmory: 2 * 0 = 0 -> immune by typing; Latios: neutral, but its only
+  // ability is Levitate -> certain ability immunity.
+  assert.deepEqual(ground, { type: "Ground", weak: 0, resist: 0, immune: 2, abilityImmune: 0 });
   const fire = sheet.typeMatrix.a.find((row) => row.type === "Fire");
   // Skarmory: Steel 2x -> weak; Latios: Dragon 0.5 -> resist.
-  assert.deepEqual(fire, { type: "Fire", weak: 1, resist: 1, immune: 0 });
+  assert.deepEqual(fire, { type: "Fire", weak: 1, resist: 1, immune: 0, abilityImmune: 0 });
+});
+
+test("teamDuelSheet counts ability immunities: certain as immune, optional as marker", () => {
+  const sheet = teamDuelSheet({ rosterA: ROSTER_A, rosterB: ROSTER_B, genA: FIXTURE_GEN, genB: FIXTURE_GEN });
+  const ground = sheet.typeMatrix.b.find((row) => row.type === "Ground");
+  // Roserade: Poison 2x -> weak. Rotom-Wash: neutral typing but Levitate is
+  // its only ability -> immune. Bronzong: Steel 2x -> weak, and Levitate is
+  // one of two abilities -> additionally flagged as possible immunity.
+  assert.deepEqual(ground, { type: "Ground", weak: 2, resist: 0, immune: 1, abilityImmune: 1 });
 });
 
 test("teamDuelSheet interleaves speed tiers across both sides", () => {
   const sheet = teamDuelSheet({ rosterA: ROSTER_A, rosterB: ROSTER_B, genA: FIXTURE_GEN, genB: FIXTURE_GEN });
   assert.deepEqual(
     sheet.speedTiers.map((entry) => [entry.side, entry.speed]),
-    [["a", 110], ["b", 90], ["a", 70]],
+    [["a", 110], ["b", 90], ["b", 86], ["a", 70], ["b", 33]],
   );
 });
 
@@ -93,6 +108,7 @@ test("teamDuelSheet degrades without adapters: names kept, no stats or matrix", 
   assert.equal(sheet.typeMatrix.a, null);
   assert.equal(sheet.speedTiers.length, 0);
   assert.equal(sheet.a.mons.length, 2);
+  assert.equal(sheet.b.mons.length, 4);
   assert.equal(sheet.a.avgBst, null);
 });
 

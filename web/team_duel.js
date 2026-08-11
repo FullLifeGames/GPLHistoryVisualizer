@@ -5,16 +5,25 @@
 import { pokemonAssetId } from "./pokemon_names.js";
 import { rosterSeasonGeneration } from "./stats.js";
 
-export function teamDuelRosters(teamRosters = []) {
+// Hinrunde and Rückrunde (and regular vs. playoffs) are DIFFERENT teams —
+// every roster phase becomes its own selectable entry.
+const PHASE_RANK = { "": 0, regular: 1, hinrunde: 2, rueckrunde: 3, playoffs: 4 };
+
+// Rows may come straight from team_rosters.csv (person_name/team_name) or
+// from the merged Kaderübersicht pipeline (person/team), which also covers
+// the killlist-derived rosters of seasons 1 and 2.
+export function teamDuelRosters(rosterRows = []) {
   const byKey = new Map();
-  for (const row of teamRosters ?? []) {
+  for (const row of rosterRows ?? []) {
     const seasonId = row.season_id || "";
-    const personName = row.person_name || "";
-    const teamName = row.team_name || "";
+    const personName = row.person_name || row.person || "";
+    const teamName = row.team_name || row.team || "";
+    const phase = row.roster_phase || "";
     if (!seasonId || (!personName && !teamName)) continue;
     const key = JSON.stringify([
       seasonId,
       row.division || "",
+      phase,
       row.person_name_normalized || personName.toLowerCase(),
       row.team_name_normalized || teamName.toLowerCase(),
     ]);
@@ -23,6 +32,7 @@ export function teamDuelRosters(teamRosters = []) {
         key,
         seasonId,
         division: row.division || "",
+        phase,
         teamName,
         personName,
         pokemon: [],
@@ -43,12 +53,44 @@ export function teamDuelRosters(teamRosters = []) {
     (a, b) =>
       a.seasonId.localeCompare(b.seasonId, "en") ||
       a.division.localeCompare(b.division, "de") ||
+      (PHASE_RANK[a.phase] ?? 5) - (PHASE_RANK[b.phase] ?? 5) ||
       (a.personName || a.teamName).localeCompare(b.personName || b.teamName, "de"),
   );
   return rosters;
 }
 
 const STAT_KEYS = ["hp", "atk", "def", "spa", "spd", "spe"];
+
+// Full damage-immunity abilities. The actual set of a historic match is
+// unknown, so an immunity only counts as certain when EVERY ability of the
+// species grants it (Rotom forms: Levitate only); otherwise it is flagged
+// as possible. Halving abilities (Heatproof, Thick Fat) are ignored.
+const ABILITY_IMMUNITIES = {
+  Levitate: "Ground",
+  "Earth Eater": "Ground",
+  "Flash Fire": "Fire",
+  "Well-Baked Body": "Fire",
+  "Water Absorb": "Water",
+  "Storm Drain": "Water",
+  "Dry Skin": "Water",
+  "Volt Absorb": "Electric",
+  "Lightning Rod": "Electric",
+  "Motor Drive": "Electric",
+  "Sap Sipper": "Grass",
+};
+
+function abilityImmunitySets(abilities = []) {
+  const certain = new Set();
+  const possible = new Set();
+  if (!abilities.length) return { certain, possible };
+  const types = new Set(abilities.map((ability) => ABILITY_IMMUNITIES[ability]).filter(Boolean));
+  for (const type of types) {
+    const granting = abilities.filter((ability) => ABILITY_IMMUNITIES[ability] === type);
+    if (granting.length === abilities.length) certain.add(type);
+    else possible.add(type);
+  }
+  return { certain, possible };
+}
 
 function resolveSide(roster, gen) {
   if (!roster) return null;
@@ -58,11 +100,18 @@ function resolveSide(roster, gen) {
     const species = gen?.species?.(pokemonAssetId(name)) ?? null;
     if (!species) {
       unresolved.push(name);
-      mons.push({ name, english: "", types: [], baseStats: null, bst: null });
+      mons.push({ name, english: "", types: [], baseStats: null, bst: null, abilityImmunities: { certain: new Set(), possible: new Set() } });
       continue;
     }
     const bst = STAT_KEYS.reduce((sum, key) => sum + (species.baseStats[key] ?? 0), 0);
-    mons.push({ name, english: species.name, types: [...species.types], baseStats: { ...species.baseStats }, bst });
+    mons.push({
+      name,
+      english: species.name,
+      types: [...species.types],
+      baseStats: { ...species.baseStats },
+      bst,
+      abilityImmunities: abilityImmunitySets(species.abilities ?? []),
+    });
   }
   const rated = mons.filter((mon) => mon.baseStats);
   const averages = rated.length
@@ -79,14 +128,23 @@ function typeProfile(side, gen) {
     let weak = 0;
     let resist = 0;
     let immune = 0;
+    let abilityImmune = 0;
     for (const mon of side.mons) {
       if (!mon.types.length) continue;
+      if (mon.abilityImmunities.certain.has(type)) {
+        immune += 1;
+        continue;
+      }
       const mult = gen.effectiveness(type, mon.types);
-      if (mult === 0) immune += 1;
-      else if (mult > 1) weak += 1;
+      if (mult === 0) {
+        immune += 1;
+        continue;
+      }
+      if (mult > 1) weak += 1;
       else if (mult < 1) resist += 1;
+      if (mon.abilityImmunities.possible.has(type)) abilityImmune += 1;
     }
-    return { type, weak, resist, immune };
+    return { type, weak, resist, immune, abilityImmune };
   });
 }
 
