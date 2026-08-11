@@ -5205,10 +5205,9 @@ p.game-status.game-bad {
   stroke-dasharray: 6 4;
 }
 
-.chart-marker.title-race-decided circle {
-  fill: none;
-  stroke: var(--muted);
-  stroke-dasharray: 3 3;
+.chart-band.title-race-decided-band {
+  fill: var(--muted);
+  opacity: 0.09;
 }
 
 /* Season Story scrollytelling */

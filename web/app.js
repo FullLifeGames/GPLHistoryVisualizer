@@ -3064,17 +3064,19 @@ function renderTitleRace() {
       )
       .join("");
 
-  const markers = [];
-  if (race.decidedX !== null) {
-    markers.push({
-      x: race.decidedX,
-      y: 0.95,
+  // The decided moment shades everything from that checkpoint on — a region
+  // reads cleaner than a floating point marker at the 95% line.
+  const bands = [];
+  if (race.decidedX !== null && race.weeks.length) {
+    bands.push({
+      fromX: race.decidedX,
+      toX: race.weeks[race.weeks.length - 1],
+      className: "title-race-decided-band",
       label: t(state.language, "titleRace.decided"),
-      labelAt: "top",
-      className: "title-race-decided",
+      shortLabel: t(state.language, "titleRace.decidedShort"),
     });
   }
-  lineChart(chart, titleRaceChartConfig(race, race.series, "p_first", "titleRace.tooltip", { markers }));
+  lineChart(chart, titleRaceChartConfig(race, race.series, "p_first", "titleRace.tooltip", { bands }));
   legend.innerHTML = legendHtml(race.series);
 
   if (race.playoffSeries) {
