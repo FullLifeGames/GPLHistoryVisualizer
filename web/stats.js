@@ -47,6 +47,11 @@ const ROSTER_SEASON_GENERATION = {
   season_010: "gen9",
 };
 
+export function rosterSeasonGeneration(seasonId) {
+  const gen = ROSTER_SEASON_GENERATION[seasonId] || "gen9";
+  return Number(gen.replace("gen", ""));
+}
+
 export function numberValue(value) {
   const parsed = Number.parseFloat(value);
   return Number.isFinite(parsed) ? parsed : 0;
