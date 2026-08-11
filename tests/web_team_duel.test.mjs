@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { teamDuelRosters, teamDuelSheet } from "../web/team_duel.js";
+import { teamDuelRosters, teamDuelSheet, eloAtSeasonEnd, teamDuelOutcome } from "../web/team_duel.js";
 import { rosterSeasonGeneration } from "../web/stats.js";
 
 const ROSTER_ROWS = [
@@ -94,4 +94,35 @@ test("teamDuelSheet degrades without adapters: names kept, no stats or matrix", 
   assert.equal(sheet.speedTiers.length, 0);
   assert.equal(sheet.a.mons.length, 2);
   assert.equal(sheet.a.avgBst, null);
+});
+
+test("eloAtSeasonEnd returns the rating after the last match up to that season", () => {
+  const chronology = {
+    perPerson: new Map([
+      [
+        "bene",
+        {
+          points: [
+            { seq: 0, matchId: "m1", seasonId: "season_002", rating: 1520 },
+            { seq: 1, matchId: "m2", seasonId: "season_002", rating: 1540 },
+            { seq: 2, matchId: "m3", seasonId: "season_008", rating: 1610 },
+          ],
+        },
+      ],
+    ]),
+  };
+  assert.equal(eloAtSeasonEnd("bene", chronology, "season_002"), 1540);
+  assert.equal(eloAtSeasonEnd("bene", chronology, "season_005"), 1540);
+  assert.equal(eloAtSeasonEnd("bene", chronology, "season_008"), 1610);
+  assert.equal(eloAtSeasonEnd("bene", chronology, "season_001"), null);
+  assert.equal(eloAtSeasonEnd("unknown", chronology, "season_002"), null);
+});
+
+test("teamDuelOutcome is a symmetric logistic on the Elo gap", () => {
+  const outcome = teamDuelOutcome(1600, 1400);
+  assert.ok(Math.abs(outcome.pA - 0.7597) < 0.001);
+  assert.ok(Math.abs(outcome.pA + outcome.pB - 1) < 1e-9);
+  const even = teamDuelOutcome(1500, 1500);
+  assert.equal(even.pA, 0.5);
+  assert.equal(teamDuelOutcome(null, 1500), null);
 });

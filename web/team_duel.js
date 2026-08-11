@@ -114,3 +114,23 @@ export function teamDuelSheet({ rosterA = null, rosterB = null, genA = null, gen
     typeMatrix: { a: typeProfile(a, genA), b: typeProfile(b, genB) },
   };
 }
+
+// Era-correct rating: the person's Elo right after their last match in or
+// before the chosen season — NOT today's all-time value. Season ids sort
+// chronologically as strings (season_001 … season_010).
+export function eloAtSeasonEnd(personKey, chronology, seasonId) {
+  const person = chronology?.perPerson?.get?.(personKey);
+  if (!person) return null;
+  let rating = null;
+  for (const point of person.points) {
+    if ((point.seasonId || "").localeCompare(seasonId, "en") > 0) break;
+    rating = point.rating;
+  }
+  return rating;
+}
+
+export function teamDuelOutcome(eloA, eloB) {
+  if (!Number.isFinite(eloA) || !Number.isFinite(eloB)) return null;
+  const pA = 1 / (1 + 10 ** ((eloB - eloA) / 400));
+  return { eloA, eloB, pA, pB: 1 - pA };
+}
