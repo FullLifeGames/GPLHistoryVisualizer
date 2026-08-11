@@ -2106,6 +2106,22 @@ def _replace_match_players(row: dict[str, Any], replacements: dict[str, str]) ->
         row["data_status"] = "sheet_extracted_with_user_correction"
 
 
+# Participant-provided battle results for the S10 playoff finals (reported by
+# Bene, 2026-08-11): the sheet records only the series pairings and winners.
+# Both series were best-of-three battles across formats. The doubles battles
+# were VGC best-of-three sets (4 Pokémon each side); their score counts games
+# won, and the per-game scores are documented in docs/known-limitations.md.
+_S10_FINAL_BATTLES = [
+    {"label": "Singles", "winner": "bene", "score_winner": "4", "score_loser": "0"},
+    {"label": "Doubles (VGC)", "winner": "bene", "score_winner": "2", "score_loser": "1"},
+]
+_S10_THIRD_PLACE_BATTLES = [
+    {"label": "Singles", "winner": "minetube", "score_winner": "3", "score_loser": "0"},
+    {"label": "Doubles (VGC) 1", "winner": "present", "score_winner": "2", "score_loser": "1"},
+    {"label": "Doubles (VGC) 2", "winner": "present", "score_winner": "2", "score_loser": "1"},
+]
+
+
 def _manual_playoff_matches(season_id: str, tables: list[dict[str, Any]], start_counter: int) -> list[dict[str, Any]]:
     # S7 deliberately has no entry here: the season had no playoffs
     # (participant-confirmed), and the opponent-less title row this used to
@@ -2115,33 +2131,73 @@ def _manual_playoff_matches(season_id: str, tables: list[dict[str, Any]], start_
         third_place = _s10_third_place_match_from_tables(tables)
         rows: list[dict[str, Any]] = []
         if third_place:
-            rows.append(
-                _manual_match_row(
+            rows.extend(
+                _s10_playoff_battle_rows(
                     season_id,
-                    start_counter,
+                    start_counter + len(rows),
                     week="Spiel um Platz 3",
-                    player_a=third_place["player_a"],
-                    player_b=third_place["player_b"],
-                    winner=third_place["winner"],
-                    source_url=third_place["source_urls"],
-                    status=third_place.get("status") or "sheet_extracted",
+                    pair=third_place,
+                    battles=_S10_THIRD_PLACE_BATTLES,
+                    fallback_status=third_place.get("status") or "sheet_extracted",
                 )
             )
         if final:
-            rows.append(
-                _manual_match_row(
+            rows.extend(
+                _s10_playoff_battle_rows(
                     season_id,
                     start_counter + len(rows),
                     week="Finale",
-                    player_a=final["player_a"],
-                    player_b=final["player_b"],
-                    winner=final["winner"],
-                    source_url=final["source_urls"],
-                    status="sheet_extracted",
+                    pair=final,
+                    battles=_S10_FINAL_BATTLES,
+                    fallback_status="sheet_extracted",
                 )
             )
         return rows
     return []
+
+
+def _s10_playoff_battle_rows(
+    season_id: str,
+    start_counter: int,
+    week: str,
+    pair: dict[str, Any],
+    battles: list[dict[str, str]],
+    fallback_status: str,
+) -> list[dict[str, Any]]:
+    player_a_key = _canonical_name(pair["player_a"])
+    player_b_key = _canonical_name(pair["player_b"])
+    if any(battle["winner"] not in {player_a_key, player_b_key} for battle in battles):
+        # Unexpected pairing (sheet data changed): keep the bare series row
+        # instead of attaching battle results to the wrong players.
+        return [
+            _manual_match_row(
+                season_id,
+                start_counter,
+                week=week,
+                player_a=pair["player_a"],
+                player_b=pair["player_b"],
+                winner=pair["winner"],
+                source_url=pair["source_urls"],
+                status=fallback_status,
+            )
+        ]
+    rows: list[dict[str, Any]] = []
+    for offset, battle in enumerate(battles):
+        winner_is_a = battle["winner"] == player_a_key
+        row = _manual_match_row(
+            season_id,
+            start_counter + offset,
+            week=f"{week} - {battle['label']}",
+            player_a=pair["player_a"],
+            player_b=pair["player_b"],
+            winner=pair["player_a"] if winner_is_a else pair["player_b"],
+            source_url=pair["source_urls"],
+            status="sheet_extracted_with_user_correction",
+        )
+        row["score_a"] = battle["score_winner"] if winner_is_a else battle["score_loser"]
+        row["score_b"] = battle["score_loser"] if winner_is_a else battle["score_winner"]
+        rows.append(row)
+    return rows
 
 
 def _manual_match_row(

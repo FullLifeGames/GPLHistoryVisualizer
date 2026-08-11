@@ -52,6 +52,11 @@ Two further participant-confirmed winner corrections (S10): Domji won the 0:0 Sp
 
 Season 10's final table folds in the fully sourced Spieltag 13, which the official sheet stopped counting (all rows are marked `sheet_extracted_with_user_correction`). Kills and deaths for those matches follow the elimination convention (winner 6 kills / 6−score deaths); ranks re-sort by points but keep the official order as tiebreak, preserving the Minetube/PresentLP direct-comparison decision. Playoff seeding keeps the official Spieltag-12 state.
 
+The S10 finale and third-place series are recorded battle by battle (participant-provided by Bene, August 2026 — the official sheet only names the series winners). Both series were best-of-three across formats; the doubles battles were VGC best-of-three sets with 4 Pokémon per side, and their match rows count games won:
+
+- Finale, Bene vs Raizor: Singles 4:0 Bene; Doubles (VGC) 2:1 Bene (games 3:0, 0:2, 2:0).
+- Spiel um Platz 3, PresentLP vs Minetube: Singles 0:3 Minetube; Doubles (VGC) 1 2:1 PresentLP (games 2:0, 0:1, 1:0); Doubles (VGC) 2 2:1 PresentLP (games 0:3, 2:0, 3:0).
+
 Three final-table rows keep a flagged internal contradiction (kills − deaths ≠ differential) because the match scores support neither candidate value: S3 SurskitTV, S4 Dauni, S5 BraveBird. Three others (S4 Scoutley, S5 Bene, S5 CrowdController) were corrected via match-score arbitration.
 
 ## Killlist Coverage

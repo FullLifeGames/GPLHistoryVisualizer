@@ -512,11 +512,20 @@ def test_s10_regular_matches_keep_results_sheet_spieltag_context():
     ]
     playoff_by_pair = {(_canonical_name(row["player_a"]), _canonical_name(row["player_b"])): row for row in playoff_rows}
     assert playoff_by_pair[("raizor", "minetube")]["week"] == "Halbfinale"
-    assert playoff_by_pair[("present", "minetube")]["week"] == "Spiel um Platz 3"
-    assert playoff_by_pair[("present", "minetube")]["winner"] == "PresentLP"
-    assert playoff_by_pair[("present", "minetube")]["score_a"] in {None, ""}
-    assert playoff_by_pair[("present", "minetube")]["score_b"] in {None, ""}
-    assert playoff_by_pair[("present", "minetube")]["data_status"] == "sheet_extracted_with_user_correction"
+
+    # The third-place series is recorded battle by battle (participant-provided
+    # results): Minetube took the singles, PresentLP both VGC doubles sets.
+    third_place_rows = [
+        row
+        for row in playoff_rows
+        if (_canonical_name(row["player_a"]), _canonical_name(row["player_b"])) == ("present", "minetube")
+    ]
+    assert [(row["week"], row["score_a"], row["score_b"], row["winner"]) for row in third_place_rows] == [
+        ("Spiel um Platz 3 - Singles", "0", "3", "Minetube"),
+        ("Spiel um Platz 3 - Doubles (VGC) 1", "2", "1", "PresentLP"),
+        ("Spiel um Platz 3 - Doubles (VGC) 2", "2", "1", "PresentLP"),
+    ]
+    assert all(row["data_status"] == "sheet_extracted_with_user_correction" for row in third_place_rows)
 
 
 def test_s1_week_21_fnupagladi_prekani_manual_match_is_available_for_video_mapping():
@@ -713,7 +722,7 @@ def test_playoff_rows_exist_for_s10_but_not_for_s7():
     s10_final = [
         row
         for row in output.matches
-        if row["season_id"] == "season_010" and row["division"] == "Playoffs" and row["week"] == "Finale"
+        if row["season_id"] == "season_010" and row["division"] == "Playoffs" and str(row["week"]).startswith("Finale")
     ]
 
     # S7 had no playoffs (participant-confirmed): the title came from rank 1 of
@@ -725,8 +734,13 @@ def test_playoff_rows_exist_for_s10_but_not_for_s7():
     assert s7_champions[0]["evidence_type"] == "final_standings_rank_1"
 
     assert any(row["player_name"] == "Bene" and row["rank"] == "1" for row in s10_standings)
-    assert s10_final and s10_final[0]["winner"] == "Bene"
-    assert s10_final[0]["data_status"] == "sheet_extracted"
+    # Battle-level final results are participant-provided; Bene swept both.
+    assert [(row["week"], row["score_a"], row["score_b"]) for row in s10_final] == [
+        ("Finale - Singles", "4", "0"),
+        ("Finale - Doubles (VGC)", "2", "1"),
+    ]
+    assert all(row["winner"] == "Bene" for row in s10_final)
+    assert all(row["data_status"] == "sheet_extracted_with_user_correction" for row in s10_final)
 
 
 def test_liga2_sources_from_video_descriptions_are_partitioned_by_division():
@@ -904,7 +918,8 @@ def test_result_basis_classifies_special_results():
     output = normalize_all(Path("data"))
 
     basis = Counter(row["result_basis"] for row in output.matches if row.get("result_basis"))
-    assert basis == {"draw": 12, "two_sided_score": 7, "forfeit": 6, "unresolved": 2}
+    # two_sided_score includes the three S10 playoff doubles sets (games 2:1).
+    assert basis == {"draw": 12, "two_sided_score": 10, "forfeit": 6, "unresolved": 2}
 
     forfeits = [row for row in output.matches if row.get("result_basis") == "forfeit"]
     assert all(row["season_id"] == "season_001" for row in forfeits)
