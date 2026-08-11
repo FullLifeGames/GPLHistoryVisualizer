@@ -68,6 +68,7 @@
         <button class="tab" data-view-group="people" data-view="team-rosters" data-i18n="nav.teamRosters">Kaderübersichten</button>
         <button class="tab" data-view-group="duels" data-view="rivalries" data-i18n="nav.rivalries">Rivalitäten</button>
         <button class="tab" data-view-group="duels" data-view="oracle" data-i18n="nav.oracle">Orakel</button>
+        <button class="tab" data-view-group="duels" data-view="team-duel" data-i18n="nav.teamDuel">Zeitmaschine</button>
         <button class="tab" data-view-group="seasons" data-view="battle-history" data-i18n="nav.battleHistory">Spielbaum</button>
         <button class="tab" data-view-group="seasons" data-view="match-highlights" data-i18n="nav.matchHighlights">Highlightkämpfe</button>
         <button class="tab" data-view-group="seasons" data-view="season-detail" data-i18n="nav.seasonDetail">Saisonakte</button>
@@ -869,6 +870,29 @@
         <div id="oracle-leaderboard" class="table-wrap"></div>
       </section>
 
+      <section id="view-team-duel" class="view">
+        <div class="section-head">
+          <h2 data-i18n="sections.teamDuelTitle">Zeitmaschinen-Duell</h2>
+          <p data-i18n="sections.teamDuelDescription">Zwei Kader aus beliebigen Saisons treten auf dem Papier gegeneinander an: Statuswerte, Typen-Matrix und Speed-Tiers – generationsgetreu berechnet.</p>
+        </div>
+        <form id="team-duel-form" class="matchup-form">
+          <label>
+            <span data-i18n="teamDuel.pickA">Kader A</span>
+            <select id="team-duel-a"></select>
+          </label>
+          <label>
+            <span data-i18n="teamDuel.pickB">Kader B</span>
+            <select id="team-duel-b"></select>
+          </label>
+        </form>
+        <div id="team-duel-notes"></div>
+        <div id="team-duel-sheet"></div>
+        <div id="team-duel-types"></div>
+        <div id="team-duel-speed"></div>
+        <div id="team-duel-sim"></div>
+        <p id="team-duel-sources" class="muted"></p>
+      </section>
+
       <section id="view-games" class="view">
         <div class="section-head">
           <h2 data-i18n="sections.gamesTitle">Spiele</h2>
@@ -889,6 +913,8 @@
 
     <script src="https://unpkg.com/tabulator-tables@6.4.0/dist/js/tabulator.min.js"></script>
     <script src="https://unpkg.com/@pkmn/img@0.3.4/build/index.min.js"></script>
+    <script src="https://unpkg.com/@pkmn/dex@0.10.11/build/index.min.js" defer></script>
+    <script src="https://unpkg.com/@pkmn/data@0.9.35/build/index.min.js" defer></script>
     <script src="https://unpkg.com/d3@7.9.0/dist/d3.min.js"></script>
     <script type="module" src="./app.js"></script>
   </body>

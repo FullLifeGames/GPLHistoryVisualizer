@@ -47,6 +47,7 @@ import {
   VIDEO_ARCHIVE_COLUMNS,
 } from "./table_columns.js";
 import { eloChronology, eloLedgerRows, personEloSeries, upsetRows } from "./elo_history.js";
+import { teamDuelRosters, teamDuelSheet, eloAtSeasonEnd, teamDuelOutcome } from "./team_duel.js";
 import { buildSeries, lineChart, paddedDomain, stackedBarChart, stepChart } from "./charts.js";
 import { attentionStripPoints, engagementAnomalies, monthlyChannelStacks, seasonMonthBands, stripSeasonIds } from "./audience.js";
 import {
@@ -120,6 +121,7 @@ import {
   reviewWorkflowRows,
   rowMatchesSearch as statsRowMatchesSearch,
   rosterKilllistRows,
+  rosterSeasonGeneration,
   seasonCoverageRows,
   seasonCountFromList,
   sourceClaimsForSeason,
@@ -196,6 +198,7 @@ const VIEW_DATASETS = {
   rivalries: ["matchupSummary", "matchHighlights", "matchVideos"],
   "rivalry-detail": ["matchupSummary", "matchHighlights", "matchVideos"],
   oracle: ["matchVideos"],
+  "team-duel": ["teamRosters"],
   games: [],
   game: ["teamRosters", "rosterMatchdays", "videos", "matchupSummary", "matchVideos", "personAllTime", "pokemonDraftInstances"],
   "record-book": ["streaks", "recordsProgression", "matchVideos", "rosterMatchdays"],
@@ -299,6 +302,10 @@ const state = {
     aKey: "",
     bKey: "",
   },
+  teamDuel: {
+    aKey: "",
+    bKey: "",
+  },
   recordBookTab: "records",
   recordKey: null,
   streakType: "all",
@@ -384,6 +391,7 @@ const VIEW_RENDERERS = {
   rivalries: renderRivalries,
   "rivalry-detail": renderRivalryDetail,
   oracle: renderOracle,
+  "team-duel": renderTeamDuel,
   games: renderGames,
   game: renderGame,
   "record-book": renderRecordBook,
@@ -540,6 +548,13 @@ function bindControls() {
     state.oracle.aKey = document.querySelector("#oracle-a")?.value || "";
     state.oracle.bKey = document.querySelector("#oracle-b")?.value || "";
     renderOracle();
+  });
+
+  [["#team-duel-a", "aKey"], ["#team-duel-b", "bKey"]].forEach(([selector, slot]) => {
+    document.querySelector(selector)?.addEventListener("change", (event) => {
+      state.teamDuel[slot] = event.target.value || "";
+      renderTeamDuel();
+    });
   });
 
 
@@ -914,7 +929,7 @@ function applyViewDataModeDefaults(viewName, previousView) {
 // zeitreise manage their own controls; record book, hall of fame, rivalries,
 // and the oracle render career-scope data over the full archive that no
 // client-side slice can recompute; the games manage their own per-round state.
-const TOOLBAR_HIDDEN_VIEWS = new Set(["cinema", "zeitreise", "record-book", "hall-of-fame", "rivalries", "rivalry-detail", "oracle", "games", "game", "audience-history", "zeitstrahl"]);
+const TOOLBAR_HIDDEN_VIEWS = new Set(["cinema", "zeitreise", "record-book", "hall-of-fame", "rivalries", "rivalry-detail", "oracle", "team-duel", "games", "game", "audience-history", "zeitstrahl"]);
 
 function setActiveView(viewName) {
   state.view = viewName;
@@ -7555,6 +7570,248 @@ function renderOracle() {
   renderTable("#oracle-leaderboard", leaderboard, DOMINANCE_COLUMNS, ["person"], {
     filename: "gpl-dominanz.csv",
   });
+}
+
+// The Generations wrapper is constructed once; individual gen handles are
+// cheap. A missing CDN global (offline, blocked unpkg) returns null and the
+// sheet renders in degraded text-badge mode, mirroring the @pkmn/img rule.
+let pkmnGenerationsCache;
+function pkmnGenerationAdapter(genNumber) {
+  const data = window.pkmn?.data;
+  const dexSource = window.pkmn?.dex?.Dex;
+  if (!data?.Generations || !dexSource) return null;
+  if (pkmnGenerationsCache === undefined) {
+    try {
+      pkmnGenerationsCache = new data.Generations(dexSource);
+    } catch {
+      pkmnGenerationsCache = null;
+    }
+  }
+  const gen = pkmnGenerationsCache?.get?.(genNumber);
+  if (!gen) return null;
+  return {
+    num: genNumber,
+    typeNames: [...gen.types].map((type) => type.name),
+    species: (id) => {
+      const species = gen.species.get(id);
+      return species ? { name: species.name, types: [...species.types], baseStats: { ...species.baseStats } } : null;
+    },
+    effectiveness: (attackType, defTypes) => {
+      const type = gen.types.get(attackType);
+      if (!type) return 1;
+      return defTypes.reduce((mult, def) => mult * (type.effectiveness[def] ?? 1), 1);
+    },
+  };
+}
+
+const TEAM_DUEL_STATS = ["hp", "atk", "def", "spa", "spd", "spe"];
+const TEAM_DUEL_STAT_KEYS = { hp: "statHp", atk: "statAtk", def: "statDef", spa: "statSpa", spd: "statSpd", spe: "statSpe" };
+
+function teamDuelOptionLabel(roster) {
+  const who = roster.personName || roster.teamName;
+  const team = roster.teamName && roster.personName ? ` (${roster.teamName})` : "";
+  const division = roster.division ? `${roster.division} · ` : "";
+  return `${division}${who}${team}`;
+}
+
+function populateTeamDuelSelects(rosters) {
+  for (const [selector, current] of [
+    ["#team-duel-a", state.teamDuel.aKey],
+    ["#team-duel-b", state.teamDuel.bKey],
+  ]) {
+    const select = document.querySelector(selector);
+    if (!select) continue;
+    let html = `<option value="">–</option>`;
+    let openSeason = null;
+    for (const roster of rosters) {
+      if (roster.seasonId !== openSeason) {
+        if (openSeason !== null) html += "</optgroup>";
+        html += `<optgroup label="${escapeAttr(seasonDisplay(roster.seasonId))}">`;
+        openSeason = roster.seasonId;
+      }
+      html += `<option value="${escapeAttr(roster.key)}">${escapeHtml(teamDuelOptionLabel(roster))}</option>`;
+    }
+    if (openSeason !== null) html += "</optgroup>";
+    select.innerHTML = html;
+    select.value = current;
+    if (select.value !== current) select.value = "";
+  }
+}
+
+function teamDuelSideLabel(roster) {
+  return roster.personName || roster.teamName;
+}
+
+function teamDuelSideHtml(side) {
+  const roster = side.roster;
+  const subline = [roster.personName && roster.teamName ? roster.teamName : "", seasonDisplay(roster.seasonId), roster.division]
+    .filter(Boolean)
+    .join(" · ");
+  const genChip = `<span class="team-duel-gen">${escapeHtml(formatMessage(t(state.language, "teamDuel.generation"), { gen: side.gen }))}</span>`;
+  const statHeads = TEAM_DUEL_STATS.map((key) => `<th>${escapeHtml(t(state.language, `teamDuel.${TEAM_DUEL_STAT_KEYS[key]}`))}</th>`).join("");
+  const rows = side.mons
+    .map((mon) => {
+      const types = mon.types.map((type) => `<span class="team-duel-type">${escapeHtml(type)}</span>`).join("");
+      const stats = mon.baseStats
+        ? TEAM_DUEL_STATS.map((key) => `<td>${mon.baseStats[key]}</td>`).join("") + `<td><strong>${mon.bst}</strong></td>`
+        : `<td colspan="7" class="muted">—</td>`;
+      return `<tr><td class="team-duel-mon">${pokemonIcon(mon.name)} ${escapeHtml(mon.name)}</td><td>${types}</td>${stats}</tr>`;
+    })
+    .join("");
+  const averages = side.averages
+    ? `<tr class="team-duel-avg"><td>${escapeHtml(t(state.language, "teamDuel.avgRow"))}</td><td></td>${TEAM_DUEL_STATS.map((key) => `<td>${side.averages[key]}</td>`).join("")}<td><strong>${side.avgBst}</strong></td></tr>`
+    : "";
+  return `
+    <div class="team-duel-side">
+      <h3>${escapeHtml(teamDuelSideLabel(roster))}${genChip}</h3>
+      <p class="muted">${escapeHtml(subline)}</p>
+      <div class="table-wrap"><table class="team-duel-table"><thead><tr><th></th><th></th>${statHeads}<th>${escapeHtml(t(state.language, "teamDuel.bst"))}</th></tr></thead><tbody>${rows}${averages}</tbody></table></div>
+    </div>`;
+}
+
+function teamDuelTypesHtml(sheet, labelA, labelB) {
+  if (!sheet.typeMatrix.a && !sheet.typeMatrix.b) return "";
+  const rowsByType = new Map();
+  for (const [sideKey, matrix] of [
+    ["a", sheet.typeMatrix.a],
+    ["b", sheet.typeMatrix.b],
+  ]) {
+    for (const row of matrix ?? []) {
+      if (!rowsByType.has(row.type)) rowsByType.set(row.type, {});
+      rowsByType.get(row.type)[sideKey] = row;
+    }
+  }
+  const cell = (entry) => (entry ? `${entry.weak} / ${entry.resist} / ${entry.immune}` : "—");
+  const rows = [...rowsByType.entries()]
+    .map(([type, sides]) => `<tr><td>${escapeHtml(type)}</td><td>${cell(sides.a)}</td><td>${cell(sides.b)}</td></tr>`)
+    .join("");
+  const legend = `${t(state.language, "teamDuel.weak")} / ${t(state.language, "teamDuel.resist")} / ${t(state.language, "teamDuel.immune")}`;
+  return `
+    <h3>${escapeHtml(t(state.language, "teamDuel.typesTitle"))}</h3>
+    <p class="muted">${escapeHtml(t(state.language, "teamDuel.typesNote"))} (${escapeHtml(legend)})</p>
+    <div class="table-wrap"><table class="team-duel-table"><thead><tr><th></th><th>${escapeHtml(labelA)}</th><th>${escapeHtml(labelB)}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+function teamDuelSpeedHtml(sheet) {
+  if (!sheet.speedTiers.length) return "";
+  const rows = sheet.speedTiers
+    .map(
+      (entry) =>
+        `<div class="team-duel-speed-row"><span class="team-duel-side-dot side-${entry.side}" aria-hidden="true"></span>${pokemonIcon(entry.name)}<span>${escapeHtml(entry.name)}</span><strong>${entry.speed}</strong></div>`,
+    )
+    .join("");
+  return `
+    <h3>${escapeHtml(t(state.language, "teamDuel.speedTitle"))}</h3>
+    <p class="muted">${escapeHtml(t(state.language, "teamDuel.speedNote"))}</p>
+    <div class="team-duel-speed-list">${rows}</div>`;
+}
+
+function teamDuelSimHtml(rosterA, rosterB) {
+  const chronology = cachedFullEloChronology();
+  const keyA = normalizedKey(teamDuelSideLabel(rosterA));
+  const keyB = normalizedKey(teamDuelSideLabel(rosterB));
+  const outcome = teamDuelOutcome(
+    eloAtSeasonEnd(keyA, chronology, rosterA.seasonId),
+    eloAtSeasonEnd(keyB, chronology, rosterB.seasonId),
+  );
+  const body = outcome
+    ? `<p class="team-duel-sim-line">${escapeHtml(
+        formatMessage(t(state.language, "teamDuel.simLine"), {
+          a: teamDuelSideLabel(rosterA),
+          b: teamDuelSideLabel(rosterB),
+          pa: Math.round(outcome.pA * 100),
+          pb: Math.round(outcome.pB * 100),
+        }),
+      )}</p><p class="muted">${escapeHtml(
+        formatMessage(t(state.language, "teamDuel.simElo"), {
+          a: teamDuelSideLabel(rosterA),
+          b: teamDuelSideLabel(rosterB),
+          eloA: Math.round(outcome.eloA),
+          eloB: Math.round(outcome.eloB),
+        }),
+      )}</p>`
+    : `<p class="muted">${escapeHtml(t(state.language, "teamDuel.simMissing"))}</p>`;
+  return `
+    <div class="team-duel-sim">
+      <span class="simulation-badge">${escapeHtml(t(state.language, "titleRace.simBadge"))}</span>
+      <h3>${escapeHtml(t(state.language, "teamDuel.simTitle"))}</h3>
+      <p class="muted">${escapeHtml(t(state.language, "teamDuel.simNote"))}</p>
+      ${body}
+    </div>`;
+}
+
+function teamDuelSourcesHtml(rosterA, rosterB) {
+  const links = [rosterA, rosterB]
+    .map((roster) => sourceLinks(String(roster.sourceUrls ?? "").split(";").slice(0, 3).join(";")))
+    .filter(Boolean);
+  if (!links.length) return "";
+  return `${escapeHtml(t(state.language, "teamDuel.sources"))}: ${links.join(" · ")}`;
+}
+
+function renderTeamDuel() {
+  const notes = document.querySelector("#team-duel-notes");
+  if (!notes) return;
+  const rosters = teamDuelRosters(state.data.teamRosters ?? []);
+  populateTeamDuelSelects(rosters);
+  const hosts = {
+    sheet: document.querySelector("#team-duel-sheet"),
+    types: document.querySelector("#team-duel-types"),
+    speed: document.querySelector("#team-duel-speed"),
+    sim: document.querySelector("#team-duel-sim"),
+    sources: document.querySelector("#team-duel-sources"),
+  };
+  const clear = () => {
+    for (const host of Object.values(hosts)) {
+      if (host) host.innerHTML = "";
+    }
+  };
+  const rosterA = rosters.find((roster) => roster.key === state.teamDuel.aKey) ?? null;
+  const rosterB = rosters.find((roster) => roster.key === state.teamDuel.bKey) ?? null;
+  if (!rosterA || !rosterB) {
+    notes.innerHTML = `<p class="muted">${escapeHtml(t(state.language, "teamDuel.pickTwo"))}</p>`;
+    clear();
+    return;
+  }
+  if (rosterA.key === rosterB.key) {
+    notes.innerHTML = `<p class="muted">${escapeHtml(t(state.language, "teamDuel.samePick"))}</p>`;
+    clear();
+    return;
+  }
+  const genA = pkmnGenerationAdapter(rosterSeasonGeneration(rosterA.seasonId));
+  const genB = pkmnGenerationAdapter(rosterSeasonGeneration(rosterB.seasonId));
+  const sheet = teamDuelSheet({ rosterA, rosterB, genA, genB });
+
+  const noteParts = [];
+  if (sheet.differentGens) {
+    noteParts.push(
+      `<p class="team-duel-note">${escapeHtml(
+        formatMessage(t(state.language, "teamDuel.differentGens"), { genA: sheet.a.gen, genB: sheet.b.gen }),
+      )}</p>`,
+    );
+  }
+  if (sheet.degraded) {
+    noteParts.push(`<p class="team-duel-note">${escapeHtml(t(state.language, "teamDuel.degraded"))}</p>`);
+  }
+  for (const side of [sheet.a, sheet.b]) {
+    if (!sheet.degraded && side.unresolved.length) {
+      noteParts.push(
+        `<p class="muted">${escapeHtml(teamDuelSideLabel(side.roster))}: ${escapeHtml(
+          formatMessage(t(state.language, "teamDuel.unresolved"), { names: side.unresolved.join(", ") }),
+        )}</p>`,
+      );
+    }
+  }
+  notes.innerHTML = noteParts.join("");
+
+  if (hosts.sheet) {
+    hosts.sheet.innerHTML = `
+      <h3>${escapeHtml(t(state.language, "teamDuel.statsTitle"))}</h3>
+      <div class="team-duel-grid">${teamDuelSideHtml(sheet.a)}${teamDuelSideHtml(sheet.b)}</div>`;
+  }
+  if (hosts.types) hosts.types.innerHTML = teamDuelTypesHtml(sheet, teamDuelSideLabel(rosterA), teamDuelSideLabel(rosterB));
+  if (hosts.speed) hosts.speed.innerHTML = teamDuelSpeedHtml(sheet);
+  if (hosts.sim) hosts.sim.innerHTML = teamDuelSimHtml(rosterA, rosterB);
+  if (hosts.sources) hosts.sources.innerHTML = teamDuelSourcesHtml(rosterA, rosterB);
 }
 
 function matchupSelectButton(value, label = value, slot = "b", primary = "") {

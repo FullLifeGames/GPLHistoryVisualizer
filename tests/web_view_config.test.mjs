@@ -41,14 +41,16 @@ assert.equal(viewGroupForView("source-claims"), "data");
 assert.equal(viewGroupForView("missing"), "people");
 
 assert.deepEqual(subviewsForGroup("people"), ["all-time", "team-rosters"]);
-assert.deepEqual(subviewsForGroup("duels"), ["rivalries", "oracle"]);
+assert.deepEqual(subviewsForGroup("duels"), ["rivalries", "oracle", "team-duel"]);
 
 const duelsGroup = VIEW_GROUPS.find((group) => group.id === "duels");
-assert.deepEqual(duelsGroup.views, ["rivalries", "oracle"]);
+assert.deepEqual(duelsGroup.views, ["rivalries", "oracle", "team-duel"]);
 assert.equal(duelsGroup.views.includes("matchup"), false);
 assert.deepEqual(duelsGroup.detailViews, ["rivalry-detail"]);
 assert.equal(viewGroupForView("rivalries"), "duels");
 assert.equal(viewGroupForView("oracle"), "duels");
+assert.equal(viewGroupForView("team-duel"), "duels");
+assert.equal(isValidView("team-duel"), true);
 assert.equal(viewGroupForView("rivalry-detail"), "duels");
 assert.equal(isValidView("oracle"), true);
 assert.equal(isValidView("rivalries"), true);

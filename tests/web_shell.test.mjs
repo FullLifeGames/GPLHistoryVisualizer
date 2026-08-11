@@ -408,6 +408,23 @@ assert.match(stylesCss, /\.app-tooltip\s*\{[\s\S]*?position:\s*fixed;[\s\S]*?z-i
 assert.match(stylesCss, /\.app-tooltip\.is-visible\s*\{[\s\S]*?opacity:\s*1;/);
 assert.match(appJs, /numberValue\(b\.rating\)[\s\S]*?numberValue\(b\.elo\)/);
 
+// Zeitmaschinen-Duell: own duels subtab, per-side pickers, sheet hosts, and
+// the deferred @pkmn CDN bundles with text-badge degradation.
+assert.equal(indexHtml.includes('data-view="team-duel"'), true);
+assert.equal(indexHtml.includes('id="view-team-duel"'), true);
+assert.equal(indexHtml.includes('id="team-duel-a"'), true);
+assert.equal(indexHtml.includes('id="team-duel-b"'), true);
+assert.equal(indexHtml.includes('id="team-duel-sheet"'), true);
+assert.equal(indexHtml.includes('id="team-duel-sim"'), true);
+assert.equal(indexHtml.includes("@pkmn/dex@"), true);
+assert.equal(indexHtml.includes("@pkmn/data@"), true);
+assert.equal(appJs.includes('"team-duel": renderTeamDuel'), true);
+assert.equal(appJs.includes("pkmnGenerationAdapter("), true);
+assert.match(appJs, /TOOLBAR_HIDDEN_VIEWS = new Set\(\[[^\]]*"team-duel"/);
+assert.match(appJs, /"team-duel":\s*\["teamRosters"\]/);
+assert.equal(stylesCss.includes(".team-duel-grid"), true);
+assert.equal(stylesCss.includes(".team-duel-sim"), true);
+
 assert.equal(indexHtml.includes('data-view-group="games"'), true);
 assert.equal(indexHtml.includes('data-view="games"'), true);
 assert.equal(indexHtml.includes('id="view-games"'), true);
