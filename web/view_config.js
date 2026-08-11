@@ -3,7 +3,7 @@ export const VIEW_GROUPS = [
     id: "records",
     labelKey: "navGroups.records",
     defaultView: "all-time",
-    views: ["all-time", "team-rosters", "record-book", "awards", "hall-of-fame", "upset-index"],
+    views: ["all-time", "team-rosters", "record-book", "awards", "hall-of-fame"],
     detailViews: ["person-details", "roster-detail"],
   },
   {
@@ -37,7 +37,7 @@ export const VIEW_GROUPS = [
     id: "videos",
     labelKey: "navGroups.videos",
     defaultView: "video-archive",
-    views: ["video-archive", "cinema", "match-highlights", "audience-history", "zeitstrahl"],
+    views: ["video-archive", "cinema", "match-highlights", "upset-index", "audience-history", "zeitstrahl"],
   },
   {
     id: "games",

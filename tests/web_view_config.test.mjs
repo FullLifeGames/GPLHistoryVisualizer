@@ -20,8 +20,8 @@ assert.deepEqual(
 
 // Bestenlisten: Ewige Tabelle + Kaderübersichten + Rekord-Cluster.
 assert.equal(defaultViewForGroup("records"), "all-time");
-assert.deepEqual(subviewsForGroup("records"), ["all-time", "team-rosters", "record-book", "awards", "hall-of-fame", "upset-index"]);
-for (const view of ["all-time", "team-rosters", "person-details", "roster-detail", "record-book", "awards", "hall-of-fame", "upset-index"]) {
+assert.deepEqual(subviewsForGroup("records"), ["all-time", "team-rosters", "record-book", "awards", "hall-of-fame"]);
+for (const view of ["all-time", "team-rosters", "person-details", "roster-detail", "record-book", "awards", "hall-of-fame"]) {
   assert.equal(viewGroupForView(view), "records");
 }
 
@@ -44,9 +44,10 @@ assert.equal(viewGroupForView("rivalry-detail"), "duels");
 assert.deepEqual(subviewsForGroup("pokemon"), ["killlists", "pokemon-drafts"]);
 assert.equal(viewGroupForView("pokemon-detail"), "pokemon");
 
-// Videos übernimmt die Highlightkämpfe.
-assert.deepEqual(subviewsForGroup("videos"), ["video-archive", "cinema", "match-highlights", "audience-history", "zeitstrahl"]);
+// Videos übernimmt die Highlightkämpfe und den Upset-Index.
+assert.deepEqual(subviewsForGroup("videos"), ["video-archive", "cinema", "match-highlights", "upset-index", "audience-history", "zeitstrahl"]);
 assert.equal(viewGroupForView("match-highlights"), "videos");
+assert.equal(viewGroupForView("upset-index"), "videos");
 
 // Spiele unverändert.
 const gamesGroup = VIEW_GROUPS.find((group) => group.id === "games");
