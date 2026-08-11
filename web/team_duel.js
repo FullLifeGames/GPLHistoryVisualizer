@@ -241,6 +241,13 @@ export function hypotheticalSix(side, gen, opponentSide = null) {
   const openWeaknesses = () => [...teamWeakCounts.keys()].filter((type) => !teamResists.has(type));
   while (picks.length < 6 && pool.length) {
     const open = new Set(openWeaknesses());
+    // Balance offense and defense: whichever of the two matchup dimensions
+    // the lineup has accumulated less of gets boosted for the next pick,
+    // so the six alternates attackers and walls instead of stacking one.
+    const offenseSoFar = picks.reduce((sum, pick) => sum + pick.threatens, 0);
+    const defenseSoFar = picks.reduce((sum, pick) => sum + pick.walls, 0);
+    const threatWeight = SIX_WEIGHTS.threat * (offenseSoFar > defenseSoFar ? 0.5 : 1.5);
+    const wallWeight = SIX_WEIGHTS.wall * (defenseSoFar > offenseSoFar ? 0.5 : 1.5);
     let best = null;
     let bestScore = -Infinity;
     for (const entry of pool) {
@@ -253,8 +260,8 @@ export function hypotheticalSix(side, gen, opponentSide = null) {
         newResists.length * SIX_WEIGHTS.newResist +
         fresh.length * SIX_WEIGHTS.freshType -
         stacked * SIX_WEIGHTS.stackedWeak +
-        entry.matchup.threatens * SIX_WEIGHTS.threat +
-        entry.matchup.walls * SIX_WEIGHTS.wall -
+        entry.matchup.threatens * threatWeight +
+        entry.matchup.walls * wallWeight -
         entry.matchup.threatened * SIX_WEIGHTS.threatened +
         entry.mon.bst / SIX_WEIGHTS.bstDivisor;
       if (score > bestScore) {

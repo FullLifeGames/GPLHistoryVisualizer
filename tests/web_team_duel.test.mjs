@@ -239,3 +239,21 @@ test("hypotheticalSix builds against the opposing roster", () => {
   const solo = hypotheticalSix(side, FIXTURE_GEN);
   assert.equal(solo.picks[0].mon.name, "Norm");
 });
+
+test("hypotheticalSix balances attackers and walls instead of stacking one side", () => {
+  // Flames threaten the Steel foes (Fire 2x), Birds wall the Ground foes
+  // (Ground -> Flying = 0). Without balancing, the higher threat weight
+  // would stack Flames; the balance rule alternates the two roles.
+  const side = {
+    mons: [
+      sixMon("F1", ["Fire"], 500), sixMon("F2", ["Fire"], 500), sixMon("F3", ["Fire"], 500), sixMon("F4", ["Fire"], 500),
+      sixMon("B1", ["Flying"], 500), sixMon("B2", ["Flying"], 500), sixMon("B3", ["Flying"], 500), sixMon("B4", ["Flying"], 500),
+    ],
+  };
+  const opponent = { mons: [sixMon("S1", ["Steel"], 500), sixMon("S2", ["Steel"], 500), sixMon("G1", ["Ground"], 500), sixMon("G2", ["Ground"], 500)] };
+  const result = hypotheticalSix(side, FIXTURE_GEN, opponent);
+  const flames = result.picks.filter((pick) => pick.mon.name.startsWith("F")).length;
+  const birds = result.picks.filter((pick) => pick.mon.name.startsWith("B")).length;
+  assert.equal(flames, 3);
+  assert.equal(birds, 3);
+});

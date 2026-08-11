@@ -7802,10 +7802,10 @@ function teamDuelSpeedHtml(sheet, labelA, labelB) {
 function teamDuelSixReasons(pick) {
   const list = (types) =>
     types.slice(0, 2).map((type) => pokemonTypeLabel(type)).join(", ") + (types.length > 2 ? ", …" : "");
-  if (pick.threatens >= 2 && pick.threatens >= pick.walls) {
-    return formatMessage(t(state.language, "teamDuel.sixThreatens"), { count: pick.threatens });
-  }
-  if (pick.walls >= 2) return formatMessage(t(state.language, "teamDuel.sixWalls"), { count: pick.walls });
+  const matchupParts = [];
+  if (pick.threatens >= 2) matchupParts.push(formatMessage(t(state.language, "teamDuel.sixThreatens"), { count: pick.threatens }));
+  if (pick.walls >= 1) matchupParts.push(formatMessage(t(state.language, "teamDuel.sixWalls"), { count: pick.walls }));
+  if (matchupParts.length) return matchupParts.join(" · ");
   if (pick.covers.length) return formatMessage(t(state.language, "teamDuel.sixCovers"), { types: list(pick.covers) });
   if (pick.resists.length) return formatMessage(t(state.language, "teamDuel.sixResists"), { types: list(pick.resists) });
   if (pick.threatens) return formatMessage(t(state.language, "teamDuel.sixThreatens"), { count: pick.threatens });
