@@ -91,6 +91,7 @@ GERMAN_FORM_DISPLAY_NAMES = {
 GERMAN_NAME_ALIASES = {
     "Drifzepeli": ["Drifzepli"],
     "Gallopa": ["Galoppa"],
+    "Kappalores": ["Kapalores"],
     "Meistagrif": ["Meistergrif"],
     "Porygon2": ["Porygon 2", "Porygon-2"],
     "Schwalboss": ["Schwallbos"],

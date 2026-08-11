@@ -11510,6 +11510,12 @@ export const POKEMON_NAME_TRANSLATIONS = [
     "asset_id": "rapidash"
   },
   {
+    "species_id": 272,
+    "german": "Kapalores",
+    "english": "Ludicolo",
+    "asset_id": "ludicolo"
+  },
+  {
     "species_id": 534,
     "german": "Meistergrif",
     "english": "Conkeldurr",
@@ -12898,6 +12904,7 @@ export const POKEMON_ASSET_IDS = {
   "kangaskhanmega": "kangaskhanmega",
   "kanivanha": "carvanha",
   "kaocto": "grapploct",
+  "kapalores": "ludicolo",
   "kapilz": "breloom",
   "kapoera": "hitmontop",
   "kappalores": "ludicolo",

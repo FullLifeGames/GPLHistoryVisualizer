@@ -9,7 +9,7 @@ import requests
 
 from .normalize import _canonical_name as _canonical_person_name
 from .normalize import _display_name as _display_person_name
-from .pokemon_names import name_key
+from .pokemon_names import GERMAN_NAME_ALIASES_BY_KEY, name_key
 from .storage import ensure_dir
 
 SHOWDOWN_FORMATS_DATA_URL = "https://raw.githubusercontent.com/smogon/pokemon-showdown/master/data/formats-data.ts"
@@ -286,9 +286,13 @@ def _translation_forms(translations: list[dict[str, str]]) -> dict[str, dict[str
         if not asset:
             continue
         current = forms.get(asset)
+        german = row.get("german", "").strip()
         candidate = {
             "species_id": row.get("species_id", "").strip(),
-            "german": row.get("german", "").strip(),
+            # Manual typo-alias rows (Drifzepli, Kapalores) are often
+            # shorter than the real name and would otherwise win the
+            # shortest-name display tiebreak.
+            "german": GERMAN_NAME_ALIASES_BY_KEY.get(name_key(german), german),
             "english": row.get("english", "").strip(),
             "asset_id": asset,
             "source_url": row.get("source_url", "").strip(),
