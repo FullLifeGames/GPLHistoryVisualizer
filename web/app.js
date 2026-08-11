@@ -7481,6 +7481,11 @@ function renderRivalryDetail() {
     lineChart(gapChart, {
       series: [{ id: "gap", points: gapPoints, className: "rivalry-gap-line" }],
       yDomain: paddedDomain([...gapPoints.map((point) => point.y), 0]),
+      // Ganzzahlige Ticks (max. ~8): der automatische Tick-Generator würde bei
+      // wenigen Duellen gerundete Duplikate (#0, #1, #1, ...) erzeugen.
+      xTickValues: gapPoints
+        .map((point) => point.x)
+        .filter((x, _, all) => (x - 1) % Math.max(1, Math.ceil(all.length / 8)) === 0 || x === all.length),
       formatX: (value) => `#${Math.round(value)}`,
       markers: winnerMarkers,
       tooltip: (meeting) =>
