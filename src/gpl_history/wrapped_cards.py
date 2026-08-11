@@ -35,6 +35,7 @@ _ROSTER_BACKGROUNDS = {
     "season_003": "gpl-s3-background.png",
     "season_004": "gpl-s4-background.png",
     "season_005": "gpl-s5-background.png",
+    "season_006": "gpl-s6-background.png",
     "season_007": "gpl-s7-background.png",
     "season_008": "gpl-s8-background.png",
     "season_009": "gpl-s9-background-pink-blau.png",

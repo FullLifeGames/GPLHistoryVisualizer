@@ -221,6 +221,7 @@ const ROSTER_BACKGROUND_BY_SEASON = {
   season_003: "assets/roster-backgrounds/gpl-s3-background.png",
   season_004: "assets/roster-backgrounds/gpl-s4-background.png",
   season_005: "assets/roster-backgrounds/gpl-s5-background.png",
+  season_006: "assets/roster-backgrounds/gpl-s6-background.png",
   season_007: "assets/roster-backgrounds/gpl-s7-background.png",
   season_008: "assets/roster-backgrounds/gpl-s8-background.png",
   season_009: "assets/roster-backgrounds/gpl-s9-background-pink-blau.png",
