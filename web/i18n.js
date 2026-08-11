@@ -493,6 +493,7 @@ export const TRANSLATIONS = {
     },
     awards: {
       computedNote: "Alle Auszeichnungen sind rückwirkend berechnet.",
+      beatName: "besiegte {name}",
       legendTitle: "Legende",
       allTimeTitle: "Meiste Auszeichnungen (inkl. 🥄)",
       careerTitle: "Karriere-Auszeichnungen",
@@ -1203,6 +1204,7 @@ export const TRANSLATIONS = {
       title: "Titel",
       titles: "Titel",
       title_seasons: "Titel-Saisons",
+      detail: "Detail",
       video_type: "Kategorie",
       published_at: "Veröffentlicht",
       detected_week: "Spieltag",
@@ -1703,6 +1705,7 @@ export const TRANSLATIONS = {
     },
     awards: {
       computedNote: "All awards are computed retroactively.",
+      beatName: "beat {name}",
       legendTitle: "Legend",
       allTimeTitle: "Most awards (incl. 🥄)",
       careerTitle: "Career awards",
@@ -2413,6 +2416,7 @@ export const TRANSLATIONS = {
       title: "Title",
       titles: "Titles",
       title_seasons: "Title Seasons",
+      detail: "Detail",
       video_type: "Category",
       published_at: "Published",
       detected_week: "Week",

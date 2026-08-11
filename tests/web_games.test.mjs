@@ -103,6 +103,25 @@ test("kaderPools groups, dedupes, and filters small rosters", () => {
   assert.ok(pool.sampleRow);
 });
 
+test("kaderPools accepts tag-team partners sharing the same season roster", () => {
+  const partnerPokemon = ["Glurak", "Bisaflor", "Turtok", "Relaxo", "Dragoran", "Gengar"];
+  const rows = [
+    ...partnerPokemon.map((pokemon, index) => ({ season_id: "season_009", division: "Singles", person_name: "PresentLP", team_name: "Prekani", pokemon, slot: String(index + 1), source_urls: "" })),
+    ...partnerPokemon.map((pokemon, index) => ({ season_id: "season_009", division: "Doubles", person_name: "Raizor", team_name: "Prekani", pokemon, slot: String(index + 1), source_urls: "" })),
+    ...partnerPokemon.map((pokemon, index) => ({ season_id: "season_010", division: "Regular Season", person_name: "Solo", team_name: "Solisten", pokemon, slot: String(index + 1), source_urls: "" })),
+  ];
+  const pools = kaderPools(rows, norm);
+  const present = pools.find((pool) => pool.personKey === "presentlp");
+  assert.deepEqual([...present.acceptedKeys].sort(), ["presentlp", "raizor"]);
+  assert.deepEqual([...present.acceptedNames].sort(), ["PresentLP", "Raizor"]);
+  const raizor = pools.find((pool) => pool.personKey === "raizor");
+  assert.deepEqual([...raizor.acceptedKeys].sort(), ["presentlp", "raizor"]);
+  // Solo rosters accept only their own trainer.
+  const solo = pools.find((pool) => pool.personKey === "solo");
+  assert.deepEqual(solo.acceptedKeys, ["solo"]);
+  assert.deepEqual(solo.acceptedNames, ["Solo"]);
+});
+
 test("dailyKader picks deterministically per date and permutes the reveal order", () => {
   const pools = kaderPools(ROSTER_ROWS, norm);
   const one = dailyKader(pools, "2026-08-10");

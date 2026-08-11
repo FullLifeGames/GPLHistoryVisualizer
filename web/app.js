@@ -4152,11 +4152,12 @@ function renderAwards() {
       division: row.division,
       person: personLink(row.person_id || normalizedKey(row.person_name), row.person_name),
       value: row.value,
+      detail: row.detail ? personLink(normalizedKey(row.detail), awardDetailText(row)) : "",
       formula: `<span title="${escapeAttr(awardFormula(row.formula))}">${escapeHtml(awardFormula(row.formula))}</span>`,
       source: sourceCell(row.source_urls),
     })),
     AWARD_COLUMNS,
-    ["season", "award", "person", "formula", "source"],
+    ["season", "award", "person", "detail", "formula", "source"],
     { filename: "gpl-awards.csv", showAllRows: true },
   );
 }
@@ -4195,7 +4196,15 @@ const AWARD_FORMULA_BY_KEY = {
   iron_man: "consecutive_seasons",
 };
 
+// Riesentöter und Upset der Saison tragen den geschlagenen Gegner im
+// detail-Feld — der gehört sichtbar auf Karte und Tabelle.
+function awardDetailText(row) {
+  if (!row.detail) return "";
+  return formatMessage(t(state.language, "awards.beatName"), { name: row.detail });
+}
+
 function awardCard(row) {
+  const detailText = awardDetailText(row);
   return `
     <article class="highlight-card award-card">
       <div class="highlight-card-head">
@@ -4204,7 +4213,7 @@ function awardCard(row) {
         <strong><small>${escapeHtml(awardName(row.award_key))}</small>${escapeHtml(String(row.value || ""))}</strong>
       </div>
       <h3 class="highlight-match-title">${personLink(row.person_id || normalizedKey(row.person_name), row.person_name)}</h3>
-      <p class="upset-prob-line">${escapeHtml(awardFormula(row.formula))}</p>
+      <p class="upset-prob-line">${escapeHtml([awardFormula(row.formula), detailText].filter(Boolean).join(" · "))}</p>
     </article>
   `;
 }
@@ -6512,8 +6521,10 @@ function kaderPuzzleArea(puzzle, progress, pools, finished) {
     ? gameRevealCard({
         title: progress.solved
           ? formatMessage(t(state.language, "games.kader.solved"), { n: progress.wrongGuesses + 1 })
-          : formatMessage(t(state.language, "games.kader.failed"), { name: puzzle.pool.personName }),
-        bodyHtml: `<p>${personLink(canonicalPersonRouteKey(puzzle.pool.personName), puzzle.pool.personName)} · ${escapeHtml(puzzle.pool.teamName)} · ${escapeHtml(seasonDisplay(puzzle.pool.seasonId))}</p>
+          : formatMessage(t(state.language, "games.kader.failed"), { name: (puzzle.pool.acceptedNames || [puzzle.pool.personName]).join(" & ") }),
+        bodyHtml: `<p>${(puzzle.pool.acceptedNames || [puzzle.pool.personName])
+          .map((name) => personLink(canonicalPersonRouteKey(name), name))
+          .join(" & ")} · ${escapeHtml(puzzle.pool.teamName)} · ${escapeHtml(seasonDisplay(puzzle.pool.seasonId))}</p>
           <p><a class="link-button" href="${escapeAttr(rosterRouteHash(rosterGroupKeyFromRow(puzzle.pool.sampleRow)))}">${escapeHtml(t(state.language, "games.kader.rosterLink"))}</a></p>`,
         sourceUrls: puzzle.pool.sourceUrls,
         tone: progress.solved ? "success" : "error",
@@ -6547,7 +6558,9 @@ function applyKaderGuess(progress, puzzle, guess) {
   const guessKey = normalizedKey(guess);
   if (!guessKey || progress.guessedKeys.includes(guessKey)) return "repeat";
   progress.guessedKeys.push(guessKey);
-  if (guessKey === puzzle.pool.personKey) {
+  // Tag-Saisons teilen den Kader: jeder Team-Partner zählt als Treffer.
+  const acceptedKeys = puzzle.pool.acceptedKeys || [puzzle.pool.personKey];
+  if (acceptedKeys.includes(guessKey)) {
     progress.solved = true;
     progress.lastWrong = "";
     return "solved";

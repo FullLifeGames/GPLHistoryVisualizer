@@ -91,10 +91,28 @@ export function kaderPools(rosterRows = [], normalizeKey, minPokemon = 6) {
       if (url.trim()) pool.sourceUrls.add(url.trim());
     }
   }
-  return [...byKey.values()]
+  const pools = [...byKey.values()]
     .filter((pool) => pool.pokemon.length >= minPokemon)
     .map(({ pokemonKeys, sourceUrls, ...pool }) => ({ ...pool, sourceUrls: [...sourceUrls].join(";") }))
     .sort((a, b) => a.poolKey.localeCompare(b.poolKey));
+  // Tag-Saisons (S9) teilen einen Kader zwischen Singles- und Doubles-Partner:
+  // jede Person mit demselben Team in derselben Saison zählt als richtige
+  // Antwort auf diesen Kader.
+  const byTeam = new Map();
+  for (const pool of pools) {
+    const teamKey = normalizeKey(pool.teamName);
+    if (!teamKey) continue;
+    const groupKey = `${pool.seasonId}__${teamKey}`;
+    if (!byTeam.has(groupKey)) byTeam.set(groupKey, []);
+    byTeam.get(groupKey).push(pool);
+  }
+  for (const pool of pools) {
+    const teamKey = normalizeKey(pool.teamName);
+    const mates = teamKey ? byTeam.get(`${pool.seasonId}__${teamKey}`) || [pool] : [pool];
+    pool.acceptedKeys = [...new Set(mates.map((mate) => mate.personKey))];
+    pool.acceptedNames = [...new Set(mates.map((mate) => mate.personName))];
+  }
+  return pools;
 }
 
 export function kaderPuzzle(pools, seedString) {

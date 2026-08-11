@@ -183,6 +183,7 @@ export const AWARD_COLUMNS = [
   "division",
   "person",
   "value",
+  "detail",
   "formula",
   "source",
 ];
