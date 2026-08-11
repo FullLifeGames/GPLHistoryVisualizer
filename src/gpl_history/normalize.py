@@ -1171,14 +1171,19 @@ def _manual_playoff_standing(
 
 def _s10_playoff_standings(season_id: str, regular_rows: list[dict[str, Any]], source_url: str | None) -> list[dict[str, Any]]:
     teams_by_person = {row.get("player_name"): row.get("team_name") for row in regular_rows}
+    # Ranks 3-7 are participant-provided (Bene, 2026-08-11): the third-place
+    # series settles ranks 3/4, and the quarterfinal losers are ordered by the
+    # final placement of the player who eliminated them (Dauni lost to the
+    # champion, Nestfloh to the runner-up, RobinVGC to third place). Wins and
+    # losses count playoff series.
     specs = [
-        ("1", "Bene", "3", "0"),
-        ("2", "Raizor", "2", "1"),
-        (None, "PresentLP", "1", "1"),
-        (None, "Minetube", "0", "1"),
-        (None, "Nestfloh", "0", "1"),
-        (None, "RobinVGC", "0", "1"),
-        (None, "Dauni", "0", "1"),
+        ("1", "Bene", "3", "0", "sheet_extracted"),
+        ("2", "Raizor", "2", "1", "sheet_extracted"),
+        ("3", "PresentLP", "2", "1", "sheet_extracted_with_user_correction"),
+        ("4", "Minetube", "0", "2", "sheet_extracted_with_user_correction"),
+        ("5", "Dauni", "0", "1", "sheet_extracted_with_user_correction"),
+        ("6", "Nestfloh", "0", "1", "sheet_extracted_with_user_correction"),
+        ("7", "RobinVGC", "0", "1", "sheet_extracted_with_user_correction"),
     ]
     return [
         _manual_playoff_standing(
@@ -1187,11 +1192,11 @@ def _s10_playoff_standings(season_id: str, regular_rows: list[dict[str, Any]], s
             person_name=person,
             team_name=teams_by_person.get(person),
             source_url=source_url,
-            notes_status="sheet_extracted",
+            notes_status=status,
             wins=wins,
             losses=losses,
         )
-        for rank, person, wins, losses in specs
+        for rank, person, wins, losses, status in specs
     ]
 
 

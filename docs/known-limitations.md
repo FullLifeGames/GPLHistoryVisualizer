@@ -57,6 +57,8 @@ The S10 finale and third-place series are recorded battle by battle (participant
 - Finale, Bene vs Raizor: Singles 4:0 Bene; Doubles (VGC) 2:1 Bene (games 3:0, 0:2, 2:0).
 - Spiel um Platz 3, PresentLP vs Minetube: Singles 0:3 Minetube; Doubles (VGC) 1 2:1 PresentLP (games 2:0, 0:1, 1:0); Doubles (VGC) 2 2:1 PresentLP (games 0:3, 2:0, 3:0).
 
+The S10 playoff standings carry participant-provided ranks 3-7 on the same basis: PresentLP 3 and Minetube 4 from the third-place series, and the quarterfinal losers ordered by the final placement of the player who eliminated them (Dauni 5, Nestfloh 6, RobinVGC 7).
+
 Three final-table rows keep a flagged internal contradiction (kills − deaths ≠ differential) because the match scores support neither candidate value: S3 SurskitTV, S4 Dauni, S5 BraveBird. Three others (S4 Scoutley, S5 Bene, S5 CrowdController) were corrected via match-score arbitration.
 
 ## Killlist Coverage
