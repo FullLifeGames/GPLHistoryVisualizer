@@ -4570,11 +4570,6 @@ tbody tr:hover {
   color: var(--muted);
 }
 
-.team-duel-type-chip.is-ability {
-  border-style: dashed;
-  color: var(--muted);
-}
-
 .team-duel-actual {
   border: 1px solid var(--line);
   border-radius: 12px;

@@ -79,26 +79,23 @@ test("teamDuelSheet resolves species, averages and flags cross-era pairs", () =>
 test("teamDuelSheet builds the defensive type matrix per attacking type", () => {
   const sheet = teamDuelSheet({ rosterA: ROSTER_A, rosterB: ROSTER_B, genA: FIXTURE_GEN, genB: FIXTURE_GEN });
   const ground = sheet.typeMatrix.a.find((row) => row.type === "Ground");
-  // Skarmory: 2 * 0 = 0 -> immune by typing; Latios: neutral, but its only
-  // ability is Levitate -> certain ability immunity.
-  assert.deepEqual(ground, { type: "Ground", weak: 0, resist: 0, immune: 2, ability: 0 });
+  // Skarmory: 2 * 0 = 0 -> immune by typing; Latios: Levitate -> immune.
+  assert.deepEqual(ground, { type: "Ground", weak: 0, resist: 0, immune: 2 });
   const fire = sheet.typeMatrix.a.find((row) => row.type === "Fire");
   // Skarmory: Steel 2x -> weak; Latios: Dragon 0.5 -> resist.
-  assert.deepEqual(fire, { type: "Fire", weak: 1, resist: 1, immune: 0, ability: 0 });
+  assert.deepEqual(fire, { type: "Fire", weak: 1, resist: 1, immune: 0 });
 });
 
-test("teamDuelSheet counts ability effects: certain as immune/resist, optional as marker", () => {
+test("teamDuelSheet folds ability effects straight into the counts", () => {
   const sheet = teamDuelSheet({ rosterA: ROSTER_A, rosterB: ROSTER_B, genA: FIXTURE_GEN, genB: FIXTURE_GEN });
   const ground = sheet.typeMatrix.b.find((row) => row.type === "Ground");
-  // Roserade: Poison 2x -> weak. Rotom-Wash: neutral typing but Levitate is
-  // its only ability -> immune. Bronzong: Steel 2x -> weak, and Levitate is
-  // one of two abilities -> flagged. Hariyama/Miltank: neutral to Ground.
-  assert.deepEqual(ground, { type: "Ground", weak: 2, resist: 0, immune: 1, ability: 1 });
+  // Roserade: Poison 2x -> weak. Rotom-Wash AND Bronzong: Levitate -> immune
+  // (any ability the species can have counts). Hariyama/Miltank: neutral.
+  assert.deepEqual(ground, { type: "Ground", weak: 1, resist: 0, immune: 2 });
   const fire = sheet.typeMatrix.b.find((row) => row.type === "Fire");
-  // Roserade: Grass 2x -> weak. Bronzong: Steel 2x -> weak, Heatproof
-  // possible -> flagged. Hariyama: neutral, Thick Fat possible -> flagged.
-  // Miltank: Thick Fat is its ONLY ability -> certain 0.5x -> resist.
-  assert.deepEqual(fire, { type: "Fire", weak: 2, resist: 1, immune: 0, ability: 2 });
+  // Roserade: Grass 2x -> weak. Bronzong: Steel 2x halved by Heatproof ->
+  // neutral. Hariyama and Miltank: Thick Fat halves -> resist.
+  assert.deepEqual(fire, { type: "Fire", weak: 1, resist: 2, immune: 0 });
 });
 
 test("teamDuelSheet interleaves speed tiers across both sides", () => {
@@ -150,7 +147,7 @@ test("teamDuelOutcome is a symmetric logistic on the Elo gap", () => {
   assert.equal(teamDuelOutcome(null, 1500), null);
 });
 
-const NO_EFFECTS = { certainImmune: new Set(), possibleImmune: new Set(), certainResist: new Set(), possibleResist: new Set() };
+const NO_EFFECTS = { immune: new Set(), resist: new Set() };
 const sixMon = (name, types, bst) => ({
   name,
   english: name,
@@ -228,4 +225,17 @@ test("teamDuelActualOutcome finds real meetings, season-scoped for same-season p
   assert.equal(career.winsA, 2);
   assert.equal(career.meetings[1].scoreA, "3");
   assert.equal(teamDuelActualOutcome(matches, "bene", "nobody", "season_008", "season_008", norm), null);
+});
+
+test("hypotheticalSix builds against the opposing roster", () => {
+  const side = { mons: [sixMon("Flame", ["Fire"], 500), sixMon("Norm", ["Normal"], 650)] };
+  const opponent = { mons: [sixMon("S1", ["Steel"], 500), sixMon("S2", ["Steel"], 500), sixMon("S3", ["Steel"], 500)] };
+  const result = hypotheticalSix(side, FIXTURE_GEN, opponent);
+  // Fire hits all three Steel foes super-effectively, which beats the
+  // Normal type's 150 extra BST.
+  assert.equal(result.picks[0].mon.name, "Flame");
+  assert.equal(result.picks[0].threatens, 3);
+  // Without an opponent the ordering flips back to the neutral heuristic.
+  const solo = hypotheticalSix(side, FIXTURE_GEN);
+  assert.equal(solo.picks[0].mon.name, "Norm");
 });

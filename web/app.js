@@ -7722,10 +7722,8 @@ function teamDuelTypeBalance(matrix) {
   const strengths = [];
   const weaknesses = [];
   const neutral = [];
-  const ability = [];
   for (const row of matrix) {
     const net = row.resist + row.immune - row.weak;
-    if (row.ability) ability.push({ type: row.type, count: row.ability });
     if (net > 0) strengths.push({ type: row.type, net });
     else if (net < 0) weaknesses.push({ type: row.type, net: -net });
     else neutral.push({ type: row.type });
@@ -7733,8 +7731,7 @@ function teamDuelTypeBalance(matrix) {
   strengths.sort((a, b) => b.net - a.net || a.type.localeCompare(b.type, "en"));
   weaknesses.sort((a, b) => b.net - a.net || a.type.localeCompare(b.type, "en"));
   neutral.sort((a, b) => a.type.localeCompare(b.type, "en"));
-  ability.sort((a, b) => b.count - a.count || a.type.localeCompare(b.type, "en"));
-  return { strengths, weaknesses, neutral, ability };
+  return { strengths, weaknesses, neutral };
 }
 
 function teamDuelTypesSideHtml(label, balance) {
@@ -7748,14 +7745,12 @@ function teamDuelTypesSideHtml(label, balance) {
   const strengths = balance.strengths.map((entry) => chip(entry, "resist", ` +${entry.net}`)).join("");
   const weaknesses = balance.weaknesses.map((entry) => chip(entry, "weak", ` −${entry.net}`)).join("");
   const neutral = balance.neutral.map((entry) => chip(entry, "neutral", "")).join("");
-  const ability = balance.ability.map((entry) => chip(entry, "ability", entry.count > 1 ? ` ×${entry.count}` : "")).join("");
   return `
     <div class="team-duel-side">
       <h3>${escapeHtml(label)}</h3>
       ${line("strengths", strengths)}
       ${line("weaknesses", weaknesses)}
       ${line("neutralLabel", neutral)}
-      ${line("abilityDependent", ability)}
     </div>`;
 }
 
@@ -7802,19 +7797,25 @@ function teamDuelSpeedHtml(sheet, labelA, labelB) {
 }
 
 // One short reason per pick — the strongest contribution only, so the
-// lineup reads as a list of roles instead of a wall of text.
+// lineup reads as a list of roles instead of a wall of text. Matchup
+// contributions against the opposing roster take precedence.
 function teamDuelSixReasons(pick) {
   const list = (types) =>
     types.slice(0, 2).map((type) => pokemonTypeLabel(type)).join(", ") + (types.length > 2 ? ", …" : "");
+  if (pick.threatens >= 2 && pick.threatens >= pick.walls) {
+    return formatMessage(t(state.language, "teamDuel.sixThreatens"), { count: pick.threatens });
+  }
+  if (pick.walls >= 2) return formatMessage(t(state.language, "teamDuel.sixWalls"), { count: pick.walls });
   if (pick.covers.length) return formatMessage(t(state.language, "teamDuel.sixCovers"), { types: list(pick.covers) });
   if (pick.resists.length) return formatMessage(t(state.language, "teamDuel.sixResists"), { types: list(pick.resists) });
+  if (pick.threatens) return formatMessage(t(state.language, "teamDuel.sixThreatens"), { count: pick.threatens });
   if (pick.fresh.length) return formatMessage(t(state.language, "teamDuel.sixBrings"), { types: list(pick.fresh) });
   return "";
 }
 
 function teamDuelSixHtml(sheet, genA, genB) {
-  const sixA = hypotheticalSix(sheet.a, genA);
-  const sixB = hypotheticalSix(sheet.b, genB);
+  const sixA = hypotheticalSix(sheet.a, genA, sheet.b);
+  const sixB = hypotheticalSix(sheet.b, genB, sheet.a);
   if (!sixA.picks.length && !sixB.picks.length) return "";
   const pickRow = (pick) => `
     <div class="team-duel-six-row">
