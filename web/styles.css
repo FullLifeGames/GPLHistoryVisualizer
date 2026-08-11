@@ -4489,11 +4489,88 @@ tbody tr:hover {
   margin-top: 12px;
 }
 
-.team-duel-six-chips {
+.team-duel-six-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 6px;
+  align-items: center;
+  gap: 10px;
+  padding: 3px 0;
+}
+
+.team-duel-six-row .team-duel-tier-chip {
+  flex: 0 0 auto;
+}
+
+.team-duel-six-reasons {
+  font-size: 0.85rem;
+}
+
+.team-duel-six-open {
+  margin: 6px 0 0;
+}
+
+.team-duel-type-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 6px 0;
+}
+
+.team-duel-type-label {
+  flex: 0 0 110px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.team-duel-type-chip {
+  display: inline-block;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0 8px;
+  font-size: 0.8rem;
+  margin: 1px 4px 1px 0;
+}
+
+.team-duel-type-chip.is-weak {
+  border-color: var(--viz-6);
+  color: var(--viz-6);
+}
+
+.team-duel-type-chip.is-resist {
+  border-color: var(--viz-2);
+  color: var(--viz-2);
+}
+
+.team-duel-type-chip.is-immune {
+  border-color: var(--accent-strong);
+  color: var(--accent-strong);
+}
+
+.team-duel-type-chip.is-ability {
+  border-style: dashed;
+  color: var(--muted);
+}
+
+.team-duel-actual {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 10px 16px;
+  margin-top: 12px;
+  max-width: 860px;
+}
+
+.team-duel-actual summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.team-duel-actual-record {
+  margin: 10px 0 4px;
+}
+
+.team-duel-actual-list {
+  margin: 4px 0;
+  padding-left: 20px;
 }
 
 .team-duel-side h3 {

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { teamDuelRosters, teamDuelSheet, eloAtSeasonEnd, teamDuelOutcome, hypotheticalSix } from "../web/team_duel.js";
+import { teamDuelRosters, teamDuelSheet, eloAtSeasonEnd, teamDuelOutcome, hypotheticalSix, teamDuelActualOutcome } from "../web/team_duel.js";
 import { rosterSeasonGeneration } from "../web/stats.js";
 
 const ROSTER_ROWS = [
@@ -150,31 +150,82 @@ test("teamDuelOutcome is a symmetric logistic on the Elo gap", () => {
   assert.equal(teamDuelOutcome(null, 1500), null);
 });
 
-test("hypotheticalSix picks six by BST with a bonus for uncovered types", () => {
-  const mon = (name, types, bst) => ({ name, english: name, types, baseStats: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 50 }, bst });
+const NO_EFFECTS = { certainImmune: new Set(), possibleImmune: new Set(), certainResist: new Set(), possibleResist: new Set() };
+const sixMon = (name, types, bst) => ({
+  name,
+  english: name,
+  types,
+  baseStats: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 50 },
+  bst,
+  abilityEffects: NO_EFFECTS,
+});
+
+test("hypotheticalSix picks by contribution, not raw BST", () => {
+  // FIXTURE_GEN types: Fire (hits Steel/Grass, resisted by Dragon) and
+  // Ground (hits Steel/Poison, blanked by Flying).
   const side = {
     mons: [
-      mon("A", ["Dragon"], 600),
-      mon("B", ["Dragon"], 590),
-      mon("C", ["Dragon"], 580),
-      mon("D", ["Dragon"], 570),
-      mon("E", ["Dragon"], 560),
-      mon("F", ["Dragon"], 555),
-      mon("G", ["Water", "Ground"], 500),
-      { name: "H", english: "", types: [], baseStats: null, bst: null },
+      sixMon("Steel1", ["Steel"], 600),
+      sixMon("Steel2", ["Steel"], 590),
+      sixMon("Dragon", ["Dragon"], 400),
+      sixMon("Bird", ["Flying"], 380),
+      sixMon("Grass", ["Grass"], 610),
+      sixMon("Normal", ["Normal"], 650),
+      sixMon("Steel3", ["Steel"], 585),
     ],
   };
-  const picks = hypotheticalSix(side);
-  assert.equal(picks.length, 6);
-  // G's two fresh types outscore F's redundant Dragon despite the lower BST.
-  assert.ok(picks.some((entry) => entry.name === "G"));
-  assert.ok(!picks.some((entry) => entry.name === "F"));
-  assert.ok(!picks.some((entry) => entry.name === "H"));
-  assert.equal(picks[0].name, "A");
+  const result = hypotheticalSix(side, FIXTURE_GEN);
+  assert.equal(result.picks.length, 6);
+  // The Fire-resisting Dragon leads despite the lowest BST on the roster —
+  // it offers a resistance and a fresh type, which outweighs raw stats.
+  assert.equal(result.picks[0].mon.name, "Dragon");
+  assert.ok(result.picks[0].resists.includes("Fire"));
+  // The stacked-weakness penalty pushes the third Steel out entirely.
+  assert.ok(!result.picks.some((pick) => pick.mon.name === "Steel3"));
+});
+
+test("hypotheticalSix covers open weaknesses of earlier picks", () => {
+  const side = {
+    mons: [sixMon("Anchor", ["Steel"], 900), sixMon("Dragon", ["Dragon"], 400), sixMon("Bird", ["Flying"], 380)],
+  };
+  const result = hypotheticalSix(side, FIXTURE_GEN);
+  // The huge Steel anchor goes first and is weak to Fire and Ground; the
+  // next picks are chosen because they cover those open weaknesses.
+  assert.equal(result.picks[0].mon.name, "Anchor");
+  assert.ok(result.picks[1].covers.length > 0);
+  assert.deepEqual(result.openWeaknesses, []);
+});
+
+test("hypotheticalSix reports weaknesses nobody covers", () => {
+  const side = { mons: [sixMon("Steel1", ["Steel"], 600)] };
+  const result = hypotheticalSix(side, FIXTURE_GEN);
+  assert.deepEqual(result.openWeaknesses, ["Fire", "Ground"]);
 });
 
 test("hypotheticalSix returns what it can for small or degraded sides", () => {
-  assert.deepEqual(hypotheticalSix(null), []);
-  const side = { mons: [{ name: "X", english: "", types: [], baseStats: null, bst: null }] };
-  assert.deepEqual(hypotheticalSix(side), []);
+  assert.deepEqual(hypotheticalSix(null, FIXTURE_GEN), { picks: [], openWeaknesses: [] });
+  const side = { mons: [{ name: "X", english: "", types: [], baseStats: null, bst: null, abilityEffects: NO_EFFECTS }] };
+  assert.deepEqual(hypotheticalSix(side, FIXTURE_GEN), { picks: [], openWeaknesses: [] });
+});
+
+test("teamDuelActualOutcome finds real meetings, season-scoped for same-season pairs", () => {
+  const matches = [
+    { season_id: "season_008", week: "Spieltag 5", stage: "regular_season", player_a: "Bene", player_b: "Dauni", score_a: "2", score_b: "1", winner: "Bene", source_urls: "u1" },
+    { season_id: "season_009", week: "Spieltag 2", stage: "regular_season", player_a: "Dauni", player_b: "Bene", score_a: "0", score_b: "3", winner: "Bene", source_urls: "u2" },
+    { season_id: "season_008", week: "Spieltag 9", stage: "regular_season", player_a: "Other", player_b: "Bene", score_a: "1", score_b: "2", winner: "Bene", source_urls: "u3" },
+    { season_id: "season_008", week: "Spieltag 11", stage: "regular_season", player_a: "Bene", player_b: "Dauni", score_a: "1", score_b: "1", winner: "", source_urls: "u4" },
+  ];
+  const norm = (value) => String(value).toLowerCase();
+  const sameSeason = teamDuelActualOutcome(matches, "bene", "dauni", "season_008", "season_008", norm);
+  assert.equal(sameSeason.scope, "season");
+  assert.equal(sameSeason.meetings.length, 2);
+  assert.equal(sameSeason.winsA, 1);
+  assert.equal(sameSeason.draws, 1);
+  assert.equal(sameSeason.meetings[1].scoreA, "1");
+  const career = teamDuelActualOutcome(matches, "bene", "dauni", "season_008", "season_009", norm);
+  assert.equal(career.scope, "career");
+  assert.equal(career.meetings.length, 3);
+  assert.equal(career.winsA, 2);
+  assert.equal(career.meetings[1].scoreA, "3");
+  assert.equal(teamDuelActualOutcome(matches, "bene", "nobody", "season_008", "season_008", norm), null);
 });
