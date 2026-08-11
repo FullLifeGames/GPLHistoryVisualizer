@@ -4462,12 +4462,33 @@ tbody tr:hover {
   font-size: 16px;
 }
 
-#team-duel-sheet:not(:empty),
+#team-duel-sheet:not(:empty) {
+  margin-top: 36px;
+}
+
+/* Everything below the stat comparison is centered as one column. */
 #team-duel-six:not(:empty),
 #team-duel-types:not(:empty),
 #team-duel-speed:not(:empty),
-#team-duel-sim:not(:empty) {
-  margin-top: 36px;
+#team-duel-sim:not(:empty),
+#team-duel-sources:not(:empty) {
+  margin: 36px auto 0;
+  max-width: 880px;
+}
+
+#team-duel-types > h3,
+#team-duel-types > p,
+#team-duel-speed > h3,
+#team-duel-speed > p,
+.team-duel-six > p.muted,
+.team-duel-sim > p.muted,
+#team-duel-sources {
+  text-align: center;
+}
+
+#team-duel-six .team-duel-sim-head,
+#team-duel-sim .team-duel-sim-head {
+  justify-content: center;
 }
 
 .team-duel-grid {
@@ -4543,6 +4564,10 @@ tbody tr:hover {
 .team-duel-type-chip.is-immune {
   border-color: var(--accent-strong);
   color: var(--accent-strong);
+}
+
+.team-duel-type-chip.is-neutral {
+  color: var(--muted);
 }
 
 .team-duel-type-chip.is-ability {

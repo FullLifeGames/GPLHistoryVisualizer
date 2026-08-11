@@ -7714,55 +7714,59 @@ function teamDuelSideHtml(side) {
     </div>`;
 }
 
-// Compact per-side summary instead of an 18-row table: only the types that
-// actually matter for a roster, grouped by weak / resist / immune, with
-// counts on the chips and sorted by how many mons are affected.
-function teamDuelTypeBuckets(matrix) {
+// Per-side net balance instead of raw counts: for each attacking type the
+// roster is either strong (more resists/immunities than weaknesses), weak
+// (the other way around), or neutral. The chip number is the difference.
+function teamDuelTypeBalance(matrix) {
   if (!matrix) return null;
-  const buckets = { weak: [], resist: [], immune: [], ability: [] };
+  const strengths = [];
+  const weaknesses = [];
+  const neutral = [];
+  const ability = [];
   for (const row of matrix) {
-    if (row.weak) buckets.weak.push({ type: row.type, count: row.weak });
-    if (row.resist) buckets.resist.push({ type: row.type, count: row.resist });
-    if (row.immune) buckets.immune.push({ type: row.type, count: row.immune });
-    if (row.ability) buckets.ability.push({ type: row.type, count: row.ability });
+    const net = row.resist + row.immune - row.weak;
+    if (row.ability) ability.push({ type: row.type, count: row.ability });
+    if (net > 0) strengths.push({ type: row.type, net });
+    else if (net < 0) weaknesses.push({ type: row.type, net: -net });
+    else neutral.push({ type: row.type });
   }
-  for (const list of Object.values(buckets)) {
-    list.sort((a, b) => b.count - a.count || a.type.localeCompare(b.type, "en"));
-  }
-  return buckets;
+  strengths.sort((a, b) => b.net - a.net || a.type.localeCompare(b.type, "en"));
+  weaknesses.sort((a, b) => b.net - a.net || a.type.localeCompare(b.type, "en"));
+  neutral.sort((a, b) => a.type.localeCompare(b.type, "en"));
+  ability.sort((a, b) => b.count - a.count || a.type.localeCompare(b.type, "en"));
+  return { strengths, weaknesses, neutral, ability };
 }
 
-function teamDuelTypesSideHtml(label, buckets) {
-  if (!buckets) return "";
-  const chips = (list, tone) =>
-    list
-      .map(
-        (entry) =>
-          `<span class="team-duel-type-chip is-${tone}">${escapeHtml(pokemonTypeLabel(entry.type))}${entry.count > 1 ? ` ×${entry.count}` : ""}</span>`,
-      )
-      .join("");
-  const line = (labelKey, list, tone) =>
-    list.length
-      ? `<div class="team-duel-type-line"><span class="team-duel-type-label">${escapeHtml(t(state.language, `teamDuel.${labelKey}`))}</span><span>${chips(list, tone)}</span></div>`
+function teamDuelTypesSideHtml(label, balance) {
+  if (!balance) return "";
+  const chip = (entry, tone, suffix) =>
+    `<span class="team-duel-type-chip is-${tone}">${escapeHtml(pokemonTypeLabel(entry.type))}${suffix}</span>`;
+  const line = (labelKey, html) =>
+    html
+      ? `<div class="team-duel-type-line"><span class="team-duel-type-label">${escapeHtml(t(state.language, `teamDuel.${labelKey}`))}</span><span>${html}</span></div>`
       : "";
+  const strengths = balance.strengths.map((entry) => chip(entry, "resist", ` +${entry.net}`)).join("");
+  const weaknesses = balance.weaknesses.map((entry) => chip(entry, "weak", ` −${entry.net}`)).join("");
+  const neutral = balance.neutral.map((entry) => chip(entry, "neutral", "")).join("");
+  const ability = balance.ability.map((entry) => chip(entry, "ability", entry.count > 1 ? ` ×${entry.count}` : "")).join("");
   return `
     <div class="team-duel-side">
       <h3>${escapeHtml(label)}</h3>
-      ${line("weak", buckets.weak, "weak")}
-      ${line("resist", buckets.resist, "resist")}
-      ${line("immune", buckets.immune, "immune")}
-      ${line("abilityDependent", buckets.ability, "ability")}
+      ${line("strengths", strengths)}
+      ${line("weaknesses", weaknesses)}
+      ${line("neutralLabel", neutral)}
+      ${line("abilityDependent", ability)}
     </div>`;
 }
 
 function teamDuelTypesHtml(sheet, labelA, labelB) {
-  const bucketsA = teamDuelTypeBuckets(sheet.typeMatrix.a);
-  const bucketsB = teamDuelTypeBuckets(sheet.typeMatrix.b);
-  if (!bucketsA && !bucketsB) return "";
+  const balanceA = teamDuelTypeBalance(sheet.typeMatrix.a);
+  const balanceB = teamDuelTypeBalance(sheet.typeMatrix.b);
+  if (!balanceA && !balanceB) return "";
   return `
     <h3>${escapeHtml(t(state.language, "teamDuel.typesTitle"))}</h3>
     <p class="muted">${escapeHtml(t(state.language, "teamDuel.typesNote"))} ${escapeHtml(t(state.language, "teamDuel.typesAbilityNote"))}</p>
-    <div class="team-duel-grid">${teamDuelTypesSideHtml(labelA, bucketsA)}${teamDuelTypesSideHtml(labelB, bucketsB)}</div>`;
+    <div class="team-duel-grid">${teamDuelTypesSideHtml(labelA, balanceA)}${teamDuelTypesSideHtml(labelB, balanceB)}</div>`;
 }
 
 function teamDuelSpeedHtml(sheet, labelA, labelB) {
@@ -7797,14 +7801,15 @@ function teamDuelSpeedHtml(sheet, labelA, labelB) {
     </div>`;
 }
 
+// One short reason per pick — the strongest contribution only, so the
+// lineup reads as a list of roles instead of a wall of text.
 function teamDuelSixReasons(pick) {
   const list = (types) =>
-    types.slice(0, 4).map((type) => pokemonTypeLabel(type)).join(", ") + (types.length > 4 ? ", …" : "");
-  const parts = [];
-  if (pick.covers.length) parts.push(formatMessage(t(state.language, "teamDuel.sixCovers"), { types: list(pick.covers) }));
-  if (pick.resists.length) parts.push(formatMessage(t(state.language, "teamDuel.sixResists"), { types: list(pick.resists) }));
-  if (pick.fresh.length) parts.push(formatMessage(t(state.language, "teamDuel.sixBrings"), { types: list(pick.fresh) }));
-  return parts.join(" · ");
+    types.slice(0, 2).map((type) => pokemonTypeLabel(type)).join(", ") + (types.length > 2 ? ", …" : "");
+  if (pick.covers.length) return formatMessage(t(state.language, "teamDuel.sixCovers"), { types: list(pick.covers) });
+  if (pick.resists.length) return formatMessage(t(state.language, "teamDuel.sixResists"), { types: list(pick.resists) });
+  if (pick.fresh.length) return formatMessage(t(state.language, "teamDuel.sixBrings"), { types: list(pick.fresh) });
+  return "";
 }
 
 function teamDuelSixHtml(sheet, genA, genB) {
