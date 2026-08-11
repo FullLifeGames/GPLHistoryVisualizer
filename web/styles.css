@@ -4462,11 +4462,38 @@ tbody tr:hover {
   font-size: 16px;
 }
 
+#team-duel-sheet:not(:empty),
+#team-duel-six:not(:empty),
+#team-duel-types:not(:empty),
+#team-duel-speed:not(:empty),
+#team-duel-sim:not(:empty) {
+  margin-top: 36px;
+}
+
 .team-duel-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 16px;
   margin-top: 12px;
+}
+
+.team-duel-six {
+  border: 1px dashed var(--accent-strong);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 14px 18px;
+  max-width: 860px;
+}
+
+.team-duel-six-side {
+  margin-top: 12px;
+}
+
+.team-duel-six-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
 }
 
 .team-duel-side h3 {

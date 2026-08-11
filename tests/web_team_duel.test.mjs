@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { teamDuelRosters, teamDuelSheet, eloAtSeasonEnd, teamDuelOutcome } from "../web/team_duel.js";
+import { teamDuelRosters, teamDuelSheet, eloAtSeasonEnd, teamDuelOutcome, hypotheticalSix } from "../web/team_duel.js";
 import { rosterSeasonGeneration } from "../web/stats.js";
 
 const ROSTER_ROWS = [
@@ -49,6 +49,8 @@ const FIXTURE_SPECIES = {
   roserade: { name: "Roserade", types: ["Grass", "Poison"], baseStats: { hp: 60, atk: 70, def: 65, spa: 125, spd: 105, spe: 90 }, abilities: ["Natural Cure", "Poison Point"] },
   rotomwash: { name: "Rotom-Wash", types: ["Electric", "Water"], baseStats: { hp: 50, atk: 65, def: 107, spa: 105, spd: 107, spe: 86 }, abilities: ["Levitate"] },
   bronzong: { name: "Bronzong", types: ["Steel", "Psychic"], baseStats: { hp: 67, atk: 89, def: 116, spa: 79, spd: 116, spe: 33 }, abilities: ["Levitate", "Heatproof"] },
+  hariyama: { name: "Hariyama", types: ["Fighting"], baseStats: { hp: 144, atk: 120, def: 60, spa: 40, spd: 60, spe: 50 }, abilities: ["Thick Fat", "Guts"] },
+  miltank: { name: "Miltank", types: ["Normal"], baseStats: { hp: 95, atk: 80, def: 105, spa: 40, spd: 70, spe: 100 }, abilities: ["Thick Fat"] },
 };
 const FIXTURE_CHART = {
   Fire: { Steel: 2, Grass: 2, Dragon: 0.5 },
@@ -61,7 +63,7 @@ const FIXTURE_GEN = {
   effectiveness: (attackType, defTypes) => defTypes.reduce((mult, def) => mult * (FIXTURE_CHART[attackType]?.[def] ?? 1), 1),
 };
 const ROSTER_A = { key: "a", seasonId: "season_002", division: "Regular Season", teamName: "ToxicBlast", personName: "SteveParker", pokemon: ["Panzaeron", "Latios"], sourceUrls: "sheet-a" };
-const ROSTER_B = { key: "b", seasonId: "season_008", division: "Liga 1", teamName: "Victini Bottom", personName: "Bene", pokemon: ["Roserade", "Fantexemplar", "Rotom-Wasch", "Bronzong"], sourceUrls: "sheet-b" };
+const ROSTER_B = { key: "b", seasonId: "season_008", division: "Liga 1", teamName: "Victini Bottom", personName: "Bene", pokemon: ["Roserade", "Fantexemplar", "Rotom-Wasch", "Bronzong", "Hariyama", "Miltank"], sourceUrls: "sheet-b" };
 
 test("teamDuelSheet resolves species, averages and flags cross-era pairs", () => {
   const sheet = teamDuelSheet({ rosterA: ROSTER_A, rosterB: ROSTER_B, genA: FIXTURE_GEN, genB: FIXTURE_GEN });
@@ -79,26 +81,31 @@ test("teamDuelSheet builds the defensive type matrix per attacking type", () => 
   const ground = sheet.typeMatrix.a.find((row) => row.type === "Ground");
   // Skarmory: 2 * 0 = 0 -> immune by typing; Latios: neutral, but its only
   // ability is Levitate -> certain ability immunity.
-  assert.deepEqual(ground, { type: "Ground", weak: 0, resist: 0, immune: 2, abilityImmune: 0 });
+  assert.deepEqual(ground, { type: "Ground", weak: 0, resist: 0, immune: 2, ability: 0 });
   const fire = sheet.typeMatrix.a.find((row) => row.type === "Fire");
   // Skarmory: Steel 2x -> weak; Latios: Dragon 0.5 -> resist.
-  assert.deepEqual(fire, { type: "Fire", weak: 1, resist: 1, immune: 0, abilityImmune: 0 });
+  assert.deepEqual(fire, { type: "Fire", weak: 1, resist: 1, immune: 0, ability: 0 });
 });
 
-test("teamDuelSheet counts ability immunities: certain as immune, optional as marker", () => {
+test("teamDuelSheet counts ability effects: certain as immune/resist, optional as marker", () => {
   const sheet = teamDuelSheet({ rosterA: ROSTER_A, rosterB: ROSTER_B, genA: FIXTURE_GEN, genB: FIXTURE_GEN });
   const ground = sheet.typeMatrix.b.find((row) => row.type === "Ground");
   // Roserade: Poison 2x -> weak. Rotom-Wash: neutral typing but Levitate is
   // its only ability -> immune. Bronzong: Steel 2x -> weak, and Levitate is
-  // one of two abilities -> additionally flagged as possible immunity.
-  assert.deepEqual(ground, { type: "Ground", weak: 2, resist: 0, immune: 1, abilityImmune: 1 });
+  // one of two abilities -> flagged. Hariyama/Miltank: neutral to Ground.
+  assert.deepEqual(ground, { type: "Ground", weak: 2, resist: 0, immune: 1, ability: 1 });
+  const fire = sheet.typeMatrix.b.find((row) => row.type === "Fire");
+  // Roserade: Grass 2x -> weak. Bronzong: Steel 2x -> weak, Heatproof
+  // possible -> flagged. Hariyama: neutral, Thick Fat possible -> flagged.
+  // Miltank: Thick Fat is its ONLY ability -> certain 0.5x -> resist.
+  assert.deepEqual(fire, { type: "Fire", weak: 2, resist: 1, immune: 0, ability: 2 });
 });
 
 test("teamDuelSheet interleaves speed tiers across both sides", () => {
   const sheet = teamDuelSheet({ rosterA: ROSTER_A, rosterB: ROSTER_B, genA: FIXTURE_GEN, genB: FIXTURE_GEN });
   assert.deepEqual(
     sheet.speedTiers.map((entry) => [entry.side, entry.speed]),
-    [["a", 110], ["b", 90], ["b", 86], ["a", 70], ["b", 33]],
+    [["a", 110], ["b", 100], ["b", 90], ["b", 86], ["a", 70], ["b", 50], ["b", 33]],
   );
 });
 
@@ -108,7 +115,7 @@ test("teamDuelSheet degrades without adapters: names kept, no stats or matrix", 
   assert.equal(sheet.typeMatrix.a, null);
   assert.equal(sheet.speedTiers.length, 0);
   assert.equal(sheet.a.mons.length, 2);
-  assert.equal(sheet.b.mons.length, 4);
+  assert.equal(sheet.b.mons.length, 6);
   assert.equal(sheet.a.avgBst, null);
 });
 
@@ -141,4 +148,33 @@ test("teamDuelOutcome is a symmetric logistic on the Elo gap", () => {
   const even = teamDuelOutcome(1500, 1500);
   assert.equal(even.pA, 0.5);
   assert.equal(teamDuelOutcome(null, 1500), null);
+});
+
+test("hypotheticalSix picks six by BST with a bonus for uncovered types", () => {
+  const mon = (name, types, bst) => ({ name, english: name, types, baseStats: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 50 }, bst });
+  const side = {
+    mons: [
+      mon("A", ["Dragon"], 600),
+      mon("B", ["Dragon"], 590),
+      mon("C", ["Dragon"], 580),
+      mon("D", ["Dragon"], 570),
+      mon("E", ["Dragon"], 560),
+      mon("F", ["Dragon"], 555),
+      mon("G", ["Water", "Ground"], 500),
+      { name: "H", english: "", types: [], baseStats: null, bst: null },
+    ],
+  };
+  const picks = hypotheticalSix(side);
+  assert.equal(picks.length, 6);
+  // G's two fresh types outscore F's redundant Dragon despite the lower BST.
+  assert.ok(picks.some((entry) => entry.name === "G"));
+  assert.ok(!picks.some((entry) => entry.name === "F"));
+  assert.ok(!picks.some((entry) => entry.name === "H"));
+  assert.equal(picks[0].name, "A");
+});
+
+test("hypotheticalSix returns what it can for small or degraded sides", () => {
+  assert.deepEqual(hypotheticalSix(null), []);
+  const side = { mons: [{ name: "X", english: "", types: [], baseStats: null, bst: null }] };
+  assert.deepEqual(hypotheticalSix(side), []);
 });

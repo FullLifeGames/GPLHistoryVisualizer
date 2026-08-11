@@ -47,7 +47,7 @@ import {
   VIDEO_ARCHIVE_COLUMNS,
 } from "./table_columns.js";
 import { eloChronology, eloLedgerRows, personEloSeries, upsetRows } from "./elo_history.js";
-import { teamDuelRosters, teamDuelSheet, eloAtSeasonEnd, teamDuelOutcome } from "./team_duel.js";
+import { teamDuelRosters, teamDuelSheet, eloAtSeasonEnd, teamDuelOutcome, hypotheticalSix } from "./team_duel.js";
 import { buildSeries, lineChart, paddedDomain, stackedBarChart, stepChart } from "./charts.js";
 import { attentionStripPoints, engagementAnomalies, monthlyChannelStacks, seasonMonthBands, stripSeasonIds } from "./audience.js";
 import {
@@ -7682,6 +7682,11 @@ function teamDuelSideLabel(roster) {
   return roster.personName || roster.teamName;
 }
 
+function pokemonTypeLabel(type) {
+  const label = t(state.language, `pokemonTypes.${type}`);
+  return label === `pokemonTypes.${type}` ? type : label;
+}
+
 function teamDuelSideHtml(side) {
   const roster = side.roster;
   const subline = [roster.personName && roster.teamName ? roster.teamName : "", seasonDisplay(roster.seasonId), roster.division, teamDuelPhaseLabel(roster)]
@@ -7691,7 +7696,7 @@ function teamDuelSideHtml(side) {
   const statHeads = TEAM_DUEL_STATS.map((key) => `<th>${escapeHtml(t(state.language, `teamDuel.${TEAM_DUEL_STAT_KEYS[key]}`))}</th>`).join("");
   const rows = side.mons
     .map((mon) => {
-      const types = mon.types.map((type) => `<span class="team-duel-type">${escapeHtml(type)}</span>`).join("");
+      const types = mon.types.map((type) => `<span class="team-duel-type">${escapeHtml(pokemonTypeLabel(type))}</span>`).join("");
       const stats = mon.baseStats
         ? TEAM_DUEL_STATS.map((key) => `<td>${mon.baseStats[key]}</td>`).join("") + `<td><strong>${mon.bst}</strong></td>`
         : `<td colspan="7" class="muted">—</td>`;
@@ -7722,9 +7727,9 @@ function teamDuelTypesHtml(sheet, labelA, labelB) {
     }
   }
   const cell = (entry) =>
-    entry ? `${entry.weak} / ${entry.resist} / ${entry.immune}${entry.abilityImmune ? ` (+${entry.abilityImmune})` : ""}` : "—";
+    entry ? `${entry.weak} / ${entry.resist} / ${entry.immune}${entry.ability ? ` (+${entry.ability})` : ""}` : "—";
   const rows = [...rowsByType.entries()]
-    .map(([type, sides]) => `<tr><td>${escapeHtml(type)}</td><td>${cell(sides.a)}</td><td>${cell(sides.b)}</td></tr>`)
+    .map(([type, sides]) => `<tr><td>${escapeHtml(pokemonTypeLabel(type))}</td><td>${cell(sides.a)}</td><td>${cell(sides.b)}</td></tr>`)
     .join("");
   const legend = `${t(state.language, "teamDuel.weak")} / ${t(state.language, "teamDuel.resist")} / ${t(state.language, "teamDuel.immune")}`;
   return `
@@ -7762,6 +7767,27 @@ function teamDuelSpeedHtml(sheet, labelA, labelB) {
         <div class="team-duel-tier-side team-duel-tier-b"><strong>${escapeHtml(labelB)}</strong></div>
       </div>
       ${rows}
+    </div>`;
+}
+
+function teamDuelSixHtml(sheet) {
+  const sixA = hypotheticalSix(sheet.a);
+  const sixB = hypotheticalSix(sheet.b);
+  if (!sixA.length && !sixB.length) return "";
+  const chips = (list) =>
+    list.map((mon) => `<span class="team-duel-tier-chip">${pokemonIcon(mon.name)}<span>${escapeHtml(mon.name)}</span></span>`).join("");
+  const sideBlock = (side, list) =>
+    list.length
+      ? `<div class="team-duel-six-side"><strong>${escapeHtml(teamDuelSideLabel(side.roster))}</strong><div class="team-duel-six-chips">${chips(list)}</div></div>`
+      : "";
+  return `
+    <div class="team-duel-six">
+      <div class="team-duel-sim-head">
+        <h3>${escapeHtml(t(state.language, "teamDuel.sixTitle"))}</h3>
+        <span class="simulation-badge">${escapeHtml(t(state.language, "titleRace.simBadge"))}</span>
+      </div>
+      <p class="muted">${escapeHtml(t(state.language, "teamDuel.sixNote"))}</p>
+      ${sideBlock(sheet.a, sixA)}${sideBlock(sheet.b, sixB)}
     </div>`;
 }
 
@@ -7825,6 +7851,7 @@ function renderTeamDuel() {
   populateTeamDuelSelects(rosters);
   const hosts = {
     sheet: document.querySelector("#team-duel-sheet"),
+    six: document.querySelector("#team-duel-six"),
     types: document.querySelector("#team-duel-types"),
     speed: document.querySelector("#team-duel-speed"),
     sim: document.querySelector("#team-duel-sim"),
@@ -7878,6 +7905,7 @@ function renderTeamDuel() {
       <h3>${escapeHtml(t(state.language, "teamDuel.statsTitle"))}</h3>
       <div class="team-duel-grid">${teamDuelSideHtml(sheet.a)}${teamDuelSideHtml(sheet.b)}</div>`;
   }
+  if (hosts.six) hosts.six.innerHTML = teamDuelSixHtml(sheet);
   if (hosts.types) hosts.types.innerHTML = teamDuelTypesHtml(sheet, teamDuelSideLabel(rosterA), teamDuelSideLabel(rosterB));
   if (hosts.speed) hosts.speed.innerHTML = teamDuelSpeedHtml(sheet, teamDuelSideLabel(rosterA), teamDuelSideLabel(rosterB));
   if (hosts.sim) hosts.sim.innerHTML = teamDuelSimHtml(rosterA, rosterB);
